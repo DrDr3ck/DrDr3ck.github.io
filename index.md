@@ -4,22 +4,22 @@
   </head>
   <body>
     <h1>Essais courts</h1>
-    <a href="./Balle/index.html">Balle</a>
+    <a href="./Balle/">Balle</a>
     <br>
-    <a href="./CasseBrique/index.html">CasseBrique</a>    
+    <a href="./CasseBrique/">CasseBrique</a>    
     <br>
-    <a href="./Fleur/index.html">Fleur</a>
+    <a href="./Fleur/">Fleur</a>
     <br>
-    <a href="./Pluie/index.html">Pluie</a>
+    <a href="./Pluie/">Pluie</a>
     <br>
-    <a href="./Serpent/index.html">Serpent</a>
+    <a href="./Serpent/">Serpent</a>
     <h2>Concept</h2>
-    <a href="./Steering/index.html">Steering behaviors</a>
+    <a href="./Steering/">Steering behaviors</a>
     <br>
-    <a href="./LettreCercle/index.html">LettreCercle</a>
+    <a href="./LettreCercle/">LettreCercle</a>
     <br>
-    <a href="./FractalTree/index.html">FractalTree</a>
+    <a href="./FractalTree/">FractalTree</a>
     <br>
-    <a href="./BarnsleyFern/index.html">BarnsleyFern</a>
+    <a href="./BarnsleyFern/">BarnsleyFern</a>
   </body>
 </html>
