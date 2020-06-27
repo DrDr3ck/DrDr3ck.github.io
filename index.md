@@ -1,4 +1,9 @@
 
+<html>
+  <head>
+    <meta charset="utf-8"/>
+  </head>
+  <body>
     <h2>Essais courts</h2>
     <h3>Mini jeu</h3>
     <!-- <a href="./Balle/">Balle</a>
@@ -20,4 +25,6 @@
     <!-- <a href="./FractalTree/">FractalTree</a>
     <br>-->
     <a href="./BarnsleyFern/">BarnsleyFern</a>
+  </body>
+</html>
 
