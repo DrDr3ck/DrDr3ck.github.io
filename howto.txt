@@ -1,0 +1,7 @@
+How to get a local server:
+==========================
+
+in a command prompt, go to your minigames directory and type:
+python -m SimpleHTTPServer
+
+Then you can use the http://localhost:8000/ in your favorite browser
