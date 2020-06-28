@@ -17,7 +17,7 @@
     <a href="./Serpent/">Serpent</a> -->
     <a href="./MineSweeper">Mine sweeper</a>
     <br>
-    <a href="./BoulderDash">Boulder Dash</a>
+    <a href="./BoulderDash">Boulder Dash (in progress)</a>
     <h3>Concept</h3>
     <a href="./Steering/">Steering behaviors</a>
     <br>
