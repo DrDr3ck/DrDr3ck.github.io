@@ -24,6 +24,38 @@ function World(w,h) {
         }
     }
 
+    this.canUp = function(x,y) {
+        const tile = this.level[x][Math.max(y-1,0)];
+        if( tile === 'W' || tile === 'B' ) {
+            return false;
+        }
+        return true;
+    }
+
+    this.canDown = function(x,y) {
+        const tile = this.level[x][Math.min(y+1,this.h-1)];
+        if( tile === 'W' || tile === 'B' ) {
+            return false;
+        }
+        return true;
+    }
+
+    this.canLeft = function(x,y) {
+        const tile = this.level[Math.max(x-1,0)][y];
+        if( tile === 'W' || tile === 'B' ) {
+            return false;
+        }
+        return true;
+    }
+
+    this.canRight = function(x,y) {
+        const tile = this.level[Math.min(x+1,this.w-1)][y];
+        if( tile === 'W' || tile === 'B' ) {
+            return false;
+        }
+        return true;
+    }
+
     this.show = function() {
         for( let i=0; i < this.w; i++ ) {
             for( let j=1; j < this.h; j++ ) {

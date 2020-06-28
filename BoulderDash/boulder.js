@@ -10,10 +10,23 @@ function BoulderDash(wx,wy) {
 
     this.setState = function(state) {
         if( this.state.startsWith("pause") || this.frame === 0) {
-            this.state = state;
-            this.frame = 8;
-            if( this.state === "right" || this.state === "left") {
-                this.lastDirection = this.state;
+            // can move ?
+            let canMove = false;
+            if( state === "up" && world.canUp(this.wx, this.wy) ) {
+                canMove = true;
+            } else if( state === "down" && world.canDown(this.wx, this.wy) ) {
+                canMove = true;
+            } else if( state === "left" && world.canLeft(this.wx, this.wy) ) {
+                canMove = true;
+            } else if( state === "right" && world.canRight(this.wx, this.wy) ) {
+                canMove = true;
+            }
+            if( canMove ) {
+                this.state = state;
+                this.frame = 8;
+                if( this.state === "right" || this.state === "left") {
+                    this.lastDirection = this.state;
+                }
             }
         }
     }
@@ -39,16 +52,16 @@ function BoulderDash(wx,wy) {
                 this.frame--;
                 if( this.frame === 0 ) {
                     if( this.state === "up") {
-                        wy--;
+                        this.wy--;
                     }
                     if( this.state === "down") {
-                        wy++;
+                        this.wy++;
                     }
                     if( this.state === "left") {
-                        wx--;
+                        this.wx--;
                     }
                     if( this.state === "right") {
-                        wx++;
+                        this.wx++;
                     }
                 }
             }
@@ -57,20 +70,20 @@ function BoulderDash(wx,wy) {
             this.frame = 8*Math.floor(random(5,15));
         }
 
-        if( this.state === "up") {
-            world.level[wx][wy] = ' ';
+        if( this.state === "up" ) {
+            world.level[this.wx][this.wy] = ' ';
             this.y -= this.speed;
         }
         if( this.state === "down") {
-            world.level[wx][wy] = ' ';
+            world.level[this.wx][this.wy] = ' ';
             this.y += this.speed;
         }
         if( this.state === "left") {
-            world.level[wx][wy] = ' ';
+            world.level[this.wx][this.wy] = ' ';
             this.x -= this.speed;
         }
         if( this.state === "right") {
-            world.level[wx][wy] = ' ';
+            world.level[this.wx][this.wy] = ' ';
             this.x += this.speed;
         }
     }
@@ -99,5 +112,7 @@ function BoulderDash(wx,wy) {
         textSize(22);
         fill(0, 102, 153);
         text(this.state, 0, 22);
+        text(this.wx, 120, 22);
+        text(this.wy, 160, 22);
     }
 }
