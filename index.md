@@ -15,6 +15,7 @@
     <a href="./Pluie/">Pluie</a>
     <br>
     <a href="./Serpent/">Serpent</a> -->
+    <a href="./BoulderDash">Boulder Dash</a>
     <h3>Concept</h3>
     <a href="./Steering/">Steering behaviors</a>
     <br>
