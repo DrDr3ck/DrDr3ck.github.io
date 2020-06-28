@@ -3,6 +3,7 @@ function World(w,h) {
     this.h = h;
     this.level = [];
     this.rocks = [];
+    this.slimes = [];
     this.enemies = [];
 
     this.readLevel = function() {
@@ -27,49 +28,48 @@ function World(w,h) {
         for( let i=1; i < 23; i++ ) {
             this.level[i][7] = 'B';
         }
+        this.level[18][7] = 'M';
+
+        // gems
         this.level[9][11] = 'G';
         this.level[14][6] = 'G';
         this.level[6][14] = 'G';
+
+        this.slimes.push(createVector(18,14));
+        this.slimes.forEach(rock => this.level[rock.x][rock.y] = 'S');
 
         this.rocks.push(createVector(18,2));
         this.rocks.push(createVector(26,2));
         this.level[18][3] = ' ';
         this.level[18][4] = ' ';
         this.level[18][5] = ' ';
+        this.level[18][8] = ' ';
         
         this.rocks.forEach(rock => this.level[rock.x][rock.y] = 'R');
     }
 
+    this.blocks = function(tile) {
+        return tile === 'W' || tile === 'B' || tile === 'R' || tile === 'S';
+    }
+
     this.canUp = function(x,y) {
         const tile = this.level[x][Math.max(y-1,0)];
-        if( tile === 'W' || tile === 'B' || tile === 'R' ) {
-            return false;
-        }
-        return true;
+        return !this.blocks(tile);
     }
 
     this.canDown = function(x,y) {
         const tile = this.level[x][Math.min(y+1,this.h-1)];
-        if( tile === 'W' || tile === 'B' || tile === 'R' ) {
-            return false;
-        }
-        return true;
+        return !this.blocks(tile);
     }
 
     this.canLeft = function(x,y) {
         const tile = this.level[Math.max(x-1,0)][y];
-        if( tile === 'W' || tile === 'B' || tile === 'R' ) {
-            return false;
-        }
-        return true;
+        return !this.blocks(tile);
     }
 
     this.canRight = function(x,y) {
         const tile = this.level[Math.min(x+1,this.w-1)][y];
-        if( tile === 'W' || tile === 'B' || tile === 'R' ) {
-            return false;
-        }
-        return true;
+        return !this.blocks(tile);
     }
 
     this.show = function() {
@@ -85,6 +85,10 @@ function World(w,h) {
                     image(spriteBrick,tileSize*i,tileSize*j,tileSize,tileSize);            
                 } else if( this.level[i][j] === 'G' ) {
                     image(animationDiamond[floor(frameCount/3)%8],i*tileSize, j*tileSize);
+                } else if( this.level[i][j] === 'S' ) {
+                    image(animationSlime[floor(frameCount/3)%8],i*tileSize, j*tileSize);
+                } else if( this.level[i][j] === 'M' ) {
+                    image(animationMagicWall[floor(frameCount/3)%8],i*tileSize, j*tileSize);
                 }
             }
         }
@@ -102,6 +106,11 @@ function World(w,h) {
         image(animationEnemy2[floor(frameCount/3)%8],15*tileSize, 0*tileSize);
     }
 
+    this.isAvailableTile = function(x,y) {
+        const tile = world.level[x][y];
+        return tile === ' ' || tile === 'D';
+    }
+
     this.update = function() {
         // update rocks
         if( frameCount % (FPS/4) !== 0 ) {
@@ -114,6 +123,43 @@ function World(w,h) {
                 world.level[rock.x][rock.y] = ' ';
                 this.rocks[i] = createVector(rock.x, rock.y+1);
                 world.level[rock.x][rock.y+1] = 'R';
+            }
+        }
+        if( this.slimes.length === 0 ) {
+            return;
+        }
+        const r = random(1);
+        if( r > 0.8 ) {
+            // try to find a spot to add more slime
+            let i = Math.round(random(0,this.slimes.length-1));
+            const slimePosition = this.slimes[i];
+            let x = Math.max(0,slimePosition.x-1);
+            let y = slimePosition.y;
+            if( this.isAvailableTile(x, y) ) {
+                this.slimes.push(createVector(x, y));
+                this.level[x][y] = 'S';
+                return;
+            }
+            x = Math.min(this.w-1,slimePosition.x+1);
+            y = slimePosition.y;
+            if( this.isAvailableTile(x, y) ) {
+                this.slimes.push(createVector(x, y));
+                this.level[x][y] = 'S';
+                return;
+            }
+            x = slimePosition.x;
+            y = Math.max(0,slimePosition.y-1);
+            if( this.isAvailableTile(x, y) ) {
+                this.slimes.push(createVector(x, y));
+                this.level[x][y] = 'S';
+                return;
+            }
+            x = slimePosition.x;
+            y = Math.min(this.h-1,slimePosition.y+1);
+            if( this.isAvailableTile(x, y) ) {
+                this.slimes.push(createVector(x, y));
+                this.level[x][y] = 'S';
+                return;
             }
         }
     }

@@ -11,6 +11,8 @@ let animationRight = [];
 let animationDiamond = [];
 let animationEnemy1 = [];
 let animationEnemy2 = [];
+let animationSlime = [];
+let animationMagicWall = [];
 let spriteWall;
 let spriteBrick;
 let spriteRock;
@@ -23,7 +25,7 @@ function preload() {
 }
 
 function setup() {
-    world = new World(30,20);
+    world = new World(40,23);
     world.readLevel();
     createCanvas(tileSize*world.w,tileSize*world.h);
     boulder = new BoulderDash(2,3);
@@ -36,11 +38,21 @@ function setup() {
         animationDiamond.push(spritesheet.get(tileSize*i,tileSize*10,tileSize,tileSize));
         animationEnemy1.push(spritesheet.get(tileSize*i,tileSize*9,tileSize,tileSize));
         animationEnemy2.push(spritesheet.get(tileSize*i,tileSize*11,tileSize,tileSize));
+        animationSlime.push(spritesheet.get(tileSize*i,tileSize*8,tileSize,tileSize));
     }
     spriteWall = spritesheet.get(tileSize*1,tileSize*6,tileSize,tileSize);
     spriteBrick = spritesheet.get(tileSize*3,tileSize*6,tileSize,tileSize);
     spriteRock = spritesheet.get(tileSize*0,tileSize*7,tileSize,tileSize);
     spriteDirt = spritesheet.get(tileSize*1,tileSize*7,tileSize,tileSize);
+
+    animationMagicWall.push(spritesheet.get(tileSize*4,tileSize*6,tileSize,tileSize));
+    animationMagicWall.push(spritesheet.get(tileSize*4,tileSize*6,tileSize,tileSize));
+    animationMagicWall.push(spritesheet.get(tileSize*5,tileSize*6,tileSize,tileSize));
+    animationMagicWall.push(spritesheet.get(tileSize*5,tileSize*6,tileSize,tileSize));
+    animationMagicWall.push(spritesheet.get(tileSize*6,tileSize*6,tileSize,tileSize));
+    animationMagicWall.push(spritesheet.get(tileSize*6,tileSize*6,tileSize,tileSize));
+    animationMagicWall.push(spritesheet.get(tileSize*7,tileSize*6,tileSize,tileSize));
+    animationMagicWall.push(spritesheet.get(tileSize*7,tileSize*6,tileSize,tileSize));
 
     animationStart.push(spritesheet.get(tileSize*0,tileSize*0,tileSize,tileSize));
     animationStart.push(spritesheet.get(tileSize*0,tileSize*0,tileSize,tileSize));
@@ -57,14 +69,15 @@ function setup() {
 function draw() {
     background(0);
 
+    const shift = keyIsDown(SHIFT);
     if(keyIsDown(LEFT_ARROW)) {
-        boulder.setState("left");
+        boulder.setState(shift ? "shiftleft" : "left");
     } else if(keyIsDown(RIGHT_ARROW)) {
-        boulder.setState("right");
+        boulder.setState(shift ? "shiftright" : "right");
     } else if(keyIsDown(UP_ARROW)) {
-        boulder.setState("up");
+        boulder.setState(shift ? "shiftup" : "up");
     } else if(keyIsDown(DOWN_ARROW)) {
-        boulder.setState("down");
+        boulder.setState(shift ? "shiftdown" : "down");
     }
 
     boulder.update();

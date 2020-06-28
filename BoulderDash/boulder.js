@@ -14,22 +14,36 @@ function BoulderDash(wx,wy) {
             return;
         }
         if( this.state.startsWith("pause") || this.frame === 0) {
-            // can move ?
-            let canMove = false;
-            if( state === "up" && world.canUp(this.wx, this.wy) ) {
-                canMove = true;
-            } else if( state === "down" && world.canDown(this.wx, this.wy) ) {
-                canMove = true;
-            } else if( state === "left" && world.canLeft(this.wx, this.wy) ) {
-                canMove = true;
-            } else if( state === "right" && world.canRight(this.wx, this.wy) ) {
-                canMove = true;
-            }
-            if( canMove ) {
-                this.state = state;
-                this.frame = 8;
-                if( this.state === "right" || this.state === "left") {
-                    this.lastDirection = this.state;
+            if( state.startsWith("shift") ) {
+                // can shift ?
+                state = state.substr(5);
+                if( state === "right" && world.level[this.wx+1][this.wy] === 'D' ) {
+                    world.level[this.wx+1][this.wy] = ' ';
+                } else if( state === "left" && world.level[this.wx-1][this.wy] === 'D' ) {
+                    world.level[this.wx-1][this.wy] = ' ';
+                } else if( state === "up" && world.level[this.wx][this.wy-1] === 'D' ) {
+                    world.level[this.wx][this.wy-1] = ' ';
+                } else if( state === "down" && world.level[this.wx][this.wy+1] === 'D' ) {
+                    world.level[this.wx][this.wy+1] = ' ';
+                }
+            } else {
+                // can move ?
+                let canMove = false;
+                if( state === "up" && world.canUp(this.wx, this.wy) ) {
+                    canMove = true;
+                } else if( state === "down" && world.canDown(this.wx, this.wy) ) {
+                    canMove = true;
+                } else if( state === "left" && world.canLeft(this.wx, this.wy) ) {
+                    canMove = true;
+                } else if( state === "right" && world.canRight(this.wx, this.wy) ) {
+                    canMove = true;
+                }
+                if( canMove ) {
+                    this.state = state;
+                    this.frame = 8;
+                    if( this.state === "right" || this.state === "left") {
+                        this.lastDirection = this.state;
+                    }
                 }
             }
         }
@@ -70,10 +84,6 @@ function BoulderDash(wx,wy) {
                     if( world.level[this.wx][this.wy] === 'G' ) {
                         world.level[this.wx][this.wy] = ' ';
                         this.scoreGems += 1;
-                        console.log(world);
-                    }
-                    if( world.level[this.wx][this.wy] !== 'b' ) {
-                        console.log("set("+this.wx+ ", "+this.wy+") to 'b'");
                     }
                     world.level[this.wx][this.wy] = 'b';
                 }
