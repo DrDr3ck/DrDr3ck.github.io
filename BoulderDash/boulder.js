@@ -3,12 +3,16 @@ function BoulderDash(wx,wy) {
     this.y = wy*tileSize;
     this.wx = wx; // world x : i.e. the horizontal index of a tile in the world
     this.wy = wy;
-    this.state = "pause";
-    this.frame = 0;
+    this.state = "pause_start";
+    this.frame = 8;
     this.speed = 4;
     this.lastDirection = "right";
+    this.scoreGems = 0;
 
     this.setState = function(state) {
+        if( this.state == "pause_start" ) {
+            return;
+        }
         if( this.state.startsWith("pause") || this.frame === 0) {
             // can move ?
             let canMove = false;
@@ -63,6 +67,15 @@ function BoulderDash(wx,wy) {
                     if( this.state === "right") {
                         this.wx++;
                     }
+                    if( world.level[this.wx][this.wy] === 'G' ) {
+                        world.level[this.wx][this.wy] = ' ';
+                        this.scoreGems += 1;
+                        console.log(world);
+                    }
+                    if( world.level[this.wx][this.wy] !== 'b' ) {
+                        console.log("set("+this.wx+ ", "+this.wy+") to 'b'");
+                    }
+                    world.level[this.wx][this.wy] = 'b';
                 }
             }
         } else {
@@ -71,26 +84,36 @@ function BoulderDash(wx,wy) {
         }
 
         if( this.state === "up" ) {
-            world.level[this.wx][this.wy] = ' ';
+            if( this.frame !== 0 ) {
+                world.level[this.wx][this.wy] = ' ';
+            }
             this.y -= this.speed;
         }
         if( this.state === "down") {
-            world.level[this.wx][this.wy] = ' ';
+            if( this.frame !== 0 ) {
+                world.level[this.wx][this.wy] = ' ';
+            }
             this.y += this.speed;
         }
         if( this.state === "left") {
-            world.level[this.wx][this.wy] = ' ';
+            if( this.frame !== 0 ) {
+                world.level[this.wx][this.wy] = ' ';
+            }
             this.x -= this.speed;
         }
         if( this.state === "right") {
-            world.level[this.wx][this.wy] = ' ';
+            if( this.frame !== 0 ) {
+                world.level[this.wx][this.wy] = ' ';
+            }
             this.x += this.speed;
         }
     }
 
     this.show = function() {
         const frame = floor(this.frame);
-        if( this.state === "pause") {
+        if( this.state === "pause_start") {
+            image(animationStart[frame%animationStart.length], this.x,this.y);
+        } else if( this.state === "pause") {
             image(animationPause1[4], this.x,this.y);
         } else if( this.state === "pause1" ) {
             image(animationPause1[frame%animationPause1.length], this.x,this.y);
@@ -112,7 +135,9 @@ function BoulderDash(wx,wy) {
         textSize(22);
         fill(0, 102, 153);
         text(this.state, 0, 22);
-        text(this.wx, 120, 22);
-        text(this.wy, 160, 22);
+        text(this.wx, 720, 22);
+        text(this.wy, 760, 22);
+
+        text(this.scoreGems, 120, 22);
     }
 }

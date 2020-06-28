@@ -2,6 +2,7 @@ let boulder;
 let world;
 let tileSize = 32;
 let spritesheet;
+let animationStart = [];
 let animationPause1 = [];
 let animationPause2 = [];
 let animationPause3 = [];
@@ -14,6 +15,8 @@ let spriteWall;
 let spriteBrick;
 let spriteRock;
 let spriteDirt;
+
+let FPS = 80;
 
 function preload() {
     spritesheet = loadImage("sprites.png");
@@ -38,7 +41,17 @@ function setup() {
     spriteBrick = spritesheet.get(tileSize*3,tileSize*6,tileSize,tileSize);
     spriteRock = spritesheet.get(tileSize*0,tileSize*7,tileSize,tileSize);
     spriteDirt = spritesheet.get(tileSize*1,tileSize*7,tileSize,tileSize);
-    frameRate(80);
+
+    animationStart.push(spritesheet.get(tileSize*0,tileSize*0,tileSize,tileSize));
+    animationStart.push(spritesheet.get(tileSize*0,tileSize*0,tileSize,tileSize));
+    animationStart.push(spritesheet.get(tileSize*3,tileSize*0,tileSize,tileSize));
+    animationStart.push(spritesheet.get(tileSize*3,tileSize*0,tileSize,tileSize));
+    animationStart.push(spritesheet.get(tileSize*2,tileSize*0,tileSize,tileSize));
+    animationStart.push(spritesheet.get(tileSize*2,tileSize*0,tileSize,tileSize));
+    animationStart.push(spritesheet.get(tileSize*1,tileSize*0,tileSize,tileSize));
+    animationStart.push(spritesheet.get(tileSize*1,tileSize*0,tileSize,tileSize));
+    
+    frameRate(FPS);
 }
 
 function draw() {
