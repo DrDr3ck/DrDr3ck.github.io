@@ -5,6 +5,8 @@ const tileSize = 30;
 
 let board;
 
+let score = 0;
+
 const shapes = [
     ["0000", "1111", "0000", "0000"],
     ["0000", "0220", "0220", "0000"],
@@ -25,10 +27,11 @@ let frame=0;
 let autoMove = 20;
 
 function setup() {
-    createCanvas(cols*tileSize+1, rows*tileSize+1);
+    createCanvas(cols*tileSize+1+32, rows*tileSize+1);
     resetBoard(true);
     frameRate(20);
     takeRandomShape();
+    textSize(20);
 }
 
 function resetBoard(full) {
@@ -43,6 +46,7 @@ function resetBoard(full) {
             board[i][j] = 0;
         }
     }
+    score = 0;
 }
 
 function shapeCanMove(curShape, dir) {
@@ -78,7 +82,7 @@ function keyPressed() {
         // rotate
         rotateShape();
     } else if( keyCode === DOWN_ARROW ) {
-        if( !checkDown(tetrisShape, shapePosition) ) {
+        if( !checkDown(tetrisShape, shapePosition, false) ) {
             shapePosition.y++;
         }
     }
@@ -105,6 +109,7 @@ function rowFilled(index, curBoard) {
             return false;
         }
     }
+    score++;
     return true;
 }
 
@@ -133,7 +138,7 @@ function drawShapeInBoard(shape) {
     });
 }
 
-function checkDown(curShape, curPosition) {
+function checkDown(curShape, curPosition, reset) {
     let sx = curPosition.x;
     let sy = curPosition.y+1;
     for( let j=0; j < curShape.length; j++) {
@@ -145,8 +150,10 @@ function checkDown(curShape, curPosition) {
                 if( sy >= 0 && sy >= rows || board[sx][sy] !== 0 ) {
                     // set shape at current position
                     drawShapeInBoard(curShape);
-                    // take another shape
-                    takeRandomShape();
+                    if( !reset ) {
+                        // take another shape
+                        takeRandomShape();
+                    }
                     frame = -1;
                     return true;
                 }
@@ -162,7 +169,7 @@ function takeRandomShape() {
     shapeIndex = Math.round(random()*7-0.5)+1;
     const newTetrisShape = shapes[shapeIndex-1];
     newShapePosition = createVector(cols/2-2, -2);
-    if( checkDown(newTetrisShape, newShapePosition) ) {
+    if( checkDown(newTetrisShape, newShapePosition, true) ) {
         // reset game
         resetBoard(false);
     }
@@ -175,7 +182,7 @@ function draw() {
     // update 
     // check if shape is touching the bottom of another shape
     if( frame % autoMove === 0 ) {
-        if( !checkDown(tetrisShape, shapePosition) ) {
+        if( !checkDown(tetrisShape, shapePosition, false) ) {
             shapePosition.y++;
         }
         // need to check if a row is filled !!
@@ -227,4 +234,8 @@ function draw() {
         }
         y++;
     });
+
+    noStroke();
+    fill(255);
+    text(score, width-30, 25);
 }
