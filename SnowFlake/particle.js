@@ -4,7 +4,8 @@ function Particle(x,y) {
 
     this.update = function() {
         this.position.x -= 1;
-        this.position.y += random(-1,1);
+        const value = sliderValue;
+        this.position.y += random(-value,value);
 
         let angle = this.position.heading();
         angle = constrain(angle, 0, PI/6);

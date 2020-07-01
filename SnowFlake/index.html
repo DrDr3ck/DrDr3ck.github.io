@@ -8,7 +8,16 @@
     <link rel="stylesheet" type="text/css" href="../style.css">
   </head>
   <body>
-    Press ESCAPE to get another snowflake
+    <div>
+      <p>Press ESCAPE to get another snowflake</p>
+      <div style="display: flex;">
+        <input type="range" id="blobby" name="blobby"
+             min="1" max="5" value="1" step="1">
+        <label for="blobby">Blobby</label>
+      </div>
+      <input type="checkbox" id="animated" name="animated">
+      <label for="animated">Animated</label>
+    </div>
     <script src="sketch.js"></script>
   </body>
 </html>

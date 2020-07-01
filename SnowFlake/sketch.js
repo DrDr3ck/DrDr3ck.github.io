@@ -3,6 +3,8 @@ const particles = [];
 let current;
 let stop = false;
 let checkBox;
+let slider;
+let sliderValue = 1;
 
 function setup() {
     createCanvas(600,600);
@@ -12,13 +14,16 @@ function setup() {
     }
     current = new Particle(width/2, 0);
     stop = false;
-    checkBox = createCheckbox('Animated', false);
+    checkBox = select('#animated');
     checkBox.changed(reset);
+    slider = select('#blobby');
+    slider.changed(reset);
 }
 
 function reset() {
     particles.splice(0, particles.length);
     stop = false;
+    sliderValue = slider.value();
 }
 
 function keyPressed() {
