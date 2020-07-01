@@ -27,6 +27,8 @@
     <br>
     <a href="./Ripple/">Ripple</a>
     <br>
+    <a href="./SnowFlake/">SnowFlake</a>
+    <br>
     <!-- <a href="./FractalTree/">FractalTree</a>
     <br>-->
     <a href="./BarnsleyFern/">BarnsleyFern</a>
