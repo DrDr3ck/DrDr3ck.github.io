@@ -1,0 +1,46 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    user-select: none;
+}
+
+body {
+    min-height: 100vh;
+    text-align: center;
+    background: rgb(109, 89, 89);
+}
+
+#canvas {
+    cursor: crosshair;
+    border-top: 3px rgba(66,0,0,0.5);
+    border-left: 3px rgba(66,0,0,0.5);
+    background: linear-gradient(135deg, rgb(197, 14, 14) 0%, rgb(207, 62, 62) 100%);
+    box-shadow: 0 10px 15px black;
+    position: relative;
+    margin: 0 auto;
+    overflow: hidden;
+    height: 500px;
+    width: 500px;
+}
+
+.mosquito {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    animation: move 12s forwards;
+}
+
+@keyframes move {
+    from {
+        transform: translate(0%, 0%);
+    }
+    to {
+        transform: translate(var(--trX), 20%);
+    }
+}
+
+
+.centered {
+    text-align: center;
+}
