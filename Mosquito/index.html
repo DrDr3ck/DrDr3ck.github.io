@@ -1,15 +1,48 @@
 <html>
     <head>
         <title>Mosquito Killer</title>
+        <link rel="icon" type="image/png" href="hit.png" />
         <link rel="stylesheet" type="text/css" href="./style.css">
         <meta charset="utf-8"/>
     </head>
     <body>
-        <div class="centered">
-            <H1>Mosquito Killer</H1>
+        <div class="page" id="succesPage">
+            <div class="pageHeader">
+                <h2>Succes</h2>
+                <div class="right">
+                    <button id="close" onclick="closeSuccesPage()">X</button>
+                </div>
+            </div>
+            <div class="wrapper">
+                <div>10 moustiques tues</div>
+                <div>25 moustiques tues</div>
+                <div>50 moustiques tues</div>
+                <div>100 moustiques tues</div>
+                <div>250 moustiques tues</div>
+                <div>500 moustiques tues</div>
+            </div>
         </div>
-        <div class="scoreboard">Score: <span id="score"></span></div>
-        <div id="canvas"></div>
-        <script src="./script.js" type="text/javascript"></script>
+        <div class="page" id="statsPage">
+            <div class="pageHeader">
+                <h2>Stats</h2>
+                <div class="right">
+                    <button id="close" onclick="closeStatsPage()">X</button>
+                </div>
+            </div>
+        </div>
+        <div id="main">
+            <div id="buttons">
+                <button class="button" onclick="succes()">Succes</button>
+                <button class="button" onclick="stats()">Stats</button>
+            </div>
+            <div id="canvasContainer">
+                <div class="centered">
+                    <H1>Mosquito Killer</H1>
+                </div>
+                <div class="scoreboard">Score: <span id="score"></span></div>
+                <div id="canvas"></div>
+                <script src="./script.js" type="text/javascript"></script>
+            </div>
+        </div>
     </body>
 </html>

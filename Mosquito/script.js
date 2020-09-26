@@ -1,5 +1,10 @@
 const canvas = document.getElementById("canvas");
 const score = document.getElementById("score");
+const succesPage = document.getElementById("succesPage");
+const statsPage = document.getElementById("statsPage");
+
+succesPage.style.visibility = statsPage.style.visibility = 'hidden';
+succesPage.style.opacity = statsPage.style.opacity = '0';
 
 let count = Number(localStorage.getItem('mosquito/score')) || 0;
 addScore(0);
@@ -24,10 +29,15 @@ function start() {
     }
 }
 
+function addImage(name) {
+  const img = new Image();
+  img.src = `./${name}.png`;
+  img.classList.add(name);
+  return img;
+}
+
 function addHit(x, y, size) {
-  const hit = new Image();
-  hit.src = "./hit.png";
-  hit.classList.add("hit");
+  const hit = addImage("hit");
 
   hit.style.top = y-size/2;
   hit.style.left = x-size;
@@ -40,9 +50,7 @@ function addHit(x, y, size) {
 }
 
 function addMosquito() {
-  const mosquito = new Image();
-  mosquito.src = "./mosquito.png";
-  mosquito.classList.add("mosquito");
+  const mosquito = addImage("mosquito");
 
   const left = Math.random() > 0.5;
 
@@ -62,6 +70,7 @@ function addMosquito() {
 
 canvas.addEventListener('click', function(e) {
     const targetElement = e.target || e.srcElement;
+    // increase score when clicking on a mosquito
     if(targetElement.classList.contains("mosquito")) {
         let PV = targetElement.alt - 1;
         targetElement.alt = PV;
@@ -76,3 +85,25 @@ canvas.addEventListener('click', function(e) {
         setTimeout(() => {hit.remove();}, 5000);
     }
 });
+
+function succes() {
+    closeStatsPage();
+    succesPage.style.visibility = (succesPage.style.visibility === 'hidden') ? 'visible' : 'hidden';
+    succesPage.style.opacity = 1 - Number(succesPage.style.opacity);
+}
+
+function closeSuccesPage() {
+    succesPage.style.visibility = 'hidden';
+    succesPage.style.opacity = 0;
+}
+
+function stats() {
+    closeSuccesPage();
+    statsPage.style.visibility = (statsPage.style.visibility === 'hidden') ? 'visible' : 'hidden';
+    statsPage.style.opacity = 1 - Number(statsPage.style.opacity);
+}
+
+function closeStatsPage() {
+    statsPage.style.visibility = 'hidden';
+    statsPage.style.opacity = 0;
+}
