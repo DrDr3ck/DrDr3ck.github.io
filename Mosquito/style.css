@@ -12,6 +12,14 @@ body {
     background: rgb(109, 89, 89);
 }
 
+.scoreboard {
+    font-size: large;
+}
+
+#score {
+    font-size: x-large;
+}
+
 #canvas {
     cursor: crosshair;
     border-top: 3px rgba(66,0,0,0.5);
@@ -20,6 +28,7 @@ body {
     box-shadow: 0 10px 15px black;
     position: relative;
     margin: 0 auto;
+    margin-top: 25px;
     overflow: hidden;
     height: 500px;
     width: 500px;
@@ -28,7 +37,13 @@ body {
 .mosquito {
     position: absolute;
     transform: translate(-50%, -50%);
-    animation: move 12s forwards;
+    animation: move 11s linear, hide 1s linear 11s;
+}
+
+.hit {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    animation: hide 5s linear;
 }
 
 @keyframes move {
@@ -36,7 +51,18 @@ body {
         transform: translate(0%, 0%);
     }
     to {
-        transform: translate(var(--trX), 20%);
+        transform: translate(var(--trX), var(--trY));
+    }
+}
+
+@keyframes hide {
+    from {
+        transform: translate(var(--trX), var(--trY));
+        opacity: 1;
+    }
+    to {
+        transform: translate(var(--trX), var(--trY));
+        opacity: 0;
     }
 }
 
