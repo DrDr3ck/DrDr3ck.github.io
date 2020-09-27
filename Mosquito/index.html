@@ -6,40 +6,41 @@
         <meta charset="utf-8"/>
     </head>
     <body>
-        <div class="page" id="succesPage">
-            <div class="pageHeader">
-                <h2>Succes</h2>
-                <div class="right">
-                    <button id="close" onclick="closeSuccesPage()">X</button>
-                </div>
-            </div>
-            <div class="wrapper">
-                <div>10 moustiques tues</div>
-                <div>25 moustiques tues</div>
-                <div>50 moustiques tues</div>
-                <div>100 moustiques tues</div>
-                <div>250 moustiques tues</div>
-                <div>500 moustiques tues</div>
+        <div class="pageContainer" id="successPage">
+            <div class="page">
+                <h2>Success</h2>
+                <div class="elementContainer" id="successElements"></div>
+                <button class="button" id="close" onclick="closePage('successPage')">Close</button>
             </div>
         </div>
-        <div class="page" id="statsPage">
-            <div class="pageHeader">
+        <div class="pageContainer" id="statsPage">
+            <div class="page">
                 <h2>Stats</h2>
-                <div class="right">
-                    <button id="close" onclick="closeStatsPage()">X</button>
+                <div class="elementContainer" id="statsElements"></div>
+                <button class="button" id="close" onclick="closePage('statsPage')"">Close</button>
+            </div>
+        </div>
+        <div class="pageContainer" id="shopPage">
+            <div class="page">
+                <h2>Shop</h2>
+                <br>
+                Work in progress...
+                <div class="elementContainer" id="shopElements">
                 </div>
+                <button class="button" id="close" onclick="closePage('shopPage')"">Close</button>
             </div>
         </div>
         <div id="main">
             <div id="buttons">
-                <button class="button" onclick="succes()">Succes</button>
-                <button class="button" onclick="stats()">Stats</button>
+                <button class="button" onclick="openSuccessPage()">Success</button>
+                <button class="button" onclick="openStatsPage()">Stats</button>
+                <button class="button" onclick="openShopPage()">Shop</button>
             </div>
             <div id="canvasContainer">
                 <div class="centered">
                     <H1>Mosquito Killer</H1>
                 </div>
-                <div class="scoreboard">Score: <span id="score"></span></div>
+                <div class="scoreboard">Money: <span id="score"></span>€</div>
                 <div id="canvas"></div>
                 <script src="./script.js" type="text/javascript"></script>
             </div>

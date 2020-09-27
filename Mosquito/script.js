@@ -1,20 +1,58 @@
 const canvas = document.getElementById("canvas");
 const score = document.getElementById("score");
-const succesPage = document.getElementById("succesPage");
+const successPage = document.getElementById("successPage");
 const statsPage = document.getElementById("statsPage");
+const successElements = document.getElementById("successElements");
+const statsElements = document.getElementById("statsElements");
+const shopElements = document.getElementById("shopElements");
 
-succesPage.style.visibility = statsPage.style.visibility = 'hidden';
-succesPage.style.opacity = statsPage.style.opacity = '0';
-
-let count = Number(localStorage.getItem('mosquito/score')) || 0;
+let scoreValue = Number(localStorage.getItem('mosquito/score')) || 0;
+let killValue = Number(localStorage.getItem('mosquito/kill')) || 0;
+let scoreMultValue = Number(localStorage.getItem('mosquito/scoreMult')) || 1;
+let hitMultValue = Number(localStorage.getItem('mosquito/hitMult')) || 0.1;
 addScore(0);
 
 start();
 
+function getDisplayValue(v) {
+    var unit = " ";
+    if( v < 1e3 ) {
+        v = Math.round(v*100);
+        v = v/100.;
+    } else if( v < 1e6 ) {
+        v = v/1e3;
+        v = Math.round(v*1000);
+        v = v/1000.;
+        unit = "k ";
+    } else if( v < 1e9 ) {
+        v = v/1e6;
+        v = Math.round(v*1000);
+        v = v/1000.;
+        unit = "M ";
+    } else if( v < 1e12 ) {
+        v = v/1e9;
+        v = Math.round(v*1000);
+        v = v/1000.;
+        unit = "G ";
+    } else if( v < 1e15 ) {
+        v = v/1e12;
+        v = Math.round(v*1000);
+        v = v/1000.;
+        unit = "T ";
+    } else if( v < 1e18 ) {
+        v = v/1e15;
+        v = Math.round(v*1000);
+        v = v/1000.;
+        unit = "P ";
+    }
+
+    return `${v}${unit}`;
+}
+
 function addScore(n) {
-    count += n;
-    score.innerHTML = count;
-    localStorage.setItem('mosquito/score', count.toString());
+    scoreValue += n;
+    score.innerHTML = getDisplayValue(scoreValue);
+    localStorage.setItem('mosquito/score', scoreValue.toString());
 }
 
 function start() {
@@ -68,16 +106,23 @@ function addMosquito() {
   return mosquito;
 }
 
+function killMosquito(mosquitoElement) {
+    mosquitoElement.remove();
+    killValue++;
+    localStorage.setItem('mosquito/kill', killValue.toString());
+    addScore(scoreMultValue);
+}
+
 canvas.addEventListener('click', function(e) {
-    const targetElement = e.target || e.srcElement;
+    const targetElement = e.target;
     // increase score when clicking on a mosquito
     if(targetElement.classList.contains("mosquito")) {
         let PV = targetElement.alt - 1;
         targetElement.alt = PV;
+        addScore(scoreMultValue*hitMultValue);
         let size = 48;
         if( PV <= 0) { 
-            targetElement.remove();
-            addScore(1);
+            killMosquito(targetElement);
         } else {
             size = 24;
         }
@@ -86,24 +131,64 @@ canvas.addEventListener('click', function(e) {
     }
 });
 
-function succes() {
-    closeStatsPage();
-    succesPage.style.visibility = (succesPage.style.visibility === 'hidden') ? 'visible' : 'hidden';
-    succesPage.style.opacity = 1 - Number(succesPage.style.opacity);
+function openSuccessPage() {
+    if( successElements.children.length === 0 ) {
+        // fill success page
+        killedList = [10,25,50,100,250,500];
+        killedList.forEach(curKilled => {
+            const curKillDiv = document.createElement("div");
+            curKillDiv.id = `${curKilled} kills`;
+            curKillDiv.classList.add("textCell");
+            curKillDiv.appendChild(document.createTextNode(`${curKilled} mosquitos killed`));
+            successElements.appendChild(curKillDiv);
+        });
+        
+    }
+    // update success
+    for( const child of successElements.children) {
+        const curKilled = Number(child.id.split(" ")[0]);
+        console.log("curKilled: "+curKilled);
+        if( curKilled <= killValue ) {
+            child.style.backgroundColor = "#129912";
+            child.style.color = "black";
+        } else {
+            child.style.backgroundColor = "#991212";
+            child.style.color = "white";
+        }
+    }
+    openDialog(successPage);
 }
 
-function closeSuccesPage() {
-    succesPage.style.visibility = 'hidden';
-    succesPage.style.opacity = 0;
+function openShopPage() {
+    openDialog(shopPage);
 }
 
-function stats() {
-    closeSuccesPage();
-    statsPage.style.visibility = (statsPage.style.visibility === 'hidden') ? 'visible' : 'hidden';
-    statsPage.style.opacity = 1 - Number(statsPage.style.opacity);
+function addCell(divName, parent) {
+    const createdDiv = document.createElement("div");
+    createdDiv.id = divName;
+    createdDiv.classList.add("textCell");
+    createdDiv.style.backgroundColor = "#ADD8E6";
+    parent.appendChild(createdDiv);
+    return createdDiv;
 }
 
-function closeStatsPage() {
-    statsPage.style.visibility = 'hidden';
-    statsPage.style.opacity = 0;
+function openStatsPage() {
+    if( statsElements.children.length === 0 ) {
+        // fill stats page
+        const killedDiv = addCell("killed", statsElements);
+        killedDiv.appendChild(document.createTextNode(`Total mosquito killed: ${killValue}`));
+        const scoreMultDiv = addCell("scoreMult", statsElements);
+        scoreMultDiv.appendChild(document.createTextNode(`Money multiplier: ${scoreMultValue}`));
+        const hitMultDiv = addCell("hitMult", statsElements);
+        hitMultDiv.appendChild(document.createTextNode(`Hit multiplier: ${hitMultValue}`));
+    }
+    openDialog(statsPage);
+}
+
+function openDialog(dialog) {
+    dialog.classList.add("show");
+}
+
+function closePage(pageId) {
+    document.getElementById(pageId).classList.remove("show");
 }
