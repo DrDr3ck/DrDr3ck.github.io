@@ -1,0 +1,150 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    user-select: none;
+}
+
+h1 {
+    text-shadow: 1px 3px 3px #cf866c;
+}
+
+body {
+    min-height: 100vh;
+    text-align: center;
+    background: rgb(109, 89, 89);
+}
+
+.scoreboard {
+    font-size: large;
+}
+
+#score {
+    font-size: x-large;
+}
+
+.button {
+    box-shadow: 5px 4px 0px 0px #cf866c;
+	background:linear-gradient(to bottom, #d0451b 5%, #bc3315 100%);
+	background-color:#d0451b;
+	border-radius:7px;
+    border:3px solid;
+    border-color: #942911;
+	display:inline-block;
+	cursor:pointer;
+	color:#ffffff;
+	font-family:Verdana;
+	font-size:17px;
+	font-weight:bold;
+	padding:6px 24px;
+    text-decoration:none;
+    margin: 5px;
+}
+.button:hover {
+	background:linear-gradient(to bottom, #bc3315 5%, #d0451b 100%);
+	background-color:#bc3315;
+}
+.button:active {
+	position:relative;
+	top:1px;
+}
+
+#main {
+    display: flex;
+    flex-direction: row;
+}
+
+.page {
+    position: absolute;
+    width: 90%;
+    height: 90vh;
+    margin: 5vh;
+    overflow: hidden;
+    background: rgba(0,0,0,0.7);
+    z-index: 3;
+    transition: 0.1s;
+    color: white;
+}
+
+.pageHeader {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+#canvasContainer {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+#buttons {
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+}
+
+#canvas {
+    cursor: crosshair;
+    border-top: 3px rgba(66,0,0,0.5);
+    border-left: 3px rgba(66,0,0,0.5);
+    background: linear-gradient(135deg, rgb(197, 14, 14) 0%, rgb(207, 62, 62) 100%);
+    box-shadow: 0 10px 15px black;
+    position: relative;
+    margin: 0 auto;
+    margin-top: 25px;
+    overflow: hidden;
+    height: 500px;
+    width: 500px;
+}
+
+.wrapper {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-gap: 10px;
+    grid-auto-rows: 100px;
+    margin-top: 50px;
+  }
+
+.mosquito {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    animation: move 11s linear, hide 1s linear 11s;
+}
+
+.hit {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    animation: hide 5s linear;
+}
+
+@keyframes move {
+    from {
+        transform: translate(0%, 0%);
+    }
+    to {
+        transform: translate(var(--trX), var(--trY));
+    }
+}
+
+@keyframes hide {
+    from {
+        transform: translate(var(--trX), var(--trY));
+        opacity: 1;
+    }
+    to {
+        transform: translate(var(--trX), var(--trY));
+        opacity: 0;
+    }
+}
+
+
+.centered {
+    text-align: center;
+}
+
+.right {
+    position:  absolute;
+    right: 5px
+}
