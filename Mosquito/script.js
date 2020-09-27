@@ -65,8 +65,18 @@ function start() {
 
     function game() {
         if( canvas.children.length < 15 ) {
-            const cur = addMosquito();
-            setTimeout(() => {cur.remove();}, 12000);
+            const r = Math.random();
+            let insectLifeTime = 12000;
+            let cur = null;
+            if( r > 0.3 ) {
+                cur = addMosquito();
+            } else if( r > 0.1 ) {
+                cur = addBee();
+            } else {
+                cur = addGrassHopper();
+                insectLifeTime = 22000;
+            }
+            setTimeout(() => {cur.remove();}, insectLifeTime);
         }
         setTimeout(() => {game();}, 500);
     }
@@ -117,24 +127,86 @@ function addMosquito() {
   return mosquito;
 }
 
-function killMosquito(mosquitoElement) {
-    mosquitoElement.remove();
+function addBee() {
+    const bee = addImage("bee");
+
+    // sliding from left or right side of the page ?
+    const left = Math.random() > 0.5;
+
+    // mosquito position
+    bee.style.top = Math.random()*450+5;
+    bee.style.left = left ? -100 : 550;
+    bee.style.height = Math.random()*70+40;
+
+    // mosquito movement
+    bee.style.setProperty("--trX", left ? "500%" : "-500%");
+    const trY = 10*(Math.round(Math.random()*15)-6);
+    bee.style.setProperty("--trY", `${trY}%`);
+
+    // mosquito PV
+    bee.alt = Math.round(Math.random()*8+3.5);
+    bee.title = "HP: "+bee.alt;
+
+    canvas.appendChild(bee);
+
+    return bee;
+}
+
+function addGrassHopper() {
+    const grassHopper = addImage("grasshopper");
+
+    // sliding from left or right side of the page ?
+    const left = Math.random() > 0.5;
+
+    // mosquito position
+    grassHopper.style.top = Math.random()*450+5;
+    grassHopper.style.left = left ? -100 : 550;
+    grassHopper.style.height = Math.random()*70+40;
+
+    // mosquito movement
+    grassHopper.style.setProperty("--trX", left ? "500%" : "-500%");
+    const trY = 10*(Math.round(Math.random()*15)-6);
+    grassHopper.style.setProperty("--trY", `${trY}%`);
+
+    // mosquito PV
+    grassHopper.alt = Math.round(Math.random()*15+7.5);
+    grassHopper.title = "HP: "+grassHopper.alt;
+
+    canvas.appendChild(grassHopper);
+
+    return grassHopper;
+}
+
+function killInsect(insectElement, basePrice) {
+    insectElement.remove();
     killValue++;
     localStorage.setItem('mosquito/kill', killValue.toString());
-    addScore(killMultValue);
+    addScore(basePrice*killMultValue);
 }
+
+function getInsectType(targetElement) {
+    if( targetElement.classList.contains("mosquito") ) { return "mosquito"; }
+    if( targetElement.classList.contains("bee") ) { return "bee"; }
+    if( targetElement.classList.contains("grasshopper") ) { return "grasshopper"; }
+    return null;
+}
+
+const insectValue = {mosquito: 1, bee: 1.4, grasshopper: 2.6};
 
 canvas.addEventListener('click', function(e) {
     const targetElement = e.target;
     // increase score when clicking on a mosquito
-    if(targetElement.classList.contains("mosquito")) {
+    const insectType = getInsectType(targetElement);
+    if( insectType ) {
         // reducing PV
-        let PV = targetElement.alt - hitDamageValue;
+        let PV = Number(targetElement.alt) - hitDamageValue;
         targetElement.alt = PV;
-        addScore(killMultValue*hitMultValue);
+        targetElement.title = "HP: "+getDisplayValue(PV);
+        addScore(killMultValue*hitMultValue); // Hit money
         let size = 48;
         if( PV <= 0) { 
-            killMosquito(targetElement);
+            console.log("money: "+insectValue[insectType]);
+            killInsect(targetElement,insectValue[insectType]);
         } else {
             size = 24;
         }

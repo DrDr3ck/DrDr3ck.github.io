@@ -133,6 +133,18 @@ body {
     animation: move 11s linear, hide 1s linear 11s;
 }
 
+.bee {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    animation: move 11s linear, hide 1s linear 11s;
+}
+
+.grasshopper {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    animation: move 21s linear, hide 1s linear 21s;
+}
+
 .hit {
     position: absolute;
     transform: translate(-50%, -50%);
