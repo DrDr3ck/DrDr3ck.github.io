@@ -15,6 +15,8 @@
     <a href="./Pluie/">Pluie</a>
     <br>
     <a href="./Serpent/">Serpent</a> -->
+    <a href="./Mosquito">Mosquito Killer</a>
+    <br>
     <a href="./MatchingCard">Matching Cards</a>
     <br>
     <a href="./MineSweeper">Mine sweeper</a>
