@@ -49,7 +49,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 10px;
+    padding: 10px;
 }
 
 .page h2 {
@@ -180,6 +180,16 @@ body {
 }
 
 #shopPage.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+#upgradePage {
+    opacity: 0;
+    visibility: hidden;
+}
+
+#upgradePage.show {
     opacity: 1;
     visibility: visible;
 }

@@ -2,17 +2,18 @@ const canvas = document.getElementById("canvas");
 const score = document.getElementById("score");
 const successPage = document.getElementById("successPage");
 const statsPage = document.getElementById("statsPage");
+const shopPage = document.getElementById("shopPage");
+const upgradePage = document.getElementById("upgradePage");
 const successElements = document.getElementById("successElements");
 const statsElements = document.getElementById("statsElements");
 const shopElements = document.getElementById("shopElements");
 
 const nbsp = "\u00a0";
-const br = "\u0085";
 
 let scoreValue = Number(localStorage.getItem('mosquito/score')) || 0;
 let killValue = Number(localStorage.getItem('mosquito/kill')) || 0;
-let hitDamageValue = Number(localStorage.getItem('mosquito/hitDamageValue')) || 1;
-let scoreMultValue = Number(localStorage.getItem('mosquito/scoreMult')) || 1;
+let hitDamageValue = Number(localStorage.getItem('mosquito/hitDamage')) || 1;
+let killMultValue = Number(localStorage.getItem('mosquito/killMult')) || 1;
 let hitMultValue = Number(localStorage.getItem('mosquito/hitMult')) || 0.1;
 addScore(0);
 
@@ -120,7 +121,7 @@ function killMosquito(mosquitoElement) {
     mosquitoElement.remove();
     killValue++;
     localStorage.setItem('mosquito/kill', killValue.toString());
-    addScore(scoreMultValue);
+    addScore(killMultValue);
 }
 
 canvas.addEventListener('click', function(e) {
@@ -130,7 +131,7 @@ canvas.addEventListener('click', function(e) {
         // reducing PV
         let PV = targetElement.alt - hitDamageValue;
         targetElement.alt = PV;
-        addScore(scoreMultValue*hitMultValue);
+        addScore(killMultValue*hitMultValue);
         let size = 48;
         if( PV <= 0) { 
             killMosquito(targetElement);
@@ -145,21 +146,32 @@ canvas.addEventListener('click', function(e) {
 function openSuccessPage() {
     if( successElements.children.length === 0 ) {
         // fill success page
-        killedList = [10,25,50,100,250,500];
-        killedList.forEach(curKilled => {
+        [10,25,50,100,250,500,1000,2500,5000,10000].forEach(curKilled => {
             const curKillDiv = document.createElement("div");
             curKillDiv.id = `${curKilled} kills`;
             curKillDiv.classList.add("textCell");
             curKillDiv.appendChild(document.createTextNode(`${curKilled} mosquitos killed`));
             successElements.appendChild(curKillDiv);
         });
-        
+        [2,4,6,8,10].forEach(curDamage => {
+            const curDamageDiv = document.createElement("div");
+            curDamageDiv.id = `${curDamage} damage`;
+            curDamageDiv.classList.add("textCell");
+            curDamageDiv.appendChild(document.createTextNode(`Hit Damage of ${curDamage}`));
+            successElements.appendChild(curDamageDiv);
+        });
     }
     // update success
     for( const child of successElements.children) {
-        const curKilled = Number(child.id.split(" ")[0]);
-        console.log("curKilled: "+curKilled);
-        if( curKilled <= killValue ) {
+        let success = false;
+        if( child.id.includes("kills") ) {
+            const curKilled = Number(child.id.split(" ")[0]);
+            success = curKilled <= killValue;
+        } else if( child.id.includes("damage") ) {
+            const curDamage = Number(child.id.split(" ")[0]);
+            success = curDamage <= hitDamageValue;
+        }
+        if( success ) {
             child.style.backgroundColor = "#129912";
             child.style.color = "black";
         } else {
@@ -167,11 +179,72 @@ function openSuccessPage() {
             child.style.color = "white";
         }
     }
+
     openDialog(successPage);
+}
+
+function buyHitDamageUpgrade(price, factor) {
+    if( price > scoreValue ) {
+        // cannot buy it
+        return;
+    }
+    addScore(-price);
+    hitDamageValue *= factor;
+    localStorage.setItem('mosquito/hitDamage', hitDamageValue.toString());
+    updateUpgradePage();
+}
+
+function buyHitMultUpgrade(price, factor) {
+    if( price > scoreValue ) {
+        // cannot buy it
+        return;
+    }
+    addScore(-price);
+    hitMultValue *= factor;
+    localStorage.setItem('mosquito/hitMult', hitMultValue.toString());
+    updateUpgradePage();
+}
+
+function buyKillMultUpgrade(price, factor) {
+    if( price > scoreValue ) {
+        // cannot buy it
+        return;
+    }
+    addScore(-price);
+    killMultValue *= factor;
+    localStorage.setItem('mosquito/killMult', killMultValue.toString());
+    updateUpgradePage();
+}
+
+function updateBuyButton(child, price) {
+    if( scoreValue >= price ) {
+        child.style.background = "#129912";
+        child.style.color = "black";
+    } else {
+        child.style.backgroundColor = "#991212";
+        child.style.color = "white";
+    }
 }
 
 function openShopPage() {
     openDialog(shopPage);
+}
+
+function updateUpgradePage() {
+    // update upgrade page
+    const buyHitDamage = document.getElementById("buyHitDamage");
+    updateBuyButton(buyHitDamage, 10);
+
+    const buyHitMult = document.getElementById("buyHitMult");
+    updateBuyButton(buyHitMult, 100);
+
+    const buyKillMult = document.getElementById("buyKillMult");
+    updateBuyButton(buyKillMult, 1000);
+}
+
+function openUpgradePage() {
+    updateUpgradePage();
+    openDialog(upgradePage);
 }
 
 function getOrCreateCell(divName, parent) {
@@ -196,11 +269,11 @@ function openStatsPage() {
     const killedDiv = getOrCreateCell("killed", statsElements);
     updateText(killedDiv, `Total mosquito killed: ${killValue}`);
     const scoreMultDiv = getOrCreateCell("scoreMult", statsElements);
-    updateText(scoreMultDiv, `Kill Money multiplier: ${scoreMultValue}`);
+    updateText(scoreMultDiv, `Kill Money multiplier: ${getDisplayValue(killMultValue)}`);
     const hitMultDiv = getOrCreateCell("hitMult", statsElements);
-    updateText(hitMultDiv, `Hit Money multiplier: ${hitMultValue}`);
+    updateText(hitMultDiv, `Hit Money multiplier: ${getDisplayValue(hitMultValue)}`);
     const hitDamageDiv = getOrCreateCell("hitDamage", statsElements);
-    updateText(hitDamageDiv, `Hit damage: ${hitDamageValue}${nbsp}HP`);
+    updateText(hitDamageDiv, `Hit damage: ${getDisplayValue(hitDamageValue)}${nbsp}HP`);
 
     openDialog(statsPage);
 }

@@ -23,11 +23,29 @@
         <div class="pageContainer" id="shopPage">
             <div class="page">
                 <h2>Shop</h2>
-                <br>
-                Work in progress...
-                <div class="elementContainer" id="shopElements">
-                </div>
+                <br>Work in progress...
+                <div class="elementContainer" id="shopElements"></div>
                 <button class="button" id="close" onclick="closePage('shopPage')"">Close</button>
+            </div>
+        </div>
+        <div class="pageContainer" id="upgradePage">
+            <div class="page">
+                <h2>Upgrade</h2>
+                <div class="elementContainer" id="upgradeElements">
+                    <div>
+                        <div class="textCell" id="buyHitDamage">Hit Damage +10% for 10€</div>
+                        <button class="button" onclick="buyHitDamageUpgrade(10,1.1)">Buy</button>
+                    </div>
+                    <div>
+                        <div class="textCell" id="buyHitMult">Hit Money +10% for 100€</div>
+                        <button class="button" onclick="buyHitMultUpgrade(100,1.1)">Buy</button>
+                    </div>
+                    <div>
+                        <div class="textCell" id="buyKillMult">Kill Money +20% for 1000€</div>
+                        <button class="button" onclick="buyKillMultUpgrade(1000,1.2)">Buy</button>
+                    </div>
+                </div>
+                <button class="button" id="close" onclick="closePage('upgradePage')"">Close</button>
             </div>
         </div>
         <div id="main">
@@ -35,6 +53,7 @@
                 <button class="button" onclick="openSuccessPage()">Success</button>
                 <button class="button" onclick="openStatsPage()">Stats</button>
                 <button class="button" onclick="openShopPage()">Shop</button>
+                <button class="button" onclick="openUpgradePage()">Upgrade</button>
             </div>
             <div id="canvasContainer">
                 <div class="centered">
