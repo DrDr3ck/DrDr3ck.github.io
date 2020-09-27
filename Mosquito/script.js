@@ -4,6 +4,7 @@ const successPage = document.getElementById("successPage");
 const statsPage = document.getElementById("statsPage");
 const shopPage = document.getElementById("shopPage");
 const upgradePage = document.getElementById("upgradePage");
+const bestiaryPage = document.getElementById("bestiaryPage");
 const successElements = document.getElementById("successElements");
 const statsElements = document.getElementById("statsElements");
 const shopElements = document.getElementById("shopElements");
@@ -68,9 +69,9 @@ function start() {
             const r = Math.random();
             let insectLifeTime = 12000;
             let cur = null;
-            if( r > 0.3 ) {
+            if( r > 0.15 ) {
                 cur = addMosquito();
-            } else if( r > 0.1 ) {
+            } else if( r > 0.03 ) {
                 cur = addBee();
             } else {
                 cur = addGrassHopper();
@@ -222,7 +223,7 @@ function openSuccessPage() {
             const curKillDiv = document.createElement("div");
             curKillDiv.id = `${curKilled} kills`;
             curKillDiv.classList.add("textCell");
-            curKillDiv.appendChild(document.createTextNode(`${curKilled} mosquitos killed`));
+            curKillDiv.appendChild(document.createTextNode(`${curKilled} mosquitoes killed`));
             successElements.appendChild(curKillDiv);
         });
         [2,4,6,8,10].forEach(curDamage => {
@@ -334,6 +335,10 @@ function getOrCreateCell(divName, parent) {
 
 function updateText(element, text) {
     element.textContent = text;
+}
+
+function openBestiaryPage() {
+    openDialog(bestiaryPage);
 }
 
 function openStatsPage() {

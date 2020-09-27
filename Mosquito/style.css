@@ -220,3 +220,13 @@ body {
     opacity: 1;
     visibility: visible;
 }
+
+#bestiaryPage {
+    opacity: 0;
+    visibility: hidden;
+}
+
+#bestiaryPage.show {
+    opacity: 1;
+    visibility: visible;
+}
