@@ -18,6 +18,7 @@ body {
 
 .scoreboard {
     font-size: large;
+    margin-top: 15px;
 }
 
 .pageContainer {

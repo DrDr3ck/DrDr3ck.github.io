@@ -6,8 +6,12 @@ const successElements = document.getElementById("successElements");
 const statsElements = document.getElementById("statsElements");
 const shopElements = document.getElementById("shopElements");
 
+const nbsp = "\u00a0";
+const br = "\u0085";
+
 let scoreValue = Number(localStorage.getItem('mosquito/score')) || 0;
 let killValue = Number(localStorage.getItem('mosquito/kill')) || 0;
+let hitDamageValue = Number(localStorage.getItem('mosquito/hitDamageValue')) || 1;
 let scoreMultValue = Number(localStorage.getItem('mosquito/scoreMult')) || 1;
 let hitMultValue = Number(localStorage.getItem('mosquito/hitMult')) || 0.1;
 addScore(0);
@@ -90,16 +94,22 @@ function addHit(x, y, size) {
 function addMosquito() {
   const mosquito = addImage("mosquito");
 
+  // sliding from left or right side of the page ?
   const left = Math.random() > 0.5;
 
+  // mosquito position
   mosquito.style.top = Math.random()*450+5;
   mosquito.style.left = left ? -100 : 550;
   mosquito.style.height = Math.random()*50+40;
 
+  // mosquito movement
   mosquito.style.setProperty("--trX", left ? "500%" : "-500%");
   const trY = 10*(Math.round(Math.random()*15)-6);
   mosquito.style.setProperty("--trY", `${trY}%`);
+
+  // mosquito PV
   mosquito.alt = Math.round(Math.random()*3+0.5);
+  mosquito.title = "HP: "+mosquito.alt;
 
   canvas.appendChild(mosquito);
 
@@ -117,7 +127,8 @@ canvas.addEventListener('click', function(e) {
     const targetElement = e.target;
     // increase score when clicking on a mosquito
     if(targetElement.classList.contains("mosquito")) {
-        let PV = targetElement.alt - 1;
+        // reducing PV
+        let PV = targetElement.alt - hitDamageValue;
         targetElement.alt = PV;
         addScore(scoreMultValue*hitMultValue);
         let size = 48;
@@ -163,7 +174,11 @@ function openShopPage() {
     openDialog(shopPage);
 }
 
-function addCell(divName, parent) {
+function getOrCreateCell(divName, parent) {
+    const existingDiv = document.getElementById(divName);
+    if( existingDiv ) {
+        return existingDiv;
+    }
     const createdDiv = document.createElement("div");
     createdDiv.id = divName;
     createdDiv.classList.add("textCell");
@@ -172,16 +187,21 @@ function addCell(divName, parent) {
     return createdDiv;
 }
 
+function updateText(element, text) {
+    element.textContent = text;
+}
+
 function openStatsPage() {
-    if( statsElements.children.length === 0 ) {
-        // fill stats page
-        const killedDiv = addCell("killed", statsElements);
-        killedDiv.appendChild(document.createTextNode(`Total mosquito killed: ${killValue}`));
-        const scoreMultDiv = addCell("scoreMult", statsElements);
-        scoreMultDiv.appendChild(document.createTextNode(`Money multiplier: ${scoreMultValue}`));
-        const hitMultDiv = addCell("hitMult", statsElements);
-        hitMultDiv.appendChild(document.createTextNode(`Hit multiplier: ${hitMultValue}`));
-    }
+    // update stats page
+    const killedDiv = getOrCreateCell("killed", statsElements);
+    updateText(killedDiv, `Total mosquito killed: ${killValue}`);
+    const scoreMultDiv = getOrCreateCell("scoreMult", statsElements);
+    updateText(scoreMultDiv, `Kill Money multiplier: ${scoreMultValue}`);
+    const hitMultDiv = getOrCreateCell("hitMult", statsElements);
+    updateText(hitMultDiv, `Hit Money multiplier: ${hitMultValue}`);
+    const hitDamageDiv = getOrCreateCell("hitDamage", statsElements);
+    updateText(hitDamageDiv, `Hit damage: ${hitDamageValue}${nbsp}HP`);
+
     openDialog(statsPage);
 }
 
