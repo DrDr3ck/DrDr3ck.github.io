@@ -7,3 +7,6 @@ or if Python 3
 python -m http.server
 
 Then you can use the http://localhost:8000/ in your favorite browser
+
+
+Or play on https://drdr3ck.github.io/ 
