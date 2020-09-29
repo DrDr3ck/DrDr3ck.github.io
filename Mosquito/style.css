@@ -115,7 +115,54 @@ body {
     margin-top: 25px;
     overflow: hidden;
     height: 500px;
-    width: 500px;
+    width: 500px;    
+}
+
+@media (max-width: 800px) {
+    h1 {
+        visibility: hidden;
+    }
+    body {
+        color: rgb(109, 89, 89);
+    }
+    #canvas {
+        position: absolute;
+        height: 320px;
+        width: 320px;
+        margin-top: 0px;
+    }
+    .page {
+        width: 480px;
+    }
+    .elementContainer {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .button {
+        font-size: 12px;
+        padding:6px 4px;
+        width: 80px;
+    }
+}
+
+@media (max-width: 400px) {
+    #main {
+        display: flex;
+        flex-direction: column;
+    }
+    #buttons {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        padding: 10px;
+    }
+    h1 {
+        visibility: visible;
+        margin-top: 330px;
+        color: black;
+    }
+    .page {
+        width: 300px;
+    }
 }
 
 .elementContainer {
