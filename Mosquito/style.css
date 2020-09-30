@@ -96,6 +96,7 @@ body {
     display: flex;
     flex-direction: column;
     width: 100%;
+    align-items: center;
 }
 
 #buttons {
@@ -127,8 +128,8 @@ body {
     }
     #canvas {
         position: absolute;
-        height: 320px;
-        width: 320px;
+        height: min(100vw, 100vh, 500px);
+        width: min(100vw, 100vh, 500px);
         margin-top: 0px;
     }
     .page {
@@ -144,7 +145,7 @@ body {
     }
 }
 
-@media (max-width: 400px) {
+@media (max-width: 500px) {
     #main {
         display: flex;
         flex-direction: column;

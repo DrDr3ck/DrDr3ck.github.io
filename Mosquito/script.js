@@ -9,6 +9,8 @@ const successElements = document.getElementById("successElements");
 const statsElements = document.getElementById("statsElements");
 const shopElements = document.getElementById("shopElements");
 
+const pageContainers = document.querySelectorAll(".pageContainer");
+
 const nbsp = "\u00a0";
 
 let scoreValue = Number(localStorage.getItem('mosquito/score')) || 0;
@@ -109,10 +111,14 @@ function addMosquito() {
   // sliding from left or right side of the page ?
   const left = Math.random() > 0.5;
 
+  const canvasSize = Math.min(canvas.offsetWidth,canvas.offsetHeight);
+
+  const ratio = canvasSize / 500.;
+
   // mosquito position
-  mosquito.style.top = Math.random()*450+5;
-  mosquito.style.left = left ? -100 : 550;
-  mosquito.style.height = Math.random()*50+40;
+  mosquito.style.top = Math.random()*canvasSize*.9+5;
+  mosquito.style.left = left ? -100 : canvasSize+50;
+  mosquito.style.height = (Math.random()*50+40)*ratio;
 
   // mosquito movement
   mosquito.style.setProperty("--trX", left ? "500%" : "-500%");
@@ -206,7 +212,6 @@ canvas.addEventListener('click', function(e) {
         addScore(killMultValue*hitMultValue); // Hit money
         let size = 48;
         if( PV <= 0) { 
-            console.log("money: "+insectValue[insectType]);
             killInsect(targetElement,insectValue[insectType]);
         } else {
             size = 24;
@@ -362,3 +367,11 @@ function openDialog(dialog) {
 function closePage(pageId) {
     document.getElementById(pageId).classList.remove("show");
 }
+
+pageContainers.forEach(pageContainer => {
+    pageContainer.addEventListener('click', function(e) {
+        if( e.target.className.includes("pageContainer") ) {
+            closePage(e.target.id);
+        }
+    });
+});
