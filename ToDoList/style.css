@@ -28,7 +28,7 @@ body{
     width:380px;
     height: 350px;
     max-height:350px;
-    background-color: #EEF;
+    background-color: #FFF;
     overflow: auto;
 }
 .content::-webkit-scrollbar { 
@@ -44,7 +44,6 @@ body{
     min-height: 45px;
     position: relative;
     border-bottom: 1px solid rgba(0,0,0,0.1);
-    background-color: #EEF;
     list-style: none;
     padding: 0;
     margin: 0;
