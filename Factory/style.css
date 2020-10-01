@@ -46,7 +46,9 @@ h1 {
 }
 
 #canvas {
-    margin: 0 10px 0 10px;
+    display: flex;
+    /* This centers our sketch horizontally. */
+    justify-content: center;
 }
 
 #footer {
