@@ -23,6 +23,8 @@
     <br>
     <a href="./Tetris">Tetris</a>
     <br>
+    <a href="./ToDoLise">To-Do List</a>
+    <br>
     <a href="./BoulderDash">Boulder Dash (in progress)</a>
     <h3>Concept</h3>
     <a href="./Steering/">Steering behaviors</a>
