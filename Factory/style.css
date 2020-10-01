@@ -1,0 +1,71 @@
+html, body {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+h1 {
+    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+    text-shadow: 1px 3px 3px #999999;
+    margin: 0;
+}
+
+.saving {
+    position: absolute;
+    left: 10px;
+    animation: move infinite 10s ease;
+    font-size: 20px;
+    background: #23cc23;
+    border-radius: 5px;
+    padding: 5px;
+    user-select: none;
+}
+
+@keyframes move {
+    0% {
+        opacity: 1;
+    }
+    30% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 0;
+    }
+}
+
+#header {
+    width: 100%;
+    display: flex;
+    /* This centers our sketch horizontally. */
+    justify-content: center;
+    user-select: none;
+}
+
+#canvas {
+    margin: 0 10px 0 10px;
+}
+
+#footer {
+    margin-top: 5px;
+    display: flex;
+    /* This centers our sketch horizontally. */
+    justify-content: center;
+    animation: foot 5s linear;
+    user-select: none;
+}
+
+@keyframes foot {
+    0% {
+        opacity: 0;
+    }
+    90% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
