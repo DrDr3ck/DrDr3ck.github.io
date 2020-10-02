@@ -6,13 +6,13 @@ const world = {
   items: []
 };
 
-world.belts.push(new Belt(100,0,"Down"));
+world.belts.push(new Belt(100,0,"Down",false));
 world.belts.push(new Belt(100,100,"Down"));
 world.belts.push(new Belt(200,200,"Right"));
 world.belts.push(new Belt(300,200,"Right"));
 world.belts.push(new Belt(500,200,"Right"));
 world.belts.push(new Belt(600,200,"Right"));
-world.belts.push(new Belt(700,200,"Right"));
+world.belts.push(new Belt(700,200,"Right",false));
 
 world.factories.push(new Creator(100,0));
 world.factories.push(new Hammer(100,200));
@@ -60,7 +60,7 @@ function mouseClicked() {
 function updateWorld(world) {
     world.belts.forEach(belt => belt.update());
     world.factories.forEach(factory => factory.update());
-    world.items.forEach(item => item.update());
+    world.items.forEach(item => item.update(world));
 }
 
 function drawWorld(world) {

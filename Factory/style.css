@@ -37,6 +37,13 @@ h1 {
     }
 }
 
+.buttonSave {
+    position: absolute;
+    left: 100px;
+    height: 35px;
+    border-radius: 5px;
+}
+
 #header {
     width: 100%;
     display: flex;

@@ -10,7 +10,10 @@ class Item {
         ellipse(this.position.x, this.position.y, this.size, this.size);
         strokeWeight(1);
     }
-    update = () => {
+    update = (world) => {
+        // need to check if item is on a belt.
+        // depending of the belt direction,
+        // the item will ;ove in the same direction.
         this.position.y += 0.2;
     }
 }
