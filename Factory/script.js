@@ -11,22 +11,26 @@ const world = {
   items: []
 };
 
-//world.belts.push(new Belt(100,0,"Down",false));
-world.belts.push(new Belt(100,100,"Down"));
-world.belts.push(new Belt(200,200,"Right"));
-world.belts.push(new Belt(300,200,"Right"));
-world.belts.push(new Belt(400,100,"Up"));
-world.belts.push(new Belt(500,0,"Right"));
-world.belts.push(new Belt(600,0,"Right"));
-//world.belts.push(new Belt(700,0,"Right",false));
+world.belts.push(new Belt(100,100,"Down",25));
+world.belts.push(new Belt(200,200,"Right",12));
+world.belts.push(new Belt(300,200,"Right",18));
+world.belts.push(new Belt(400,100,"Up",35));
+world.belts.push(new Belt(500,0,"Right",15));
+world.belts.push(new Belt(600,0,"Right",15));
 
 world.factories.push(new Creator(100,0,"Down"));
+world.belts.push(new Belt(100,0,"Down",30,false));
 world.factories.push(new Hammer(100,200,"Right"));
+world.belts.push(new Belt(100,200,"Right", 30, false));
 world.factories.push(new Painter(400,200,"Up"));
+world.belts.push(new Belt(400,200,"Up", 30, false));
 world.factories.push(new Dryer(400,0,"Right"));
+world.belts.push(new Belt(400,0,"Right", 30, false));
 world.factories.push(new Deliver(700,0,"Right"));
+world.belts.push(new Belt(700,0,"Right", 30, false));
 
-//world.items.push(new Item(150,50,40));
+//const firstItem = new Item(150,101,40);
+//world.items.push(firstItem);
 
 const storage = localStorage.getItem("FACTORY");
 let data = {
@@ -40,11 +44,10 @@ if( storage ) {
 // saving data
 const doSaveData = () => {
     localStorage.setItem("FACTORY", JSON.stringify(data));
-    console.log("Saving Data");
 }
 const saveData = () => {
     doSaveData();
-    setTimeout(saveData, 10000);
+    setTimeout(saveData, 60000);
 }
 saveData();
 
@@ -58,20 +61,19 @@ function setup() {
 function draw() { 
     background(51);
 
+    // process time
     const f = frameCount % 30;
     if( f === 0 ) {
         seconds = (seconds+1)%60;
-        console.log("new second: "+seconds);
         if( seconds === 0 ) {
             minutes = (minutes+1)%60;
-            console.log("new minute: "+minutes);
             if( minutes === 0 ) {
                 hours++;
-                console.log("new hour: "+hours);
             }
         }
     }
 
+    // update and draw
     updateItems(world, f);
     updateWorld(world, f);
     drawWorld(world);
@@ -80,22 +82,31 @@ function draw() {
 
 function mouseClicked() {
     console.log(mouseX + "  " + mouseY);
+    world.factories.forEach(factory => {
+        if( factory.contains(mouseX, mouseY)) {
+            factory.clicked();
+        }
+    });
+    world.belts.forEach(belt => {
+        if( belt.contains(mouseX, mouseY)) {
+            // console.log("Belt to the "+belt.direction);
+        }
+    });
 }
 
 function updateItems(world, frameNumber) {
     world.items.forEach(item => item.update(world));
+    // when should we delete items ?
 }
 
 function updateWorld(world, frameNumber) {
-    world.belts.forEach(belt => belt.update(frameNumber));
+    world.belts.forEach(belt => belt.update());
     world.factories.forEach(factory => factory.update());
-    world.items.forEach(item => item.update(world));
 }
 
 function drawWorld(world) {
     world.belts.forEach(belt => belt.show());
     world.factories.forEach(factory => factory.show());
-    world.items.forEach(item => item.show());
 }
 
 function drawItems(world) {

@@ -1,10 +1,21 @@
+const findBelt = (item) => {
+    for( const belt of world.belts ) {
+        if( belt.contains(item.position.x, item.position.y)) {
+            return belt;
+        }
+    }
+    return null;
+}
+
 class Belt {
-    constructor(x,y,direction,visible=true) {
+    constructor(x,y,direction,speed,visible=true) {
         this.position = {x,y};
         this.direction = direction;
         this.size = 100;
         this.step = 0;
         this.visible = visible;
+        this.speed = speed; // speed px/s
+        this.currentItem = null;
     }
     show = () => {
         if(!this.visible) {
@@ -38,10 +49,38 @@ class Belt {
             });
         }
     }
-    update = (frameCount) => {
+    update = function() {
         // step from 0 to 100px
         // frameCount from 0 to 30 ticks
         // speed = 0.2 => 30px*0.5/sec = 15px/sec
-        this.step = (this.step+0.5)%this.size;
+        const step = this.speed/frame;
+        this.step = (this.step+step)%this.size;
+        if( this.currentItem ) {
+            // move item on the belt at same speed that the belt
+            if( this.direction === "Down" ) {
+                this.currentItem.position.y += step;
+            } else if( this.direction === "Up" ) {
+                this.currentItem.position.y -= step;
+            } else if( this.direction === "Right" ) {
+                this.currentItem.position.x += step;
+            } else if( this.direction === "Left" ) {
+                this.currentItem.position.x -= step;
+            }
+            if( !this.contains(this.currentItem.position.x, this.currentItem.position.y) ) {
+                this.currentItem.belt = null;
+                this.currentItem = null;
+            }
+        }
+    }
+    contains = (x,y) => {
+        if( x < this.position.x ) {return false;}
+        if( x > this.position.x+this.size ) {return false;}
+        if( y < this.position.y ) {return false;}
+        if( y > this.position.y+this.size ) {return false;}
+        return true;
+    }
+    setItem = (item) => {
+        this.currentItem = item;
+        item.belt = this;
     }
 }
