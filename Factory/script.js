@@ -81,7 +81,7 @@ function draw() {
 }
 
 function mouseClicked() {
-    console.log(mouseX + "  " + mouseY);
+    console.log("Mouse position: (" + mouseX + ", " + mouseY+")");
     world.factories.forEach(factory => {
         if( factory.contains(mouseX, mouseY)) {
             factory.clicked();
