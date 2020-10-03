@@ -38,7 +38,10 @@ class Belt {
             });
         }
     }
-    update = () => {
-        this.step = (this.step+0.2)%this.size;
+    update = (frameCount) => {
+        // step from 0 to 100px
+        // frameCount from 0 to 30 ticks
+        // speed = 0.2 => 30px*0.5/sec = 15px/sec
+        this.step = (this.step+0.5)%this.size;
     }
 }

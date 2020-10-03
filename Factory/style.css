@@ -19,7 +19,7 @@ h1 {
     left: 10px;
     animation: move infinite 10s ease;
     font-size: 20px;
-    background: #23cc23;
+    background: #3f84d4;
     border-radius: 5px;
     padding: 5px;
     user-select: none;
@@ -27,6 +27,9 @@ h1 {
 
 @keyframes move {
     0% {
+        opacity: 1;
+    }
+    10% {
         opacity: 1;
     }
     30% {
