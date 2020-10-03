@@ -12,8 +12,8 @@ const world = {
 };
 
 world.belts.push(new Belt(100,100,"Down",25));
-world.belts.push(new Belt(200,200,"Right",12));
-world.belts.push(new Belt(300,200,"Right",18));
+world.belts.push(new Belt(200,200,"Right",20));
+world.belts.push(new Belt(300,200,"Right",20));
 world.belts.push(new Belt(400,100,"Up",35));
 world.belts.push(new Belt(500,0,"Right",15));
 world.belts.push(new Belt(600,0,"Right",15));
@@ -96,7 +96,8 @@ function mouseClicked() {
 
 function updateItems(world, frameNumber) {
     world.items.forEach(item => item.update(world));
-    // when should we delete items ?
+    // delete delivered items
+    world.items = world.items.filter(item => item.sizeX > 0);
 }
 
 function updateWorld(world, frameNumber) {

@@ -190,6 +190,14 @@ class Painter extends Box {
     update = function() {
         this.doUpdate();
     }
+    processItem() {
+        this.currentItem.color = {
+            r: Math.min(255,this.currentItem.color.r*0.9),
+            g: Math.min(255,this.currentItem.color.g*0.7),
+            b: Math.min(255,this.currentItem.color.b*0.7)
+        }
+        super.processItem();
+    }
     endProcessItem() {
         this.currentItem.color = {r: 156, g: 63, b: 63}; 
         super.endProcessItem();
@@ -253,6 +261,8 @@ class Deliver extends Box {
     constructor(x,y,direction) {
         super(x,y,direction,100);
         this.progress = 100;
+        this.max = 5;
+        this.count = 0;
     }
     show = () => {
         fill(173,135,98);
@@ -263,15 +273,22 @@ class Deliver extends Box {
         } else {
             stroke(142,108,74);
         }
-        rect(this.position.x, this.position.y, this.size, this.size, 16);
+        const x = this.position.x;
+        const y = this.position.y;
+        const half = this.size/2;
+        rect(x, y, this.size, this.size, 16);
+        fill(220);
+        textSize(32);
+        const str = `${this.count}/${this.max}`;
+        text(str, x+half, y+this.size-5);
     }
     update = function() {
         this.doUpdate();
     }
     endProcessItem() {
-        // remove item: TODO
         this.currentItem.sizeX = 0;
         this.currentItem.sizeY = 0;
+        this.count++;
         super.endProcessItem();
     }
 }
