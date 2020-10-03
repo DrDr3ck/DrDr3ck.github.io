@@ -167,19 +167,25 @@ class Painter extends Box {
         } else {
             stroke(105);
         }
-        rect(this.position.x, this.position.y, this.size, this.size);
-        noStroke();
-        fill(200);
-        ellipse(this.position.x+40,this.position.y+50, 40, 40);
-        ellipse(this.position.x+60,this.position.y+40, 40, 40);
-        ellipse(this.position.x+60,this.position.y+60, 40, 40);
-        const alpha = 150;
-        fill(200,54,54,alpha);        
-        ellipse(this.position.x+40,this.position.y+50, 40, 40);
-        fill(54,200,54,alpha);        
-        ellipse(this.position.x+60,this.position.y+40, 40, 40);
-        fill(54,54,200,alpha);        
-        ellipse(this.position.x+60,this.position.y+60, 40, 40);
+        const x = this.position.x;
+        const y = this.position.y;
+        const half = this.size/2;
+        rect(x, y, this.size, this.size);
+        push(); // pinceau
+        translate(x+half,y+half);
+        rotate(-PI / 4.0);
+        translate(-half-10,-half-5);
+        fill(5);
+        stroke(5);
+        strokeWeight(1);
+        rect(70,20,20,50,3);
+        rect(5,50,15,10);
+        strokeWeight(5);
+        line(80,75,80,85);
+        line(80,85,70,85);
+        line(70,85,40,55);
+        line(40,55,25,55);
+        pop();
     }
     update = function() {
         this.doUpdate();
@@ -203,7 +209,24 @@ class Dryer extends Box {
         } else {
             stroke(105);
         }
-        rect(this.position.x, this.position.y, this.size, this.size, 25,0,25,0);
+        const x = this.position.x;
+        const y = this.position.y;
+        const half = this.size/2;
+        rect(x, y, this.size, this.size, 25,0,25,0);
+        push(); // ventilateur
+        translate(x+half, y+half);
+        fill(5);
+        noStroke();
+        ellipse(0,0,20,20);
+        ellipse(34,11,20,40);
+        ellipse(28,0,30,20);
+        ellipse(-34,-11,20,40);
+        ellipse(-28,0,30,20);
+        ellipse(0,-28,20,30);
+        ellipse(11,-34,40,20);
+        ellipse(0,28,20,30);
+        ellipse(-11,34,40,20);
+        pop();
     }
     update = function() {
         this.doUpdate();
