@@ -1,3 +1,5 @@
+let uid = 0;
+
 class Item {
     constructor(x,y,size) {
         this.position = {x,y};
@@ -6,6 +8,7 @@ class Item {
         this.factory = null;
         this.belt = null;
         this.color = {r: 235, g: 235, b: 235};
+        this.uid = uid++;
     }
     show = () => {
         fill(this.color.r, this.color.g, this.color.b);

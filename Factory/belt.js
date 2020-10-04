@@ -79,13 +79,12 @@ class Belt {
             if( this.contains(newPosition) ) {
                 // check if item collide with another item of the belt
                 let collide = false;
-                /*
                 this.items.forEach(i=>{
-                    if( i !== item && i.collide(item) ) {
+                    if( i.uid < item.uid && i.collide(item) ) {
                         collide = true;
+                        console.log(item.uid+" and "+i.uid+" are colliding." );
                     }
                 });
-                */
                 if( !collide ) {
                     item.position = {x: item.position.x+dx, y: item.position.y+dy};
                 }

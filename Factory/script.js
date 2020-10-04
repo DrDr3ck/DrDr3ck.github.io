@@ -29,9 +29,6 @@ world.belts.push(new Belt(400,0,"Right", 30, false));
 world.factories.push(new Deliver(700,0,"Right"));
 world.belts.push(new Belt(700,0,"Right", 30, false));
 
-//const firstItem = new Item(150,101,40);
-//world.items.push(firstItem);
-
 const storage = localStorage.getItem("FACTORY");
 let data = {
     itemsCount: 0,
