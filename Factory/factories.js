@@ -1,5 +1,5 @@
 class Factory {
-    constructor(x,y,direction,size,speed = 30) {
+    constructor(x,y,direction,size=100,speed = 30) {
         this.position = {x,y};
         this.size = size;
         this.direction = direction;
@@ -60,6 +60,16 @@ class Factory {
         this.currentItem = item;
         item.factory = this;
     }
+    setAttributes(attributes) {
+        this.position = {x: attributes.x,y: attributes.y};
+        this.size = attributes.size;
+        this.direction = attributes.direction;
+        this.curFrame = attributes.curFrame; // from 0 to 30ticks*60sec = 1800 ticks
+        this.speed = attributes.speed; // 30px/sec by default
+        this.processProgress = attributes.processProgress;
+        this.progress = attributes.progress;
+        this.currentItem = null;
+    }
     processItem() {
         this.processProgress += this.progress;
     }
@@ -88,8 +98,9 @@ class Factory {
 
 // Create one item per minute
 class Creator extends Factory {
-    constructor(x,y,direction) {
-        super(x,y,direction,100);
+    constructor(x,y,direction=DOWN) {
+        super(x,y,direction);
+        world.belts.push(new Belt(x,y,direction,30,false));
     }
     show = () => {
         fill(222,91,89);
@@ -126,7 +137,11 @@ class Creator extends Factory {
 
 class Hammer extends Factory {
     constructor(x,y,direction) {
-        super(x,y,direction,100);
+        super(x,y,direction);
+        world.belts.push(new Belt(x,y,direction, 30, false));
+    }
+    static type() {
+        return this.name;
     }
     show = () => {
         fill(156);
@@ -170,7 +185,8 @@ class Hammer extends Factory {
 
 class Painter extends Factory {
     constructor(x,y,direction) {
-        super(x,y,direction,100);
+        super(x,y,direction);
+        world.belts.push(new Belt(x,y,direction,30,false));
     }
     show = () => {
         fill(244,254,254);
@@ -220,7 +236,8 @@ class Painter extends Factory {
 
 class Dryer extends Factory {
     constructor(x,y,direction) {
-        super(x,y,direction,100);
+        super(x,y,direction);
+        world.belts.push(new Belt(x,y,direction, 30, false));
     }
     show = () => {
         fill(135, 206, 235);
@@ -274,6 +291,7 @@ class Dryer extends Factory {
 class Deliver extends Factory {
     constructor(x,y,direction) {
         super(x,y,direction,100,60);
+        world.belts.push(new Belt(x,y,direction, 30, false));
         this.progress = 100;
         this.max = 5;
         this.count = 0;

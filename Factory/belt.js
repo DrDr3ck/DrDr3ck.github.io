@@ -1,3 +1,8 @@
+const DOWN="Down";
+const UP="Up";
+const LEFT="Left";
+const RIGHT="Right";
+
 const findBelt = (position, hidden=false) => {
     for( const belt of world.belts ) {
         if( !hidden && !belt.visible ) {
@@ -11,13 +16,22 @@ const findBelt = (position, hidden=false) => {
 }
 
 class Belt {
-    constructor(x,y,direction,speed,visible=true) {
+    constructor(x,y,direction=DOWN,speed=15,visible=true) {
         this.position = {x,y};
         this.direction = direction;
         this.size = 100;
         this.step = 0;
         this.visible = visible;
         this.speed = speed; // speed px/s
+        this.items = [];
+    }
+    setAttributes(attributes) {
+        this.position = {x: attributes.x,y: attributes.y};
+        this.direction = attributes.direction;
+        this.size = attributes.size;
+        this.step = attributes.step;
+        this.speed = attributes.speed;
+        this.visible = attributes.visible;
         this.items = [];
     }
     show = () => {
@@ -30,22 +44,22 @@ class Belt {
         let y = this.position.y;
         rect(x, y, this.size, this.size);
         strokeWeight(2);
-        if( this.direction === "Down") {
+        if( this.direction === DOWN) {
             [0,20,40,60,80].forEach(ty => {
                 const newY = y+(ty+this.step)%100;
                 line(x, newY, x+this.size, newY);
             });
-        } else if( this.direction === "Right") {
+        } else if( this.direction === RIGHT) {
             [0,20,40,60,80].forEach(tx => {
                 const newX = x+(tx+this.step)%100;
                 line(newX, y, newX, y+this.size);
             });
-        } else if( this.direction === "Left") {
+        } else if( this.direction === LEFT) {
             [0,20,40,60,80].forEach(tx => {
                 const newX = x+(tx-this.step+100)%100;
                 line(newX, y, newX, y+this.size);
             });
-        } else if( this.direction === "Up") {
+        } else if( this.direction === UP) {
             [0,20,40,60,80].forEach(ty => {
                 const newY = y+(ty-this.step+100)%100;
                 line(x, newY, x+this.size, newY);
@@ -63,13 +77,13 @@ class Belt {
             let dx = 0;
             let dy = 0;
             // move item on the belt at same speed that the belt
-            if( this.direction === "Down" ) {
+            if( this.direction === DOWN ) {
                 dy = step;
-            } else if( this.direction === "Up" ) {
+            } else if( this.direction === UP ) {
                 dy = -step;
-            } else if( this.direction === "Right" ) {
+            } else if( this.direction === RIGHT ) {
                 dx = step;
-            } else if( this.direction === "Left" ) {
+            } else if( this.direction === LEFT ) {
                 dx = -step;
             }
             const newPosition = {x: item.position.x+dx, y: item.position.y+dy};

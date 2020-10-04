@@ -12,30 +12,30 @@ const world = {
   data: null
 };
 
-world.belts.push(new Belt(100,100,"Down",25));
-world.belts.push(new Belt(200,200,"Right",20));
-world.belts.push(new Belt(300,200,"Right",20));
-world.belts.push(new Belt(400,100,"Up",35));
-world.belts.push(new Belt(500,0,"Right",15));
-world.belts.push(new Belt(600,0,"Right",15));
-
-world.factories.push(new Creator(100,0,"Down"));
-world.belts.push(new Belt(100,0,"Down",30,false));
-world.factories.push(new Hammer(100,200,"Right"));
-world.belts.push(new Belt(100,200,"Right", 30, false));
-world.factories.push(new Painter(400,200,"Up"));
-world.belts.push(new Belt(400,200,"Up", 30, false));
-world.factories.push(new Dryer(400,0,"Right"));
-world.belts.push(new Belt(400,0,"Right", 30, false));
-world.factories.push(new Deliver(700,0,"Right"));
-world.belts.push(new Belt(700,0,"Right", 30, false));
-
-const storage = localStorage.getItem("FACTORY");
 const initialData = {
     itemsCount: 0,
     level: 1,
-    money: 0
+    money: 0,
+    description: {
+        belts: [
+            {x: 100, y:100, direction: DOWN, speed:25},
+            {x: 200, y:200, direction: RIGHT, speed:20},
+            {x: 300, y:200, direction: RIGHT, speed:20},
+            {x: 400, y:100, direction: UP, speed:35},
+            {x: 500, y:0, direction: RIGHT, speed:15},
+            {x: 600, y:0, direction: RIGHT, speed:15}
+        ],
+        factories: [
+            {name: Creator.name, x: 100, y: 0, direction: DOWN, size:100, speed: 30},
+            {name: Hammer.name, x: 100, y: 200, direction: RIGHT, size:100, speed: 30},
+            {name: Painter.name, x: 400, y: 200, direction: UP, size:100, speed: 30},
+            {name: Dryer.name, x: 400, y: 0, direction: RIGHT, size:100, speed: 30},
+            {name: Deliver.name, x: 700, y: 0, direction: RIGHT, size:100, speed: 30}
+        ]
+    }
 };
+
+const storage = localStorage.getItem("FACTORY");
 let data = initialData;
 if( storage ) {
     data = JSON.parse(storage);
@@ -46,6 +46,12 @@ if( storage ) {
     }
 }
 world.data = data;
+world.belts = BeltManager.readBelts(
+    data.description.belts
+);
+world.factories = FactoryManager.readFactories(
+    data.description.factories
+);
 
 // saving data
 const doSaveData = () => {
