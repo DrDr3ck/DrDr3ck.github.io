@@ -1,6 +1,6 @@
 const saving = document.getElementById("saving");
 
-const frame = 30;
+const globalFrame = 30;
 let seconds = -1;
 let minutes = -1;
 let hours = -1;
@@ -55,14 +55,14 @@ function setup() {
     canvas = createCanvas(800, 400);
     canvas.parent('canvas');
 
-    frameRate(frame);
+    frameRate(globalFrame);
 }
 
 function draw() { 
     background(51);
 
     // process time
-    const f = frameCount % 30;
+    const f = frameCount % globalFrame;
     if( f === 0 ) {
         seconds = (seconds+1)%60;
         if( seconds === 0 ) {
@@ -81,15 +81,10 @@ function draw() {
 }
 
 function mouseClicked() {
-    console.log("Mouse position: (" + mouseX + ", " + mouseY+")");
+    console.info("Mouse position: (" + mouseX + ", " + mouseY+")");
     world.factories.forEach(factory => {
         if( factory.contains(mouseX, mouseY)) {
             factory.clicked();
-        }
-    });
-    world.belts.forEach(belt => {
-        if( belt.contains(mouseX, mouseY)) {
-            // console.log("Belt to the "+belt.direction);
         }
     });
 }

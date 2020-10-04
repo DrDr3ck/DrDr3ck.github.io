@@ -21,7 +21,7 @@ class Item {
         }
         // otherwise find a belt or factory
         world.factories.some(factory => {
-            if( factory.contains(this.position.x, this.position.y) ) {
+            if( !factory.hasItem() && factory.contains(this.position.x, this.position.y) ) {
                 factory.setItem(this);
                 return true; // break
             }
@@ -30,10 +30,32 @@ class Item {
         if( this.factory ) {
             return;
         }
-        const belt = findBelt(this);
-        if( belt ) {
-            belt.setItem(this);
+        const belt = findBelt(this.position, false/*onlyVisible*/);
+        if( belt && belt.canAddItem(this) ) {
+            belt.addItem(this);
+        }
+        if( this.belt ) {
+            return;
         }
         // what should we do with item without factory/belt ?
+        console.error("*** item cannot be placed");
+    }
+    getBox = () => {
+        return {
+            x: this.position.x-this.sizeX/2,
+            y: this.position.y-this.sizeY/2,
+            width: this.sizeX,
+            height: this.sizeY
+        };
+    }
+    collide = (item) => {
+        const a = this.getBox();
+        const b = item.getBox();
+        return !(
+            ((a.y + a.height) < (b.y)) ||
+            (a.y > (b.y + b.height)) ||
+            ((a.x + a.width) < b.x) ||
+            (a.x > (b.x + b.width))
+        );
     }
 }

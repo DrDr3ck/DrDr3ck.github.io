@@ -1,10 +1,10 @@
-class Box {
-    constructor(x,y,direction,size) {
+class Factory {
+    constructor(x,y,direction,size,speed = 30) {
         this.position = {x,y};
         this.size = size;
         this.direction = direction;
         this.curFrame = 0; // from 0 to 30ticks*60sec = 1800 ticks
-        this.speed = 30; // 30px/sec
+        this.speed = speed; // 30px/sec by default
         this.processProgress = 0;
         this.progress = 25;
         this.currentItem = null;
@@ -19,7 +19,7 @@ class Box {
         }
         if( this.currentItem && this.processProgress === 0 ) {
             // move item at the middle
-            const step = this.speed/frame;
+            const step = this.speed/globalFrame;
             const dx = this.currentItem.position.x - (this.position.x+this.size/2);
             const dy = this.currentItem.position.y - (this.position.y+this.size/2);
             if( dy < 0 ) {
@@ -53,6 +53,9 @@ class Box {
             }
         }
     }
+    hasItem = () => {
+        return this.currentItem !== null;        
+    }
     setItem = (item) => {
         this.currentItem = item;
         item.factory = this;
@@ -63,18 +66,28 @@ class Box {
     endProcessItem() {
         this.processProgress = 0;
         // find belt under the factory
-        const belt = findBelt(this.currentItem);
-        this.currentItem.factory = null;
-        belt.setItem(this.currentItem);
-        this.currentItem = null;
+        const belt = findBelt(this.currentItem.position, true/*alsoHidden*/);
+        if( belt.canAddItem(this.currentItem) ) {
+            this.currentItem.factory = null;
+            belt.addItem(this.currentItem);
+            this.currentItem = null;
+        }
     }
     ready() {
         // does nothing
     }
+    static findFactory(world, position) {
+        for( const factory of world.factories ) {
+            if( !factory.hasItem() && factory.contains(position.x, position.y) ) {
+                return factory; // break
+            }
+        }
+        return null;
+    }
 }
 
 // Create one item per minute
-class Creator extends Box {
+class Creator extends Factory {
     constructor(x,y,direction) {
         super(x,y,direction,100);
     }
@@ -95,8 +108,8 @@ class Creator extends Box {
         rect(this.position.x, this.position.y, this.size, this.size,20,20,0,0);
     }
     update = function() {
-        // create an item
-        if( this.currentItem === null && this.curFrame === 0) {
+        // create an item if possible
+        if( !this.hasItem() && this.currentItem === null && this.curFrame === 0) {
             const item = new Item(this.position.x+this.size/2,this.position.y+this.size/2,40);
             world.items.push(item);
             this.setItem(item);
@@ -105,12 +118,13 @@ class Creator extends Box {
         this.doUpdate();
     }
     endProcessItem() {
-        this.curFrame = 30*30; // wait 30 sec before next new item
+        const secondsBeforeNextCreation = 2; // to change to 30 !
+        this.curFrame = globalFrame*secondsBeforeNextCreation;
         super.endProcessItem();
     }
 }
 
-class Hammer extends Box {
+class Hammer extends Factory {
     constructor(x,y,direction) {
         super(x,y,direction,100);
     }
@@ -154,7 +168,7 @@ class Hammer extends Box {
     }
 }
 
-class Painter extends Box {
+class Painter extends Factory {
     constructor(x,y,direction) {
         super(x,y,direction,100);
     }
@@ -204,7 +218,7 @@ class Painter extends Box {
     }
 }
 
-class Dryer extends Box {
+class Dryer extends Factory {
     constructor(x,y,direction) {
         super(x,y,direction,100);
     }
@@ -257,9 +271,9 @@ class Dryer extends Box {
     }
 }
 
-class Deliver extends Box {
+class Deliver extends Factory {
     constructor(x,y,direction) {
-        super(x,y,direction,100);
+        super(x,y,direction,100,60);
         this.progress = 100;
         this.max = 5;
         this.count = 0;
@@ -289,6 +303,12 @@ class Deliver extends Box {
         this.currentItem.sizeX = 0;
         this.currentItem.sizeY = 0;
         this.count++;
+        if( this.count === this.max ) {
+            // move box
+            // pay me !!!! TODO
+            // get a new box
+            this.count = 0;
+        }
         super.endProcessItem();
     }
 }

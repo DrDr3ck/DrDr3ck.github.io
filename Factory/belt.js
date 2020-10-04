@@ -1,6 +1,11 @@
-const findBelt = (item) => {
+const globalFrame = 30;
+
+const findBelt = (position, hidden=false) => {
     for( const belt of world.belts ) {
-        if( belt.contains(item.position.x, item.position.y)) {
+        if( !hidden && !belt.visible ) {
+            continue;
+        }
+        if( belt.contains(position)) {
             return belt;
         }
     }
@@ -15,7 +20,7 @@ class Belt {
         this.step = 0;
         this.visible = visible;
         this.speed = speed; // speed px/s
-        this.currentItem = null;
+        this.items = [];
     }
     show = () => {
         if(!this.visible) {
@@ -23,9 +28,9 @@ class Belt {
         }
         fill(200);
         stroke(105);
-        rect(this.position.x, this.position.y, this.size, this.size);
         let x = this.position.x;
         let y = this.position.y;
+        rect(x, y, this.size, this.size);
         strokeWeight(2);
         if( this.direction === "Down") {
             [0,20,40,60,80].forEach(ty => {
@@ -53,34 +58,92 @@ class Belt {
         // step from 0 to 100px
         // frameCount from 0 to 30 ticks
         // speed = 0.2 => 30px*0.5/sec = 15px/sec
-        const step = this.speed/frame;
+        const step = this.speed/globalFrame;
         this.step = (this.step+step)%this.size;
-        if( this.currentItem ) {
+        const toRemove = [];
+        for( const item of this.items ) {
+            let dx = 0;
+            let dy = 0;
             // move item on the belt at same speed that the belt
             if( this.direction === "Down" ) {
-                this.currentItem.position.y += step;
+                dy = step;
             } else if( this.direction === "Up" ) {
-                this.currentItem.position.y -= step;
+                dy = -step;
             } else if( this.direction === "Right" ) {
-                this.currentItem.position.x += step;
+                dx = step;
             } else if( this.direction === "Left" ) {
-                this.currentItem.position.x -= step;
+                dx = -step;
             }
-            if( !this.contains(this.currentItem.position.x, this.currentItem.position.y) ) {
-                this.currentItem.belt = null;
-                this.currentItem = null;
+            const newPosition = {x: item.position.x+dx, y: item.position.y+dy};
+            // need to check if item will stay on current belt
+            if( this.contains(newPosition) ) {
+                // check if item collide with another item of the belt
+                let collide = false;
+                /*
+                this.items.forEach(i=>{
+                    if( i !== item && i.collide(item) ) {
+                        collide = true;
+                    }
+                });
+                */
+                if( !collide ) {
+                    item.position = {x: item.position.x+dx, y: item.position.y+dy};
+                }
+            } else {
+                // check if item can go on next factory / belt
+                const factory = Factory.findFactory(world, newPosition);
+                if( factory ) {
+                    item.belt = null;
+                    factory.setItem(item);
+                    toRemove.push(item);
+                    continue;
+                }
+                const belt = findBelt(newPosition, false);
+                if( belt ) {
+                    /*
+                    let collide = false;
+                    belt.items.forEach(i=>{
+                        if( i !== item && i.collide(item) ) {
+                            collide = true;
+                        }
+                    });
+                    if( !collide ) {
+                        */
+                        item.belt = null;
+                        belt.addItem(item);
+                        toRemove.push(item);
+                    //}
+                }
+            }
+        }
+        for( const item of toRemove ) {
+            const index = this.items.indexOf(item);
+            if (index > -1) {
+                this.items.splice(index, 1);
             }
         }
     }
-    contains = (x,y) => {
+    canAddItem = (item) => {
+        // check if given item collide with any item of the belt
+        for( const curItem of this.items ) {
+            if( item.collide(curItem) ) {
+                return false;
+            }
+        }
+        return true;
+    }
+    addItem = (item) => {
+        this.items.push(item);
+        item.belt = this;
+    }
+    containsPoint = (x,y) => {
         if( x < this.position.x ) {return false;}
         if( x > this.position.x+this.size ) {return false;}
         if( y < this.position.y ) {return false;}
         if( y > this.position.y+this.size ) {return false;}
         return true;
     }
-    setItem = (item) => {
-        this.currentItem = item;
-        item.belt = this;
+    contains = (position) => {
+        return this.containsPoint(position.x, position.y);
     }
 }
