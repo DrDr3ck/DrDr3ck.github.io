@@ -303,11 +303,13 @@ class Deliver extends Factory {
         this.currentItem.sizeX = 0;
         this.currentItem.sizeY = 0;
         this.count++;
+        world.data.itemsCount++;
         if( this.count === this.max ) {
             // move box
             // pay me !!!! TODO
             // get a new box
             this.count = 0;
+            world.data.money += 50;
         }
         super.endProcessItem();
     }

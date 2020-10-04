@@ -8,7 +8,8 @@ let hours = -1;
 const world = {
   belts: [],
   factories: [],
-  items: []
+  items: [],
+  data: null
 };
 
 world.belts.push(new Belt(100,100,"Down",25));
@@ -30,21 +31,30 @@ world.factories.push(new Deliver(700,0,"Right"));
 world.belts.push(new Belt(700,0,"Right", 30, false));
 
 const storage = localStorage.getItem("FACTORY");
-let data = {
+const initialData = {
     itemsCount: 0,
-    level: 1
+    level: 1,
+    money: 0
 };
+let data = initialData;
 if( storage ) {
     data = JSON.parse(storage);
+    for (var k in initialData) {
+        if( !data[k] ) {
+            data[k] = initialData[k];
+        }
+    }
 }
+world.data = data;
 
 // saving data
 const doSaveData = () => {
-    localStorage.setItem("FACTORY", JSON.stringify(data));
+    localStorage.setItem("FACTORY", JSON.stringify(world.data));
+    console.log("auto save "+JSON.stringify(world.data));
 }
 const saveData = () => {
     doSaveData();
-    setTimeout(saveData, 60000);
+    setTimeout(saveData, 10000); // 60000 for every minute !!
 }
 saveData();
 

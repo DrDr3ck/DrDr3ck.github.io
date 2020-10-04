@@ -1,5 +1,3 @@
-const globalFrame = 30;
-
 const findBelt = (position, hidden=false) => {
     for( const belt of world.belts ) {
         if( !hidden && !belt.visible ) {
