@@ -1,4 +1,12 @@
 const saving = document.getElementById("saving");
+const upgrade = document.getElementById("upgrade");
+
+// Get the <span> element that closes the modal
+var closeUpgrade = document.getElementsByClassName("close")[0];
+// When the user clicks on <span> (x), close the modal
+closeUpgrade.onclick = function() {
+    upgrade.style.display = "none";
+}
 
 const globalFrame = 30;
 let seconds = -1;
@@ -94,11 +102,25 @@ function draw() {
 }
 
 function mouseClicked() {
+    if( upgrade.style.display === "block") return;
     console.info("Mouse position: (" + mouseX + ", " + mouseY+")");
     world.factories.forEach(factory => {
         if( factory.contains(mouseX, mouseY)) {
-            factory.clicked();
+            if( factory.containsHover(mouseX, mouseY)) {
+                console.log("upgrade");
+                factory.showUpgrade();
+                upgrade.style.display = "block";
+            } else {
+                factory.clicked();
+            }
         }
+    });
+}
+
+function mouseMoved() {
+    if( upgrade.style.display === "block") return;
+    world.factories.forEach(factory => {
+        factory.isHovered(factory.contains(mouseX, mouseY));
     });
 }
 

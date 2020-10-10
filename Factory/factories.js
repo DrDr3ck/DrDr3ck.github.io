@@ -8,6 +8,15 @@ class Factory {
         this.processProgress = 0;
         this.progress = 25;
         this.currentItem = null;
+        this.hover = false;
+    }
+    doShow = function() {
+        if( this.hover ) {
+            strokeWeight(1);
+            stroke(255);
+            fill(64);
+            ellipse(this.position.x+this.size-10, this.position.y+10, 16,16);
+        }
     }
     doUpdate = function() {
         if( this.curFrame > 0 ) {
@@ -45,6 +54,10 @@ class Factory {
         if( y > this.position.y+this.size ) {return false;}
         return true;
     }
+    containsHover = (x,y) => {
+        const d = dist(x,y,this.position.x+this.size-10, this.position.y+10);
+        return d < 16;
+    }
     clicked = () => {
         if( this.processProgress > 0 ) {
             this.processItem();
@@ -55,6 +68,9 @@ class Factory {
     }
     hasItem = () => {
         return this.currentItem !== null;        
+    }
+    isHovered = (value) => {
+        this.hover = value;
     }
     setItem = (item) => {
         this.currentItem = item;
@@ -82,6 +98,9 @@ class Factory {
             belt.addItem(this.currentItem);
             this.currentItem = null;
         }
+    }
+    showUpgrade = () => {
+
     }
     ready() {
         // does nothing
@@ -117,6 +136,7 @@ class Creator extends Factory {
             stroke(66);
         }
         rect(this.position.x, this.position.y, this.size, this.size,20,20,0,0);
+        this.doShow();
     }
     update = function() {
         // create an item if possible
@@ -167,6 +187,7 @@ class Hammer extends Factory {
         rect(55,25,30,50,5);
         rect(90,45,5,10,0,5,5,0);
         pop();
+        this.doShow();
     }
     update = function() {
         this.doUpdate();
@@ -216,6 +237,7 @@ class Painter extends Factory {
         line(70,85,40,55);
         line(40,55,25,55);
         pop();
+        this.doShow();
     }
     update = function() {
         this.doUpdate();
@@ -266,6 +288,7 @@ class Dryer extends Factory {
         ellipse(0,28,20,30);
         ellipse(-11,34,40,20);
         pop();
+        this.doShow();
     }
     update = function() {
         this.doUpdate();
@@ -315,6 +338,7 @@ class Deliver extends Factory {
         const str = `${this.count}/${this.max}`;
         text(str, x+half, y+this.size-5);
         noStroke();
+        this.doShow();
     }
     update = function() {
         this.doUpdate();
