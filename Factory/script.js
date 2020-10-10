@@ -120,7 +120,7 @@ function mouseClicked() {
 function mouseMoved() {
     if( upgrade.style.display === "block") return;
     world.factories.forEach(factory => {
-        factory.isHovered(factory.contains(mouseX, mouseY));
+        factory.setHover(factory.contains(mouseX, mouseY));
     });
 }
 

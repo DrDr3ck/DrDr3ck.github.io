@@ -8,15 +8,15 @@ class Factory {
         this.processProgress = 0;
         this.progress = 25;
         this.currentItem = null;
-        this.hover = false;
+        this.hover = {value: false, x: x+size-10, y:y+10 ,size: 16};
         this.showProgessBar = true;
     }
     doShow = function() {
-        if( this.hover ) {
+        if( this.hover.value ) {
             strokeWeight(1);
             stroke(255);
             fill(64);
-            ellipse(this.position.x+this.size-10, this.position.y+10, 16,16);
+            ellipse(this.hover.x, this.hover.y, this.hover.size, this.hover.size);
         }
         // display progress bar
         if( this.showProgessBar && this.processProgress > 0 ) {
@@ -68,8 +68,8 @@ class Factory {
         return true;
     }
     containsHover = (x,y) => {
-        const d = dist(x,y,this.position.x+this.size-10, this.position.y+10);
-        return d < 16;
+        const d = dist(x,y,this.hover.x, this.hover.y);
+        return d < this.hover.size;
     }
     clicked = () => {
         if( this.processProgress > 0 ) {
@@ -82,8 +82,8 @@ class Factory {
     hasItem = () => {
         return this.currentItem !== null;        
     }
-    isHovered = (value) => {
-        this.hover = value;
+    setHover = (value) => {
+        this.hover.value = value;
     }
     setItem = (item) => {
         this.currentItem = item;
