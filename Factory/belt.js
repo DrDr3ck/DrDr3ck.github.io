@@ -94,7 +94,6 @@ class Belt {
                 this.items.forEach(i=>{
                     if( i.uid < item.uid && i.collide(item) ) {
                         collide = true;
-                        console.log(item.uid+" and "+i.uid+" are colliding." );
                     }
                 });
                 if( !collide ) {

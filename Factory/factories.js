@@ -9,6 +9,7 @@ class Factory {
         this.progress = 25;
         this.currentItem = null;
         this.hover = false;
+        this.showProgessBar = true;
     }
     doShow = function() {
         if( this.hover ) {
@@ -16,6 +17,18 @@ class Factory {
             stroke(255);
             fill(64);
             ellipse(this.position.x+this.size-10, this.position.y+10, 16,16);
+        }
+        // display progress bar
+        if( this.showProgessBar && this.processProgress > 0 ) {
+            noStroke();
+            fill(128);
+            rect(this.position.x+10, this.position.y+this.size-15, 40, 10);
+            fill(0,255,0);
+            rect(this.position.x+10, this.position.y+this.size-15, 40*this.processProgress/100, 10);
+            strokeWeight(1);
+            stroke(32);
+            noFill();
+            rect(this.position.x+10, this.position.y+this.size-15, 40, 10);
         }
     }
     doUpdate = function() {
@@ -120,6 +133,7 @@ class Creator extends Factory {
     constructor(x,y,direction=FDOWN) {
         super(x,y,direction);
         world.belts.push(new Belt(x,y,direction,30,false));
+        this.showProgessBar = false;
     }
     show = () => {
         fill(222,91,89);
@@ -318,6 +332,7 @@ class Deliver extends Factory {
         this.progress = 100;
         this.max = 5;
         this.count = 0;
+        this.showProgessBar = false;
     }
     show = () => {
         fill(173,135,98);
@@ -349,9 +364,8 @@ class Deliver extends Factory {
         this.count++;
         world.data.itemsCount++;
         if( this.count === this.max ) {
-            // move box
-            // pay me !!!! TODO
-            // get a new box
+            // move box: TODO
+            // get a new box: TODO
             this.count = 0;
             world.data.money += 50;
         }
