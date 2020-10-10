@@ -98,7 +98,7 @@ class Factory {
 
 // Create one item per minute
 class Creator extends Factory {
-    constructor(x,y,direction=DOWN) {
+    constructor(x,y,direction=FDOWN) {
         super(x,y,direction);
         world.belts.push(new Belt(x,y,direction,30,false));
     }
@@ -310,9 +310,11 @@ class Deliver extends Factory {
         const half = this.size/2;
         rect(x, y, this.size, this.size, 16);
         fill(220);
+        noStroke();
         textSize(32);
         const str = `${this.count}/${this.max}`;
         text(str, x+half, y+this.size-5);
+        noStroke();
     }
     update = function() {
         this.doUpdate();

@@ -1,7 +1,7 @@
-const DOWN="Down";
-const UP="Up";
-const LEFT="Left";
-const RIGHT="Right";
+const FDOWN="Down";
+const FUP="Up";
+const FLEFT="Left";
+const FRIGHT="Right";
 
 const findBelt = (position, hidden=false) => {
     for( const belt of world.belts ) {
@@ -16,7 +16,7 @@ const findBelt = (position, hidden=false) => {
 }
 
 class Belt {
-    constructor(x,y,direction=DOWN,speed=15,visible=true) {
+    constructor(x,y,direction=FDOWN,speed=15,visible=true) {
         this.position = {x,y};
         this.direction = direction;
         this.size = 100;
@@ -44,22 +44,22 @@ class Belt {
         let y = this.position.y;
         rect(x, y, this.size, this.size);
         strokeWeight(2);
-        if( this.direction === DOWN) {
+        if( this.direction === FDOWN) {
             [0,20,40,60,80].forEach(ty => {
                 const newY = y+(ty+this.step)%100;
                 line(x, newY, x+this.size, newY);
             });
-        } else if( this.direction === RIGHT) {
+        } else if( this.direction === FRIGHT) {
             [0,20,40,60,80].forEach(tx => {
                 const newX = x+(tx+this.step)%100;
                 line(newX, y, newX, y+this.size);
             });
-        } else if( this.direction === LEFT) {
+        } else if( this.direction === FLEFT) {
             [0,20,40,60,80].forEach(tx => {
                 const newX = x+(tx-this.step+100)%100;
                 line(newX, y, newX, y+this.size);
             });
-        } else if( this.direction === UP) {
+        } else if( this.direction === FUP) {
             [0,20,40,60,80].forEach(ty => {
                 const newY = y+(ty-this.step+100)%100;
                 line(x, newY, x+this.size, newY);
@@ -77,13 +77,13 @@ class Belt {
             let dx = 0;
             let dy = 0;
             // move item on the belt at same speed that the belt
-            if( this.direction === DOWN ) {
+            if( this.direction === FDOWN ) {
                 dy = step;
-            } else if( this.direction === UP ) {
+            } else if( this.direction === FUP ) {
                 dy = -step;
-            } else if( this.direction === RIGHT ) {
+            } else if( this.direction === FRIGHT ) {
                 dx = step;
-            } else if( this.direction === LEFT ) {
+            } else if( this.direction === FLEFT ) {
                 dx = -step;
             }
             const newPosition = {x: item.position.x+dx, y: item.position.y+dy};
