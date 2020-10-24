@@ -8,7 +8,23 @@ closeUpgrade.onclick = function() {
     upgrade.style.display = "none";
 }
 
+const images = {
+    hammer: null
+};
+
+const getImages = (imageName) => {
+    if( imageName === "hammer")  {
+        return images.hammer;
+    }
+    return null;
+}
+
 const globalFrame = 30;
+
+function preload() {
+    images.hammer = loadImage('images/hammer.png');
+}
+
 let seconds = -1;
 let minutes = -1;
 let hours = -1;
@@ -20,10 +36,40 @@ const world = {
   data: null
 };
 
-const initialData = {
-    itemsCount: 0,
-    level: 1,
-    money: 0,
+const level1 = {
+    description: {
+        belts: [
+            {x: 300, y:150, direction: FRIGHT, speed:25},
+            {x: 400, y:150, direction: FRIGHT, speed:25}
+        ],
+        factories: [
+            {name: Creator.name, x: 200, y: 150, direction: FRIGHT, size:100, speed: 30},
+            {name: Deliver.name, x: 500, y: 150, direction: FRIGHT, size:100, speed: 30}
+        ]
+    },
+    finish: {
+        deliver: 5
+    }
+};
+
+const level2 = {
+    description: {
+        belts: [
+            {x: 200, y:150, direction: FRIGHT, speed:25},
+            {x: 400, y:150, direction: FRIGHT, speed:25}
+        ],
+        factories: [
+            {name: Creator.name, x: 100, y: 150, direction: FRIGHT, size:100, speed: 30},
+            {name: Hammer.name, x: 300, y: 150, direction: FRIGHT, size:100, speed: 30},
+            {name: Deliver.name, x: 500, y: 150, direction: FRIGHT, size:100, speed: 30}
+        ]
+    },
+    finish: {
+        hammer: 10
+    }
+};
+
+const level5 = {
     description: {
         belts: [
             {x: 100, y:100, direction: FDOWN, speed:25},
@@ -41,42 +87,62 @@ const initialData = {
             {name: Deliver.name, x: 700, y: 0, direction: FRIGHT, size:100, speed: 30}
         ]
     }
+}
+
+const initialData = {
+    itemsCount: 0,
+    level: 1,
+    money: 0,
+    level: level1
 };
 
-const storage = localStorage.getItem("FACTORY");
-let data = initialData;
-if( storage ) {
-    data = JSON.parse(storage);
-    for (var k in initialData) {
-        if( !data[k] ) {
-            data[k] = initialData[k];
+const loadDataFromStorage = () => {
+    const storage = localStorage.getItem("FACTORY");
+    let data = initialData;
+    console.log("storage: "+storage);
+    if( storage ) {
+        data = JSON.parse(storage) || initialData;
+        console.log(data);
+        for (var k in initialData) {
+            if( !data[k] ) {
+                data[k] = initialData[k];
+            }
         }
     }
+    world.data = data;
+    world.belts = BeltManager.readBelts(
+        data.level.description.belts
+    );
+    world.factories = FactoryManager.readFactories(
+        data.level.description.factories
+    );
 }
-world.data = data;
-world.belts = BeltManager.readBelts(
-    data.description.belts
-);
-world.factories = FactoryManager.readFactories(
-    data.description.factories
-);
 
 // saving data
 const doSaveData = () => {
-    localStorage.setItem("FACTORY", JSON.stringify(world.data));
-    console.log("auto save "+JSON.stringify(world.data));
+    const wdata = JSON.stringify(world.data);
+    if( wdata && wdata !== "null" ) {
+        localStorage.setItem("FACTORY", wdata);
+        console.log("auto save "+JSON.stringify(world.data));
+    } else {
+        console.error("no data to save...");
+    }
 }
 const saveData = () => {
     doSaveData();
-    setTimeout(saveData, 10000); // 60000 for every minute !!
+    setTimeout(saveData, 10000); // 60000 for every minute
 }
-saveData();
 
 function setup() {   
     canvas = createCanvas(800, 400);
     canvas.parent('canvas');
 
     frameRate(globalFrame);
+
+    // loading data from storage
+    loadDataFromStorage();
+
+    setTimeout(saveData, 10000);
 }
 
 function draw() { 

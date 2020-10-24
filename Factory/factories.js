@@ -173,6 +173,7 @@ class Hammer extends Factory {
     constructor(x,y,direction) {
         super(x,y,direction);
         world.belts.push(new Belt(x,y,direction, 30, false));
+        this.img = getImages("hammer");
     }
     static type() {
         return this.name;
@@ -188,19 +189,9 @@ class Hammer extends Factory {
         }
         const x = this.position.x;
         const y = this.position.y;
-        const half = this.size/2;
         rect(x, y, this.size, this.size);
         // hammer icon
-        push();
-        fill(5);
-        stroke(5);
-        translate(x+half,y+half);
-        rotate(-PI / 4.0);
-        translate(-half,-half);
-        rect(5,45,45,10,5,0,0,5);
-        rect(55,25,30,50,5);
-        rect(90,45,5,10,0,5,5,0);
-        pop();
+        image(this.img, x, y, this.size, this.size);
         this.doShow();
     }
     update = function() {
