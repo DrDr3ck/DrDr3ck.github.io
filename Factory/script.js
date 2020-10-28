@@ -1,5 +1,6 @@
 const saving = document.getElementById("saving");
 const upgrade = document.getElementById("upgrade");
+const next = document.getElementById("next");
 
 // Get the <span> element that closes the modal
 var closeUpgrade = document.getElementsByClassName("close")[0];
@@ -7,6 +8,9 @@ var closeUpgrade = document.getElementsByClassName("close")[0];
 closeUpgrade.onclick = function() {
     upgrade.style.display = "none";
 }
+
+// Get the <span> element for 'Next Level'
+var nextLevel = document.getElementsByClassName("next")[0];
 
 const images = {
     hammer: null
@@ -37,6 +41,7 @@ const world = {
 };
 
 const level1 = {
+    number: 1,
     description: {
         belts: [
             {x: 300, y:150, direction: FRIGHT, speed:25},
@@ -53,6 +58,7 @@ const level1 = {
 };
 
 const level2 = {
+    number: 2,
     description: {
         belts: [
             {x: 200, y:150, direction: FRIGHT, speed:25},
@@ -70,6 +76,7 @@ const level2 = {
 };
 
 const level5 = {
+    number: 5,
     description: {
         belts: [
             {x: 100, y:100, direction: FDOWN, speed:25},
@@ -89,9 +96,23 @@ const level5 = {
     }
 }
 
+// When the user clicks on 'Next', close the modal + change level
+nextLevel.onclick = function() {
+    next.style.display = "none";
+    if( world.data.level.number === 1 ) {
+        world.data.level = level2;
+        world.belts = BeltManager.readBelts(
+            level2.description.belts
+        );
+        world.factories = FactoryManager.readFactories(
+            level2.description.factories
+        );
+        doSaveData();
+    }
+}
+
 const initialData = {
     itemsCount: 0,
-    level: 1,
     money: 0,
     level: level1
 };
@@ -158,6 +179,11 @@ function draw() {
                 hours++;
             }
         }
+    }
+
+    // check next level
+    if( world.data.level.number === 1 && next.style.display !== "block" && world.data.itemsCount >= world.data.level.finish.deliver ) {
+        next.style.display = "block";
     }
 
     // update and draw

@@ -100,11 +100,22 @@ h1 {
     padding: 20px;
     border: 1px solid #888;
     width: 60%; /* Could be more or less, depending on screen size */
-  }
+}
 
-  .modal-header {
+.modal-header {
     font-family: 'Squada One', cursive;
-  }
+}
+
+.next-header {
+    font-family: 'Squada One', cursive;
+    display: flex;
+    justify-content: center;
+    cursor: pointer;
+}
+.next-header .next {
+    background-color: darkgreen;
+    padding: 20px;
+}
 
 /* The Close Button */
 .close {

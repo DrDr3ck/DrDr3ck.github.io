@@ -138,13 +138,8 @@ class Creator extends Factory {
     show = () => {
         fill(222,91,89);
         if( this.processProgress > 0 ) {
-            if( frameCount % 15 !== 0 ) {
-                stroke(255,250,205);
-                strokeWeight(3);
-            } else {
-                stroke(255*0.8,250*0.8,205*0.8);
-                strokeWeight(2);
-            }
+            stroke(255,250,205);
+            strokeWeight(3);
         } else {
             strokeWeight(1);
             stroke(66);
