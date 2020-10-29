@@ -160,6 +160,7 @@ class Creator extends Factory {
     endProcessItem() {
         const secondsBeforeNextCreation = 2; // to change to 30 !
         this.curFrame = globalFrame*secondsBeforeNextCreation;
+        world.data.creatorsCount++;
         super.endProcessItem();
     }
 }
@@ -200,6 +201,7 @@ class Hammer extends Factory {
     endProcessItem() {
         this.currentItem.sizeX = 50;
         this.currentItem.sizeY = 20;
+        world.data.hammersCount++;
         super.endProcessItem();
     }
 }
@@ -252,6 +254,7 @@ class Painter extends Factory {
     }
     endProcessItem() {
         this.currentItem.color = {r: 156, g: 63, b: 63}; 
+        world.data.paintersCount++;
         super.endProcessItem();
     }
 }
@@ -307,6 +310,7 @@ class Dryer extends Factory {
             g: Math.min(255,this.currentItem.color.g*1.2),
             b: Math.min(255,this.currentItem.color.b*1.2)
         }; 
+        world.data.dryersCount++;
         super.endProcessItem();
     }
 }

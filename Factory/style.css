@@ -110,11 +110,16 @@ h1 {
     font-family: 'Squada One', cursive;
     display: flex;
     justify-content: center;
-    cursor: pointer;
 }
 .next-header .next {
     background-color: darkgreen;
     padding: 20px;
+    cursor: pointer;
+}
+.next-header .endGame {
+    background-color: rebeccapurple;
+    padding: 40px;
+    font-size: x-large;
 }
 
 /* The Close Button */

@@ -1,6 +1,7 @@
 const saving = document.getElementById("saving");
 const upgrade = document.getElementById("upgrade");
 const next = document.getElementById("next");
+const endGame = document.getElementById("endGame");
 
 // Get the <span> element that closes the modal
 var closeUpgrade = document.getElementsByClassName("close")[0];
@@ -75,6 +76,27 @@ const level2 = {
     }
 };
 
+const level3 = {
+    number: 3,
+    description: {
+        belts: [
+            {x: 200, y:100, direction: FDOWN, speed:25},
+            {x: 300, y:200, direction: FRIGHT, speed:25},
+            {x: 400, y:200, direction: FRIGHT, speed:25},
+            {x: 500, y:100, direction: FUP, speed:25}
+        ],
+        factories: [
+            {name: Creator.name, x: 200, y: 0, direction: FDOWN, size:100, speed: 30},
+            {name: Painter.name, x: 200, y: 200, direction: FRIGHT, size:100, speed: 30},
+            {name: Dryer.name, x: 500, y: 200, direction: FUP, size:100, speed: 30},
+            {name: Deliver.name, x: 500, y: 0, direction: FRIGHT, size:100, speed: 30}
+        ]
+    },
+    finish: {
+        dryer: 15
+    }
+};
+
 const level5 = {
     number: 5,
     description: {
@@ -107,12 +129,29 @@ nextLevel.onclick = function() {
         world.factories = FactoryManager.readFactories(
             level2.description.factories
         );
-        doSaveData();
+        world.items = [];
+    } else if( world.data.level.number === 2 ) {
+        world.data.level = level3;
+        world.belts = BeltManager.readBelts(
+            level3.description.belts
+        );
+        world.factories = FactoryManager.readFactories(
+            level3.description.factories
+        );
+        world.items = [];
+    } else if( world.data.level.number === 3 ) {
+        // End of the game: no more levels
+        endGame.style.display = "block";
     }
+    doSaveData();
 }
 
 const initialData = {
     itemsCount: 0,
+    creatorsCount: 0,
+    hammersCount: 0,
+    dryersCount: 0,
+    paintersCount: 0,
     money: 0,
     level: level1
 };
@@ -120,10 +159,8 @@ const initialData = {
 const loadDataFromStorage = () => {
     const storage = localStorage.getItem("FACTORY");
     let data = initialData;
-    console.log("storage: "+storage);
     if( storage ) {
         data = JSON.parse(storage) || initialData;
-        console.log(data);
         for (var k in initialData) {
             if( !data[k] ) {
                 data[k] = initialData[k];
@@ -144,7 +181,7 @@ const doSaveData = () => {
     const wdata = JSON.stringify(world.data);
     if( wdata && wdata !== "null" ) {
         localStorage.setItem("FACTORY", wdata);
-        console.log("auto save "+JSON.stringify(world.data));
+        //console.log("auto save "+JSON.stringify(world.data));
     } else {
         console.error("no data to save...");
     }
@@ -182,8 +219,14 @@ function draw() {
     }
 
     // check next level
-    if( world.data.level.number === 1 && next.style.display !== "block" && world.data.itemsCount >= world.data.level.finish.deliver ) {
-        next.style.display = "block";
+    if( next.style.display !== "block" ) {
+        if( world.data.level.number === 1 && world.data.itemsCount >= world.data.level.finish.deliver ) {
+            next.style.display = "block";
+        } else if( world.data.level.number === 2 && world.data.hammersCount >= world.data.level.finish.hammer ) {
+            next.style.display = "block";
+        } else if( world.data.level.number === 3 && world.data.dryersCount >= world.data.level.finish.dryer ) {
+            next.style.display = "block";
+        }
     }
 
     // update and draw
@@ -195,11 +238,10 @@ function draw() {
 
 function mouseClicked() {
     if( upgrade.style.display === "block") return;
-    console.info("Mouse position: (" + mouseX + ", " + mouseY+")");
+    //console.info("Mouse position: (" + mouseX + ", " + mouseY+")");
     world.factories.forEach(factory => {
         if( factory.contains(mouseX, mouseY)) {
             if( factory.containsHover(mouseX, mouseY)) {
-                console.log("upgrade");
                 factory.showUpgrade();
                 upgrade.style.display = "block";
             } else {
