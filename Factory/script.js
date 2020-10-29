@@ -118,28 +118,30 @@ const level5 = {
     }
 }
 
+const getLevel = (number) => {
+    if( number === 2) {
+        return level2;
+    }
+    if( number === 3) {
+        return level3;
+    }
+    return null;
+}
+
 // When the user clicks on 'Next', close the modal + change level
 nextLevel.onclick = function() {
     next.style.display = "none";
-    if( world.data.level.number === 1 ) {
-        world.data.level = level2;
+    const level = getLevel(world.data.level.number+1);
+    if( level !== null ) {
+        world.data.level = level;
         world.belts = BeltManager.readBelts(
-            level2.description.belts
+            level.description.belts
         );
         world.factories = FactoryManager.readFactories(
-            level2.description.factories
+            level.description.factories
         );
         world.items = [];
-    } else if( world.data.level.number === 2 ) {
-        world.data.level = level3;
-        world.belts = BeltManager.readBelts(
-            level3.description.belts
-        );
-        world.factories = FactoryManager.readFactories(
-            level3.description.factories
-        );
-        world.items = [];
-    } else if( world.data.level.number === 3 ) {
+    } else {
         // End of the game: no more levels
         endGame.style.display = "block";
     }
