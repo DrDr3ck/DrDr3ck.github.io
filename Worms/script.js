@@ -73,7 +73,7 @@ class Entity {
             if (fTestPosY < 0) fTestPosY = 0;
 
             // Test if any points on semicircle intersect with terrain
-            if (world.map[Math.round(fTestPosX)][Math.round(fTestPosY)] !== 0)
+            if (world.map[Math.floor(fTestPosX)][Math.floor(fTestPosY)] !== 0)
             {
                 // Accumulate collision points to give an escape response vector
                 // Effectively, normal to the areas of contact
@@ -91,7 +91,7 @@ class Entity {
         if (bCollision)
         {
             // Force object to be stable, this stops the object penetrating the terrain
-            if (fMagVelocity < 0.5) this.stable = true;
+            if (fMagVelocity < 1) this.stable = true;
             
             // Calculate reflection vector of objects velocity vector, using response vector as normal
             const dot = this.velX * (fResponseX / fMagResponse) + this.velY * (fResponseY / fMagResponse);
@@ -212,14 +212,11 @@ function createMap() {
     const map = [];
     for( let i=0; i < world.width; i++ ) {
         const column = [];
+        const maxLand = noise(i*0.003);
         for( let j=0; j < world.height; j++ ) {
             let land = 1;
             if( i % 100 === 0 ) land = 2;
-            if( i < 1800 ) {
-                column.push( j>300 ? land : 0);
-            } else {
-                column.push( j>250 ? land : 0);
-            }
+            column.push( j>maxLand*400 ? land : 0);
         }
         map.push(column);
     }
