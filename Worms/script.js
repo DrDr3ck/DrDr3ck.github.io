@@ -1,6 +1,6 @@
 const world = {
     map: null,
-    width: 3600,
+    width: 2400,
     height: 400,
     player1: null,
     player2: null,
@@ -106,18 +106,35 @@ class Entity {
                 this.nBounceBeforeDeath--;
                 this.bDead = this.nBounceBeforeDeath == 0;
 
-                /*
                 // If object died, work out what to do next
-                if (this.bDead)
+                if (this.bDead && this.radius > 2)
                 {
+                    // Shockwave other entities in range
+                    entities.filter(entity => entity !== this).forEach(entity => {
+                        const dx = entity.x - this.x;
+                        const dy = entity.y - this.y;
+                        const dist = Math.max(0.0001, sqrt(dx*dx+dy*dy));
+
+                        if( dist < entity.radius * 2) {   
+                            entity.velX = (dx/dist)* entity.radius;
+                            entity.velY = (dy/dist)* entity.radius;
+                            console.log("bouge",entity.velX,entity.velY);
+                            entity.stable = false;
+                        }
+                    });
+        
+                    console.log("boom in", this.x);
+                    for (let i = 0; i < 20; i++)
+			            entities.push(new Debris(this.x, this.y));
+                    /*
                     // Action upon object death
                     // = 0 Nothing
                     // > 0 Explosion 
                     const nResponse = this.BounceDeathAction();
                     if (nResponse > 0)
                         Boom(this.x, this.y, nResponse);
+                        */
                 }
-                */
             } 
         }
         else
@@ -154,6 +171,17 @@ class Bot extends Entity {
     }
 }
 
+class Debris extends Entity {
+    constructor(x,y) {
+        super(x,y);
+        this.velX = 10.0 * Math.cos(Math.random() * 2.0 * PI);
+        this.velY = 10.0 * Math.sin(Math.random() * 2.0 * PI);
+        this.radius = 2.0;
+        this.friction = 0.8;
+        this.nBounceBeforeDeath = 5; // After 5 bounces, dispose
+    }
+}
+
 class Missile extends Entity {
     constructor(x,y,vx, vy) {
         super(x,y);
@@ -165,12 +193,15 @@ class Missile extends Entity {
     }
 }
 
+const userLang = navigator.language || navigator.userLanguage;  // "en-US"
+
 let entities = [];
 
 entities.push( new Bot(550,50,16,YELLOW) );
-entities.push( new Bot(3050,50,16,RED) );
+entities.push( new Bot(2050,50,16,RED) );
 entities.push( new Bot(700,50,16,YELLOW) );
-entities.push( new Bot(2900,50,16,RED) );
+entities.push( new Bot(1900,50,16,RED) );
+
 world.player1 = entities[0];
 world.player2 = entities[1];
 world.cameraTracking1 = world.player1;
@@ -217,7 +248,8 @@ function getColor(mapValue) {
 
 function drawObjects(dx, dy) {
     entities.forEach(entity => {
-        entity.draw(dx,dy);
+        if( entity.y > 0 )
+            entity.draw(dx,dy);
     });
 }
 
@@ -413,9 +445,15 @@ function draw() {
     // text for help
     textSize(16);
     textAlign(LEFT);
-    text('Q-D for aiming', 10, 390);
-    text('Z to jump', 10, 390-16-5);
-    text('Hold S to fire', 10, 390 - 16*2 - 5*2);
+    if( userLang !== "en-US" ) {
+        text('Q-D for aiming', 10, 390);
+        text('Z to jump', 10, 390-16-5);
+        text('Hold S to fire', 10, 390 - 16*2 - 5*2);
+    } else {
+        text('A-D for aiming', 10, 390);
+        text('W to jump', 10, 390-16-5);
+        text('Hold S to fire', 10, 390 - 16*2 - 5*2);
+    }
 
     textAlign(RIGHT);
     text('4-6 for aiming', 1190, 390+450);
