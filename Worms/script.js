@@ -4,6 +4,8 @@ const world = {
     height: 400,
     player1: null,
     player2: null,
+    cameraTracking1: null,
+    cameraTracking2: null,
     fire1: {
         bEnergising: true,
         bFireWeapon: false,
@@ -28,15 +30,14 @@ class Entity {
         this.accY = 0;
         this.stable = false;
         this.radius = 18;
+        this.nBounceBeforeDeath = -1;
+        this.bDead = false;
 
         this.friction = 0.2;
     }
 
     draw(dx, dy) {
-        push();
-        fill(250,250,120);
-        ellipse(this.x+dx, this.y+dy, this.radius*2, this.radius*2);
-        pop();
+        ellipse(this.x-dx, this.y-dy, this.radius*2, this.radius*2);
     }
 
     update(elapsedTime) {
@@ -72,7 +73,7 @@ class Entity {
             if (fTestPosY < 0) fTestPosY = 0;
 
             // Test if any points on semicircle intersect with terrain
-            if (world.map[Math.round(fTestPosX)][Math.round(fTestPosY)] != 0)
+            if (world.map[Math.round(fTestPosX)][Math.round(fTestPosY)] !== 0)
             {
                 // Accumulate collision points to give an escape response vector
                 // Effectively, normal to the areas of contact
@@ -82,8 +83,6 @@ class Entity {
             }
         }
 
-        //console.log("velocity: ",this.velX,this.velY);
-
         // Calculate magnitudes of response and velocity vectors
         const fMagVelocity = sqrt(this.velX*this.velX + this.velY*this.velY);
         const fMagResponse = sqrt(fResponseX*fResponseX + fResponseY*fResponseY);
@@ -92,8 +91,6 @@ class Entity {
         if (bCollision)
         {
             // Force object to be stable, this stops the object penetrating the terrain
-            //this.stable = true;
-            //console.log("fMagVelocity",fMagVelocity);
             if (fMagVelocity < 0.5) this.stable = true;
             
             // Calculate reflection vector of objects velocity vector, using response vector as normal
@@ -102,26 +99,26 @@ class Entity {
             // Use friction coefficient to dampen response (approximating energy loss)
             this.velX = this.friction * (-2.0 * dot * (fResponseX / fMagResponse) + this.velX);
             this.velY = this.friction * (-2.0 * dot * (fResponseY / fMagResponse) + this.velY);
-            /*
+            
             //Some objects will "die" after several bounces
-            if (p->nBounceBeforeDeath > 0)
+            if (this.nBounceBeforeDeath > 0)
             {
-                p->nBounceBeforeDeath--;
-                p->bDead = p->nBounceBeforeDeath == 0;
+                this.nBounceBeforeDeath--;
+                this.bDead = this.nBounceBeforeDeath == 0;
 
+                /*
                 // If object died, work out what to do next
-                if (p->bDead)
+                if (this.bDead)
                 {
                     // Action upon object death
                     // = 0 Nothing
                     // > 0 Explosion 
-                    int nResponse = p->BounceDeathAction();
+                    const nResponse = this.BounceDeathAction();
                     if (nResponse > 0)
-                        Boom(p->px, p->py, nResponse);
+                        Boom(this.x, this.y, nResponse);
                 }
-            }
-            */
-
+                */
+            } 
         }
         else
         {
@@ -135,20 +132,49 @@ class Entity {
     }
 }
 
+const YELLOW = 1;
+const RED = 2;
+
 class Bot extends Entity {
-    constructor(x,y,radius) {
+    constructor(x,y,radius,team) {
         super(x,y);
         this.radius = radius;
         this.shootAngle = 0;
+        this.team = team;
+    }
+
+    draw(dx,dy) {
+        if( this.team === YELLOW) {
+            fill(250,250,120);
+        }
+        if( this.team === RED) {
+            fill(250,120,120);
+        }
+        super.draw(dx,dy);
     }
 }
 
-const entities = [];
+class Missile extends Entity {
+    constructor(x,y,vx, vy) {
+        super(x,y);
+        this.radius = 3;
+        this.velX = vx;
+        this.velY = vy;
+        this.friction = 0.5;
+        this.nBounceBeforeDeath = 1;
+    }
+}
 
-entities.push( new Bot(100,50,16) );
-entities.push( new Bot(2800,50,16) );
+let entities = [];
+
+entities.push( new Bot(550,50,16,YELLOW) );
+entities.push( new Bot(3050,50,16,RED) );
+entities.push( new Bot(700,50,16,YELLOW) );
+entities.push( new Bot(2900,50,16,RED) );
 world.player1 = entities[0];
 world.player2 = entities[1];
+world.cameraTracking1 = world.player1;
+world.cameraTracking2 = world.player2;
 world.player2.shootAngle = -PI;
 
 function createMap() {
@@ -156,10 +182,12 @@ function createMap() {
     for( let i=0; i < world.width; i++ ) {
         const column = [];
         for( let j=0; j < world.height; j++ ) {
+            let land = 1;
+            if( i % 100 === 0 ) land = 2;
             if( i < 1800 ) {
-                column.push( j>300 ? 1 : 0);
+                column.push( j>300 ? land : 0);
             } else {
-                column.push( j>250 ? 1 : 0);
+                column.push( j>250 ? land : 0);
             }
         }
         map.push(column);
@@ -168,10 +196,36 @@ function createMap() {
 }
 
 function drawShootAngle(player, dx=0, dy=0) {
-    const cx = player.x + dx + 8.0*cos(player.shootAngle);
-    const cy = player.y + dy + 8.0*sin(player.shootAngle);
+    const cx = player.x - dx + 8.0*cos(player.shootAngle);
+    const cy = player.y - dy + 8.0*sin(player.shootAngle);
     fill(0);
     ellipse(cx,cy,4,4);
+}
+
+function getColor(mapValue) {
+    switch(mapValue) {
+        case 0:
+            return {r: 0, g: 0, b: 128};
+        case 1:
+            return {r: 0, g: 128, b: 0};
+        case 2:
+            return {r: 100, g: 128, b: 100};
+        default:
+            return {r:0, g:0, b:0};
+    }
+}
+
+function drawObjects(dx, dy) {
+    entities.forEach(entity => {
+        entity.draw(dx,dy);
+    });
+}
+
+function drawFire(fire, player, dx, dy) {
+    for (let i = 0; i < 11 * fire.fEnergyLevel; i++)
+    {
+        line(player.x - 5 - dx, player.y - 12 - dy, player.x - 5 + i - dx, player.y - 12 - dy);
+    }
 }
 
 function setup() {   
@@ -204,6 +258,20 @@ function draw() {
             }
         }
         if (world.fire1.bFireWeapon) {
+            // Get Weapon Origin
+            const ox = world.player1.x;
+            const oy = world.player1.y;
+
+            // Get Weapon Direction
+            const dx = cos(world.player1.shootAngle);
+            const dy = sin(world.player1.shootAngle);
+
+            // create Missile
+            const missileStrength = 60.0* world.fire1.fEnergyLevel;
+            const m = new Missile(ox, oy, dx * missileStrength, dy * missileStrength);
+            entities.push(m);
+            //pCameraTrackingObject = m;
+                    
             // Reset flags involved with firing weapon
             world.fire1.bFireWeapon = false;
             world.fire1.fEnergyLevel = 0.0;
@@ -233,6 +301,20 @@ function draw() {
             }
         }
         if (world.fire2.bFireWeapon) {
+            // Get Weapon Origin
+            const ox = world.player2.x;
+            const oy = world.player2.y;
+
+            // Get Weapon Direction
+            const dx = cos(world.player2.shootAngle);
+            const dy = sin(world.player2.shootAngle);
+
+            // create Missile
+            const missileStrength = 60.0* world.fire2.fEnergyLevel;
+            const m = new Missile(ox, oy, dx * missileStrength, dy * missileStrength);
+            entities.push(m);
+            //pCameraTrackingObject = m;
+
             // Reset flags involved with firing weapon
             world.fire2.bFireWeapon = false;
             world.fire2.fEnergyLevel = 0.0;
@@ -240,6 +322,39 @@ function draw() {
             console.log("fire 2");
         }
     }
+
+    let cameraPosX1 = 0;
+    let cameraPosY1 = 0;
+
+    let cameraPosX2 = 0;
+    let cameraPosY2 = 0;
+
+    if (world.cameraTracking1 !== null)
+		{
+			cameraPosX1 = world.cameraTracking1.x - width / 2;
+			cameraPosY1 = world.cameraTracking1.y - height / 2;
+			//fCameraPosXTarget = pCameraTrackingObject->px - ScreenWidth() / 2;
+			//fCameraPosYTarget = pCameraTrackingObject->py - ScreenHeight() / 2;
+			//fCameraPosX += (fCameraPosXTarget - fCameraPosX) * 5.0f * fElapsedTime;
+			//fCameraPosY += (fCameraPosYTarget - fCameraPosY) * 5.0f * fElapsedTime;
+        }
+
+        if (world.cameraTracking1 !== null)
+		{
+			cameraPosX2 = world.cameraTracking2.x - width / 2;
+			cameraPosY2 = world.cameraTracking2.y - height / 2;
+        }
+        
+    // Clamp map boundaries
+    if (cameraPosX1 < 0) cameraPosX1 = 0;
+    if (cameraPosX1 >= world.width - width) cameraPosX1 = world.width - width;
+    if (cameraPosY1 < 0) cameraPosY1 = 0;
+    if (cameraPosY1 >= world.height - height) cameraPosY1 = world.height - 400;
+
+    if (cameraPosX2 < 0) cameraPosX2 = 0;
+    if (cameraPosX2 >= world.width - width) cameraPosX2 = world.width - width;
+    if (cameraPosY2 < 0) cameraPosY2 = 0;
+    if (cameraPosY2 >= world.height - height) cameraPosY2 = world.height - 400;
 
     // update objects
     entities.forEach(entity => {
@@ -249,19 +364,23 @@ function draw() {
     // draw map
     noStroke();
     loadPixels();
+    const cameraDx1 = round(cameraPosX1);
+    const cameraDy1 = round(cameraPosY1);
+    const cameraDx2 = round(cameraPosX2);
+    const cameraDy2 = round(cameraPosY2);
     for( let i=0; i < 1200; i++ ) {
         for( let j=0; j < world.height; j++ ) {
             let index = i + j * 1200;
-            let land = world.map[i][j] > 0;
-            pixels[index*4] = 0;      
-            pixels[index*4+1] = land ? 128 : 0;
-            pixels[index*4+2] = land ? 0 : 128;
+            let color = getColor(world.map[i+cameraDx1][j+cameraDy1]);
+            pixels[index*4] = color.r;      
+            pixels[index*4+1] = color.g;
+            pixels[index*4+2] = color.b;
             pixels[index*4+3] = 255;    
-            land = world.map[i+2400][j] > 0;
+            color = getColor(world.map[i+cameraDx2][j+cameraDy2]); //getColor(world.map[i+2400][j]);
             index = i + (j+450) * 1200;
-            pixels[index*4] = 0;      
-            pixels[index*4+1] = land ? 128 : 0;
-            pixels[index*4+2] = land ? 0 : 128;
+            pixels[index*4] = color.r;        
+            pixels[index*4+1] = color.g;
+            pixels[index*4+2] = color.b;
             pixels[index*4+3] = 255;    
         }
     }
@@ -270,36 +389,46 @@ function draw() {
     rect(0,400,1200,50);
 
     // draw objects
+    const dy = -450;
+    drawObjects(cameraPosX1, cameraPosY1);
+    drawObjects(cameraPosX2, cameraPosY2+dy);
     let gameIsStable = true;
-    world.player1.draw(0,0);
-    world.player2.draw(-1800,450);
     entities.forEach(entity => {
-        
         gameIsStable &= entity.stable;
     });
 
     // draw shootangle
-    drawShootAngle(world.player1);
-    drawShootAngle(world.player2,-1800,+450);
+    drawShootAngle(world.player1,cameraPosX1,cameraPosY1);
+    drawShootAngle(world.player2,cameraPosX2,cameraPosY2+dy);
 
     // Draws an Energy Bar, indicating how much energy should the weapon be fired with
     push();
     strokeWeight(3);
     stroke(250,100,100);
-    for (let i = 0; i < 11 * world.fire1.fEnergyLevel; i++)
-    {
-        line(world.player1.x - 5, world.player1.y - 12, world.player1.x - 5 + i, world.player1.y - 12);
-    }
-    for (let i = 0; i < 11 * world.fire2.fEnergyLevel; i++)
-    {
-        line(world.player2.x - 5 - 1800, world.player2.y - 12 + 450, world.player2.x - 5 + i - 1800, world.player2.y - 12 + 450);
-    }
+    drawFire(world.fire1, world.player1, cameraPosX1, cameraPosY1);
+    stroke(100,250,100);
+    drawFire(world.fire2, world.player2, cameraPosX2,cameraPosY2+dy);
     pop();
+
+    // text for help
+    textSize(16);
+    textAlign(LEFT);
+    text('Q-D for aiming', 10, 390);
+    text('Z to jump', 10, 390-16-5);
+    text('Hold S to fire', 10, 390 - 16*2 - 5*2);
+
+    textAlign(RIGHT);
+    text('4-6 for aiming', 1190, 390+450);
+    text('8 to jump', 1190, 390-16-5+450);
+    text('Hold 5 to fire', 1190, 390 - 16*2 - 5*2+450);
 
     if( gameIsStable ) {
         fill(250,100,100);
         rect(10,10,10,10);
     }
+
+    // TODO: memory leak
+    entities = entities.filter(entity => !entity.bDead);
 
 }
 
