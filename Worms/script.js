@@ -2,6 +2,7 @@ const world = {
     map: null,
     width: 2400,
     height: 400,
+    teams: [],
     player1: null,
     player2: null,
     cameraTracking1: null,
@@ -32,6 +33,7 @@ class Entity {
         this.radius = 18;
         this.nBounceBeforeDeath = -1;
         this.bDead = false;
+        this.explode = false;
 
         this.friction = 0.2;
     }
@@ -102,12 +104,12 @@ class Entity {
             
             //Some objects will "die" after several bounces
             if (this.nBounceBeforeDeath > 0)
-            {
+            { // BOOM
                 this.nBounceBeforeDeath--;
                 this.bDead = this.nBounceBeforeDeath == 0;
 
                 // If object died, work out what to do next
-                if (this.bDead && this.radius > 2)
+                if (this.bDead && this.explode )
                 {
                     // Shockwave other entities in range
                     entities.filter(entity => entity !== this).forEach(entity => {
@@ -118,22 +120,35 @@ class Entity {
                         if( dist < entity.radius * 2) {   
                             entity.velX = (dx/dist)* entity.radius;
                             entity.velY = (dy/dist)* entity.radius;
-                            console.log("bouge",entity.velX,entity.velY);
                             entity.stable = false;
+                            entity.life = Math.max(0,entity.life-25);
                         }
                     });
-        
-                    console.log("boom in", this.x);
+
+                    // create a hole
+                    const holeSize = 80;
+                    for( let i=0; i < holeSize; i++ ) {
+                        for( let j=0; j < holeSize; j++ ) {
+                            const dx = this.x-holeSize/2+i - this.x;
+                            const dy = this.y-holeSize/2+j - this.y;
+                            const dist = Math.max(0.0001, sqrt(dx*dx+dy*dy));
+                            if( dist < holeSize/2 ) {
+                                const mapX = Math.min(world.width-1,Math.max(0,floor(this.x-dx)));
+                                const mapY = Math.min(world.height-1,Math.max(0,floor(this.y-dy)));
+                                world.map[mapX][mapY] = 0;
+                            }
+                        }
+                    }
+
+                    // check to which player belongs this missile
+                    if( world.cameraTracking1 === this ) {
+                        world.cameraTracking1 = world.player1;
+                    } else {
+                        world.cameraTracking2 = world.player2;
+                    }
+
                     for (let i = 0; i < 20; i++)
 			            entities.push(new Debris(this.x, this.y));
-                    /*
-                    // Action upon object death
-                    // = 0 Nothing
-                    // > 0 Explosion 
-                    const nResponse = this.BounceDeathAction();
-                    if (nResponse > 0)
-                        Boom(this.x, this.y, nResponse);
-                        */
                 }
             } 
         }
@@ -158,6 +173,7 @@ class Bot extends Entity {
         this.radius = radius;
         this.shootAngle = 0;
         this.team = team;
+        this.life = 100;
     }
 
     draw(dx,dy) {
@@ -167,7 +183,13 @@ class Bot extends Entity {
         if( this.team === RED) {
             fill(250,120,120);
         }
-        super.draw(dx,dy);
+        if( this.life > 0 ) {
+            super.draw(dx,dy);
+            fill(50,250,50,128);
+            rect(this.x-dx-this.radius, this.y-dy+5+this.radius, this.radius*2*this.life/100., 3);
+        } else {
+            // draw a grave ?
+        }
     }
 }
 
@@ -180,6 +202,11 @@ class Debris extends Entity {
         this.friction = 0.8;
         this.nBounceBeforeDeath = 5; // After 5 bounces, dispose
     }
+
+    draw(dx,dy) {
+        fill(120,250,120);
+        super.draw(dx,dy);
+    }
 }
 
 class Missile extends Entity {
@@ -190,6 +217,12 @@ class Missile extends Entity {
         this.velY = vy;
         this.friction = 0.5;
         this.nBounceBeforeDeath = 1;
+        this.explode = true;
+    }
+
+    draw(dx,dy) {
+        fill(200,200,200);
+        super.draw(dx,dy);
     }
 }
 
@@ -207,6 +240,9 @@ world.player2 = entities[1];
 world.cameraTracking1 = world.player1;
 world.cameraTracking2 = world.player2;
 world.player2.shootAngle = -PI;
+
+world.teams.push([entities[0], entities[2]]);
+world.teams.push([entities[1], entities[3]]);
 
 function createMap() {
     const map = [];
@@ -266,14 +302,14 @@ function setup() {
 
 function draw() { 
     const elapsedTime = 0.3;
-    if( world.player1.stable ) {
+    if( world.player1.stable && world.player1 === world.cameraTracking1 ) {
         // player 1 left
         if( keyIsDown(81) || keyIsDown(65) ) { // q or a
-            world.player1.shootAngle -= 1 * elapsedTime / 5;
+            world.player1.shootAngle -= 1 * elapsedTime / 10;
         }
         // player 1 right
         if( keyIsDown(68) ) {
-            world.player1.shootAngle += 1 * elapsedTime / 5;
+            world.player1.shootAngle += 1 * elapsedTime / 10;
         }
         // player 1 fire
         if( keyIsDown(83) ) { 
@@ -298,8 +334,8 @@ function draw() {
             // create Missile
             const missileStrength = 60.0* world.fire1.fEnergyLevel;
             const m = new Missile(ox, oy, dx * missileStrength, dy * missileStrength);
+            world.cameraTracking1 = m;
             entities.push(m);
-            //pCameraTrackingObject = m;
                     
             // Reset flags involved with firing weapon
             world.fire1.bFireWeapon = false;
@@ -312,11 +348,11 @@ function draw() {
     if( world.player2.stable ) {
         // player 2 left
         if( keyIsDown(100) ) {
-            world.player2.shootAngle -= 1 * elapsedTime / 5;
+            world.player2.shootAngle -= 1 * elapsedTime / 10;
         }
         // player 2 right
         if( keyIsDown(102) ) {
-            world.player2.shootAngle += 1 * elapsedTime / 5;
+            world.player2.shootAngle += 1 * elapsedTime / 10;
         }
         // player 2 fire
         if( keyIsDown(101) ) {
@@ -341,8 +377,8 @@ function draw() {
             // create Missile
             const missileStrength = 60.0* world.fire2.fEnergyLevel;
             const m = new Missile(ox, oy, dx * missileStrength, dy * missileStrength);
+            world.cameraTracking2 = m;
             entities.push(m);
-            //pCameraTrackingObject = m;
 
             // Reset flags involved with firing weapon
             world.fire2.bFireWeapon = false;
@@ -405,7 +441,7 @@ function draw() {
             pixels[index*4+1] = color.g;
             pixels[index*4+2] = color.b;
             pixels[index*4+3] = 255;    
-            color = getColor(world.map[i+cameraDx2][j+cameraDy2]); //getColor(world.map[i+2400][j]);
+            color = getColor(world.map[i+cameraDx2][j+cameraDy2]);
             index = i + (j+450) * 1200;
             pixels[index*4] = color.r;        
             pixels[index*4+1] = color.g;
@@ -468,12 +504,12 @@ function draw() {
 }
 
 function keyPressed() {
-    if( world.player1.stable ) {
+    if( world.player1.stable && world.player1 === world.cameraTracking1 ) {
         if( key === 'z' || key === 'w') {
             console.log("player 1 jump");
             const a = world.player1.shootAngle;
-            world.player1.velX = 4.0 * cos(a);
-            world.player1.velY = 8.0 * sin(a);
+            world.player1.velX = 6.0 * cos(a);
+            world.player1.velY = 12.0 * sin(a);
             world.player1.stable = false;
         }
         if( key === 's') {
@@ -487,8 +523,8 @@ function keyPressed() {
         if( key === '8' ) {
             console.log("player 2 jump");
             const a = world.player2.shootAngle;
-            world.player2.velX = 4.0 * cos(a);
-            world.player2.velY = 8.0 * sin(a);
+            world.player2.velX = 6.0 * cos(a);
+            world.player2.velY = 12.0 * sin(a);
             world.player2.stable = false;
         }
         if( key === '5') {
@@ -502,7 +538,7 @@ function keyPressed() {
 }
 
 function keyReleased() {
-    if( world.player1.stable ) {
+    if( world.player1.stable && world.player1 === world.cameraTracking1 ) {
         if( key === 's') {
             if (world.fire1.bEnergising) {
                 world.fire1.bFireWeapon = true;
