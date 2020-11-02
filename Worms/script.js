@@ -266,7 +266,7 @@ function createMap() {
     const map = [];
     for( let i=0; i < world.width; i++ ) {
         const column = [];
-        const maxLand = noise(i*0.003) * 300;
+        const maxLand = world.height - noise(i*0.003) * world.height*0.75;
         for( let j=0; j < world.height; j++ ) {
             column.push( getMapColor(j,maxLand) );
         }
