@@ -239,20 +239,36 @@ world.player1 = entities[0];
 world.player2 = entities[1];
 world.cameraTracking1 = world.player1;
 world.cameraTracking2 = world.player2;
-world.player2.shootAngle = -PI;
 
 world.teams.push([entities[0], entities[2]]);
 world.teams.push([entities[1], entities[3]]);
+
+// reverse default shoot angle for team 2
+world.teams[1].forEach(member => member.shootAngle = -PI);
+
+function getMapColor(currentDepth, beginDepth) {
+    if( currentDepth <= beginDepth) {
+        return 0;
+    }
+    if( currentDepth <= beginDepth + 5) {
+        return 1;
+    }
+    if( currentDepth <= beginDepth + 55) {
+        return 2;
+    }
+    if( currentDepth <= beginDepth + 255) {
+        return 3;
+    }
+    return 4;
+}
 
 function createMap() {
     const map = [];
     for( let i=0; i < world.width; i++ ) {
         const column = [];
-        const maxLand = noise(i*0.003);
+        const maxLand = noise(i*0.003) * 300;
         for( let j=0; j < world.height; j++ ) {
-            let land = 1;
-            if( i % 100 === 0 ) land = 2;
-            column.push( j>maxLand*400 ? land : 0);
+            column.push( getMapColor(j,maxLand) );
         }
         map.push(column);
     }
@@ -273,7 +289,11 @@ function getColor(mapValue) {
         case 1:
             return {r: 0, g: 128, b: 0};
         case 2:
-            return {r: 100, g: 128, b: 100};
+            return {r: 139, g: 69, b: 19};
+        case 3:
+            return {r: 128, g: 128, b: 128};
+        case 4:
+            return {r: 255, g: 0, b: 0};
         default:
             return {r:0, g:0, b:0};
     }
@@ -286,16 +306,53 @@ function drawObjects(dx, dy) {
     });
 }
 
-function drawFire(fire, player, dx, dy) {
+function drawFireBar(fire, player, dx, dy) {
     for (let i = 0; i < 11 * fire.fEnergyLevel; i++)
     {
         line(player.x - 5 - dx, player.y - 12 - dy, player.x - 5 + i - dx, player.y - 12 - dy);
     }
 }
 
+function fireMissile(player, fire) {
+    // Get Weapon Origin
+    const ox = player.x;
+    const oy = player.y;
+
+    // Get Weapon Direction
+    const dx = cos(player.shootAngle);
+    const dy = sin(player.shootAngle);
+
+    // create Missile
+    const missileStrength = 60.0* fire.fEnergyLevel;
+    const m = new Missile(ox, oy, dx * missileStrength, dy * missileStrength);
+    entities.push(m);
+            
+    // Reset flags involved with firing weapon
+    fire.bFireWeapon = false;
+    fire.fEnergyLevel = 0.0;
+    fire.bEnergising = false;
+    
+    return m;
+}
+
+function holdingFire(fire, elapsedTime) {
+    if (fire.bEnergising) {
+        fire.fEnergyLevel += 0.75 * elapsedTime / 10;
+        if (fire.fEnergyLevel >= 1.0) // If it maxes out, Fire!
+        {
+            fire.fEnergyLevel = 1.0;
+            fire.bFireWeapon = true;
+        }
+    }
+}
+
+const FPS = 60;
+
 function setup() {   
     canvas = createCanvas(1200, 850);
     canvas.parent('canvas');
+
+    frameRate(FPS);
 
     world.map = createMap();
 }
@@ -313,35 +370,11 @@ function draw() {
         }
         // player 1 fire
         if( keyIsDown(83) ) { 
-            if (world.fire1.bEnergising) {
-                world.fire1.fEnergyLevel += 0.75 * elapsedTime / 10;
-                if (world.fire1.fEnergyLevel >= 1.0) // If it maxes out, Fire!
-                {
-                    world.fire1.fEnergyLevel = 1.0;
-                    world.fire1.bFireWeapon = true;
-                }
-            }
+            holdingFire(world.fire1, elapsedTime);
         }
         if (world.fire1.bFireWeapon) {
-            // Get Weapon Origin
-            const ox = world.player1.x;
-            const oy = world.player1.y;
-
-            // Get Weapon Direction
-            const dx = cos(world.player1.shootAngle);
-            const dy = sin(world.player1.shootAngle);
-
-            // create Missile
-            const missileStrength = 60.0* world.fire1.fEnergyLevel;
-            const m = new Missile(ox, oy, dx * missileStrength, dy * missileStrength);
+            const m = fireMissile(world.player1, world.fire1);
             world.cameraTracking1 = m;
-            entities.push(m);
-                    
-            // Reset flags involved with firing weapon
-            world.fire1.bFireWeapon = false;
-            world.fire1.fEnergyLevel = 0.0;
-            world.fire1.bEnergising = false;
-            console.log("fire 1");
         }
     }
 
@@ -356,35 +389,11 @@ function draw() {
         }
         // player 2 fire
         if( keyIsDown(101) ) {
-            if (world.fire2.bEnergising) {
-                world.fire2.fEnergyLevel += 0.75 * elapsedTime / 10;
-                if (world.fire2.fEnergyLevel >= 1.0) // If it maxes out, Fire!
-                {
-                    world.fire2.fEnergyLevel = 1.0;
-                    world.fire2.bFireWeapon = true;
-                }
-            }
+            holdingFire(world.fire2, elapsedTime);
         }
         if (world.fire2.bFireWeapon) {
-            // Get Weapon Origin
-            const ox = world.player2.x;
-            const oy = world.player2.y;
-
-            // Get Weapon Direction
-            const dx = cos(world.player2.shootAngle);
-            const dy = sin(world.player2.shootAngle);
-
-            // create Missile
-            const missileStrength = 60.0* world.fire2.fEnergyLevel;
-            const m = new Missile(ox, oy, dx * missileStrength, dy * missileStrength);
+            const m = fireMissile(world.player2, world.fire2);
             world.cameraTracking2 = m;
-            entities.push(m);
-
-            // Reset flags involved with firing weapon
-            world.fire2.bFireWeapon = false;
-            world.fire2.fEnergyLevel = 0.0;
-            world.fire2.bEnergising = false;
-            console.log("fire 2");
         }
     }
 
@@ -404,7 +413,7 @@ function draw() {
 			//fCameraPosY += (fCameraPosYTarget - fCameraPosY) * 5.0f * fElapsedTime;
         }
 
-        if (world.cameraTracking1 !== null)
+    if (world.cameraTracking2 !== null)
 		{
 			cameraPosX2 = world.cameraTracking2.x - width / 2;
 			cameraPosY2 = world.cameraTracking2.y - height / 2;
@@ -427,22 +436,23 @@ function draw() {
     });
     
     // draw map
+    const secondCameraPixelOffset = 450;
     noStroke();
     loadPixels();
     const cameraDx1 = round(cameraPosX1);
     const cameraDy1 = round(cameraPosY1);
     const cameraDx2 = round(cameraPosX2);
     const cameraDy2 = round(cameraPosY2);
-    for( let i=0; i < 1200; i++ ) {
-        for( let j=0; j < world.height; j++ ) {
-            let index = i + j * 1200;
+    for( let i=0; i < width; i++ ) { // width of the canvas
+        for( let j=0; j < world.height; j++ ) { // height of the 'half' canvas
+            let index = i + j * width;
             let color = getColor(world.map[i+cameraDx1][j+cameraDy1]);
             pixels[index*4] = color.r;      
             pixels[index*4+1] = color.g;
             pixels[index*4+2] = color.b;
             pixels[index*4+3] = 255;    
             color = getColor(world.map[i+cameraDx2][j+cameraDy2]);
-            index = i + (j+450) * 1200;
+            index = i + (j+secondCameraPixelOffset) * width;
             pixels[index*4] = color.r;        
             pixels[index*4+1] = color.g;
             pixels[index*4+2] = color.b;
@@ -454,9 +464,8 @@ function draw() {
     rect(0,400,1200,50);
 
     // draw objects
-    const dy = -450;
     drawObjects(cameraPosX1, cameraPosY1);
-    drawObjects(cameraPosX2, cameraPosY2+dy);
+    drawObjects(cameraPosX2, cameraPosY2-secondCameraPixelOffset);
     let gameIsStable = true;
     entities.forEach(entity => {
         gameIsStable &= entity.stable;
@@ -464,34 +473,36 @@ function draw() {
 
     // draw shootangle
     drawShootAngle(world.player1,cameraPosX1,cameraPosY1);
-    drawShootAngle(world.player2,cameraPosX2,cameraPosY2+dy);
+    drawShootAngle(world.player2,cameraPosX2,cameraPosY2-secondCameraPixelOffset);
 
     // Draws an Energy Bar, indicating how much energy should the weapon be fired with
     push();
     strokeWeight(3);
     stroke(250,100,100);
-    drawFire(world.fire1, world.player1, cameraPosX1, cameraPosY1);
+    drawFireBar(world.fire1, world.player1, cameraPosX1, cameraPosY1);
     stroke(100,250,100);
-    drawFire(world.fire2, world.player2, cameraPosX2,cameraPosY2+dy);
+    drawFireBar(world.fire2, world.player2, cameraPosX2,cameraPosY2-secondCameraPixelOffset);
     pop();
 
     // text for help
-    textSize(16);
+    const size = 16;
+    const textMargin = 5;
+    textSize(size);
     textAlign(LEFT);
     if( userLang !== "en-US" ) {
         text('Q-D for aiming', 10, 390);
-        text('Z to jump', 10, 390-16-5);
-        text('Hold S to fire', 10, 390 - 16*2 - 5*2);
+        text('Z to jump', 10, 390-size-textMargin);
+        text('Hold S to fire', 10, 390 - size*2 - textMargin*2);
     } else {
         text('A-D for aiming', 10, 390);
-        text('W to jump', 10, 390-16-5);
-        text('Hold S to fire', 10, 390 - 16*2 - 5*2);
+        text('W to jump', 10, 390-size-textMargin5);
+        text('Hold S to fire', 10, 390 - size*2 - textMargin*2);
     }
 
     textAlign(RIGHT);
-    text('4-6 for aiming', 1190, 390+450);
-    text('8 to jump', 1190, 390-16-5+450);
-    text('Hold 5 to fire', 1190, 390 - 16*2 - 5*2+450);
+    text('4-6 for aiming', 1190, 390+secondCameraPixelOffset);
+    text('8 to jump', 1190, 390-size-textMargin+secondCameraPixelOffset);
+    text('Hold 5 to fire', 1190, 390 - size*2 - textMargin*2+secondCameraPixelOffset);
 
     if( gameIsStable ) {
         fill(250,100,100);
@@ -500,58 +511,59 @@ function draw() {
 
     // TODO: memory leak
     entities = entities.filter(entity => !entity.bDead);
+}
 
+function jump(player) {
+    const a = player.shootAngle;
+    player.velX = 6.0 * cos(a);
+    player.velY = 12.0 * sin(a);
+    player.stable = false;
+}
+
+function startFire(fire) {
+    fire.bEnergising = true;
+    fire.bFireWeapon = false;
+    fire.fEnergyLevel = 0.0;
 }
 
 function keyPressed() {
     if( world.player1.stable && world.player1 === world.cameraTracking1 ) {
         if( key === 'z' || key === 'w') {
-            console.log("player 1 jump");
-            const a = world.player1.shootAngle;
-            world.player1.velX = 6.0 * cos(a);
-            world.player1.velY = 12.0 * sin(a);
-            world.player1.stable = false;
+            jump(world.player1);
         }
         if( key === 's') {
             // start firing
-            world.fire1.bEnergising = true;
-			world.fire1.bFireWeapon = false;
-			world.fire1.fEnergyLevel = 0.0;
+            startFire(world.fire1);
         }
     }
     if( world.player2.stable ) {
         if( key === '8' ) {
-            console.log("player 2 jump");
-            const a = world.player2.shootAngle;
-            world.player2.velX = 6.0 * cos(a);
-            world.player2.velY = 12.0 * sin(a);
-            world.player2.stable = false;
+            jump(world.player2);
         }
         if( key === '5') {
             // start firing
-            world.fire2.bEnergising = true;
-			world.fire2.bFireWeapon = false;
-			world.fire2.fEnergyLevel = 0.0;
+            startFire(world.fire2);
         }
     }
     console.log("Keycode for ",key,":",keyCode);
 }
 
+function fire(fire) {
+    if (fire.bEnergising) {
+        fire.bFireWeapon = true;
+    }
+    fire.bEnergising = false;
+}
+
 function keyReleased() {
     if( world.player1.stable && world.player1 === world.cameraTracking1 ) {
         if( key === 's') {
-            if (world.fire1.bEnergising) {
-                world.fire1.bFireWeapon = true;
-            }
-			world.fire1.bEnergising = false;
+            fire(world.fire1);
         }
     }
     if( world.player2.stable ) {
         if( key === '5') {
-            if (world.fire2.bEnergising) {
-                world.fire2.bFireWeapon = true;
-            }
-			world.fire2.bEnergising = false;
+            fire(world.fire2);
         }
     }
 }
