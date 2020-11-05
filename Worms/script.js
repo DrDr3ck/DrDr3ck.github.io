@@ -2,7 +2,7 @@ const world = {
 	map: null,
 	width: 2400,
 	height: 400,
-	teams: [[],[]],
+	teams: [ [], [] ],
 	players: []
 };
 
@@ -129,7 +129,7 @@ class Entity {
 							entity.velX = dx / dist * entity.radius;
 							entity.velY = dy / dist * entity.radius;
 							entity.stable = false;
-							entity.life = Math.max(0,entity.life-25);
+							entity.life = Math.max(0, entity.life - 25);
 						}
 					});
 
@@ -252,12 +252,12 @@ function createBot(x, y, team) {
 	}
 }
 
-createBot(350,50,YELLOW);
-createBot(2050,50,RED);
-createBot(500,50,YELLOW);
-createBot(1900,50,RED);
-createBot(200,50,YELLOW);
-createBot(2200,50,RED);
+createBot(350, 50, YELLOW);
+createBot(2050, 50, RED);
+createBot(500, 50, YELLOW);
+createBot(1900, 50, RED);
+createBot(200, 50, YELLOW);
+createBot(2200, 50, RED);
 
 world.players[0].bot = entities[0];
 world.players[1].bot = entities[1];
@@ -446,10 +446,10 @@ function draw() {
 		fill(250, 50, 50);
 		textSize(128);
 		textAlign(CENTER, CENTER);
-		drawText('Game Over', width/2, 200);
-        drawText('You Win', width/2, 650);
-        textSize(32);
-        drawText('Refresh to start (F5)', width/2, 425);
+		drawText('Game Over', width / 2, 200);
+		drawText('You Win', width / 2, 650);
+		textSize(32);
+		drawText('Refresh to start (F5)', width / 2, 425);
 		return;
 	}
 	if (!world.players[1].bot) {
@@ -457,10 +457,10 @@ function draw() {
 		fill(250, 50, 50);
 		textSize(128);
 		textAlign(CENTER, CENTER);
-		drawText('Game Over', width/2, 650);
-        drawText('You Win', width/2, 200);
-        textSize(32);
-        drawText('Refresh to start (F5)', width/2, 425);
+		drawText('Game Over', width / 2, 650);
+		drawText('You Win', width / 2, 200);
+		textSize(32);
+		drawText('Refresh to start (F5)', width / 2, 425);
 		return;
 	}
 
