@@ -135,7 +135,7 @@ class Entity {
                             entity.velX = (dx/dist)* entity.radius;
                             entity.velY = (dy/dist)* entity.radius;
                             entity.stable = false;
-                            entity.life = Math.max(0,entity.life-25);
+                            entity.life = 0;//Math.max(0,entity.life-25);
                         }
                     });
 
@@ -205,6 +205,9 @@ class Bot extends Entity {
             rect(this.x-dx-this.radius, this.y-dy+5+this.radius, this.radius*2*this.life/100., 3);
         } else {
             // draw a grave ?
+            fill(250,250,250);
+            rect(this.x-3-dx, this.y-this.radius-dy, 6, this.radius*2);
+            rect(this.x-dx-this.radius+5, this.y-10-dy, this.radius*2-10, 5);
         }
     }
 }
@@ -250,19 +253,21 @@ entities.push( new Bot(550,50,16,YELLOW) );
 entities.push( new Bot(2050,50,16,RED) );
 entities.push( new Bot(700,50,16,YELLOW) );
 entities.push( new Bot(1900,50,16,RED) );
+entities.push( new Bot(250,50,16,YELLOW) );
+entities.push( new Bot(2250,50,16,RED) );
 
 world.players[0].bot = entities[0];
 world.players[1].bot = entities[1];
 world.players[0].cameraTracking = world.players[0].bot;
 world.players[1].cameraTracking = world.players[1].bot;
 
-world.teams.push([entities[0], entities[2]]);
-world.teams.push([entities[1], entities[3]]);
+world.teams.push([entities[0], entities[2], entities[4]]);
+world.teams.push([entities[1], entities[3], entities[5 ]]);
 
 // reverse default shoot angle for team 2
 world.teams[1].forEach(member => member.shootAngle = -PI);
 
-function getMapColor(currentDepth, beginDepth) {
+function getMapColorIndex(currentDepth, beginDepth) {
     if( currentDepth <= beginDepth) {
         return 0;
     }
@@ -284,7 +289,7 @@ function createMap() {
         const column = [];
         const maxLand = world.height - noise(i*0.003) * world.height*0.75;
         for( let j=0; j < world.height; j++ ) {
-            column.push( getMapColor(j,maxLand) );
+            column.push( getMapColorIndex(j,maxLand) );
         }
         map.push(column);
     }
@@ -298,7 +303,7 @@ function drawShootAngle(player, dx=0, dy=0) {
     ellipse(cx,cy,4,4);
 }
 
-function getColor(mapValue) {
+function getMapColor(mapValue) {
     switch(mapValue) {
         case 0:
             return {r: 0, g: 0, b: 128};
@@ -391,6 +396,27 @@ function drawText(string, x, y) {
     text(string,x,y);
     fill(11);
     text(string,x+1,y);
+}
+
+function drawHelp(secondCameraPixelOffset) {
+    const sizeT = 16;
+    const marginT = 5;
+    fill(0);
+    textSize(sizeT);
+    textAlign(LEFT);
+    if( userLang !== "en-US" ) {
+        drawText('Q-D for aiming', 10, 390);
+        drawText('Z to jump', 10, 390-sizeT-marginT);
+        drawText('Hold S to fire', 10, 390 - sizeT*2 - marginT*2);
+    } else {
+        drawText('A-D for aiming', 10, 390);
+        drawText('W to jump', 10, 390-sizeT-textMargin5);
+        drawText('Hold S to fire', 10, 390 - sizeT*2 - marginT*2);
+    }
+    textAlign(RIGHT);
+    drawText('4-6 for aiming', 1190, 390+secondCameraPixelOffset);
+    drawText('8 to jump', 1190, 390-sizeT-marginT+secondCameraPixelOffset);
+    drawText('Hold 5 to fire', 1190, 390 - sizeT*2 - marginT*2+secondCameraPixelOffset);
 }
 
 function gameIsStable(index) {
@@ -493,20 +519,20 @@ function draw() {
     // draw map
     const secondCameraPixelOffset = 450;
     noStroke();
-    loadPixels();
     const cameraDx1 = round(cameraPosX1);
     const cameraDy1 = round(cameraPosY1);
     const cameraDx2 = round(cameraPosX2);
     const cameraDy2 = round(cameraPosY2);
+    loadPixels();
     for( let i=0; i < width; i++ ) { // width of the canvas
         for( let j=0; j < world.height; j++ ) { // height of the 'half' canvas
             let index = i + j * width;
-            let color = getColor(world.map[i+cameraDx1][j+cameraDy1]);
+            let color = getMapColor(world.map[i+cameraDx1][j+cameraDy1]);
             pixels[index*4] = color.r;      
             pixels[index*4+1] = color.g;
             pixels[index*4+2] = color.b;
             pixels[index*4+3] = 255;    
-            color = getColor(world.map[i+cameraDx2][j+cameraDy2]);
+            color = getMapColor(world.map[i+cameraDx2][j+cameraDy2]);
             index = i + (j+secondCameraPixelOffset) * width;
             pixels[index*4] = color.r;        
             pixels[index*4+1] = color.g;
@@ -536,24 +562,7 @@ function draw() {
     pop();
 
     // text for help
-    const sizeT = 16;
-    const marginT = 5;
-    fill(0);
-    textSize(sizeT);
-    textAlign(LEFT);
-    if( userLang !== "en-US" ) {
-        drawText('Q-D for aiming', 10, 390);
-        drawText('Z to jump', 10, 390-sizeT-marginT);
-        drawText('Hold S to fire', 10, 390 - sizeT*2 - marginT*2);
-    } else {
-        drawText('A-D for aiming', 10, 390);
-        drawText('W to jump', 10, 390-sizeT-textMargin5);
-        drawText('Hold S to fire', 10, 390 - sizeT*2 - marginT*2);
-    }
-    textAlign(RIGHT);
-    drawText('4-6 for aiming', 1190, 390+secondCameraPixelOffset);
-    drawText('8 to jump', 1190, 390-sizeT-marginT+secondCameraPixelOffset);
-    drawText('Hold 5 to fire', 1190, 390 - sizeT*2 - marginT*2+secondCameraPixelOffset);
+    drawHelp(secondCameraPixelOffset);
 
     if( gameIsStable(0) ) {
         fill(250,100,100);
