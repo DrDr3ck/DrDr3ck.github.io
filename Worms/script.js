@@ -2,7 +2,7 @@ const world = {
 	map: null,
 	width: 2400,
 	height: 400,
-	teams: [],
+	teams: [[],[]],
 	players: []
 };
 
@@ -23,12 +23,12 @@ function getNextPlayer(teamIndex) {
 	const playerIndex = team.indexOf(world.players[teamIndex].bot);
 	for (let i = 0; i < team.length; i++) {
 		const curIndex = (i + playerIndex + 1) % team.length;
-		if (!team[curIndex].bDead) {
+		if (team[curIndex].life > 0) {
 			return team[curIndex];
 		}
 	}
-	// TODO; gameover ?
-	return world.players[teamIndex].bot;
+	// gameover
+	return null;
 }
 
 const PI = 3.141592;
@@ -129,7 +129,7 @@ class Entity {
 							entity.velX = dx / dist * entity.radius;
 							entity.velY = dy / dist * entity.radius;
 							entity.stable = false;
-							entity.life = 0; //Math.max(0,entity.life-25);
+							entity.life = Math.max(0,entity.life-25);
 						}
 					});
 
@@ -188,7 +188,7 @@ class Bot extends Entity {
 			fill(250, 250, 120);
 		}
 		if (this.team === RED) {
-            fill(250, 120, 120);
+			fill(250, 120, 120);
 		}
 		if (this.life > 0) {
 			super.draw(dx, dy);
@@ -240,20 +240,29 @@ const userLang = navigator.language || navigator.userLanguage; // "en-US"
 
 let entities = [];
 
-entities.push(new Bot(550, 50, 16, YELLOW));
-entities.push(new Bot(2050, 50, 16, RED));
-entities.push(new Bot(700, 50, 16, YELLOW));
-entities.push(new Bot(1900, 50, 16, RED));
-entities.push(new Bot(250, 50, 16, YELLOW));
-entities.push(new Bot(2250, 50, 16, RED));
+function createBot(x, y, team) {
+	if (team === YELLOW) {
+		const bot = new Bot(x, y, 16, YELLOW);
+		entities.push(bot);
+		world.teams[0].push(bot);
+	} else {
+		const bot = new Bot(x, y, 16, RED);
+		entities.push(bot);
+		world.teams[1].push(bot);
+	}
+}
+
+createBot(350,50,YELLOW);
+createBot(2050,50,RED);
+createBot(500,50,YELLOW);
+createBot(1900,50,RED);
+createBot(200,50,YELLOW);
+createBot(2200,50,RED);
 
 world.players[0].bot = entities[0];
 world.players[1].bot = entities[1];
 world.players[0].cameraTracking = world.players[0].bot;
 world.players[1].cameraTracking = world.players[1].bot;
-
-world.teams.push([ entities[0], entities[2], entities[4] ]);
-world.teams.push([ entities[1], entities[3], entities[5] ]);
 
 // reverse default shoot angle for team 2
 world.teams[1].forEach((member) => (member.shootAngle = -PI));
@@ -288,6 +297,7 @@ function createMap() {
 }
 
 function drawShootAngle(player, dx = 0, dy = 0) {
+	if (!player) return;
 	const cx = player.x - dx + 8.0 * cos(player.shootAngle);
 	const cy = player.y - dy + 8.0 * sin(player.shootAngle);
 	fill(0);
@@ -318,6 +328,7 @@ function drawObjects(dx, dy) {
 }
 
 function drawFireBar(fire, player, dx, dy) {
+	if (!player) return;
 	for (let i = 0; i < 11 * fire.fEnergyLevel; i++) {
 		line(player.x - 5 - dx, player.y - 12 - dy, player.x - 5 + i - dx, player.y - 12 - dy);
 	}
@@ -393,7 +404,6 @@ function drawText(string, x, y) {
 function drawHelp(secondCameraPixelOffset) {
 	const sizeT = 16;
 	const marginT = 5;
-	fill(0);
 	textSize(sizeT);
 	textAlign(LEFT);
 	if (userLang !== 'en-US') {
@@ -431,6 +441,29 @@ function setup() {
 }
 
 function draw() {
+	if (!world.players[0].bot) {
+		// game over for player 1
+		fill(250, 50, 50);
+		textSize(128);
+		textAlign(CENTER, CENTER);
+		drawText('Game Over', width/2, 200);
+        drawText('You Win', width/2, 650);
+        textSize(32);
+        drawText('Refresh to start (F5)', width/2, 425);
+		return;
+	}
+	if (!world.players[1].bot) {
+		// game over for player 2
+		fill(250, 50, 50);
+		textSize(128);
+		textAlign(CENTER, CENTER);
+		drawText('Game Over', width/2, 650);
+        drawText('You Win', width/2, 200);
+        textSize(32);
+        drawText('Refresh to start (F5)', width/2, 425);
+		return;
+	}
+
 	const elapsedTime = 0.3;
 	if (canPlay(0)) {
 		// player 1 left
