@@ -1,3 +1,6 @@
+let boomSong = null;
+let songVolume = 0.3;
+
 const world = {
 	map: null,
 	width: 2400,
@@ -119,6 +122,7 @@ class Entity {
 
 				// If object died, work out what to do next
 				if (this.bDead && this.explode) {
+					boomSong.play();
 					// Shockwave other entities in range
 					entities.filter((entity) => entity !== this).forEach((entity) => {
 						const dx = entity.x - this.x;
@@ -147,6 +151,12 @@ class Entity {
 							}
 						}
 					}
+
+					world.teams.forEach((team) => {
+						team.forEach((bot) => {
+							bot.stable = false;
+						});
+					});
 
 					// check to which player belongs this missile
 					if (world.players[0].cameraTracking === this) {
@@ -419,6 +429,13 @@ function drawHelp(secondCameraPixelOffset) {
 	drawText('4-6 for aiming', 1190, 390 + secondCameraPixelOffset);
 	drawText('8 to jump', 1190, 390 - sizeT - marginT + secondCameraPixelOffset);
 	drawText('Hold 5 to fire', 1190, 390 - sizeT * 2 - marginT * 2 + secondCameraPixelOffset);
+
+	textAlign(LEFT, CENTER);
+	if (songVolume === 0) {
+		drawText('Press m to unmute', 10, 425);
+	} else {
+		drawText('Press m to mute', 10, 425);
+	}
 }
 
 function gameIsStable(index) {
@@ -430,6 +447,11 @@ function gameIsStable(index) {
 }
 
 const FPS = 60;
+
+function preload() {
+	boomSong = loadSound('./sounds/boom.mp3');
+	boomSong.setVolume(songVolume);
+}
 
 function setup() {
 	canvas = createCanvas(1200, 850);
@@ -462,6 +484,16 @@ function draw() {
 		textSize(32);
 		drawText('Refresh to start (F5)', width / 2, 425);
 		return;
+	}
+
+	if (world.players[0].bot.life === 0) {
+		world.players[0].bot = getNextPlayer(0);
+		world.players[0].cameraTracking = world.players[0].bot;
+	}
+
+	if (world.players[1].bot.life === 0) {
+		world.players[1].bot = getNextPlayer(1);
+		world.players[1].cameraTracking = world.players[1].bot;
 	}
 
 	const elapsedTime = 0.3;
@@ -623,6 +655,15 @@ function keyPressed() {
 		}
 	}
 	console.log('Keycode for ', key, ':', keyCode);
+	if (key === 'm' || key == ',') {
+		if (songVolume > 0) {
+			songVolume = 0;
+		} else {
+			songVolume = 0.3;
+		}
+		console.log('set volume', songVolume);
+		boomSong.setVolume(songVolume);
+	}
 }
 
 function keyReleased() {
