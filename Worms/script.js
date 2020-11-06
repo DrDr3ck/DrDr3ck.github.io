@@ -61,10 +61,10 @@ createBot(1900, 50, RED);
 createBot(200, 50, YELLOW);
 createBot(2200, 50, RED);
 
-world.players[0].bot = entities[0];
-world.players[1].bot = entities[1];
-world.players[0].cameraTracking = world.players[0].bot;
-world.players[1].cameraTracking = world.players[1].bot;
+world.players[YELLOW].bot = entities[0];
+world.players[RED].bot = entities[1];
+world.players[YELLOW].cameraTracking = world.players[YELLOW].bot;
+world.players[RED].cameraTracking = world.players[RED].bot;
 
 // reverse default shoot angle for team 2
 world.teams[1].forEach((member) => (member.shootAngle = -PI));
@@ -196,6 +196,10 @@ function holdingFire(fire, elapsedTime) {
 	}
 }
 
+function aiming(bot, angleDelta) {
+	bot.shootAngle += angleDelta;
+}
+
 function canPlay(playerIndex) {
 	if( !world.players[playerIndex].bot ) {
 		return false;
@@ -280,7 +284,7 @@ function setup() {
 }
 
 function draw() {
-	if (!world.players[0].bot) {
+	if (!world.players[YELLOW].bot) {
 		// game over for player 1
 		fill(250, 50, 50);
 		textSize(128);
@@ -291,7 +295,7 @@ function draw() {
 		drawText('Refresh to start (F5)', width / 2, 425);
 		return;
 	}
-	if (!world.players[1].bot) {
+	if (!world.players[RED].bot) {
 		// game over for player 2
 		fill(250, 50, 50);
 		textSize(128);
@@ -311,38 +315,36 @@ function draw() {
 		// player 1 left
 		if (keyIsDown(81) || keyIsDown(65)) {
 			// q or a
-			world.players[0].bot.shootAngle -= 1 * elapsedTime / 10;
+			aiming(world.players[YELLOW].bot, -1 * elapsedTime / 10);
 		}
 		// player 1 right
 		if (keyIsDown(68)) {
-			world.players[0].bot.shootAngle += 1 * elapsedTime / 10;
+			aiming(world.players[YELLOW].bot, 1 * elapsedTime / 10);
 		}
 		// player 1 fire
 		if (keyIsDown(83)) {
-			holdingFire(world.players[0].fire, elapsedTime);
+			holdingFire(world.players[YELLOW].fire, elapsedTime);
 		}
-		if (world.players[0].fire.bFireWeapon) {
-			const m = fireMissile(world.players[0]);
-			world.players[0].cameraTracking = m;
+		if (world.players[YELLOW].fire.bFireWeapon) {
+			world.players[YELLOW].cameraTracking = fireMissile(world.players[YELLOW]);
 		}
 	}
 
 	if (canPlay(1)) {
 		// player 2 left
 		if (keyIsDown(100)) {
-			world.players[1].bot.shootAngle -= 1 * elapsedTime / 10;
+			aiming(world.players[RED].bot, -1 * elapsedTime / 10);
 		}
 		// player 2 right
 		if (keyIsDown(102)) {
-			world.players[1].bot.shootAngle += 1 * elapsedTime / 10;
+			aiming(world.players[RED].bot, 1 * elapsedTime / 10);
 		}
 		// player 2 fire
 		if (keyIsDown(101)) {
-			holdingFire(world.players[1].fire, elapsedTime);
+			holdingFire(world.players[RED].fire, elapsedTime);
 		}
-		if (world.players[1].fire.bFireWeapon) {
-			const m = fireMissile(world.players[1]);
-			world.players[1].cameraTracking = m;
+		if (world.players[RED].fire.bFireWeapon) {
+			world.players[RED].cameraTracking = fireMissile(world.players[RED]);
 		}
 	}
 
@@ -352,18 +354,18 @@ function draw() {
 	let cameraPosX2 = 0;
 	let cameraPosY2 = 0;
 
-	if (world.players[0].cameraTracking !== null) {
-		cameraPosX1 = world.players[0].cameraTracking.x - width / 2;
-		cameraPosY1 = world.players[0].cameraTracking.y - height / 2;
+	if (world.players[YELLOW].cameraTracking !== null) {
+		cameraPosX1 = world.players[YELLOW].cameraTracking.x - width / 2;
+		cameraPosY1 = world.players[YELLOW].cameraTracking.y - height / 2;
 		//fCameraPosXTarget = pCameraTrackingObject->px - ScreenWidth() / 2;
 		//fCameraPosYTarget = pCameraTrackingObject->py - ScreenHeight() / 2;
 		//fCameraPosX += (fCameraPosXTarget - fCameraPosX) * 5.0f * fElapsedTime;
 		//fCameraPosY += (fCameraPosYTarget - fCameraPosY) * 5.0f * fElapsedTime;
 	}
 
-	if (world.players[1].cameraTracking !== null) {
-		cameraPosX2 = world.players[1].cameraTracking.x - width / 2;
-		cameraPosY2 = world.players[1].cameraTracking.y - height / 2;
+	if (world.players[RED].cameraTracking !== null) {
+		cameraPosX2 = world.players[RED].cameraTracking.x - width / 2;
+		cameraPosY2 = world.players[RED].cameraTracking.y - height / 2;
 	}
 
 	// Clamp map boundaries
@@ -417,16 +419,16 @@ function draw() {
 	drawObjects(cameraPosX2, cameraPosY2 - secondCameraPixelOffset);
 
 	// draw shootangle in the two cameras
-	drawShootAngle(world.players[0].bot, cameraPosX1, cameraPosY1);
-	drawShootAngle(world.players[1].bot, cameraPosX2, cameraPosY2 - secondCameraPixelOffset);
+	drawShootAngle(world.players[YELLOW].bot, cameraPosX1, cameraPosY1);
+	drawShootAngle(world.players[RED].bot, cameraPosX2, cameraPosY2 - secondCameraPixelOffset);
 
 	// Draws an Energy Bar, indicating how much energy should the weapon be fired with
 	push();
 	strokeWeight(3);
 	stroke(250, 100, 100);
-	drawFireBar(world.players[0], cameraPosX1, cameraPosY1);
+	drawFireBar(world.players[YELLOW], cameraPosX1, cameraPosY1);
 	stroke(100, 250, 100);
-	drawFireBar(world.players[1], cameraPosX2, cameraPosY2 - secondCameraPixelOffset);
+	drawFireBar(world.players[RED], cameraPosX2, cameraPosY2 - secondCameraPixelOffset);
 	pop();
 
 	// text for help
@@ -450,20 +452,20 @@ function draw() {
 function keyPressed() {
 	if (canPlay(0)) {
 		if (key === 'z' || key === 'w') {
-			jump(world.players[0].bot);
+			jump(world.players[YELLOW].bot);
 		}
 		if (key === 's') {
 			// start firing
-			startFire(world.players[0].fire);
+			startFire(world.players[YELLOW].fire);
 		}
 	}
 	if (canPlay(1)) {
 		if (key === '8') {
-			jump(world.players[1].bot);
+			jump(world.players[RED].bot);
 		}
 		if (key === '5') {
 			// start firing
-			startFire(world.players[1].fire);
+			startFire(world.players[RED].fire);
 		}
 	}
 	if (key === 'm' || key == ',') {
@@ -481,12 +483,12 @@ function keyPressed() {
 function keyReleased() {
 	if (canPlay(0)) {
 		if (key === 's') {
-			fire(world.players[0].fire);
+			fire(world.players[YELLOW].fire);
 		}
 	}
 	if (canPlay(1)) {
 		if (key === '5') {
-			fire(world.players[1].fire);
+			fire(world.players[RED].fire);
 		}
 	}
 }
