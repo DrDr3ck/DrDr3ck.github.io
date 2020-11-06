@@ -63,7 +63,11 @@ class Entity {
 
 		// Calculate magnitudes of response and velocity vectors
 		const fMagVelocity = sqrt(this.velX * this.velX + this.velY * this.velY);
-		const fMagResponse = sqrt(fResponseX * fResponseX + fResponseY * fResponseY);
+        const fMagResponse = sqrt(fResponseX * fResponseX + fResponseY * fResponseY);
+        
+        if( this.x < 0 || this.x > world.width || this.y > 400 ) {
+            bCollision = true;
+        }
 
 		// Collision occurred
 		if (bCollision) {

@@ -3,7 +3,8 @@ const RED = 1;
 const PI = 3.141592;
 
 let boomSong = null;
-let songVolume = 0; //0.3;
+const initSongVolume = 0.3;
+let songVolume = initSongVolume;
 
 const world = {
 	map: null,
@@ -211,12 +212,18 @@ function canPlay(playerIndex) {
 }
 
 function checkLife(playerIndex) {
-	if( world.players[playerIndex].bot.x < 0 ) {
-		world.players[playerIndex].bot.life = 0;
-	}
-	if( world.players[playerIndex].bot.x > world.width ) {
-		world.players[playerIndex].bot.life = 0;
-	}
+	// check life for full team
+	world.teams[playerIndex].forEach(
+		bot=>{
+			if( bot.x < 0 || bot.y > 400) {
+				bot.life = 0;
+			}
+			if( bot.x > world.width ) {
+				bot.life = 0;
+			}
+		}
+	);
+	
 	if (world.players[playerIndex].bot.life === 0) {
 		world.players[playerIndex].bot = getNextPlayer(playerIndex);
 		world.players[playerIndex].cameraTracking = world.players[playerIndex].bot;
@@ -472,7 +479,7 @@ function keyPressed() {
 		if (songVolume > 0) {
 			songVolume = 0;
 		} else {
-			songVolume = 0; //0.3;
+			songVolume = initSongVolume;
 		}
 		boomSong.setVolume(songVolume);
 	}
