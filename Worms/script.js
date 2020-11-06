@@ -1,5 +1,9 @@
+const YELLOW = 0;
+const RED = 1;
+const PI = 3.141592;
+
 let boomSong = null;
-let songVolume = 0.3;
+let songVolume = 0; //0.3;
 
 const world = {
 	map: null,
@@ -34,224 +38,12 @@ function getNextPlayer(teamIndex) {
 	return null;
 }
 
-const PI = 3.141592;
-
-class Entity {
-	constructor(x, y) {
-		this.x = x;
-		this.y = y;
-		this.velX = 0;
-		this.velY = 0;
-		this.accX = 0;
-		this.accY = 0;
-		this.stable = false;
-		this.radius = 18;
-		this.nBounceBeforeDeath = -1;
-		this.bDead = false;
-		this.explode = false;
-
-		this.friction = 0.2;
-	}
-
-	draw(dx, dy) {
-		ellipse(this.x - dx, this.y - dy, this.radius * 2, this.radius * 2);
-	}
-
-	update(elapsedTime) {
-		if (this.stable) return;
-		this.accY = 2.0; // gravity
-		// update velocity
-		this.velX += this.accX * elapsedTime;
-		this.velY += this.accY * elapsedTime;
-		// update position
-		const fPotentialX = this.x + this.velX * elapsedTime;
-		const fPotentialY = this.y + this.velY * elapsedTime;
-		// reset acceleration
-		this.accX = 0;
-		this.accY = 0;
-		this.stable = false;
-
-		// collision with map
-		const angle = atan2(this.velY, this.velX);
-		let fResponseX = 0;
-		let fResponseY = 0;
-		let bCollision = false;
-
-		for (let r = angle - PI / 2.0; r < angle + PI / 2.0; r += PI / 8.0) {
-			// Calculate test point on circumference of circle
-			let fTestPosX = this.radius * cos(r) + fPotentialX;
-			let fTestPosY = this.radius * sin(r) + fPotentialY;
-
-			// Constrain to test within map boundary
-			if (fTestPosX >= world.width) fTestPosX = world.width - 1;
-			if (fTestPosY >= world.height) fTestPosY = world.height - 1;
-			if (fTestPosX < 0) fTestPosX = 0;
-			if (fTestPosY < 0) fTestPosY = 0;
-
-			// Test if any points on semicircle intersect with terrain
-			if (world.map[Math.floor(fTestPosX)][Math.floor(fTestPosY)] !== 0) {
-				// Accumulate collision points to give an escape response vector
-				// Effectively, normal to the areas of contact
-				fResponseX += fPotentialX - fTestPosX;
-				fResponseY += fPotentialY - fTestPosY;
-				bCollision = true;
-			}
-		}
-
-		// Calculate magnitudes of response and velocity vectors
-		const fMagVelocity = sqrt(this.velX * this.velX + this.velY * this.velY);
-		const fMagResponse = sqrt(fResponseX * fResponseX + fResponseY * fResponseY);
-
-		// Collision occurred
-		if (bCollision) {
-			// Force object to be stable, this stops the object penetrating the terrain
-			if (fMagVelocity < 1) this.stable = true;
-
-			// Calculate reflection vector of objects velocity vector, using response vector as normal
-			const dot = this.velX * (fResponseX / fMagResponse) + this.velY * (fResponseY / fMagResponse);
-
-			// Use friction coefficient to dampen response (approximating energy loss)
-			this.velX = this.friction * (-2.0 * dot * (fResponseX / fMagResponse) + this.velX);
-			this.velY = this.friction * (-2.0 * dot * (fResponseY / fMagResponse) + this.velY);
-
-			//Some objects will "die" after several bounces
-			if (this.nBounceBeforeDeath > 0) {
-				// BOOM
-				this.nBounceBeforeDeath--;
-				this.bDead = this.nBounceBeforeDeath == 0;
-
-				// If object died, work out what to do next
-				if (this.bDead && this.explode) {
-					boomSong.play();
-					// Shockwave other entities in range
-					entities.filter((entity) => entity !== this).forEach((entity) => {
-						const dx = entity.x - this.x;
-						const dy = entity.y - this.y;
-						const dist = Math.max(0.0001, sqrt(dx * dx + dy * dy));
-
-						if (dist < entity.radius * 2) {
-							entity.velX = dx / dist * entity.radius;
-							entity.velY = dy / dist * entity.radius;
-							entity.stable = false;
-							entity.life = Math.max(0, entity.life - 25);
-						}
-					});
-
-					// create a hole
-					const holeSize = 80;
-					for (let i = 0; i < holeSize; i++) {
-						for (let j = 0; j < holeSize; j++) {
-							const dx = this.x - holeSize / 2 + i - this.x;
-							const dy = this.y - holeSize / 2 + j - this.y;
-							const dist = Math.max(0.0001, sqrt(dx * dx + dy * dy));
-							if (dist < holeSize / 2) {
-								const mapX = Math.min(world.width - 1, Math.max(0, floor(this.x - dx)));
-								const mapY = Math.min(world.height - 1, Math.max(0, floor(this.y - dy)));
-								world.map[mapX][mapY] = 0;
-							}
-						}
-					}
-
-					world.teams.forEach((team) => {
-						team.forEach((bot) => {
-							bot.stable = false;
-						});
-					});
-
-					// check to which player belongs this missile
-					if (world.players[0].cameraTracking === this) {
-						world.players[0].bot = getNextPlayer(0);
-						world.players[0].cameraTracking = world.players[0].bot;
-					} else if (world.players[1].cameraTracking === this) {
-						world.players[1].bot = getNextPlayer(1);
-						world.players[1].cameraTracking = world.players[1].bot;
-					}
-
-					for (let i = 0; i < 20; i++) entities.push(new Debris(this.x, this.y));
-				}
-			}
-		} else {
-			// No collision so update objects position
-			this.x = fPotentialX;
-			this.y = fPotentialY;
-		}
-
-		// Turn off movement when tiny
-		//if (fMagVelocity < 0.5) this.stable = true;
-	}
-}
-
-const YELLOW = 1;
-const RED = 2;
-
-class Bot extends Entity {
-	constructor(x, y, radius, team) {
-		super(x, y);
-		this.radius = radius;
-		this.shootAngle = 0;
-		this.team = team;
-		this.life = 100;
-	}
-
-	draw(dx, dy) {
-		if (this.team === YELLOW) {
-			fill(250, 250, 120);
-		}
-		if (this.team === RED) {
-			fill(250, 120, 120);
-		}
-		if (this.life > 0) {
-			super.draw(dx, dy);
-			fill(50, 250, 50, 128);
-			rect(this.x - dx - this.radius, this.y - dy + 5 + this.radius, this.radius * 2 * this.life / 100, 3);
-		} else {
-			// draw a grave ?
-			fill(250, 250, 250);
-			rect(this.x - 3 - dx, this.y - this.radius - dy, 6, this.radius * 2);
-			rect(this.x - dx - this.radius + 5, this.y - 10 - dy, this.radius * 2 - 10, 5);
-		}
-	}
-}
-
-class Debris extends Entity {
-	constructor(x, y) {
-		super(x, y);
-		this.velX = 10.0 * Math.cos(Math.random() * 2.0 * PI);
-		this.velY = 10.0 * Math.sin(Math.random() * 2.0 * PI);
-		this.radius = 2.0;
-		this.friction = 0.8;
-		this.nBounceBeforeDeath = 5; // After 5 bounces, dispose
-	}
-
-	draw(dx, dy) {
-		fill(120, 250, 120);
-		super.draw(dx, dy);
-	}
-}
-
-class Missile extends Entity {
-	constructor(x, y, vx, vy) {
-		super(x, y);
-		this.radius = 3;
-		this.velX = vx;
-		this.velY = vy;
-		this.friction = 0.5;
-		this.nBounceBeforeDeath = 1;
-		this.explode = true;
-	}
-
-	draw(dx, dy) {
-		fill(200, 200, 200);
-		super.draw(dx, dy);
-	}
-}
-
 const userLang = navigator.language || navigator.userLanguage; // "en-US"
 
 let entities = [];
 
-function createBot(x, y, team) {
-	if (team === YELLOW) {
+function createBot(x, y, teamIndex) {
+	if (teamIndex === YELLOW) {
 		const bot = new Bot(x, y, 16, YELLOW);
 		entities.push(bot);
 		world.teams[0].push(bot);
@@ -276,6 +68,13 @@ world.players[1].cameraTracking = world.players[1].bot;
 
 // reverse default shoot angle for team 2
 world.teams[1].forEach((member) => (member.shootAngle = -PI));
+
+function checkPlayerTracking(playerIndex) {
+	if (world.players[playerIndex].cameraTracking !== world.players[playerIndex].bot) {
+		world.players[playerIndex].bot = getNextPlayer(playerIndex);
+		world.players[playerIndex].cameraTracking = world.players[playerIndex].bot;
+	}
+}
 
 function getMapColorIndex(currentDepth, beginDepth) {
 	if (currentDepth <= beginDepth) {
@@ -306,10 +105,10 @@ function createMap() {
 	return map;
 }
 
-function drawShootAngle(player, dx = 0, dy = 0) {
-	if (!player) return;
-	const cx = player.x - dx + 8.0 * cos(player.shootAngle);
-	const cy = player.y - dy + 8.0 * sin(player.shootAngle);
+function drawShootAngle(bot, dx = 0, dy = 0) {
+	if (!bot) return;
+	const cx = bot.x - dx + 8.0 * cos(bot.shootAngle);
+	const cy = bot.y - dy + 8.0 * sin(bot.shootAngle);
 	fill(0);
 	ellipse(cx, cy, 4, 4);
 }
@@ -337,40 +136,40 @@ function drawObjects(dx, dy) {
 	});
 }
 
-function drawFireBar(fire, player, dx, dy) {
-	if (!player) return;
-	for (let i = 0; i < 11 * fire.fEnergyLevel; i++) {
-		line(player.x - 5 - dx, player.y - 12 - dy, player.x - 5 + i - dx, player.y - 12 - dy);
+function drawFireBar(player, dx, dy) {
+	if (!player.bot) return;
+	for (let i = 0; i < 11 * player.fire.fEnergyLevel; i++) {
+		line(player.bot.x - 5 - dx, player.bot.y - 12 - dy, player.bot.x - 5 + i - dx, player.bot.y - 12 - dy);
 	}
 }
 
-function fireMissile(player, fire) {
+function fireMissile(player) {
 	// Get Weapon Origin
-	const ox = player.x;
-	const oy = player.y;
+	const ox = player.bot.x;
+	const oy = player.bot.y;
 
 	// Get Weapon Direction
-	const dx = cos(player.shootAngle);
-	const dy = sin(player.shootAngle);
+	const dx = cos(player.bot.shootAngle);
+	const dy = sin(player.bot.shootAngle);
 
 	// create Missile
-	const missileStrength = 60.0 * fire.fEnergyLevel;
-	const m = new Missile(ox, oy, dx * missileStrength, dy * missileStrength);
+	const missileStrength = 60.0 * player.fire.fEnergyLevel;
+	const m = new Missile(ox, oy, dx * missileStrength, dy * missileStrength, player.bot.team);
 	entities.push(m);
 
 	// Reset flags involved with firing weapon
-	fire.bFireWeapon = false;
-	fire.fEnergyLevel = 0.0;
-	fire.bEnergising = false;
+	player.fire.bFireWeapon = false;
+	player.fire.fEnergyLevel = 0.0;
+	player.fire.bEnergising = false;
 
 	return m;
 }
 
-function jump(player) {
-	const a = player.shootAngle;
-	player.velX = 6.0 * cos(a);
-	player.velY = 12.0 * sin(a);
-	player.stable = false;
+function jump(bot) {
+	const a = bot.shootAngle;
+	bot.velX = 6.0 * cos(a);
+	bot.velY = 12.0 * sin(a);
+	bot.stable = false;
 }
 
 function startFire(fire) {
@@ -398,10 +197,26 @@ function holdingFire(fire, elapsedTime) {
 }
 
 function canPlay(playerIndex) {
+	if( !world.players[playerIndex].bot ) {
+		return false;
+	}
 	return (
 		world.players[playerIndex].bot.stable &&
 		world.players[playerIndex].bot === world.players[playerIndex].cameraTracking
 	);
+}
+
+function checkLife(playerIndex) {
+	if( world.players[playerIndex].bot.x < 0 ) {
+		world.players[playerIndex].bot.life = 0;
+	}
+	if( world.players[playerIndex].bot.x > world.width ) {
+		world.players[playerIndex].bot.life = 0;
+	}
+	if (world.players[playerIndex].bot.life === 0) {
+		world.players[playerIndex].bot = getNextPlayer(playerIndex);
+		world.players[playerIndex].cameraTracking = world.players[playerIndex].bot;
+	}
 }
 
 function drawText(string, x, y) {
@@ -438,10 +253,12 @@ function drawHelp(secondCameraPixelOffset) {
 	}
 }
 
-function gameIsStable(index) {
+function gameIsStable(teamIndex) {
 	let stable = true;
 	entities.forEach((entity) => {
-		stable &= entity.stable;
+		if( entity.team === teamIndex) {
+		    stable &= entity.stable;
+		}
 	});
 	return stable;
 }
@@ -486,15 +303,8 @@ function draw() {
 		return;
 	}
 
-	if (world.players[0].bot.life === 0) {
-		world.players[0].bot = getNextPlayer(0);
-		world.players[0].cameraTracking = world.players[0].bot;
-	}
-
-	if (world.players[1].bot.life === 0) {
-		world.players[1].bot = getNextPlayer(1);
-		world.players[1].cameraTracking = world.players[1].bot;
-	}
+	checkLife(0);
+	checkLife(1);
 
 	const elapsedTime = 0.3;
 	if (canPlay(0)) {
@@ -512,7 +322,7 @@ function draw() {
 			holdingFire(world.players[0].fire, elapsedTime);
 		}
 		if (world.players[0].fire.bFireWeapon) {
-			const m = fireMissile(world.players[0].bot, world.players[0].fire);
+			const m = fireMissile(world.players[0]);
 			world.players[0].cameraTracking = m;
 		}
 	}
@@ -531,7 +341,7 @@ function draw() {
 			holdingFire(world.players[1].fire, elapsedTime);
 		}
 		if (world.players[1].fire.bFireWeapon) {
-			const m = fireMissile(world.players[1].bot, world.players[1].fire);
+			const m = fireMissile(world.players[1]);
 			world.players[1].cameraTracking = m;
 		}
 	}
@@ -602,11 +412,11 @@ function draw() {
 	fill(255);
 	rect(0, 400, 1200, 50);
 
-	// draw objects
+	// draw objects in the two cameras
 	drawObjects(cameraPosX1, cameraPosY1);
 	drawObjects(cameraPosX2, cameraPosY2 - secondCameraPixelOffset);
 
-	// draw shootangle
+	// draw shootangle in the two cameras
 	drawShootAngle(world.players[0].bot, cameraPosX1, cameraPosY1);
 	drawShootAngle(world.players[1].bot, cameraPosX2, cameraPosY2 - secondCameraPixelOffset);
 
@@ -614,21 +424,23 @@ function draw() {
 	push();
 	strokeWeight(3);
 	stroke(250, 100, 100);
-	drawFireBar(world.players[0].fire, world.players[0].bot, cameraPosX1, cameraPosY1);
+	drawFireBar(world.players[0], cameraPosX1, cameraPosY1);
 	stroke(100, 250, 100);
-	drawFireBar(world.players[1].fire, world.players[1].bot, cameraPosX2, cameraPosY2 - secondCameraPixelOffset);
+	drawFireBar(world.players[1], cameraPosX2, cameraPosY2 - secondCameraPixelOffset);
 	pop();
 
 	// text for help
 	drawHelp(secondCameraPixelOffset);
 
-	if (gameIsStable(0)) {
+	if (gameIsStable(YELLOW)) {
 		fill(250, 100, 100);
 		rect(10, 10, 10, 10);
+		checkPlayerTracking(0);
 	}
-	if (gameIsStable(1)) {
+	if (gameIsStable(RED)) {
 		fill(250, 100, 100);
 		rect(width - 20, secondCameraPixelOffset + 10, 10, 10);
+		checkPlayerTracking(1);
 	}
 
 	// TODO: memory leak
@@ -654,16 +466,16 @@ function keyPressed() {
 			startFire(world.players[1].fire);
 		}
 	}
-	console.log('Keycode for ', key, ':', keyCode);
 	if (key === 'm' || key == ',') {
 		if (songVolume > 0) {
 			songVolume = 0;
 		} else {
-			songVolume = 0.3;
+			songVolume = 0; //0.3;
 		}
-		console.log('set volume', songVolume);
 		boomSong.setVolume(songVolume);
 	}
+
+	console.log('Keycode for ', key, ':', keyCode);
 }
 
 function keyReleased() {
