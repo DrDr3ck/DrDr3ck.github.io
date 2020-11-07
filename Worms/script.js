@@ -26,6 +26,33 @@ for (let i = 0; i < 2; i++) {
 	});
 }
 
+function getData() {
+	const data = {
+		volume: songVolume
+	};
+	return data;
+}
+
+const storageKey = "WORMS";
+
+function doSave() {
+	const data = JSON.stringify(getData());
+	if( data && data !== "null" ) {
+		localStorage.setItem(storageKey, data);
+		console.log("saving ",data);
+	}
+}
+
+function loadData() {
+	const storage = localStorage.getItem(storageKey);
+	const initialData = getData();
+	let data = initialData;
+	if( storage ) {
+		data = JSON.parse(storage) || initialData;
+	}
+	songVolume = data.volume;
+}
+
 function getNextPlayer(teamIndex) {
 	const team = world.teams[teamIndex];
 	const playerIndex = team.indexOf(world.players[teamIndex].bot);
@@ -277,11 +304,12 @@ function gameIsStable(teamIndex) {
 const FPS = 60;
 
 function preload() {
-	boomSong = loadSound('./sounds/boom.mp3');
-	boomSong.setVolume(songVolume);
+	boomSong = loadSound('./sounds/boom.mp3', ()=>{boomSong.setVolume(songVolume);});
 }
 
 function setup() {
+	loadData();
+
 	canvas = createCanvas(1200, 850);
 	canvas.parent('canvas');
 
@@ -481,7 +509,10 @@ function keyPressed() {
 		} else {
 			songVolume = initSongVolume;
 		}
-		boomSong.setVolume(songVolume);
+		if( boomSong ) {
+			boomSong.setVolume(songVolume);
+		}
+		doSave();
 	}
 
 	console.log('Keycode for ', key, ':', keyCode);
