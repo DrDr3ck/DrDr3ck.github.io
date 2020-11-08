@@ -4,8 +4,9 @@
     <meta charset="utf-8"/>
   </head>
   <body>
-    <h2>Essais courts</h2>
-    <h3>Mini jeu</h3>
+    <h2>Jeux</h2>
+    <a href="./Bakhar/">Bakhar</a>
+    <h2>Mini jeux</h2>
     <!-- <a href="./Balle/">Balle</a>
     <br>
     <a href="./CasseBrique/">CasseBrique</a>    
@@ -26,7 +27,7 @@
     <a href="./ToDoList">To-Do List</a>
     <br>
     <a href="./BoulderDash">Boulder Dash (in progress)</a>
-    <h3>Concept</h3>
+    <h2>Concept</h2>
     <a href="./Steering/">Steering behaviors</a>
     <br>
     <a href="./LettreCercle/">LettreCercle</a>
