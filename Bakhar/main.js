@@ -104,28 +104,40 @@ class UIComponent {
 
 class BButton extends UIComponent {
 	constructor(x, y, text) {
-		super(x, y, 400, 70);
+        const textSize = 60;
+		super(x, y, 400, textSize*1.2);
 		this.text = text;
-		this.over = false;
+        this.over = false;
+        this.textSize = textSize;
 	}
 
 	draw() {
 		push();
 		textAlign(CENTER, CENTER);
 		rectMode(CENTER);
-		textSize(60);
+		textSize(this.textSize);
 		let fRadius = 5;
-		let lRadius = 15;
+        let lRadius = 15;
+        let extend = 0;
 		if (this.over) {
 			stroke(29,62,105);
 			fRadius = 15;
-			lRadius = 5;
+            lRadius = 5;
+            strokeWeight(4);
+            extend = 12;
 		} else {
             stroke(188,219,255);
+            strokeWeight(2);
         }
         fill(9,18,47);
 		
-		rect(this.x + this.w / 2, this.y - this.h / 2, this.w, this.h, fRadius, lRadius);
+        rect(this.x + this.w / 2, this.y - this.h / 2, this.w, this.h + extend, fRadius, lRadius);
+        if (this.over) {
+            stroke(188,219,255);
+            strokeWeight(2);
+        } else {
+            noStroke();
+        }
 		drawText(this.text, this.x + this.w / 2, this.y - this.h / 2);
 		pop();
 	}
@@ -155,9 +167,18 @@ const menu = {
 let lastTime = Date.now();
 
 function drawMenu() {
-	background(51);
-	fill(128);
-	rect(180, 80, width - 180 - 180, 580 - 80);
+    // background
+    stroke(110,130,160);
+    strokeWeight(3);
+    fill(18,27,42);
+    rect(10,10,width-20,height-20,10);
+
+    // grey rectangle
+    fill(51);
+    noStroke();
+    rect(180, 80, width - 180 - 180, 580 - 80);
+
+    strokeWeight(1);
 	menu.start.draw();
 	menu.story.draw();
 	menu.credit.draw();
