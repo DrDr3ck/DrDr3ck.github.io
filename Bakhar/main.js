@@ -2,6 +2,9 @@ const initSongVolume = 0.3;
 let songVolume = initSongVolume;
 
 const GAME_MENU_STATE = 0;
+const GAME_START_STATE = 1;
+const GAME_PLAY_STATE = 2;
+const GAME_CREDIT_STATE = 3;
 
 let curState = GAME_MENU_STATE;
 
@@ -39,109 +42,7 @@ function loadData() {
 
 const userLang = navigator.language || navigator.userLanguage; // "en-US"
 
-function drawText(string, x, y) {
-	fill(198,244,255);
-	text(string, x, y);
-}
-
-class UIManager {
-	constructor() {
-		this.components = [];
-	}
-
-	processInput() {
-		this.components.forEach((c) => {
-			c.over = c.mouseOver(mouseX, mouseY);
-		});
-    }
-    
-    mouseClicked() {
-        let overComponent = null;
-        this.components.forEach((c) => {
-            if( c.over ) {
-                overComponent = c;
-                return;
-            }
-        });
-        if( overComponent ) {
-            overComponent.clicked();
-        }
-    }
-
-	update(elapsedTime) {
-		this.components.forEach((c) => {
-			c.update(elapsedTime);
-		});
-	}
-}
-
 const manager = new UIManager();
-
-class UIComponent {
-	constructor(x, y, width, height) {
-		this.x = x;
-		this.y = y;
-		this.w = width;
-		this.h = height;
-		manager.components.push(this);
-	}
-
-	mouseOver(mx, my) {
-		if (mx > this.x + this.w) return false;
-		if (mx < this.x) return false;
-		if (my < this.y - this.h) return false;
-		if (my > this.y) return false;
-		return true;
-	}
-
-	update(elapsedTime) {
-		// virtual pure ?
-    }
-    
-    clicked() {
-    }
-}
-
-class BButton extends UIComponent {
-	constructor(x, y, text) {
-        const textSize = 60;
-		super(x, y, 400, textSize*1.2);
-		this.text = text;
-        this.over = false;
-        this.textSize = textSize;
-	}
-
-	draw() {
-		push();
-		textAlign(CENTER, CENTER);
-		rectMode(CENTER);
-		textSize(this.textSize);
-		let fRadius = 5;
-        let lRadius = 15;
-        let extend = 0;
-		if (this.over) {
-			stroke(29,62,105);
-			fRadius = 15;
-            lRadius = 5;
-            strokeWeight(4);
-            extend = 12;
-		} else {
-            stroke(188,219,255);
-            strokeWeight(2);
-        }
-        fill(9,18,47);
-		
-        rect(this.x + this.w / 2, this.y - this.h / 2, this.w, this.h + extend, fRadius, lRadius);
-        if (this.over) {
-            stroke(188,219,255);
-            strokeWeight(2);
-        } else {
-            noStroke();
-        }
-		drawText(this.text, this.x + this.w / 2, this.y - this.h / 2);
-		pop();
-	}
-}
 
 const FPS = 60;
 
@@ -158,30 +59,84 @@ function setup() {
 	frameRate(FPS);
 }
 
-const menu = {
-	start: new BButton(100, 400, 'START'),
-	story: new BButton(100, 500, 'BLOG'),
-	credit: new BButton(100, 600, 'CREDIT')
-};
+function nothing() {
+    console.log("does nothing");
+}
+
+function menuClicked() {
+    curState = GAME_MENU_STATE;
+    manager.setUI(menu);
+}
+
+function startClicked() {
+    curState = GAME_START_STATE;
+    manager.setUI(start);
+}
+
+function creditClicked() {
+    curState = GAME_CREDIT_STATE;
+    manager.setUI(credit);
+}
+
+function newClicked() {
+    curState = GAME_PLAY_STATE;
+    manager.setUI([]);
+}
+
+const menu = [
+	new BButton(100, 400, 'START', startClicked),
+	new BButton(100, 500, 'BLOG', nothing),
+	new BButton(100, 600, 'CREDIT',creditClicked)
+];
+menu[1].enabled = false;
+
+const start = [
+    new BButton(300,400,'NEW', newClicked),
+    new BButton(300,500,'CONTINUE',nothing),
+    new BFloatingButton(1100,100,"\u2716",menuClicked)
+];
+start[1].enabled = false;
+
+const credit = [
+    new BFloatingButton(1100,100,"\u2716",menuClicked)
+];
+
+menuClicked();
 
 let lastTime = Date.now();
 
-function drawMenu() {
+function drawBackground() {
     // background
     stroke(110,130,160);
     strokeWeight(3);
     fill(18,27,42);
     rect(10,10,width-20,height-20,10);
+}
+
+function drawMenu() {
+    drawBackground();
 
     // grey rectangle
     fill(51);
     noStroke();
     rect(180, 80, width - 180 - 180, 580 - 80);
+}
 
-    strokeWeight(1);
-	menu.start.draw();
-	menu.story.draw();
-	menu.credit.draw();
+function drawCredit() {
+    drawBackground();
+
+    textSize(32);
+    drawText("Work in progress...", 100, 100);
+}
+
+function drawLoading() {
+    drawBackground();
+}
+
+function drawGame() {
+    drawBackground();
+    textSize(32);
+    drawText("Work in progress...", 100, 100);
 }
 
 function processInput() {
@@ -193,8 +148,15 @@ function update(elapsedTime) {}
 function render() {
 	if (curState === GAME_MENU_STATE) {
 		drawMenu();
-		return;
-	}
+	} else if( curState === GAME_CREDIT_STATE ) {
+        drawCredit();
+    } else if( curState === GAME_START_STATE ) {
+        drawLoading();
+    } else if( curState === GAME_PLAY_STATE ) {
+        drawGame();
+    }
+    strokeWeight(1);
+	manager.currentUI.forEach(c => {c.draw();});
 }
 
 function draw() {
