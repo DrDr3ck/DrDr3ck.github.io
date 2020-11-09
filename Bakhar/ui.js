@@ -48,9 +48,9 @@ class UIManager {
 
 function drawText(string, x, y, enabled=true) {
     if( enabled ) {
-        fill(198,244,255);
+        fill(198,255,244);
     } else {
-        fill(128,128,198);
+        fill(128,198,128);
     }
 	text(string, x, y+4);
 }
@@ -112,24 +112,24 @@ class BButton extends UIComponent {
         let lRadius = 15;
         let extend = 0;
 		if (this.over) {
-			stroke(29,62,105);
+			stroke(29,105,62);
 			fRadius = 15;
             lRadius = 5;
             strokeWeight(4);
             extend = 12;
 		} else {
-            stroke(188,219,255);
+            stroke(188,255,219);
             strokeWeight(2);
         }
         if( this.enabled ) {
-            fill(9,18,47);
+            fill(9,47,18);
         } else {
-            fill(47,47,67);
+            fill(47,67,47);
         }
 		
         rect(this.x + this.w / 2, this.y - this.h / 2, this.w, this.h + extend, fRadius, lRadius);
         if (this.over) {
-            stroke(188,219,255);
+            stroke(188,255,219);
             strokeWeight(2);
         } else {
             noStroke();
@@ -167,18 +167,18 @@ class BFloatingButton extends UIComponent {
 		textSize(this.textSize);
         let extend = 0;
 		if (this.over) {
-			stroke(29,62,105);
+			stroke(29,105,62);
             strokeWeight(4);
             extend = 12;
 		} else {
-            stroke(188,219,255);
+            stroke(188,255,219);
             strokeWeight(2);
         }
-        fill(9,18,47);
+        fill(9,47,18);
 
         ellipse(this.x + this.w / 2, this.y - this.h / 2, this.w + extend, this.h + extend);
         if (this.over) {
-            stroke(188,219,255);
+            stroke(188,255,219);
             strokeWeight(2);
         } else {
             noStroke();

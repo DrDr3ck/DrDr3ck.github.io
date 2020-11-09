@@ -93,9 +93,11 @@ menu[1].enabled = false;
 const start = [
     new BButton(300,400,'NEW', newClicked),
     new BButton(300,500,'CONTINUE',nothing),
+    new BButton(300,600,'SAVE',nothing),
     new BFloatingButton(1100,100,"\u2716",menuClicked)
 ];
 start[1].enabled = false;
+start[2].enabled = false;
 
 const credit = [
     new BFloatingButton(1100,100,"\u2716",menuClicked)
@@ -107,9 +109,9 @@ let lastTime = Date.now();
 
 function drawBackground() {
     // background
-    stroke(110,130,160);
+    stroke(110,160,130);
     strokeWeight(3);
-    fill(18,27,42);
+    fill(18,42,27);
     rect(10,10,width-20,height-20,10);
 }
 
@@ -139,11 +141,19 @@ function drawGame() {
     drawText("Work in progress...", 100, 100);
 }
 
+function updateGame(elapsedTime) {
+
+}
+
 function processInput() {
 	manager.processInput();
 }
 
-function update(elapsedTime) {}
+function update(elapsedTime) {
+    if( curState === GAME_PLAY_STATE ) {
+        updateGame(elapsedTime);
+    }
+}
 
 function render() {
 	if (curState === GAME_MENU_STATE) {
