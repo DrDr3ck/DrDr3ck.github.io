@@ -46,8 +46,13 @@ const manager = new UIManager();
 
 const FPS = 60;
 
+let tileImages = [];
+let atlas = null;
+
 function preload() {
-	// Load sounds
+    // Load sounds
+    // load images
+    tileImages.push(loadImage('./images/tiles01.png'));
 }
 
 function setup() {
@@ -56,7 +61,9 @@ function setup() {
 	canvas = createCanvas(1200, 800);
 	canvas.parent('canvas');
 
-	frameRate(FPS);
+    frameRate(FPS);
+    
+    atlas = new TileAtlas();
 }
 
 function nothing() {
@@ -78,9 +85,12 @@ function creditClicked() {
     manager.setUI(credit);
 }
 
+const tileMap = new TileMap();;
+
 function newClicked() {
     curState = GAME_PLAY_STATE;
     manager.setUI([]);
+    tileMap.init(16,10);
 }
 
 const menu = [
@@ -138,7 +148,7 @@ function drawLoading() {
 function drawGame() {
     drawBackground();
     textSize(32);
-    drawText("Work in progress...", 100, 100);
+    tileMap.render(20,20);
 }
 
 function updateGame(elapsedTime) {
