@@ -2,7 +2,8 @@ const tileSize = 64;
 
 class TileAtlas {
 	constructor() {
-		this.image = tileImages[0];
+		this.back = tileImages[0];
+		this.front = tileImages[1];
 	}
 
 	getTile(indexI, indexJ, sizeI, sizeJ) {
@@ -28,18 +29,19 @@ class TileMap {
 			}
 			this.tiles.push(rowTiles);
 		}
-		this.tiles[0][9].back = 1;
-        this.tiles[2][9].back = 2;
-        this.tiles[2][8].back = 5;
+		this.tiles[0][9].front = 1;
+		this.tiles[1][9].back = 1;
+        this.tiles[2][9].front = 2;
+        this.tiles[2][8].front = 5;
 
-        this.tiles[4][8].back = 5;
-        this.tiles[4][9].back = 4;
-        this.tiles[5][9].back = 9;
+        this.tiles[4][8].front = 5;
+        this.tiles[4][9].front = 4;
+        this.tiles[5][9].front = 9;
 
-        this.tiles[7][9].back = 3;
-        this.tiles[8][9].back = 11;
-        this.tiles[9][9].back = 11;
-        this.tiles[10][9].back = 9;
+        this.tiles[7][9].front = 3;
+        this.tiles[8][9].front = 11;
+        this.tiles[9][9].front = 11;
+        this.tiles[10][9].front = 9;
 	}
 
 	render(dx, dy) {
@@ -78,7 +80,7 @@ class Tile {
             const indexI = ((this.back-1)%10);
             const indexJ = Math.floor((this.back-1)/10);
 			image(
-				atlas.image,
+				atlas.back,
 				this.x * tileSize + dx,
 				this.y * tileSize + dy,
 				tileSize,
@@ -88,11 +90,21 @@ class Tile {
 				tileSize,
 				tileSize
 			);
-		} else {
-            strokeWeight(1);
-		    stroke(50, 0, 0);
-			noFill();
-			//rect(this.x * tileSize + dx, this.y * tileSize + dy, tileSize, tileSize);
+		}
+		if (this.front !== 0) {
+            const indexI = ((this.front-1)%10);
+            const indexJ = Math.floor((this.front-1)/10);
+			image(
+				atlas.front,
+				this.x * tileSize + dx,
+				this.y * tileSize + dy,
+				tileSize,
+				tileSize,
+				indexI*tileSize,
+				indexJ*tileSize,
+				tileSize,
+				tileSize
+			);
 		}
 	}
 }

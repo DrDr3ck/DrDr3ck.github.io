@@ -53,6 +53,7 @@ function preload() {
     // Load sounds
     // load images
     tileImages.push(loadImage('./images/tiles01.png'));
+    tileImages.push(loadImage('./images/tiles02.png'));
 }
 
 function setup() {
