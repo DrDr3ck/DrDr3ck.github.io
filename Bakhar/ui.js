@@ -2,17 +2,29 @@ class UIManager {
 	constructor() {
 		this.components = [];
 		this.currentUI = [];
+		this.currentMenu = null;
 	}
 
 	setUI(components) {
 		this.currentUI.forEach((c) => (c.visible = false));
 		this.currentUI = components;
 		this.currentUI.forEach((c) => (c.visible = true));
+		this.setMenu(null);
+	}
+
+	setMenu(menu) {
+		if( this.currentMenu ) {
+			this.currentMenu.closeMenu();
+		}
+		this.currentMenu = menu;
+		if( this.currentMenu ) {
+		    this.currentMenu.openMenu();
+		}
 	}
 
 	processInput() {
 		let over = false;
-		this.components.forEach((c) => {
+		this.currentUI.forEach((c) => {
 			c.over = c.mouseOver(mouseX, mouseY);
 			over = over || (c.over && c.isClickable());
 		});
@@ -215,18 +227,24 @@ class BFloatingButton extends BButtonTextBase {
 }
 
 class BMenu extends BButtonBase {
-	constructor(x, y, img, nbColumns) {
+	constructor(title, x, y, img, nbColumns) {
 		super(x, y, 100, 100);
+		this.title = title;
 		this.img = img;
 		this.open = false;
 		this.children = [];
 		this.nbColumns = nbColumns;
-		this.dialogX = 30;
-		this.dialogY = this.prepareItems(0);
+		this.dialogX = x;
+		this.dialogY = 0;
 	}
 
-	prepareItems(nb) {
-		this.dialogY = 520 - Math.floor(nb / this.nbColumns) * 110;
+	prepareItems() {
+		this.dialogY = 630 - Math.ceil(this.children.length / this.nbColumns) * 110;
+		for( let i=0; i < this.children.length; i++ ) {
+			const child = this.children[i];
+			child.x = this.getNextX(i);
+			child.y = this.getNextY(i);
+		}
 	}
 
 	draw() {
@@ -244,59 +262,70 @@ class BMenu extends BButtonBase {
 		}
 		rect(this.x, this.y, this.w, this.h, 5);
 
+		if( this.title && this.over ) {
+			textSize(12);
+			textAlign(CENTER, CENTER);
+			noStroke();
+			drawText(this.title, this.x+this.w/2, this.y+this.h-12);
+		}
+
 		if (this.open) {
+			fill(9, 67, 18);
 			stroke(188, 255, 219);
 			strokeWeight(2);
 			// display a dialog to draw childrens
+			const nbRows = Math.ceil(this.children.length / this.nbColumns);
+			console.log(nbRows);
 			rect(
 				this.dialogX,
 				this.dialogY,
-				this.nbColumns * 110 + 10,
-				Math.ceil(this.children.length / this.nbColumns) * 110 + 10
+				Math.min(this.nbColumns,this.children.length) * 110 + 10,
+				nbRows * 110 + 10
 			);
 		}
 		pop();
 	}
 
-	getNextX() {
-		return this.dialogX + (this.children.length % this.nbColumns) * 110 + 10;
+	getNextX(childIndex) {
+		return this.dialogX + (childIndex % this.nbColumns) * 110 + 10;
 	}
 
-	getNextY() {
-		return this.dialogY + Math.floor(this.children.length / this.nbColumns) * 110 + 10;
+	getNextY(childIndex) {
+		return this.dialogY + Math.floor(childIndex / this.nbColumns) * 110 + 10;
 	}
 
 	openMenu() {
-		//this.children.forEach((c) => (c.visible = true));
+		this.children.forEach(c => c.visible=true);
 		manager.currentUI.push(...this.children);
 		this.open = true;
+		console.log(manager.currentUI.length);
 	}
 
 	closeMenu() {
-		//this.children.forEach((c) => (c.visible = false));
+		this.children.forEach(c => c.visible=false);
 		manager.currentUI = manager.currentUI.filter(c => !this.children.includes(c));
 		this.open = false;
+		console.log(manager.currentUI.length);
 	}
 
 	clicked() {
 		super.clicked();
 		if (this.open) {
-			this.closeMenu();
+			manager.setMenu(null);
 		} else {
-			this.openMenu();
+			manager.setMenu(this);
 		}
 	}
 
-	addItem(img, callback) {
-		this.children.push(new BMenuItem(this, img, callback));
+	addItem(title, img, callback) {
+		this.children.push(new BMenuItem(this, title, img, callback));
 	}
 }
 
 class BMenuItem extends BButtonBase {
-	constructor(menu, img, callback) {
-		let x = menu.getNextX();
-		let y = menu.getNextY();
-		super(x, y, 100, 100);
+	constructor(menu, title, img, callback) {
+		super(0, 0, 100, 100);
+		this.title = title;
 		this.img = img;
 		this.callback = callback;
 		this.visible = true;
@@ -316,11 +345,18 @@ class BMenuItem extends BButtonBase {
 			strokeWeight(2);
 		}
 		rect(this.x, this.y, this.w, this.h, 5);
+
+		if( this.title ) {
+			textSize(12);
+			textAlign(CENTER, CENTER);
+			noStroke();
+			drawText(this.title, this.x+this.w/2, this.y+this.h-12);
+		}
 		pop();
 	}
 
 	clicked() {
 		super.clicked();
-		this.menu.closeMenu();
+		manager.setMenu(null);
 	}
 }

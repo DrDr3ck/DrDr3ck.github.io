@@ -116,15 +116,28 @@ start[2].enabled = false;
 
 const credit = [ new BFloatingButton(1100, 100, '\u2716', menuClicked) ];
 
-const blockMenu = new BMenu(30, 675, null, 3);
-blockMenu.prepareItems(4);
+const blockMenu = new BMenu("Block", 30, 675, null, 3);
+const structureMenu = new BMenu("Structure", 140, 675, null, 3);
+const objectMenu = new BMenu("Object", 250, 675, null, 3);
 const game = [
-	blockMenu
+	blockMenu,
+	structureMenu,
+	objectMenu
 ];
-blockMenu.addItem(null, nothing);
-blockMenu.addItem(null, nothing);
-blockMenu.addItem(null, nothing);
-blockMenu.addItem(null, nothing);
+blockMenu.addItem("metal", null, nothing);
+blockMenu.addItem("plastic", null, nothing);
+blockMenu.addItem("glass", null, nothing);
+blockMenu.addItem("", null, nothing);
+blockMenu.prepareItems();
+
+structureMenu.addItem("door", null, nothing);
+structureMenu.addItem("lift", null, nothing);
+structureMenu.addItem("gate", null, nothing);
+structureMenu.prepareItems();
+
+objectMenu.addItem("seed tray", null, nothing);
+objectMenu.addItem("", null, nothing);
+objectMenu.prepareItems();
 
 //menuClicked();
 newClicked();
