@@ -116,9 +116,18 @@ start[2].enabled = false;
 
 const credit = [ new BFloatingButton(1100, 100, '\u2716', menuClicked) ];
 
-const game = [ new BMenuButton(30, 675, null, nothing) ];
+const blockMenu = new BMenu(30, 675, null, 3);
+blockMenu.prepareItems(4);
+const game = [
+	blockMenu
+];
+blockMenu.addItem(null, nothing);
+blockMenu.addItem(null, nothing);
+blockMenu.addItem(null, nothing);
+blockMenu.addItem(null, nothing);
 
-menuClicked();
+//menuClicked();
+newClicked();
 
 let lastTime = Date.now();
 

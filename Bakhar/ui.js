@@ -91,13 +91,51 @@ class UIComponent {
 	}
 }
 
-class BButton extends UIComponent {
+class BButtonBase extends UIComponent {
+	// pure virtual
+	constructor(x, y, w, h) {
+		super(x, y, w, h);
+	}
+
+	clicked() {
+		super.clicked();
+	}
+
+	isClickable() {
+		return this.enabled && this.visible;
+	}
+}
+
+class BButtonTextBase extends BButtonBase {
+	// pure virtual
+	constructor(x, y, w, h, text, callback) {
+		super(x, y, w, h);
+		this.text = text;
+		this.callback = callback;
+	}
+
+	clicked() {
+		super.clicked();
+		this.callback();
+	}
+
+	mouseOver(mx, my) {
+		if (!this.enabled || !this.visible) {
+			return false;
+		}
+		if (mx > this.x + this.w) return false;
+		if (mx < this.x) return false;
+		if (my < this.y - this.h) return false;
+		if (my > this.y) return false;
+		return true;
+	}
+}
+
+class BButton extends BButtonTextBase {
 	constructor(x, y, text, callback) {
 		const textSize = 60;
-		super(x, y, 400, textSize * 1.2);
-		this.text = text;
+		super(x, y, 400, textSize * 1.2, text, callback);
 		this.textSize = textSize;
-		this.callback = callback;
 	}
 
 	draw() {
@@ -137,35 +175,13 @@ class BButton extends UIComponent {
 		drawText(this.text, this.x + this.w / 2, this.y - this.h / 2, this.enabled);
 		pop();
 	}
-
-	mouseOver(mx, my) {
-		if (!this.enabled || !this.visible) {
-			return false;
-		}
-		if (mx > this.x + this.w) return false;
-		if (mx < this.x) return false;
-		if (my < this.y - this.h) return false;
-		if (my > this.y) return false;
-		return true;
-	}
-
-	clicked() {
-		super.clicked();
-		this.callback();
-	}
-
-	isClickable() {
-		return this.enabled && this.visible;
-	}
 }
 
-class BFloatingButton extends UIComponent {
+class BFloatingButton extends BButtonTextBase {
 	constructor(x, y, text, callback) {
 		const textSize = 60;
-		super(x, y, textSize * 1.2, textSize * 1.2);
-		this.text = text;
+		super(x, y, textSize * 1.2, textSize * 1.2, text, callback);
 		this.textSize = textSize;
-		this.callback = callback;
 	}
 
 	draw() {
@@ -196,33 +212,21 @@ class BFloatingButton extends UIComponent {
 		drawText(this.text, this.x + this.w / 2, this.y - this.h / 2);
 		pop();
 	}
-
-	mouseOver(mx, my) {
-		if (!this.enabled || !this.visible) {
-			return false;
-		}
-		if (mx > this.x + this.w) return false;
-		if (mx < this.x) return false;
-		if (my < this.y - this.h) return false;
-		if (my > this.y) return false;
-		return true;
-	}
-
-	clicked() {
-		super.clicked();
-		this.callback();
-	}
-
-	isClickable() {
-		return this.enabled && this.visible;
-	}
 }
 
-class BMenuButton extends UIComponent {
-	constructor(x, y, img, callback) {
+class BMenu extends BButtonBase {
+	constructor(x, y, img, nbColumns) {
 		super(x, y, 100, 100);
 		this.img = img;
-		this.callback = callback;
+		this.open = false;
+		this.children = [];
+		this.nbColumns = nbColumns;
+		this.dialogX = 30;
+		this.dialogY = this.prepareItems(0);
+	}
+
+	prepareItems(nb) {
+		this.dialogY = 520 - Math.floor(nb / this.nbColumns) * 110;
 	}
 
 	draw() {
@@ -230,8 +234,81 @@ class BMenuButton extends UIComponent {
 			return;
 		}
 		push();
-    	fill(9, 47, 18);
-        if (this.over) {
+		fill(9, 47, 18);
+		if (this.over) {
+			stroke(188, 255, 219);
+			strokeWeight(4);
+		} else {
+			stroke(29, 105, 62);
+			strokeWeight(2);
+		}
+		rect(this.x, this.y, this.w, this.h, 5);
+
+		if (this.open) {
+			stroke(188, 255, 219);
+			strokeWeight(2);
+			// display a dialog to draw childrens
+			rect(
+				this.dialogX,
+				this.dialogY,
+				this.nbColumns * 110 + 10,
+				Math.ceil(this.children.length / this.nbColumns) * 110 + 10
+			);
+		}
+		pop();
+	}
+
+	getNextX() {
+		return this.dialogX + (this.children.length % this.nbColumns) * 110 + 10;
+	}
+
+	getNextY() {
+		return this.dialogY + Math.floor(this.children.length / this.nbColumns) * 110 + 10;
+	}
+
+	openMenu() {
+		//this.children.forEach((c) => (c.visible = true));
+		manager.currentUI.push(...this.children);
+		this.open = true;
+	}
+
+	closeMenu() {
+		//this.children.forEach((c) => (c.visible = false));
+		manager.currentUI = manager.currentUI.filter(c => !this.children.includes(c));
+		this.open = false;
+	}
+
+	clicked() {
+		super.clicked();
+		if (this.open) {
+			this.closeMenu();
+		} else {
+			this.openMenu();
+		}
+	}
+
+	addItem(img, callback) {
+		this.children.push(new BMenuItem(this, img, callback));
+	}
+}
+
+class BMenuItem extends BButtonBase {
+	constructor(menu, img, callback) {
+		let x = menu.getNextX();
+		let y = menu.getNextY();
+		super(x, y, 100, 100);
+		this.img = img;
+		this.callback = callback;
+		this.visible = true;
+		this.menu = menu;
+	}
+	draw() {
+		if (!this.visible) {
+			return;
+		}
+		push();
+		fill(9, 47, 18);
+		if (this.over) {
 			stroke(188, 255, 219);
 			strokeWeight(4);
 		} else {
@@ -244,10 +321,6 @@ class BMenuButton extends UIComponent {
 
 	clicked() {
 		super.clicked();
-		this.callback();
-	}
-
-	isClickable() {
-		return this.enabled && this.visible;
+		this.menu.closeMenu();
 	}
 }
