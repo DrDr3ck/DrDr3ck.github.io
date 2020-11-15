@@ -238,6 +238,15 @@ class BMenu extends BButtonBase {
 		this.dialogY = 0;
 	}
 
+	// callback
+	clickMenu() {
+		if (this.open) {
+			manager.setMenu(null);
+		} else {
+			manager.setMenu(this);
+		}
+	}
+
 	prepareItems() {
 		this.dialogY = 630 - Math.ceil(this.children.length / this.nbColumns) * 110;
 		for( let i=0; i < this.children.length; i++ ) {
@@ -275,7 +284,6 @@ class BMenu extends BButtonBase {
 			strokeWeight(2);
 			// display a dialog to draw childrens
 			const nbRows = Math.ceil(this.children.length / this.nbColumns);
-			console.log(nbRows);
 			rect(
 				this.dialogX,
 				this.dialogY,
@@ -298,23 +306,17 @@ class BMenu extends BButtonBase {
 		this.children.forEach(c => c.visible=true);
 		manager.currentUI.push(...this.children);
 		this.open = true;
-		console.log(manager.currentUI.length);
 	}
 
 	closeMenu() {
 		this.children.forEach(c => c.visible=false);
 		manager.currentUI = manager.currentUI.filter(c => !this.children.includes(c));
 		this.open = false;
-		console.log(manager.currentUI.length);
 	}
 
 	clicked() {
 		super.clicked();
-		if (this.open) {
-			manager.setMenu(null);
-		} else {
-			manager.setMenu(this);
-		}
+		this.clickMenu();
 	}
 
 	addItem(title, img, callback) {
@@ -357,6 +359,7 @@ class BMenuItem extends BButtonBase {
 
 	clicked() {
 		super.clicked();
+		this.callback();
 		manager.setMenu(null);
 	}
 }

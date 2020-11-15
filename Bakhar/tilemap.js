@@ -13,10 +13,12 @@ class TileAtlas {
 }
 
 class TileMap {
-	constructor() {
+	constructor(dx,dy) {
 		this.tiles = [];
 		this.ni = 0;
 		this.nj = 0;
+		this.dx = dx;
+		this.dy = dy;
 	}
 
 	init(ni, nj) {
@@ -44,10 +46,10 @@ class TileMap {
         this.tiles[10][9].front = 9;
 	}
 
-	render(dx, dy) {
+	render() {
 		for (let j = 0; j < this.nj; j++) {
 			for (let i = 0; i < this.ni; i++) {
-				this.tiles[i][j].draw(dx, dy);
+				this.tiles[i][j].draw(this.dx, this.dy);
 			}
 		}
 	}
