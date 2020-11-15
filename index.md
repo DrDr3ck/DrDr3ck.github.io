@@ -20,6 +20,8 @@
     <br>
     <a href="./MatchingCard">Matching Cards</a>
     <br>
+    <a href="./Set">Set</a>
+    <br>
     <a href="./MineSweeper">Mine sweeper</a>
     <br>
     <a href="./Tetris">Tetris</a>
