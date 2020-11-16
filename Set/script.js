@@ -6,6 +6,7 @@ const board = {
 
 let triplet = [];
 let allSolutions = -1;
+let selected = [];
 
 const FORME = 0;
 const COLOR = 1;
@@ -77,12 +78,35 @@ function drawItem(dx, dy, forme, fill) {
 	pop();
 }
 
-function drawCard(card, i, j) {
+function mouseInCard(x, y, w, h) {
+	if (mouseX < x) return false;
+	if (mouseX > x + w) return false;
+	if (mouseY < y) return false;
+	if (mouseY > y + h) return false;
+	return true;
+}
+
+function getCardX(i) {
+	return 200 + i * 110;
+}
+
+function getCardY(j) {
+	return j * 200;
+}
+
+function drawCard(cardIndex, i, j) {
+	const card = board.cards[cardIndex];
 	stroke(20, 20, 50);
 	strokeWeight(3);
 	noFill();
-	const dx = 200 + i * 110;
-	const dy = j * 200;
+	const dx = getCardX(i);
+	const dy = getCardY(j);
+	if (mouseInCard(dx, dy, 100, 180)) {
+		stroke(20, 20, 150);
+	}
+	if (selected.includes(cardIndex)) {
+		fill(100, 100, 100);
+	}
 	rect(dx, dy, 100, 180, 5);
 
 	strokeWeight(2);
@@ -116,26 +140,41 @@ function setup() {
 	initCards();
 }
 
+function getCardI(index) {
+	if (index < 12) {
+		return index % 4;
+	}
+	if (index < 15) {
+		return 4;
+	}
+	return 5;
+}
+
+function getCardJ(index) {
+	if (index < 12) {
+		return Math.floor(index / 4);
+	}
+	if (index < 15) {
+		return index - 12;
+	}
+	return index - 15;
+}
+
 function draw() {
 	background(80);
 
-	let i = 0;
-	let j = 0;
 	for (const cardIndex in board.cards) {
+		const i = getCardI(cardIndex);
+		const j = getCardJ(cardIndex);
 		if (!triplet.includes(parseInt(cardIndex))) {
-			drawCard(board.cards[cardIndex], i, j);
-		}
-		i++;
-		if (i === 4) {
-			j++;
-			i = 0;
+			drawCard(cardIndex, i, j);
 		}
 	}
 
 	textSize(16);
 	noStroke();
-    fill(198, 255, 244);
-    text(`${cards.length} cards left`, 100, 200);
+	fill(198, 255, 244);
+	text(`${cards.length} cards left`, 100, 200);
 	if (triplet.length === 3) {
 		text('Solution:', 100, 100);
 		text(`Card: ${triplet[0]}`, 100, 120);
@@ -145,9 +184,9 @@ function draw() {
 		text("Press 'n' to get next cards", 700, 100);
 
 		push();
-		drawCard(board.cards[triplet[0]], 5, 1);
-		drawCard(board.cards[triplet[1]], 6, 1);
-		drawCard(board.cards[triplet[2]], 7, 1);
+		drawCard(triplet[0], 5, 1);
+		drawCard(triplet[1], 6, 1);
+		drawCard(triplet[2], 7, 1);
 		pop();
 	} else {
 		text("Press 's' to get a set", 700, 100);
@@ -160,6 +199,29 @@ function draw() {
 				text('There is 1 set', 700, 200);
 			} else {
 				text(`There are ${allSolutions} sets`, 700, 200);
+			}
+		}
+	}
+}
+
+function mousePressed() {
+	// check if mouse is over a card
+	for (const cardIndex in board.cards) {
+		const i = getCardI(cardIndex);
+		const j = getCardJ(cardIndex);
+		const dx = getCardX(i);
+		const dy = getCardY(j);
+		if (mouseInCard(dx, dy, 100, 180)) {
+			if (selected.includes(cardIndex)) {
+				selected = selected.filter((c) => c !== cardIndex);
+			} else if (selected.length < 3) {
+				selected.push(cardIndex);
+				if (selected.length === 3) {
+					if (checkTriplet(board.cards[parseInt(selected[0])], board.cards[parseInt(selected[1])], board.cards[parseInt(selected[2])])) {
+						triplet = selected;
+						selected = [];
+					}
+				}
 			}
 		}
 	}
@@ -179,17 +241,21 @@ function checkState(curTriplet, state) {
 	return false;
 }
 
+function checkTriplet(curTriplet) {
+    console.log(curTriplet);
+	return (
+		checkState(curTriplet, 'forme') &&
+		checkState(curTriplet, 'color') &&
+		checkState(curTriplet, 'fill') &&
+		checkState(curTriplet, 'number')
+	);
+}
+
 function findSolution() {
 	for (let i = 0; i < board.cards.length; i++) {
 		for (let j = i + 1; j < board.cards.length; j++) {
 			for (let k = j + 1; k < board.cards.length; k++) {
-				const curTriplet = [ board.cards[i], board.cards[j], board.cards[k] ];
-				if (
-					checkState(curTriplet, 'forme') &&
-					checkState(curTriplet, 'color') &&
-					checkState(curTriplet, 'fill') &&
-					checkState(curTriplet, 'number')
-				) {
+				if (checkTriplet([ board.cards[i], board.cards[j], board.cards[k] ])) {
 					return [ i, j, k ];
 				}
 			}
