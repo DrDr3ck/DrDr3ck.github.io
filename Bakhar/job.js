@@ -100,6 +100,30 @@ class InstallBlockJob extends JobBase {
     }
 }
 
+class RemoveBlockJob extends JobBase {
+    constructor(i,j,workTime) {
+        super(i,j,workTime);
+    }
+
+    draw() {
+        push();
+        fill(150,50,40);
+        // draw a block skeleton
+        const x = tileMap.indexToX(this.i,this.j);
+        const y = tileMap.indexToY(this.i,this.j);
+        rect(x,y,tileSize, tileSize);
+        if( !this.available ) {
+            this.drawProgress(x,y);
+        }
+        pop();
+    }
+
+    executeJob() {
+        // try to remove block at position tileX,tileY in tileMap
+        tileMap.removeBlock(this.i, this.j);
+    }
+}
+
 function test() {
     /*
     const testJM = new JobManager();

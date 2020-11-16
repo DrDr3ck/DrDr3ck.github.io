@@ -127,7 +127,9 @@ blockMenu.addItem('metal', null, () => {
 });
 blockMenu.addItem('plastic', null, nothing);
 blockMenu.addItem('glass', null, nothing);
-blockMenu.addItem('?', null, nothing);
+blockMenu.addItem('Remove Block', null, () => {
+	toolManager.setTool(new RemoveBlockTool());
+});
 blockMenu.prepareItems();
 
 structureMenu.addItem('door', null, nothing);

@@ -55,11 +55,19 @@ class TileMap {
 
 	addBlock(tileX, tileY, blockIndex) {
 		const tile = this.tiles[tileX][tileY];
-		console.log("addblock", tile);
 		if (tile.back === -1) {
 			tile.addBack(blockIndex);
 		} else if (tile.front === -1) {
 			tile.addFront(blockIndex);
+		}
+	}
+
+	removeBlock(tileX, tileY) {
+		const tile = this.tiles[tileX][tileY];
+		if (tile.front > 0) {
+			tile.addFront(0);
+		} else if( tile.back > 0 ) {
+			tile.addBack(0);
 		}
 	}
 
@@ -83,10 +91,12 @@ class Tile {
 	}
 
 	addBack(backIndex) {
+		// TODO check tile around to update them
 		this.back = backIndex;
 	}
 
 	addFront(frontIndex) {
+		// TODO check tile around to update them
 		this.front = frontIndex;
 	}
 

@@ -6,8 +6,7 @@ class ToolManager {
 	setTool(tool) {
 		if (this.currentTool) {
 			this.currentTool.cancel();
-        }
-        console.log("set current tool");
+		}
 		this.currentTool = tool;
 		if (this.currentTool) {
 			this.currentTool.start();
@@ -15,7 +14,7 @@ class ToolManager {
 	}
 
 	mouseClicked() {
-        if (!this.currentTool) return;
+		if (!this.currentTool) return;
 		this.currentTool.action();
 	}
 }
@@ -49,17 +48,34 @@ class InstallBlockTool extends ToolBase {
 
 	action() {
 		const tileX = Math.floor((mouseX - 20) / tileSize);
-        const tileY = Math.floor((mouseY - 20) / tileSize);
-        // check if block is free on this tile
-        const tile = tileMap.tiles[tileX][tileY];
-        if( tile.back === 0 && tile.front === 0 ) {
-            tile.back = -1;
-            jobManager.addJob(new InstallBlockJob(this.blockIndex, tileX, tileY, 5000));
-        } else if( tile.front === 0 ) {
-            tile.front = -1;
-            jobManager.addJob(new InstallBlockJob(this.blockIndex, tileX, tileY, 5000));
-        }
-        
+		const tileY = Math.floor((mouseY - 20) / tileSize);
+		// check if block is free on this tile
+		const tile = tileMap.tiles[tileX][tileY];
+		if (tile.back === 0 && tile.front === 0) {
+			tile.back = -1;
+			jobManager.addJob(new InstallBlockJob(this.blockIndex, tileX, tileY, 5000));
+		} else if (tile.front === 0 && tile.back > 0) {
+			tile.front = -1;
+			jobManager.addJob(new InstallBlockJob(this.blockIndex, tileX, tileY, 5000));
+		}
+	}
+}
+
+class RemoveBlockTool extends ToolBase {
+	constructor() {
+		super('remove_block');
+	}
+
+	action() {
+		const tileX = Math.floor((mouseX - 20) / tileSize);
+		const tileY = Math.floor((mouseY - 20) / tileSize);
+		// check if block is free on this tile
+		const tile = tileMap.tiles[tileX][tileY];
+		if (tile.front > 0) {
+			jobManager.addJob(new RemoveBlockJob(tileX, tileY, 5000));
+		} else if (tile.front === 0 && tile.back > 0) {
+			jobManager.addJob(new RemoveBlockJob(tileX, tileY, 5000));
+		}
 	}
 }
 
