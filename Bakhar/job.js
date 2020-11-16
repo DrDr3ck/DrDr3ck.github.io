@@ -40,7 +40,7 @@ class JobBase {
         this.j = j;
         this.workTime = workTime; // in ms
         this.currentTime = 0;
-        this.available = true;
+        this.available = false; // TODO true;
     }
 
     prepare() {
@@ -82,18 +82,26 @@ class InstallBlockJob extends JobBase {
     }
 
     draw() {
+        push();
+        fill(50,50,140);
         // draw a block skeleton
+        const x = tileMap.indexToX(this.i,this.j);
+        const y = tileMap.indexToY(this.i,this.j);
+        rect(x,y,tileSize, tileSize);
         if( !this.available ) {
-            this.drawProgress(tileMap.indexToX(this.i,this.j),tileMap.indexToY(this.i,this.j));
+            this.drawProgress(x,y);
         }
+        pop();
     }
 
     executeJob() {
-        // set block on tile
+        // try to add block at position tileX,tileY in tileMap
+        tileMap.addBlock(this.i, this.j, this.blockIndex);
     }
 }
 
 function test() {
+    /*
     const testJM = new JobManager();
     jobManager = testJM;
     testJM.addJob( new InstallBlockJob(0,0,0,1000) );
@@ -104,7 +112,7 @@ function test() {
     next.update(500);
     expect( testJM.jobs.length === 1, "should still work on this job" );
     next.update(500);
-    expect( testJM.jobs.length === 0, "job should be removed" );
+    expect( testJM.jobs.length === 0, "job should be removed" );*/
 }
 
 test();

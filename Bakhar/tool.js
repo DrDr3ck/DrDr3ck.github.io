@@ -1,56 +1,76 @@
 class ToolManager {
-    constructor() {
-        this.currentTool = null;
-    }
+	constructor() {
+		this.currentTool = null;
+	}
 
-    setTool(tool) {
-        if( this.currentTool ) {
-            this.currentTool.cancel();
+	setTool(tool) {
+		if (this.currentTool) {
+			this.currentTool.cancel();
         }
-        this.currentTool = tool;
-        if( this.currentTool ) {
-            this.currentTool.start();
-        }
-    }
+        console.log("set current tool");
+		this.currentTool = tool;
+		if (this.currentTool) {
+			this.currentTool.start();
+		}
+	}
+
+	mouseClicked() {
+        if (!this.currentTool) return;
+		this.currentTool.action();
+	}
 }
 
 class ToolBase {
-    constructor(name) {
-        this.name = name;
-    }
+	constructor(name) {
+		this.name = name;
+	}
 
-    start() {
+	start() {}
 
-    }
+	cancel() {}
 
-    action() {
+	draw() {
+		push();
+		fill(51);
+		const tileX = Math.floor((mouseX - 20) / tileSize);
+		const tileY = Math.floor((mouseY - 20) / tileSize);
+		if (tileX >= 0 && tileY >= 0 && tileX < tileMap.ni && tileY < tileMap.nj) {
+			rect(tileX * tileSize + 20, tileY * tileSize + 20, tileSize, tileSize);
+		}
+		pop();
+	}
+}
 
-    }
+class InstallBlockTool extends ToolBase {
+	constructor(blockIndex) {
+		super('install_block');
+		this.blockIndex = blockIndex;
+	}
 
-    cancel() {
-
-    }
-
-    draw() {
-        push();
-        fill(51);
-        const tileX = Math.floor((mouseX-20)/tileSize);
-        const tileY = Math.floor((mouseY-20)/tileSize);
-        if( tileX >= 0 && tileY >= 0 && tileX < tileMap.ni && tileY < tileMap.nj ) {
-            rect(tileX*tileSize+20, tileY*tileSize+20, tileSize, tileSize);
+	action() {
+		const tileX = Math.floor((mouseX - 20) / tileSize);
+        const tileY = Math.floor((mouseY - 20) / tileSize);
+        // check if block is free on this tile
+        const tile = tileMap.tiles[tileX][tileY];
+        if( tile.back === 0 && tile.front === 0 ) {
+            tile.back = -1;
+            jobManager.addJob(new InstallBlockJob(this.blockIndex, tileX, tileY, 5000));
+        } else if( tile.front === 0 ) {
+            tile.front = -1;
+            jobManager.addJob(new InstallBlockJob(this.blockIndex, tileX, tileY, 5000));
         }
-        pop();
-    }
+        
+	}
 }
 
 function test() {
-    const testTM = new ToolManager();
-    expect( testTM.currentTool === null, "error in ToolManager constructor" );
-    testTM.setTool( new ToolBase("myTool") );
-    expect( testTM.currentTool !== null, "error in setTool");
-    expect( testTM.currentTool.name === "myTool", "error in ToolBase constructor");
-    testTM.setTool( null );
-    expect( testTM.currentTool === null, "error in setTool");
+	const testTM = new ToolManager();
+	expect(testTM.currentTool === null, 'error in ToolManager constructor');
+	testTM.setTool(new ToolBase('myTool'));
+	expect(testTM.currentTool !== null, 'error in setTool');
+	expect(testTM.currentTool.name === 'myTool', 'error in ToolBase constructor');
+	testTM.setTool(null);
+	expect(testTM.currentTool === null, 'error in setTool');
 }
 
 test();

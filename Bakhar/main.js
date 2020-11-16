@@ -46,7 +46,9 @@ function loadData() {
 
 const userLang = navigator.language || navigator.userLanguage; // "en-US"
 
-const manager = new UIManager();
+const tileMap = new TileMap(20, 20);
+
+const uiManager = new UIManager();
 const toolManager = new ToolManager();
 const jobManager = new JobManager();
 
@@ -79,24 +81,22 @@ function nothing() {
 
 function menuClicked() {
 	curState = GAME_MENU_STATE;
-	manager.setUI(menu);
+	uiManager.setUI(menu);
 }
 
 function startClicked() {
 	curState = GAME_START_STATE;
-	manager.setUI(start);
+	uiManager.setUI(start);
 }
 
 function creditClicked() {
 	curState = GAME_CREDIT_STATE;
-	manager.setUI(credit);
+	uiManager.setUI(credit);
 }
-
-const tileMap = new TileMap(20, 20);
 
 function newClicked() {
 	curState = GAME_PLAY_STATE;
-	manager.setUI(game);
+	uiManager.setUI(game);
 	tileMap.init(16, 10);
 }
 
@@ -123,7 +123,7 @@ const structureMenu = new BMenu('Structure', 140, 675, null, 3);
 const objectMenu = new BMenu('Object', 250, 675, null, 3);
 const game = [ blockMenu, structureMenu, objectMenu ];
 blockMenu.addItem('metal', null, () => {
-	toolManager.setTool(new ToolBase('metal'));
+	toolManager.setTool(new InstallBlockTool(1));
 });
 blockMenu.addItem('plastic', null, nothing);
 blockMenu.addItem('glass', null, nothing);
@@ -191,7 +191,7 @@ function updateGame(elapsedTime) {
 }
 
 function processInput() {
-	manager.processInput();
+	uiManager.processInput();
 }
 
 function update(elapsedTime) {
@@ -211,7 +211,7 @@ function render() {
 		drawGame();
 	}
 	strokeWeight(1);
-	manager.currentUI.forEach((c) => {
+	uiManager.currentUI.forEach((c) => {
 		c.draw();
 	});
 	if (toolManager.currentTool) {
@@ -238,7 +238,8 @@ function draw() {
 }
 
 function mouseClicked() {
-	manager.mouseClicked();
+	toolManager.mouseClicked();
+	uiManager.mouseClicked();
 }
 
 function keyPressed() {

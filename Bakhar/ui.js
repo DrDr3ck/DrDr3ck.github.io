@@ -82,7 +82,7 @@ class UIComponent {
 		this.over = false;
 		this.enabled = true;
 		this.visible = false;
-		manager.components.push(this);
+		uiManager.components.push(this);
 	}
 
 	mouseOver(mx, my) {
@@ -247,9 +247,9 @@ class BMenu extends BButtonBase {
 	// callback
 	clickMenu() {
 		if (this.open) {
-			manager.setMenu(null);
+			uiManager.setMenu(null);
 		} else {
-			manager.setMenu(this);
+			uiManager.setMenu(this);
 		}
 	}
 
@@ -310,13 +310,13 @@ class BMenu extends BButtonBase {
 
 	openMenu() {
 		this.children.forEach(c => c.visible=true);
-		manager.currentUI.push(...this.children);
+		uiManager.currentUI.push(...this.children);
 		this.open = true;
 	}
 
 	closeMenu() {
 		this.children.forEach(c => c.visible=false);
-		manager.currentUI = manager.currentUI.filter(c => !this.children.includes(c));
+		uiManager.currentUI = uiManager.currentUI.filter(c => !this.children.includes(c));
 		this.open = false;
 	}
 
@@ -366,7 +366,7 @@ class BMenuItem extends BButtonBase {
 	clicked() {
 		super.clicked();
 		this.callback();
-		manager.setMenu(null);
+		uiManager.setMenu(null);
 	}
 }
 

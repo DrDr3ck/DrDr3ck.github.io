@@ -13,7 +13,7 @@ class TileAtlas {
 }
 
 class TileMap {
-	constructor(dx,dy) {
+	constructor(dx, dy) {
 		this.tiles = [];
 		this.ni = 0;
 		this.nj = 0;
@@ -21,10 +21,10 @@ class TileMap {
 		this.dy = dy;
 	}
 
-	indexToX(i,j) {
+	indexToX(i, j) {
 		return this.tiles[i][j].x * tileSize + this.dx;
 	}
-	indexToY(i,j) {
+	indexToY(i, j) {
 		return this.tiles[i][j].y * tileSize + this.dy;
 	}
 
@@ -40,17 +40,27 @@ class TileMap {
 		}
 		this.tiles[0][9].front = 1;
 		this.tiles[1][9].back = 1;
-        this.tiles[2][9].front = 2;
-        this.tiles[2][8].front = 5;
+		this.tiles[2][9].front = 2;
+		this.tiles[2][8].front = 5;
 
-        this.tiles[4][8].front = 5;
-        this.tiles[4][9].front = 4;
-        this.tiles[5][9].front = 9;
+		this.tiles[4][8].front = 5;
+		this.tiles[4][9].front = 4;
+		this.tiles[5][9].front = 9;
 
-        this.tiles[7][9].front = 3;
-        this.tiles[8][9].front = 11;
-        this.tiles[9][9].front = 11;
-        this.tiles[10][9].front = 9;
+		this.tiles[7][9].front = 3;
+		this.tiles[8][9].front = 11;
+		this.tiles[9][9].front = 11;
+		this.tiles[10][9].front = 9;
+	}
+
+	addBlock(tileX, tileY, blockIndex) {
+		const tile = this.tiles[tileX][tileY];
+		console.log("addblock", tile);
+		if (tile.back === -1) {
+			tile.addBack(blockIndex);
+		} else if (tile.front === -1) {
+			tile.addFront(blockIndex);
+		}
 	}
 
 	render() {
@@ -85,32 +95,32 @@ class Tile {
 	}
 
 	draw(dx, dy) {
-		if (this.back !== 0) {
-            const indexI = ((this.back-1)%10);
-            const indexJ = Math.floor((this.back-1)/10);
+		if (this.back > 0) {
+			const indexI = (this.back - 1) % 10;
+			const indexJ = Math.floor((this.back - 1) / 10);
 			image(
 				atlas.back,
 				this.x * tileSize + dx,
 				this.y * tileSize + dy,
 				tileSize,
 				tileSize,
-				indexI*tileSize,
-				indexJ*tileSize,
+				indexI * tileSize,
+				indexJ * tileSize,
 				tileSize,
 				tileSize
 			);
 		}
-		if (this.front !== 0) {
-            const indexI = ((this.front-1)%10);
-            const indexJ = Math.floor((this.front-1)/10);
+		if (this.front > 0) {
+			const indexI = (this.front - 1) % 10;
+			const indexJ = Math.floor((this.front - 1) / 10);
 			image(
 				atlas.front,
 				this.x * tileSize + dx,
 				this.y * tileSize + dy,
 				tileSize,
 				tileSize,
-				indexI*tileSize,
-				indexJ*tileSize,
+				indexI * tileSize,
+				indexJ * tileSize,
 				tileSize,
 				tileSize
 			);
@@ -118,8 +128,6 @@ class Tile {
 	}
 }
 
-function test() {
-
-}
+function test() {}
 
 test();
