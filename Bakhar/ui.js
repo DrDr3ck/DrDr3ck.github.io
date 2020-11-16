@@ -1,3 +1,9 @@
+function expect(check, text) {
+	if( !check ) {
+		throw text;
+	}
+}
+
 class UIManager {
 	constructor() {
 		this.components = [];
@@ -363,3 +369,9 @@ class BMenuItem extends BButtonBase {
 		manager.setMenu(null);
 	}
 }
+
+function test() {
+
+}
+
+test();

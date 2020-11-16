@@ -42,3 +42,15 @@ class ToolBase {
         pop();
     }
 }
+
+function test() {
+    const testTM = new ToolManager();
+    expect( testTM.currentTool === null, "error in ToolManager constructor" );
+    testTM.setTool( new ToolBase("myTool") );
+    expect( testTM.currentTool !== null, "error in setTool");
+    expect( testTM.currentTool.name === "myTool", "error in ToolBase constructor");
+    testTM.setTool( null );
+    expect( testTM.currentTool === null, "error in setTool");
+}
+
+test();

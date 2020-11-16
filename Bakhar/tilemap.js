@@ -21,6 +21,13 @@ class TileMap {
 		this.dy = dy;
 	}
 
+	indexToX(i,j) {
+		return this.tiles[i][j].x * tileSize + this.dx;
+	}
+	indexToY(i,j) {
+		return this.tiles[i][j].y * tileSize + this.dy;
+	}
+
 	init(ni, nj) {
 		this.ni = ni;
 		this.nj = nj;
@@ -110,3 +117,9 @@ class Tile {
 		}
 	}
 }
+
+function test() {
+
+}
+
+test();

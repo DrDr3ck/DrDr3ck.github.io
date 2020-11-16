@@ -48,6 +48,7 @@ const userLang = navigator.language || navigator.userLanguage; // "en-US"
 
 const manager = new UIManager();
 const toolManager = new ToolManager();
+const jobManager = new JobManager();
 
 const FPS = 60;
 
@@ -121,13 +122,9 @@ const blockMenu = new BMenu('Block', 30, 675, null, 3);
 const structureMenu = new BMenu('Structure', 140, 675, null, 3);
 const objectMenu = new BMenu('Object', 250, 675, null, 3);
 const game = [ blockMenu, structureMenu, objectMenu ];
-blockMenu.addItem(
-	'metal',
-	null,
-	() => {
-		toolManager.setTool(new ToolBase('metal'));
-	}
-);
+blockMenu.addItem('metal', null, () => {
+	toolManager.setTool(new ToolBase('metal'));
+});
 blockMenu.addItem('plastic', null, nothing);
 blockMenu.addItem('glass', null, nothing);
 blockMenu.addItem('?', null, nothing);
@@ -189,7 +186,9 @@ function drawGame() {
 	tileMap.render();
 }
 
-function updateGame(elapsedTime) {}
+function updateGame(elapsedTime) {
+	jobManager.update(elapsedTime);
+}
 
 function processInput() {
 	manager.processInput();
@@ -215,9 +214,10 @@ function render() {
 	manager.currentUI.forEach((c) => {
 		c.draw();
 	});
-	if( toolManager.currentTool ) {
+	if (toolManager.currentTool) {
 		toolManager.currentTool.draw();
 	}
+	jobManager.draw();
 
 	if (toggleHelp) {
 		push();
@@ -246,7 +246,8 @@ function keyPressed() {
 		toggleHelp = !toggleHelp;
 	}
 
-	if( keyCode === 27 ) { // ESC
+	if (keyCode === 27) {
+		// ESC
 		toolManager.setTool(null);
 	}
 }
