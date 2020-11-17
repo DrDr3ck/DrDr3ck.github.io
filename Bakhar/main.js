@@ -10,8 +10,11 @@ let toggleHelp = false;
 
 let curState = GAME_MENU_STATE;
 
+const tileMap = new TileMap(20, 20);
+
 function getData() {
 	const data = {
+		tileMap: tileMap,
 		volume: songVolume,
 		help: toggleHelp
 	};
@@ -42,11 +45,10 @@ function loadData() {
 	}
 	songVolume = data.volume;
 	toggleHelp = data.toggleHelp;
+	tileMap.parseMap(data.tileMap);
 }
 
 const userLang = navigator.language || navigator.userLanguage; // "en-US"
-
-const tileMap = new TileMap(20, 20);
 
 const uiManager = new UIManager();
 const toolManager = new ToolManager();
@@ -73,6 +75,12 @@ function setup() {
 	frameRate(FPS);
 
 	atlas = new TileAtlas();
+
+	if( tileMap.ni === 0 ) {
+	    menuClicked();
+	} else {
+	    newClicked();
+	}
 }
 
 function nothing() {
@@ -97,7 +105,10 @@ function creditClicked() {
 function newClicked() {
 	curState = GAME_PLAY_STATE;
 	uiManager.setUI(game);
-	tileMap.init(16, 10);
+	if( tileMap.ni === 0 ) {
+		tileMap.init(16, 10);
+		tileMap.parseMap(null);
+	}
 }
 
 const menu = [
@@ -140,9 +151,6 @@ structureMenu.prepareItems();
 objectMenu.addItem('seed tray', null, nothing);
 objectMenu.addItem('', null, nothing);
 objectMenu.prepareItems();
-
-//menuClicked();
-newClicked();
 
 let lastTime = Date.now();
 
@@ -247,6 +255,10 @@ function mouseClicked() {
 function keyPressed() {
 	if (key === 'H') {
 		toggleHelp = !toggleHelp;
+	}
+
+	if (key === 'S') {
+		doSave();
 	}
 
 	if (keyCode === 27) {

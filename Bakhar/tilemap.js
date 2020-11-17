@@ -29,6 +29,7 @@ class TileMap {
 	}
 
 	init(ni, nj) {
+		if (this.ni !== 0) return;
 		this.ni = ni;
 		this.nj = nj;
 		for (let i = 0; i < ni; i++) {
@@ -38,6 +39,26 @@ class TileMap {
 			}
 			this.tiles.push(rowTiles);
 		}
+	}
+
+	parseMap(jsonMap) {
+		console.log(jsonMap);
+		if (jsonMap !== null) {
+			this.dx = jsonMap.dx;
+			this.dy = jsonMap.dy;
+			this.init(jsonMap.ni, jsonMap.nj);
+			for( const rowTile of jsonMap.tiles ) {
+				for( const tile of rowTile ) {
+					const t = this.tiles[tile.x][tile.y];
+					t.back = tile.back;
+					t.front = tile.front;
+					t.object = tile.object;
+					t.occupied = tile.occupied;
+				}
+			}
+			return;
+		}
+		if (this.ni === 0) return;
 		this.tiles[0][9].front = 1;
 		this.tiles[1][9].back = 1;
 		this.tiles[2][9].front = 2;
@@ -66,7 +87,7 @@ class TileMap {
 		const tile = this.tiles[tileX][tileY];
 		if (tile.front > 0) {
 			tile.addFront(0);
-		} else if( tile.back > 0 ) {
+		} else if (tile.back > 0) {
 			tile.addBack(0);
 		}
 	}
