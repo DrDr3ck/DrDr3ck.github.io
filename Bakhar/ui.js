@@ -1,5 +1,5 @@
 function expect(check, text) {
-	if( !check ) {
+	if (!check) {
 		throw text;
 	}
 }
@@ -9,6 +9,13 @@ class UIManager {
 		this.components = [];
 		this.currentUI = [];
 		this.currentMenu = null;
+		this.loggerContainer = null;
+	}
+
+	addLogger(text) {
+		if (this.loggerContainer) {
+			this.loggerContainer.addText(text);
+		}
 	}
 
 	setUI(components) {
@@ -19,12 +26,12 @@ class UIManager {
 	}
 
 	setMenu(menu) {
-		if( this.currentMenu ) {
+		if (this.currentMenu) {
 			this.currentMenu.closeMenu();
 		}
 		this.currentMenu = menu;
-		if( this.currentMenu ) {
-		    this.currentMenu.openMenu();
+		if (this.currentMenu) {
+			this.currentMenu.openMenu();
 		}
 	}
 
@@ -39,6 +46,13 @@ class UIManager {
 		} else {
 			cursor('default');
 		}
+	}
+
+	draw() {
+		this.currentUI.forEach((c) => {
+			c.draw();
+		});
+		this.loggerContainer.draw();
 	}
 
 	mouseClicked() {
@@ -61,6 +75,7 @@ class UIManager {
 		this.components.forEach((c) => {
 			c.update(elapsedTime);
 		});
+		this.loggerContainer.update(elapsedTime);
 	}
 }
 
@@ -255,7 +270,7 @@ class BMenu extends BButtonBase {
 
 	prepareItems() {
 		this.dialogY = 630 - Math.ceil(this.children.length / this.nbColumns) * 110;
-		for( let i=0; i < this.children.length; i++ ) {
+		for (let i = 0; i < this.children.length; i++) {
 			const child = this.children[i];
 			child.x = this.getNextX(i);
 			child.y = this.getNextY(i);
@@ -277,11 +292,11 @@ class BMenu extends BButtonBase {
 		}
 		rect(this.x, this.y, this.w, this.h, 5);
 
-		if( this.title && this.over ) {
+		if (this.title && this.over) {
 			textSize(12);
 			textAlign(CENTER, CENTER);
 			noStroke();
-			drawText(this.title, this.x+this.w/2, this.y+this.h-12);
+			drawText(this.title, this.x + this.w / 2, this.y + this.h - 12);
 		}
 
 		if (this.open) {
@@ -293,7 +308,7 @@ class BMenu extends BButtonBase {
 			rect(
 				this.dialogX,
 				this.dialogY,
-				Math.min(this.nbColumns,this.children.length) * 110 + 10,
+				Math.min(this.nbColumns, this.children.length) * 110 + 10,
 				nbRows * 110 + 10
 			);
 		}
@@ -309,14 +324,14 @@ class BMenu extends BButtonBase {
 	}
 
 	openMenu() {
-		this.children.forEach(c => c.visible=true);
+		this.children.forEach((c) => (c.visible = true));
 		uiManager.currentUI.push(...this.children);
 		this.open = true;
 	}
 
 	closeMenu() {
-		this.children.forEach(c => c.visible=false);
-		uiManager.currentUI = uiManager.currentUI.filter(c => !this.children.includes(c));
+		this.children.forEach((c) => (c.visible = false));
+		uiManager.currentUI = uiManager.currentUI.filter((c) => !this.children.includes(c));
 		this.open = false;
 	}
 
@@ -354,11 +369,11 @@ class BMenuItem extends BButtonBase {
 		}
 		rect(this.x, this.y, this.w, this.h, 5);
 
-		if( this.title ) {
+		if (this.title) {
 			textSize(12);
 			textAlign(CENTER, CENTER);
 			noStroke();
-			drawText(this.title, this.x+this.w/2, this.y+this.h-12);
+			drawText(this.title, this.x + this.w / 2, this.y + this.h - 12);
 		}
 		pop();
 	}
@@ -370,8 +385,63 @@ class BMenuItem extends BButtonBase {
 	}
 }
 
-function test() {
+class LoggerContainer extends UIComponent {
+	constructor(x, y, w, h) {
+		super(x, y, w, h);
+		this.loggers = [];
+	}
 
+	addText(text) {
+		this.loggers.push(new Logger(text, 5000));
+	}
+
+	draw() {
+		if (!this.visible) return;
+		push();
+		textSize(16);
+		translate(this.x, this.y);
+		/*
+		stroke(128);
+		noFill();
+		rect(0, 0, this.w, this.h);
+		*/
+		const x = 0;
+		const maxLogger = Math.min(5, this.loggers.length);
+		let y = this.h + 10 - maxLogger * 20;
+		this.loggers.forEach((logger) => {
+			if (y > this.h) return;
+			logger.draw(x, y);
+			y += 20;
+		});
+		pop();
+	}
+
+	update(elapsedTime) {
+		this.loggers.forEach((logger) => {
+			logger.time -= elapsedTime;
+			logger.animation -= elapsedTime;
+		});
+		this.loggers = this.loggers.filter((logger) => logger.time > 0);
+	}
 }
+
+class Logger {
+	constructor(text, time) {
+		this.text = text;
+		const millisecondPerLetter = 150;
+		this.totalAnimationTime = text.length*millisecondPerLetter;
+		this.animation = this.totalAnimationTime;
+		this.time = time + this.totalAnimationTime;
+	}
+
+	draw(x, y) {
+		const percent = 1-Math.max(this.animation,0)/(this.totalAnimationTime);
+		const nbLetters = Math.round(this.text.length*percent);
+		const text = this.text.slice(0, nbLetters);
+		drawText(text, x, y);
+	}
+}
+
+function test() {}
 
 test();

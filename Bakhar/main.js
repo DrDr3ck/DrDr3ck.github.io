@@ -28,6 +28,7 @@ function doSave() {
 	if (data && data !== 'null') {
 		localStorage.setItem(storageKey, data);
 		console.log('saving ', data);
+		uiManager.addLogger("Saved");
 	}
 }
 
@@ -51,6 +52,8 @@ function loadData() {
 const userLang = navigator.language || navigator.userLanguage; // "en-US"
 
 const uiManager = new UIManager();
+uiManager.loggerContainer = new LoggerContainer(925,675,240,100);
+uiManager.loggerContainer.visible = false;
 const toolManager = new ToolManager();
 const jobManager = new JobManager();
 
@@ -84,6 +87,7 @@ function setup() {
 
 function nothing() {
 	console.log('does nothing');
+	uiManager.addLogger("Not yet implemented");
 }
 
 function menuClicked() {
@@ -94,6 +98,7 @@ function menuClicked() {
 function startClicked() {
 	curState = GAME_START_STATE;
 	uiManager.setUI(start);
+	uiManager.loggerContainer.visible = false;
 }
 
 function creditClicked() {
@@ -104,6 +109,7 @@ function creditClicked() {
 function newClicked() {
 	curState = GAME_PLAY_STATE;
 	uiManager.setUI(game);
+	uiManager.loggerContainer.visible = true;
 	if( tileMap.ni === 0 ) {
 		tileMap.init(16, 10);
 		tileMap.parseMap(null);
@@ -205,6 +211,7 @@ function drawGame() {
 
 function updateGame(elapsedTime) {
 	jobManager.update(elapsedTime);
+	uiManager.update(elapsedTime);
 }
 
 function processInput() {
@@ -228,9 +235,7 @@ function render() {
 		drawGame();
 	}
 	strokeWeight(1);
-	uiManager.currentUI.forEach((c) => {
-		c.draw();
-	});
+	uiManager.draw();
 	if (toolManager.currentTool) {
 		toolManager.currentTool.draw();
 	}
