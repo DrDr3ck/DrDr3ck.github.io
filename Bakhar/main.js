@@ -67,8 +67,6 @@ function preload() {
 }
 
 function setup() {
-	loadData();
-
 	canvas = createCanvas(1200, 800);
 	canvas.parent('canvas');
 
@@ -79,7 +77,8 @@ function setup() {
 	if( tileMap.ni === 0 ) {
 	    menuClicked();
 	} else {
-	    newClicked();
+		menuClicked();
+	    //newClicked();
 	}
 }
 
@@ -111,6 +110,8 @@ function newClicked() {
 	}
 }
 
+loadData();
+
 const menu = [
 	new BButton(100, 400, 'START', startClicked),
 	new BButton(100, 500, 'BLOG', nothing),
@@ -120,12 +121,18 @@ menu[1].enabled = false;
 
 const start = [
 	new BButton(300, 400, 'NEW', newClicked),
-	new BButton(300, 500, 'CONTINUE', nothing),
-	new BButton(300, 600, 'SAVE', nothing),
+	new BButton(300, 500, 'CONTINUE', newClicked),
+	new BButton(300, 600, 'SAVE', doSave),
+	new BButton(300, 700, 'DELETE', nothing),
 	new BFloatingButton(1100, 100, '\u2716', menuClicked)
 ];
-start[1].enabled = false;
-start[2].enabled = false;
+if( tileMap.ni === 0 ) {
+	start[1].enabled = false;
+	start[2].enabled = false;
+	start[3].enabled = false;
+} else {
+	start[0].enabled = false;
+}
 
 const credit = [ new BFloatingButton(1100, 100, '\u2716', menuClicked) ];
 
@@ -263,6 +270,11 @@ function keyPressed() {
 
 	if (keyCode === 27) {
 		// ESC
-		toolManager.setTool(null);
+		if( toolManager.currentTool ) {
+			toolManager.setTool(null);
+		} else {
+			// no tool, go back to start menu
+			startClicked();
+		}
 	}
 }
