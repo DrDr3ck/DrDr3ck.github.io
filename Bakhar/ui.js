@@ -9,6 +9,7 @@ class UIManager {
 		this.components = [];
 		this.currentUI = [];
 		this.currentMenu = null;
+		this.currentDialog = null;
 		this.loggerContainer = null;
 	}
 
@@ -25,6 +26,18 @@ class UIManager {
 		this.setMenu(null);
 	}
 
+	setDialog(dialog) {
+		if (this.currentDialog) {
+			this.currentDialog.visible = false;
+			this.currentDialog.components.forEach((c) => (c.visible = false));
+		}
+		this.currentDialog = dialog;
+		if (this.currentDialog) {
+			this.currentDialog.visible = true;
+			this.currentDialog.components.forEach((c) => (c.visible = true));
+		}
+	}
+
 	setMenu(menu) {
 		if (this.currentMenu) {
 			this.currentMenu.closeMenu();
@@ -37,10 +50,17 @@ class UIManager {
 
 	processInput() {
 		let over = false;
-		this.currentUI.forEach((c) => {
-			c.over = c.mouseOver(mouseX, mouseY);
-			over = over || (c.over && c.isClickable());
-		});
+		if (this.currentDialog) {
+			this.currentDialog.components.forEach((c) => {
+				c.over = c.mouseOver(mouseX - this.currentDialog.x, mouseY - this.currentDialog.y);
+				over = over || (c.over && c.isClickable());
+			});
+		} else {
+			this.currentUI.forEach((c) => {
+				c.over = c.mouseOver(mouseX, mouseY);
+				over = over || (c.over && c.isClickable());
+			});
+		}
 		if (over) {
 			cursor('pointer');
 		} else {
@@ -52,20 +72,35 @@ class UIManager {
 		this.currentUI.forEach((c) => {
 			c.draw();
 		});
+		if (this.currentDialog) {
+			this.currentDialog.draw();
+		}
 		this.loggerContainer.draw();
 	}
 
 	mouseClicked() {
 		let overComponent = null;
-		this.components.forEach((c) => {
-			if (!c.visible) {
-				return;
-			}
-			if (c.over) {
-				overComponent = c;
-				return;
-			}
-		});
+		if (this.currentDialog) {
+			this.currentDialog.components.forEach((c) => {
+				if (!c.visible) {
+					return;
+				}
+				if (c.over) {
+					overComponent = c;
+					return;
+				}
+			});
+		} else {
+			this.currentUI.forEach((c) => {
+				if (!c.visible) {
+					return;
+				}
+				if (c.over) {
+					overComponent = c;
+					return;
+				}
+			});
+		}
 		if (overComponent && overComponent.enabled) {
 			overComponent.clicked();
 		}
@@ -75,6 +110,10 @@ class UIManager {
 		this.components.forEach((c) => {
 			c.update(elapsedTime);
 		});
+		if (this.currentDialog) {
+			console.log("update dialog");
+			this.currentDialog.update(elapsedTime);
+		}
 		this.loggerContainer.update(elapsedTime);
 	}
 }
@@ -385,6 +424,41 @@ class BMenuItem extends BButtonBase {
 	}
 }
 
+class Dialog extends UIComponent {
+	constructor(x, y, w, h) {
+		super(x, y, w, h);
+		this.components = [];
+		this.totalPopupAnimationTime = 600;
+		this.popupAnimation = this.totalPopupAnimationTime;
+		this.startX = x;
+		this.startY = y;
+	}
+
+	draw() {
+		if (!this.visible) return;
+		push();
+		stroke(29, 105, 62);
+		strokeWeight(2);
+		fill(9, 47, 18);
+		if (this.popupAnimation === 0) {
+			translate(this.x, this.y);
+			rect(0, 0, this.w, this.h, 5);
+			this.components.forEach((c) => c.draw());
+		} else {
+			const percent = 1 - Math.max(this.popupAnimation, 0) / this.totalPopupAnimationTime;
+			const x = this.startX-(this.startX-this.x)*percent;
+			const y = this.startY-(this.startY-this.y)*percent;
+			rect(x+this.w/2-this.w*percent/2, y+this.h/2-this.h*percent/2, this.w*percent, this.h*percent, 5);
+		}
+		pop();
+	}
+
+	update(elapsedTime) {
+		this.popupAnimation = Math.max(0, this.popupAnimation - elapsedTime);
+		console.log(this.popupAnimation);
+	}
+}
+
 class LoggerContainer extends UIComponent {
 	constructor(x, y, w, h) {
 		super(x, y, w, h);
@@ -392,7 +466,7 @@ class LoggerContainer extends UIComponent {
 	}
 
 	addText(text) {
-		this.loggers.push(new Logger(text, 5000));
+		this.loggers.push(new Logger(text, 15000));
 	}
 
 	draw() {
@@ -406,13 +480,16 @@ class LoggerContainer extends UIComponent {
 		rect(0, 0, this.w, this.h);
 		*/
 		const x = 0;
+		// only display the 5 last messages
 		const maxLogger = Math.min(5, this.loggers.length);
+		const minLogger = Math.max(0, this.loggers.length - 5);
 		let y = this.h + 10 - maxLogger * 20;
-		this.loggers.forEach((logger) => {
+		for (let i = minLogger; i < this.loggers.length; i++) {
+			const logger = this.loggers[i];
 			if (y > this.h) return;
 			logger.draw(x, y);
 			y += 20;
-		});
+		}
 		pop();
 	}
 
@@ -429,14 +506,14 @@ class Logger {
 	constructor(text, time) {
 		this.text = text;
 		const millisecondPerLetter = 150;
-		this.totalAnimationTime = text.length*millisecondPerLetter;
+		this.totalAnimationTime = text.length * millisecondPerLetter;
 		this.animation = this.totalAnimationTime;
 		this.time = time + this.totalAnimationTime;
 	}
 
 	draw(x, y) {
-		const percent = 1-Math.max(this.animation,0)/(this.totalAnimationTime);
-		const nbLetters = Math.round(this.text.length*percent);
+		const percent = 1 - Math.max(this.animation, 0) / this.totalAnimationTime;
+		const nbLetters = Math.round(this.text.length * percent);
 		const text = this.text.slice(0, nbLetters);
 		drawText(text, x, y);
 	}
