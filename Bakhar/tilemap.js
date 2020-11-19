@@ -92,6 +92,9 @@ class TileMap {
 		}
 	}
 
+	addStructure(tileX, tileY, structureIndex) {
+	}
+
 	render() {
 		for (let j = 0; j < this.nj; j++) {
 			for (let i = 0; i < this.ni; i++) {
@@ -101,12 +104,16 @@ class TileMap {
 	}
 }
 
+const FREE = 0;
+const USED = -1;
+
 class Tile {
 	constructor(x, y) {
 		this.x = x;
 		this.y = y;
-		this.back = 0;
-		this.front = 0;
+		this.back = FREE;
+		this.front = FREE;
+		this.structure = FREE;
 		this.occupied = false;
 		this.object = null;
 	}
@@ -123,6 +130,30 @@ class Tile {
 
 	addObject(object) {
 		this.object = object;
+	}
+
+	isFree() {
+		return this.back === FREE && this.front === FREE;
+	}
+
+	isBackFree() {
+		return this.back === FREE;
+	}
+
+	isStructureFree() {
+		return this.structure === FREE;
+	}
+
+	backInUse() {
+		this.back = USED;
+	}
+
+	frontInUse() {
+		this.front = USED;
+	}
+
+	isFrontFree() {
+		return this.front === FREE;
 	}
 
 	draw(dx, dy) {
@@ -155,6 +186,9 @@ class Tile {
 				tileSize,
 				tileSize
 			);
+		}
+		if( this.structure > 0 ) {
+			// TODO
 		}
 	}
 }

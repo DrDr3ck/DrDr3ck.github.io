@@ -40,10 +40,11 @@ class ToolBase {
 	}
 }
 
-class InstallBlockTool extends ToolBase {
-	constructor(blockIndex) {
-		super('install_block');
+class InstallTool extends ToolBase {
+	constructor(type, blockIndex) {
+		super(`install_${type}`);
 		this.blockIndex = blockIndex;
+		this.type = type;
 	}
 
 	action() {
@@ -51,12 +52,20 @@ class InstallBlockTool extends ToolBase {
 		const tileY = Math.floor((mouseY - 20) / tileSize);
 		// check if block is free on this tile
 		const tile = tileMap.tiles[tileX][tileY];
-		if (tile.back === 0 && tile.front === 0) {
-			tile.back = -1;
-			jobManager.addJob(new InstallBlockJob(this.blockIndex, tileX, tileY, 5000));
-		} else if (tile.front === 0 && tile.back > 0) {
-			tile.front = -1;
-			jobManager.addJob(new InstallBlockJob(this.blockIndex, tileX, tileY, 5000));
+		if( this.type === 'block' ) {
+			if (tile.isFree()) {
+				tile.backInUse();
+				uiManager.addLogger(`Adding back ${this.type}`);
+				jobManager.addJob(new InstallBlockJob(this.blockIndex, tileX, tileY, 5000));
+			} else if (tile.isFrontFree()) {
+				tile.frontInUse();
+				uiManager.addLogger(`Adding front ${this.type}`);
+				jobManager.addJob(new InstallBlockJob(this.blockIndex, tileX, tileY, 5000));
+			}
+		} else if( this.type === 'structure') {
+			if( tile.isStructureFree() ) {
+				uiManager.addLogger(`TODO: Adding front ${this.type}`);
+			}
 		}
 	}
 }
@@ -72,8 +81,10 @@ class RemoveBlockTool extends ToolBase {
 		// check if block is free on this tile
 		const tile = tileMap.tiles[tileX][tileY];
 		if (tile.front > 0) {
+			uiManager.addLogger("Removing front block");
 			jobManager.addJob(new RemoveBlockJob(tileX, tileY, 5000));
 		} else if (tile.front === 0 && tile.back > 0) {
+			uiManager.addLogger("Removing back block");
 			jobManager.addJob(new RemoveBlockJob(tileX, tileY, 5000));
 		}
 	}

@@ -28,7 +28,7 @@ function doSave() {
 	if (data && data !== 'null') {
 		localStorage.setItem(storageKey, data);
 		console.log('saving ', data);
-		uiManager.addLogger("Saved");
+		uiManager.addLogger('Saved');
 	}
 }
 
@@ -52,7 +52,7 @@ function loadData() {
 const userLang = navigator.language || navigator.userLanguage; // "en-US"
 
 const uiManager = new UIManager();
-uiManager.loggerContainer = new LoggerContainer(925,675,240,100);
+uiManager.loggerContainer = new LoggerContainer(925, 675, 240, 100);
 uiManager.loggerContainer.visible = false;
 const toolManager = new ToolManager();
 const jobManager = new JobManager();
@@ -77,17 +77,17 @@ function setup() {
 
 	atlas = new TileAtlas();
 
-	if( tileMap.ni === 0 ) {
-	    menuClicked();
+	if (tileMap.ni === 0) {
+		menuClicked();
 	} else {
 		menuClicked();
-	    //newClicked();
+		//newClicked();
 	}
 }
 
 function nothing() {
 	console.log('does nothing');
-	uiManager.addLogger("Not yet implemented");
+	uiManager.addLogger('Not yet implemented');
 }
 
 function menuClicked() {
@@ -110,10 +110,38 @@ function newClicked() {
 	curState = GAME_PLAY_STATE;
 	uiManager.setUI(game);
 	uiManager.loggerContainer.visible = true;
-	if( tileMap.ni === 0 ) {
+	if (tileMap.ni === 0) {
 		tileMap.init(16, 10);
 		tileMap.parseMap(null);
+		start[0].enabled = false;
+		start[1].enabled = true;
+		start[2].enabled = true;
+		start[3].enabled = true;
 	}
+}
+
+function closeCurrentDialog() {
+	uiManager.setDialog(null);
+}
+
+function deleteGame() {
+	tileMap.ni = 0;
+	start[0].enabled = true;
+	start[1].enabled = false;
+	start[2].enabled = false;
+	start[3].enabled = false;
+	closeCurrentDialog();
+}
+
+function popupDeleteDialog() {
+	//const dialog = new Dialog(100, 100, 500, 300);
+	const dialog = new Dialog(720,580,100,200);
+	dialog.startX = 300+200;
+	dialog.startY = 700-150;
+	dialog.components.push(new BFloatingButton(14, 92, '\u2714', deleteGame));
+	dialog.components.push(new BFloatingButton(14, 180, '\u2716', closeCurrentDialog));
+	dialog.components.forEach((c) => (c.visible = true));
+	uiManager.setDialog(dialog);
 }
 
 loadData();
@@ -129,10 +157,10 @@ const start = [
 	new BButton(300, 400, 'NEW', newClicked),
 	new BButton(300, 500, 'CONTINUE', newClicked),
 	new BButton(300, 600, 'SAVE', doSave),
-	new BButton(300, 700, 'DELETE', nothing),
+	new BButton(300, 700, 'DELETE', popupDeleteDialog),
 	new BFloatingButton(1100, 100, '\u2716', menuClicked)
 ];
-if( tileMap.ni === 0 ) {
+if (tileMap.ni === 0) {
 	start[1].enabled = false;
 	start[2].enabled = false;
 	start[3].enabled = false;
@@ -147,7 +175,7 @@ const structureMenu = new BMenu('Structure', 140, 675, null, 3);
 const objectMenu = new BMenu('Object', 250, 675, null, 3);
 const game = [ blockMenu, structureMenu, objectMenu ];
 blockMenu.addItem('metal', null, () => {
-	toolManager.setTool(new InstallBlockTool(1));
+	toolManager.setTool(new InstallTool('block', 1));
 });
 blockMenu.addItem('plastic', null, nothing);
 blockMenu.addItem('glass', null, nothing);
@@ -156,7 +184,9 @@ blockMenu.addItem('Remove Block', null, () => {
 });
 blockMenu.prepareItems();
 
-structureMenu.addItem('door', null, nothing);
+structureMenu.addItem('door', null, () => {
+	toolManager.setTool(new InstallTool('structure', 1));
+});
 structureMenu.addItem('lift', null, nothing);
 structureMenu.addItem('gate', null, nothing);
 structureMenu.prepareItems();
@@ -211,7 +241,6 @@ function drawGame() {
 
 function updateGame(elapsedTime) {
 	jobManager.update(elapsedTime);
-	uiManager.update(elapsedTime);
 }
 
 function processInput() {
@@ -222,6 +251,7 @@ function update(elapsedTime) {
 	if (curState === GAME_PLAY_STATE) {
 		updateGame(elapsedTime);
 	}
+	uiManager.update(elapsedTime);
 }
 
 function render() {
@@ -246,6 +276,10 @@ function render() {
 		textSize(10);
 		const txt = `Mouse ${mouseX},${mouseY}`;
 		drawText(txt, 1100, 770);
+		if (uiManager.currentDialog) {
+			const txt = `Mouse ${mouseX - uiManager.currentDialog.x},${mouseY - uiManager.currentDialog.y}`;
+			drawText(txt, 1100, 782);
+		}
 		pop();
 	}
 }
@@ -275,7 +309,7 @@ function keyPressed() {
 
 	if (keyCode === 27) {
 		// ESC
-		if( toolManager.currentTool ) {
+		if (toolManager.currentTool) {
 			toolManager.setTool(null);
 		} else {
 			// no tool, go back to start menu
