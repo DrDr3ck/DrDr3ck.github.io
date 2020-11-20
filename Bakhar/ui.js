@@ -21,7 +21,7 @@ class UIManager {
 
 	setUI(components) {
 		this.currentUI.forEach((c) => (c.visible = false));
-		this.currentUI = components;
+		this.currentUI = [...components];
 		this.currentUI.forEach((c) => (c.visible = true));
 		this.setMenu(null);
 	}
@@ -102,6 +102,7 @@ class UIManager {
 			});
 		}
 		if (overComponent && overComponent.enabled) {
+			toolManager.setTool(null);
 			overComponent.clicked();
 		}
 	}

@@ -313,6 +313,7 @@ function keyPressed() {
 			toolManager.setTool(null);
 		} else {
 			// no tool, go back to start menu
+			uiManager.setMenu(null);
 			startClicked();
 		}
 	}
