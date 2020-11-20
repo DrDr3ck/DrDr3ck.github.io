@@ -20,8 +20,9 @@ class ToolManager {
 }
 
 class ToolBase {
-	constructor(name) {
+	constructor(name, sizeX, sizeY) {
 		this.name = name;
+		this.size = {x:sizeX, y:sizeY};
 	}
 
 	start() {}
@@ -34,7 +35,7 @@ class ToolBase {
 		const tileX = Math.floor((mouseX - 20) / tileSize);
 		const tileY = Math.floor((mouseY - 20) / tileSize);
 		if (tileX >= 0 && tileY >= 0 && tileX < tileMap.ni && tileY < tileMap.nj) {
-			rect(tileX * tileSize + 20, tileY * tileSize + 20, tileSize, tileSize);
+			rect(tileX * tileSize + 20, tileY * tileSize + 20, tileSize*this.size.x, tileSize*this.size.y);
 		}
 		pop();
 	}
@@ -42,9 +43,12 @@ class ToolBase {
 
 class InstallTool extends ToolBase {
 	constructor(type, blockIndex) {
-		super(`install_${type}`);
+		super(`install_${type}`, 1, 1);
 		this.blockIndex = blockIndex;
 		this.type = type;
+		if( type === "structure" ) {
+			this.size.y = 2;
+		}
 	}
 
 	action() {
@@ -52,6 +56,7 @@ class InstallTool extends ToolBase {
 		const tileY = Math.floor((mouseY - 20) / tileSize);
 		// check if block is free on this tile
 		const tile = tileMap.tiles[tileX][tileY];
+		if( !tile ) { return; }
 		if( this.type === 'block' ) {
 			if (tile.isFree()) {
 				tile.backInUse();
