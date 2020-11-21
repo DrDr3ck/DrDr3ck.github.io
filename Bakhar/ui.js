@@ -21,7 +21,7 @@ class UIManager {
 
 	setUI(components) {
 		this.currentUI.forEach((c) => (c.visible = false));
-		this.currentUI = [...components];
+		this.currentUI = [ ...components ];
 		this.currentUI.forEach((c) => (c.visible = true));
 		this.setMenu(null);
 	}
@@ -112,7 +112,6 @@ class UIManager {
 			c.update(elapsedTime);
 		});
 		if (this.currentDialog) {
-			console.log("update dialog");
 			this.currentDialog.update(elapsedTime);
 		}
 		this.loggerContainer.update(elapsedTime);
@@ -257,6 +256,12 @@ class BFloatingButton extends BButtonTextBase {
 		this.textSize = textSize;
 	}
 
+	setTextSize(size) {
+		this.w = size * 1.2;
+		this.h = size * 1.2;
+		this.textSize = size;
+	}
+
 	draw() {
 		if (!this.visible) {
 			return;
@@ -365,6 +370,11 @@ class BMenu extends BButtonBase {
 
 	openMenu() {
 		this.children.forEach((c) => (c.visible = true));
+		const index = uiManager.currentUI.indexOf(this);
+		if (index >= 0) {
+			uiManager.currentUI.slice(index, 1);
+			uiManager.currentUI.push(this);
+		}
 		uiManager.currentUI.push(...this.children);
 		this.open = true;
 	}
@@ -425,6 +435,88 @@ class BMenuItem extends BButtonBase {
 	}
 }
 
+class BItem extends UIComponent {
+	constructor(title) {
+		super(0, 0, 0, 0);
+		this.title = title;
+		this.count = 0;
+	}
+
+	draw() {
+		push();
+		const over = this.mouseOver(mouseX - 100, mouseY - 100);
+		stroke(29, 105, 62);
+		fill(9, 47, 18);
+		strokeWeight(2);
+		if (over) {
+			stroke(188, 255, 219);
+			strokeWeight(4);
+		}
+		rect(this.x, this.y, this.w, this.h, 5);
+		noStroke();
+		drawText(this.title, this.x + this.w / 2, this.y + 8);
+		drawText(this.count, this.x + this.w / 2, this.y + this.h - 8);
+		pop();
+	}
+
+	clicked() {
+		super.clicked();
+		this.callback();
+	}
+}
+
+class BItemSelector extends UIComponent {
+	constructor(x, y, nbCols, nbRows) {
+		super(x, y, 0, 0);
+		this.items = [];
+		this.nbCols = nbCols;
+		this.nbRows = nbRows;
+		this.margin = 10;
+		this.itemSize = 80;
+		this.w = nbCols * (this.itemSize + this.margin) + this.margin + this.margin * 2; // space for "-/+"
+		this.h = nbRows * (this.itemSize + this.margin) + this.margin;
+		this.maxRows = 1;
+		this.curRow = 0;
+	}
+
+	computeNextItemPosition() {
+		const x = this.x + this.margin + this.items.length * (this.itemSize + this.margin);
+		const y = this.y + this.margin;
+		return { x: x, y: y };
+	}
+
+	addItem(item) {
+		const position = this.computeNextItemPosition();
+		this.items.push(item);
+		item.x = position.x;
+		item.y = position.y;
+		item.w = this.itemSize;
+		item.h = this.itemSize;
+		this.maxRows = Math.ceil(this.items.length / this.nbCols);
+		
+	}
+
+	draw() {
+		if (!this.visible) {
+			return;
+		}
+		push();
+		stroke(29, 105, 62);
+		strokeWeight(2);
+		rect(this.x, this.y, this.w, this.h, 5);
+		textSize(12);
+		textAlign(CENTER);
+		const iStart = 0;
+		const iStop = Math.min(3,this.items.length);
+		for( let i = iStart; i < iStop; i++ ) {
+			this.items[i].draw();
+		}
+		drawText('-', this.x + this.w - 10, this.y + this.margin * 2, this.curRow > 0);
+		drawText('+', this.x + this.w - 10, this.y + this.h - this.margin * 2, this.curRow+1 < this.maxRows);
+		pop();
+	}
+}
+
 class Dialog extends UIComponent {
 	constructor(x, y, w, h) {
 		super(x, y, w, h);
@@ -447,16 +539,21 @@ class Dialog extends UIComponent {
 			this.components.forEach((c) => c.draw());
 		} else {
 			const percent = 1 - Math.max(this.popupAnimation, 0) / this.totalPopupAnimationTime;
-			const x = this.startX-(this.startX-this.x)*percent;
-			const y = this.startY-(this.startY-this.y)*percent;
-			rect(x+this.w/2-this.w*percent/2, y+this.h/2-this.h*percent/2, this.w*percent, this.h*percent, 5);
+			const x = this.startX - (this.startX - this.x) * percent;
+			const y = this.startY - (this.startY - this.y) * percent;
+			rect(
+				x + this.w / 2 - this.w * percent / 2,
+				y + this.h / 2 - this.h * percent / 2,
+				this.w * percent,
+				this.h * percent,
+				5
+			);
 		}
 		pop();
 	}
 
 	update(elapsedTime) {
 		this.popupAnimation = Math.max(0, this.popupAnimation - elapsedTime);
-		console.log(this.popupAnimation);
 	}
 }
 

@@ -135,9 +135,9 @@ function deleteGame() {
 
 function popupDeleteDialog() {
 	//const dialog = new Dialog(100, 100, 500, 300);
-	const dialog = new Dialog(720,580,100,200);
-	dialog.startX = 300+200;
-	dialog.startY = 700-150;
+	const dialog = new Dialog(720, 580, 100, 200);
+	dialog.startX = 300 + 200;
+	dialog.startY = 700 - 150;
 	dialog.components.push(new BFloatingButton(14, 92, '\u2714', deleteGame));
 	dialog.components.push(new BFloatingButton(14, 180, '\u2716', closeCurrentDialog));
 	dialog.components.forEach((c) => (c.visible = true));
@@ -305,6 +305,35 @@ function keyPressed() {
 
 	if (key === 'S') {
 		doSave();
+	}
+
+	if (key === 'F') {
+		// add a 'four' dialog
+		if( uiManager.currentDialog !== null ) {
+			return;
+		}
+		const dialog = new Dialog(100, 100, 560, 400);
+		const selector = new BItemSelector(10, 10, 3/*5*/, 1);
+		selector.addItem(new BItem('plip'));
+		const item = new BItem('plap');
+		item.count = 10;
+		selector.addItem(item);
+		selector.addItem(new BItem('plop'));
+		selector.addItem(new BItem('plup'));
+		selector.addItem(new BItem('plep'));
+		selector.items.forEach((i) => (i.visible = true));
+		dialog.visible = true;
+		dialog.components.push(selector);
+		dialog.components.forEach((c) => (c.visible = true));
+		const closeDialogButton = new BFloatingButton(512, 50, '\u2716', () => {
+			closeCurrentDialog();
+			delete dialog;
+		});
+		closeDialogButton.setTextSize(32);
+		dialog.components.push(
+			closeDialogButton
+		);
+		uiManager.setDialog(dialog);
 	}
 
 	if (keyCode === 27) {
