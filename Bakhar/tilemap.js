@@ -42,7 +42,6 @@ class TileMap {
 	}
 
 	parseMap(jsonMap) {
-		console.log(jsonMap);
 		if (jsonMap !== null) {
 			this.dx = jsonMap.dx;
 			this.dy = jsonMap.dy;
