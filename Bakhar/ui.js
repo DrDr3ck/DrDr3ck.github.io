@@ -52,12 +52,12 @@ class UIManager {
 		let over = false;
 		if (this.currentDialog) {
 			this.currentDialog.components.forEach((c) => {
-				c.over = c.mouseOver(mouseX - this.currentDialog.x, mouseY - this.currentDialog.y);
+				c.mouseOver(mouseX - this.currentDialog.x, mouseY - this.currentDialog.y);
 				over = over || (c.over && c.isClickable());
 			});
 		} else {
 			this.currentUI.forEach((c) => {
-				c.over = c.mouseOver(mouseX, mouseY);
+				c.mouseOver(mouseX, mouseY);
 				over = over || (c.over && c.isClickable());
 			});
 		}
@@ -85,8 +85,9 @@ class UIManager {
 				if (!c.visible) {
 					return;
 				}
-				if (c.over) {
-					overComponent = c;
+				const curComponent = c.getOver();
+				if (curComponent) {
+					overComponent = curComponent;
 					return;
 				}
 			});
@@ -139,13 +140,21 @@ class UIComponent {
 		uiManager.components.push(this);
 	}
 
+	getOver() {
+		if (this.over) {
+			return this;
+		}
+		return null;
+	}
+
 	draw() {
-		if( this.visible ) {
+		if (this.visible) {
 			this.doDraw();
 		}
 	}
 
 	mouseOver(mx, my) {
+		this.over = false;
 		if (!this.enabled || !this.visible) {
 			return false;
 		}
@@ -153,6 +162,7 @@ class UIComponent {
 		if (mx < this.x) return false;
 		if (my > this.y + this.h) return false;
 		if (my < this.y) return false;
+		this.over = true;
 		return true;
 	}
 
@@ -170,17 +180,37 @@ class UIComponent {
 }
 
 class UIContainer extends UIComponent {
-	constructor(x,y,w,h) {
-		super(x,y,w,h);
+	constructor(x, y, w, h) {
+		super(x, y, w, h);
 		this.components = [];
 	}
 
+	mouseOver(mx, my) {
+		this.over = false;
+		this.clickable = false;
+		this.components.forEach((c) => {
+			c.mouseOver(mx, my);
+			if (c.over) {
+				this.over = true;
+				this.clickable = true; //c.isClickable();
+			}
+		});
+		return this.over;
+	}
+
+	getOver() {
+		if (this.over) {
+			return this;
+		}
+		return null;
+	}
+
 	doDraw() {
-		this.components.forEach(c=>c.draw());
+		this.components.forEach((c) => c.draw());
 	}
 
 	update(elapsedTime) {
-		this.components.forEach(c=>c.update(elapsedTime));
+		this.components.forEach((c) => c.update(elapsedTime));
 	}
 }
 
@@ -213,6 +243,7 @@ class BButtonTextBase extends BButtonBase {
 	}
 
 	mouseOver(mx, my) {
+		this.over = false;
 		if (!this.enabled || !this.visible) {
 			return false;
 		}
@@ -220,6 +251,7 @@ class BButtonTextBase extends BButtonBase {
 		if (mx < this.x) return false;
 		if (my < this.y - this.h) return false;
 		if (my > this.y) return false;
+		this.over = true;
 		return true;
 	}
 }
@@ -282,26 +314,26 @@ class BFloatingButton extends BButtonTextBase {
 
 	doDraw() {
 		push();
-		textAlign(CENTER, CENTER);
-		textSize(this.textSize);
 		let extend = 0;
 		if (this.over) {
 			stroke(188, 255, 219);
-			strokeWeight(4);
-			extend = 12;
+			strokeWeight(Math.ceil(this.textSize / 15));
+			extend = Math.ceil(this.textSize / 5);
 		} else {
 			stroke(29, 105, 62);
-			strokeWeight(2);
+			strokeWeight(Math.ceil(this.textSize / 30));
 		}
 		fill(9, 47, 18);
 
 		ellipse(this.x + this.w / 2, this.y - this.h / 2, this.w + extend, this.h + extend);
 		if (this.over) {
 			stroke(188, 255, 219);
-			strokeWeight(2);
+			strokeWeight(Math.ceil(this.textSize / 30));
 		} else {
 			noStroke();
 		}
+		textAlign(CENTER, CENTER);
+		textSize(this.textSize);
 		drawText(this.text, this.x + this.w / 2, this.y - this.h / 2);
 		pop();
 	}
@@ -454,11 +486,10 @@ class BItem extends UIComponent {
 
 	doDraw() {
 		push();
-		const over = this.mouseOver(mouseX - 100, mouseY - 100);
 		stroke(29, 105, 62);
 		fill(9, 47, 18);
 		strokeWeight(2);
-		if (over) {
+		if (this.over) {
 			stroke(188, 255, 219);
 			strokeWeight(4);
 		}
@@ -486,12 +517,59 @@ class BItemSelector extends UIContainer {
 		this.h = nbRows * (this.itemSize + this.margin) + this.margin;
 		this.maxRows = 1;
 		this.curRow = 0;
+		this.minus = new BFloatingButton(this.x + this.w - this.margin, this.y + this.margin * 2, '-', () => {
+			this.curRow--;
+			this.checkNavigators();
+		});
+		this.minus.setTextSize(12);
+		this.minus.visible = true;
+		this.plus = new BFloatingButton(this.x + this.w - this.margin, this.y + this.h - this.margin * 2, '+', () => {
+			this.curRow++;
+			this.checkNavigators();
+		});
+		this.plus.setTextSize(12);
+		this.plus.visible = true;
+
+		this.clickable = false;
+	}
+
+	getOver() {
+		if (this.over) {
+			if (this.plus.over) {
+				return this.plus;
+			}
+			if (this.minus.over) {
+				return this.minus;
+			}
+			return this;
+		}
+		return null;
 	}
 
 	computeNextItemPosition() {
 		const x = this.x + this.margin + this.components.length * (this.itemSize + this.margin);
 		const y = this.y + this.margin;
 		return { x: x, y: y };
+	}
+
+	mouseOver(mx, my) {
+		this.over = super.mouseOver(mx, my);
+		if (!this.over) {
+			if (this.plus.mouseOver(mx, my) || this.minus.mouseOver(mx, my)) {
+				this.over = true;
+				this.clickable = true;
+			}
+		}
+		return this.over;
+	}
+
+	isClickable() {
+		return this.clickable;
+	}
+
+	checkNavigators() {
+		this.minus.enabled = this.curRow > 0;
+		this.plus.enabled = this.curRow + 1 < this.maxRows;
 	}
 
 	addItem(item) {
@@ -502,24 +580,23 @@ class BItemSelector extends UIContainer {
 		item.w = this.itemSize;
 		item.h = this.itemSize;
 		this.maxRows = Math.ceil(this.components.length / this.nbCols);
-		
 	}
 
 	doDraw() {
 		push();
 		stroke(29, 105, 62);
 		strokeWeight(2);
-		console.log(this.x, this.y);
 		rect(this.x, this.y, this.w, this.h, 5);
 		textSize(12);
 		textAlign(CENTER);
 		const iStart = 0;
-		const iStop = Math.min(3,this.components.length);
-		for( let i = iStart; i < iStop; i++ ) {
+		const iStop = Math.min(3, this.components.length);
+		for (let i = iStart; i < iStop; i++) {
+			this.components[i].visible = true;
 			this.components[i].doDraw();
 		}
-		drawText('-', this.x + this.w - 10, this.y + this.margin * 2, this.curRow > 0);
-		drawText('+', this.x + this.w - 10, this.y + this.h - this.margin * 2, this.curRow+1 < this.maxRows);
+		this.minus.draw();
+		this.plus.draw();
 		pop();
 	}
 }

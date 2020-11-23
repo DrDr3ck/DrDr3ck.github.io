@@ -57,6 +57,12 @@ uiManager.loggerContainer.visible = false;
 const toolManager = new ToolManager();
 const jobManager = new JobManager();
 
+const objectManager = new ObjectManager();
+objectManager.addObject(new ObjectDescription('coal', 'coal ore'), 100);
+objectManager.addObject(new ObjectDescription('iron', 'iron ore'), 50);
+objectManager.addObject(new ObjectDescription('copper', 'copper ore'), 20);
+objectManager.addObject(new ObjectDescription('gold', 'gold ore'), 5);
+
 const FPS = 60;
 
 let tileImages = [];
@@ -309,30 +315,27 @@ function keyPressed() {
 
 	if (key === 'F') {
 		// add a 'four' dialog
-		if( uiManager.currentDialog !== null ) {
+		if (uiManager.currentDialog !== null) {
 			return;
 		}
 		const dialog = new Dialog(100, 100, 560, 400);
-		const selector = new BItemSelector(10, 10, 3/*5*/, 1);
-		selector.addItem(new BItem('plip'));
-		const item = new BItem('plap');
-		item.count = 10;
-		selector.addItem(item);
-		selector.addItem(new BItem('plop'));
-		selector.addItem(new BItem('plup'));
-		selector.addItem(new BItem('plep'));
-		selector.components.forEach((i) => (i.visible = true));
-		dialog.visible = true;
+		const selector = new BItemSelector(10, 10, 3 /*5*/, 1 /*2*/);
+
+		objectManager.items.forEach((obj) => {
+			const item = new BItem(obj.description.name);
+			item.count = obj.count;
+			selector.addItem(item);
+		});
 		dialog.components.push(selector);
+
+		dialog.visible = true;
 		dialog.components.forEach((c) => (c.visible = true));
 		const closeDialogButton = new BFloatingButton(512, 50, '\u2716', () => {
 			closeCurrentDialog();
 			delete dialog;
 		});
 		closeDialogButton.setTextSize(32);
-		dialog.components.push(
-			closeDialogButton
-		);
+		dialog.components.push(closeDialogButton);
 		uiManager.setDialog(dialog);
 	}
 
