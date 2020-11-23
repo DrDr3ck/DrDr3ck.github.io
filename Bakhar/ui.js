@@ -139,6 +139,12 @@ class UIComponent {
 		uiManager.components.push(this);
 	}
 
+	draw() {
+		if( this.visible ) {
+			this.doDraw();
+		}
+	}
+
 	mouseOver(mx, my) {
 		if (!this.enabled || !this.visible) {
 			return false;
@@ -160,6 +166,21 @@ class UIComponent {
 
 	isClickable() {
 		return false;
+	}
+}
+
+class UIContainer extends UIComponent {
+	constructor(x,y,w,h) {
+		super(x,y,w,h);
+		this.components = [];
+	}
+
+	doDraw() {
+		this.components.forEach(c=>c.draw());
+	}
+
+	update(elapsedTime) {
+		this.components.forEach(c=>c.update(elapsedTime));
 	}
 }
 
@@ -210,10 +231,7 @@ class BButton extends BButtonTextBase {
 		this.textSize = textSize;
 	}
 
-	draw() {
-		if (!this.visible) {
-			return;
-		}
+	doDraw() {
 		push();
 		textAlign(CENTER, CENTER);
 		rectMode(CENTER);
@@ -262,10 +280,7 @@ class BFloatingButton extends BButtonTextBase {
 		this.textSize = size;
 	}
 
-	draw() {
-		if (!this.visible) {
-			return;
-		}
+	doDraw() {
 		push();
 		textAlign(CENTER, CENTER);
 		textSize(this.textSize);
@@ -322,10 +337,7 @@ class BMenu extends BButtonBase {
 		}
 	}
 
-	draw() {
-		if (!this.visible) {
-			return;
-		}
+	doDraw() {
 		push();
 		fill(9, 47, 18);
 		if (this.over) {
@@ -404,10 +416,8 @@ class BMenuItem extends BButtonBase {
 		this.visible = true;
 		this.menu = menu;
 	}
-	draw() {
-		if (!this.visible) {
-			return;
-		}
+
+	doDraw() {
 		push();
 		fill(9, 47, 18);
 		if (this.over) {
@@ -442,7 +452,7 @@ class BItem extends UIComponent {
 		this.count = 0;
 	}
 
-	draw() {
+	doDraw() {
 		push();
 		const over = this.mouseOver(mouseX - 100, mouseY - 100);
 		stroke(29, 105, 62);
@@ -465,10 +475,9 @@ class BItem extends UIComponent {
 	}
 }
 
-class BItemSelector extends UIComponent {
+class BItemSelector extends UIContainer {
 	constructor(x, y, nbCols, nbRows) {
 		super(x, y, 0, 0);
-		this.items = [];
 		this.nbCols = nbCols;
 		this.nbRows = nbRows;
 		this.margin = 10;
@@ -480,36 +489,34 @@ class BItemSelector extends UIComponent {
 	}
 
 	computeNextItemPosition() {
-		const x = this.x + this.margin + this.items.length * (this.itemSize + this.margin);
+		const x = this.x + this.margin + this.components.length * (this.itemSize + this.margin);
 		const y = this.y + this.margin;
 		return { x: x, y: y };
 	}
 
 	addItem(item) {
 		const position = this.computeNextItemPosition();
-		this.items.push(item);
+		this.components.push(item);
 		item.x = position.x;
 		item.y = position.y;
 		item.w = this.itemSize;
 		item.h = this.itemSize;
-		this.maxRows = Math.ceil(this.items.length / this.nbCols);
+		this.maxRows = Math.ceil(this.components.length / this.nbCols);
 		
 	}
 
-	draw() {
-		if (!this.visible) {
-			return;
-		}
+	doDraw() {
 		push();
 		stroke(29, 105, 62);
 		strokeWeight(2);
+		console.log(this.x, this.y);
 		rect(this.x, this.y, this.w, this.h, 5);
 		textSize(12);
 		textAlign(CENTER);
 		const iStart = 0;
-		const iStop = Math.min(3,this.items.length);
+		const iStop = Math.min(3,this.components.length);
 		for( let i = iStart; i < iStop; i++ ) {
-			this.items[i].draw();
+			this.components[i].doDraw();
 		}
 		drawText('-', this.x + this.w - 10, this.y + this.margin * 2, this.curRow > 0);
 		drawText('+', this.x + this.w - 10, this.y + this.h - this.margin * 2, this.curRow+1 < this.maxRows);
@@ -517,18 +524,16 @@ class BItemSelector extends UIComponent {
 	}
 }
 
-class Dialog extends UIComponent {
+class Dialog extends UIContainer {
 	constructor(x, y, w, h) {
 		super(x, y, w, h);
-		this.components = [];
 		this.totalPopupAnimationTime = 600;
 		this.popupAnimation = this.totalPopupAnimationTime;
 		this.startX = x;
 		this.startY = y;
 	}
 
-	draw() {
-		if (!this.visible) return;
+	doDraw() {
 		push();
 		stroke(29, 105, 62);
 		strokeWeight(2);
@@ -567,8 +572,7 @@ class LoggerContainer extends UIComponent {
 		this.loggers.push(new Logger(text, 15000));
 	}
 
-	draw() {
-		if (!this.visible) return;
+	doDraw() {
 		push();
 		textSize(16);
 		translate(this.x, this.y);

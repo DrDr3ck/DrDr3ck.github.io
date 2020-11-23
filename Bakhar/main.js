@@ -321,7 +321,7 @@ function keyPressed() {
 		selector.addItem(new BItem('plop'));
 		selector.addItem(new BItem('plup'));
 		selector.addItem(new BItem('plep'));
-		selector.items.forEach((i) => (i.visible = true));
+		selector.components.forEach((i) => (i.visible = true));
 		dialog.visible = true;
 		dialog.components.push(selector);
 		dialog.components.forEach((c) => (c.visible = true));
