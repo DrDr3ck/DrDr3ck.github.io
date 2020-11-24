@@ -598,7 +598,7 @@ class BItemSelector extends UIContainer {
 	}
 }
 
-class BCraft extends UIComponent {
+class BCraftRecipe extends UIComponent {
 	constructor(x, y) {
 		const craftSize = 80;
 		super(x, y, (craftSize+10)*3+10, craftSize+20);
@@ -629,6 +629,23 @@ class BCraft extends UIComponent {
 				x += this.craftSize + 10;
 			}
 		);
+	}
+}
+
+class BCraftQueue extends UIContainer {
+	constructor(x,y,size) {
+		const itemSize = 80;
+		super(x,y,(itemSize+10)*size+10, itemSize+20);
+		this.maxQueue = size;
+		this.itemSize = itemSize;
+	}
+
+	doDraw() {
+		stroke(29, 105, 62);
+		strokeWeight(2);
+		translate(this.x, this.y);
+		rect(0, 0, this.w, this.h, 5);
+		this.components.forEach((c) => c.draw());
 	}
 }
 

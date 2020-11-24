@@ -320,17 +320,21 @@ function keyPressed() {
 		}
 		const dialog = new Dialog(100, 100, 560, 400);
 		const selector = new BItemSelector(10, 10, 5, 1 /*2*/);
-
 		Object.keys(objectManager.items).forEach((key) => {
 			const obj = objectManager.items[key];
 			const item = new BItem(obj.description.name);
 			item.count = obj.count;
 			selector.addItem(item);
 		});
-		const crafter = new BCraft(10,selector.x+selector.h+10);
+
+		const crafter = new BCraftRecipe(10,selector.y+selector.h+10);
 		crafter.setRecipe([{name: 'iron', count:1},{name: 'iron', count:1}]);
+
+		const queue = new BCraftQueue(10, crafter.y+crafter.h+10,5);
+
 		dialog.components.push(selector);
 		dialog.components.push(crafter);
+		dialog.components.push(queue);
 
 		dialog.visible = true;
 		dialog.components.forEach((c) => (c.visible = true));
