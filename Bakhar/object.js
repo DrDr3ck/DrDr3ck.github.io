@@ -1,10 +1,14 @@
 class ObjectManager {
     constructor() {
-        this.items = [];
+        this.items = {};
     }
 
     addObject(description, count) {
-        this.items.push({description, count});
+        this.items[description.name] = {description, count};
+    }
+
+    getObject(name) {
+        return this.items[name];
     }
 
 }
@@ -14,6 +18,10 @@ class ObjectDescription {
         this.name = name;
         this.description = description;
         this.recipe = [];
+    }
+
+    addRecipeItem(name, count) {
+        this.recipe.push({name, count});
     }
 }
 

@@ -319,14 +319,18 @@ function keyPressed() {
 			return;
 		}
 		const dialog = new Dialog(100, 100, 560, 400);
-		const selector = new BItemSelector(10, 10, 3 /*5*/, 1 /*2*/);
+		const selector = new BItemSelector(10, 10, 5, 1 /*2*/);
 
-		objectManager.items.forEach((obj) => {
+		Object.keys(objectManager.items).forEach((key) => {
+			const obj = objectManager.items[key];
 			const item = new BItem(obj.description.name);
 			item.count = obj.count;
 			selector.addItem(item);
 		});
+		const crafter = new BCraft(10,selector.x+selector.h+10);
+		crafter.setRecipe([{name: 'iron', count:1},{name: 'iron', count:1}]);
 		dialog.components.push(selector);
+		dialog.components.push(crafter);
 
 		dialog.visible = true;
 		dialog.components.forEach((c) => (c.visible = true));

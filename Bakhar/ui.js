@@ -149,7 +149,9 @@ class UIComponent {
 
 	draw() {
 		if (this.visible) {
+			push();
 			this.doDraw();
+			pop();
 		}
 	}
 
@@ -264,7 +266,6 @@ class BButton extends BButtonTextBase {
 	}
 
 	doDraw() {
-		push();
 		textAlign(CENTER, CENTER);
 		rectMode(CENTER);
 		textSize(this.textSize);
@@ -295,7 +296,6 @@ class BButton extends BButtonTextBase {
 			noStroke();
 		}
 		drawText(this.text, this.x + this.w / 2, this.y - this.h / 2, this.enabled);
-		pop();
 	}
 }
 
@@ -313,7 +313,6 @@ class BFloatingButton extends BButtonTextBase {
 	}
 
 	doDraw() {
-		push();
 		let extend = 0;
 		if (this.over) {
 			stroke(188, 255, 219);
@@ -335,7 +334,6 @@ class BFloatingButton extends BButtonTextBase {
 		textAlign(CENTER, CENTER);
 		textSize(this.textSize);
 		drawText(this.text, this.x + this.w / 2, this.y - this.h / 2);
-		pop();
 	}
 }
 
@@ -370,7 +368,6 @@ class BMenu extends BButtonBase {
 	}
 
 	doDraw() {
-		push();
 		fill(9, 47, 18);
 		if (this.over) {
 			stroke(188, 255, 219);
@@ -401,7 +398,6 @@ class BMenu extends BButtonBase {
 				nbRows * 110 + 10
 			);
 		}
-		pop();
 	}
 
 	getNextX(childIndex) {
@@ -450,7 +446,6 @@ class BMenuItem extends BButtonBase {
 	}
 
 	doDraw() {
-		push();
 		fill(9, 47, 18);
 		if (this.over) {
 			stroke(188, 255, 219);
@@ -467,7 +462,6 @@ class BMenuItem extends BButtonBase {
 			noStroke();
 			drawText(this.title, this.x + this.w / 2, this.y + this.h - 12);
 		}
-		pop();
 	}
 
 	clicked() {
@@ -485,7 +479,6 @@ class BItem extends UIComponent {
 	}
 
 	doDraw() {
-		push();
 		stroke(29, 105, 62);
 		fill(9, 47, 18);
 		strokeWeight(2);
@@ -497,7 +490,6 @@ class BItem extends UIComponent {
 		noStroke();
 		drawText(this.title, this.x + this.w / 2, this.y + 8);
 		drawText(this.count, this.x + this.w / 2, this.y + this.h - 8);
-		pop();
 	}
 
 	clicked() {
@@ -529,6 +521,7 @@ class BItemSelector extends UIContainer {
 		});
 		this.plus.setTextSize(12);
 		this.plus.visible = true;
+		this.checkNavigators();
 
 		this.clickable = false;
 	}
@@ -589,7 +582,6 @@ class BItemSelector extends UIContainer {
 	}
 
 	doDraw() {
-		push();
 		stroke(29, 105, 62);
 		strokeWeight(2);
 		rect(this.x, this.y, this.w, this.h, 5);
@@ -603,7 +595,40 @@ class BItemSelector extends UIContainer {
 		}
 		this.minus.draw();
 		this.plus.draw();
-		pop();
+	}
+}
+
+class BCraft extends UIComponent {
+	constructor(x, y) {
+		const craftSize = 80;
+		super(x, y, (craftSize+10)*3+10, craftSize+20);
+		this.recipe = [];
+		this.craftSize = craftSize;
+	}
+
+	setRecipe(recipe) {
+		this.recipe = recipe;
+	}
+
+	doDraw() {
+		stroke(29, 105, 62);
+		strokeWeight(2);
+		rect(this.x, this.y, this.w, this.h, 5);
+		let x = this.x+10;
+		const y = this.y+10;
+		textSize(12);
+		textAlign(CENTER);
+		this.recipe.forEach(
+			item=>{
+				rect(x,y,this.craftSize, this.craftSize,5);
+				push();
+				noStroke();
+				drawText(item.name,x + this.craftSize / 2, y + 8);
+				drawText(item.count, x + this.craftSize / 2, y + this.craftSize - 8);
+				pop();
+				x += this.craftSize + 10;
+			}
+		);
 	}
 }
 
@@ -617,7 +642,6 @@ class Dialog extends UIContainer {
 	}
 
 	doDraw() {
-		push();
 		stroke(29, 105, 62);
 		strokeWeight(2);
 		fill(9, 47, 18);
@@ -638,7 +662,6 @@ class Dialog extends UIContainer {
 				5
 			);
 		}
-		pop();
 	}
 
 	update(elapsedTime) {
@@ -657,7 +680,6 @@ class LoggerContainer extends UIComponent {
 	}
 
 	doDraw() {
-		push();
 		textSize(16);
 		translate(this.x, this.y);
 		/*
@@ -676,7 +698,6 @@ class LoggerContainer extends UIComponent {
 			logger.draw(x, y);
 			y += 20;
 		}
-		pop();
 	}
 
 	update(elapsedTime) {
