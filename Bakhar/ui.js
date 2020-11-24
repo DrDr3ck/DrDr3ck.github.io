@@ -547,7 +547,7 @@ class BItemSelector extends UIContainer {
 	}
 
 	computeNextItemPosition() {
-		const x = this.x + this.margin + this.components.length * (this.itemSize + this.margin);
+		const x = this.x + this.margin + (this.components.length % this.nbCols) * (this.itemSize + this.margin);
 		const y = this.y + this.margin;
 		return { x: x, y: y };
 	}
@@ -570,6 +570,12 @@ class BItemSelector extends UIContainer {
 	checkNavigators() {
 		this.minus.enabled = this.curRow > 0;
 		this.plus.enabled = this.curRow + 1 < this.maxRows;
+		const iStart = this.curRow * this.nbCols;
+		const iStop = Math.min(iStart + this.nbCols, this.components.length);
+		for (let i = 0; i < this.components.length; i++) {
+			const visibility = i >= iStart && i < iStop;
+			this.components[i].visible = visibility;
+		}
 	}
 
 	addItem(item) {
@@ -589,8 +595,8 @@ class BItemSelector extends UIContainer {
 		rect(this.x, this.y, this.w, this.h, 5);
 		textSize(12);
 		textAlign(CENTER);
-		const iStart = 0;
-		const iStop = Math.min(3, this.components.length);
+		const iStart = this.curRow * this.nbCols;
+		const iStop = Math.min(iStart + this.nbCols, this.components.length);
 		for (let i = iStart; i < iStop; i++) {
 			this.components[i].visible = true;
 			this.components[i].doDraw();
@@ -615,12 +621,13 @@ class Dialog extends UIContainer {
 		stroke(29, 105, 62);
 		strokeWeight(2);
 		fill(9, 47, 18);
+		const percent = 1 - Math.max(this.popupAnimation, 0) / this.totalPopupAnimationTime;
+		background(10, 10, 10, percent * 160);
 		if (this.popupAnimation === 0) {
 			translate(this.x, this.y);
 			rect(0, 0, this.w, this.h, 5);
 			this.components.forEach((c) => c.draw());
 		} else {
-			const percent = 1 - Math.max(this.popupAnimation, 0) / this.totalPopupAnimationTime;
 			const x = this.startX - (this.startX - this.x) * percent;
 			const y = this.startY - (this.startY - this.y) * percent;
 			rect(
