@@ -21,7 +21,7 @@ class UIManager {
 
 	setUI(components) {
 		this.currentUI.forEach((c) => (c.visible = false));
-		this.currentUI = [ ...components ];
+		this.currentUI = [...components];
 		this.currentUI.forEach((c) => (c.visible = true));
 		this.setMenu(null);
 	}
@@ -64,7 +64,11 @@ class UIManager {
 		if (over) {
 			cursor('pointer');
 		} else {
-			cursor('default');
+			if (toolManager.currentTool) {
+				cursor(CROSS);
+			} else {
+				cursor('default');
+			}
 		}
 	}
 
@@ -601,7 +605,7 @@ class BItemSelector extends UIContainer {
 class BCraftRecipe extends UIComponent {
 	constructor(x, y) {
 		const craftSize = 80;
-		super(x, y, (craftSize+10)*3+10, craftSize+20);
+		super(x, y, (craftSize + 10) * 3 + 10, craftSize + 20);
 		this.recipe = [];
 		this.craftSize = craftSize;
 	}
@@ -614,16 +618,16 @@ class BCraftRecipe extends UIComponent {
 		stroke(29, 105, 62);
 		strokeWeight(2);
 		rect(this.x, this.y, this.w, this.h, 5);
-		let x = this.x+10;
-		const y = this.y+10;
+		let x = this.x + 10;
+		const y = this.y + 10;
 		textSize(12);
 		textAlign(CENTER);
 		this.recipe.forEach(
-			item=>{
-				rect(x,y,this.craftSize, this.craftSize,5);
+			item => {
+				rect(x, y, this.craftSize, this.craftSize, 5);
 				push();
 				noStroke();
-				drawText(item.name,x + this.craftSize / 2, y + 8);
+				drawText(item.name, x + this.craftSize / 2, y + 8);
 				drawText(item.count, x + this.craftSize / 2, y + this.craftSize - 8);
 				pop();
 				x += this.craftSize + 10;
@@ -633,9 +637,9 @@ class BCraftRecipe extends UIComponent {
 }
 
 class BCraftQueue extends UIContainer {
-	constructor(x,y,size) {
+	constructor(x, y, size) {
 		const itemSize = 80;
-		super(x,y,(itemSize+10)*size+10, itemSize+20);
+		super(x, y, (itemSize + 10) * size + 10, itemSize + 20);
 		this.maxQueue = size;
 		this.itemSize = itemSize;
 	}
@@ -743,6 +747,6 @@ class Logger {
 	}
 }
 
-function test() {}
+function test() { }
 
 test();
