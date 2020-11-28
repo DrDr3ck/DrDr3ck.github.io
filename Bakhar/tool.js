@@ -22,20 +22,21 @@ class ToolManager {
 class ToolBase {
 	constructor(name, sizeX, sizeY) {
 		this.name = name;
-		this.size = {x:sizeX, y:sizeY};
+		this.size = { x: sizeX, y: sizeY };
+		this.fill = { r: 51, g: 51, b: 51, a: 255 };
 	}
-
-	start() {}
-
-	cancel() {}
-
+	
+	start() { }
+	
+	cancel() { }
+	
 	draw() {
 		push();
-		fill(51);
+		fill(this.fill.r, this.fill.g, this.fill.b, this.fill.a);
 		const tileX = Math.floor((mouseX - 20) / tileSize);
 		const tileY = Math.floor((mouseY - 20) / tileSize);
 		if (tileX >= 0 && tileY >= 0 && tileX < tileMap.ni && tileY < tileMap.nj) {
-			rect(tileX * tileSize + 20, tileY * tileSize + 20, tileSize*this.size.x, tileSize*this.size.y);
+			rect(tileX * tileSize + 20, tileY * tileSize + 20, tileSize * this.size.x, tileSize * this.size.y);
 		}
 		pop();
 	}
@@ -46,18 +47,18 @@ class InstallTool extends ToolBase {
 		super(`install_${type}`, 1, 1);
 		this.blockIndex = blockIndex;
 		this.type = type;
-		if( type === "structure" ) {
+		if (type === "structure") {
 			this.size.y = 2;
 		}
 	}
-
+	
 	action() {
 		const tileX = Math.floor((mouseX - 20) / tileSize);
 		const tileY = Math.floor((mouseY - 20) / tileSize);
 		// check if block is free on this tile
 		const tile = tileMap.tiles[tileX][tileY];
-		if( !tile ) { return; }
-		if( this.type === 'block' ) {
+		if (!tile) { return; }
+		if (this.type === 'block') {
 			if (tile.isFree()) {
 				tile.backInUse();
 				uiManager.addLogger(`Adding back ${this.type}`);
@@ -67,8 +68,8 @@ class InstallTool extends ToolBase {
 				uiManager.addLogger(`Adding front ${this.type}`);
 				jobManager.addJob(new InstallBlockJob(this.blockIndex, tileX, tileY, 5000));
 			}
-		} else if( this.type === 'structure') {
-			if( tile.isStructureFree() ) {
+		} else if (this.type === 'structure') {
+			if (tile.isStructureFree()) {
 				uiManager.addLogger(`TODO: Adding front ${this.type}`);
 			}
 		}
@@ -77,9 +78,10 @@ class InstallTool extends ToolBase {
 
 class RemoveBlockTool extends ToolBase {
 	constructor() {
-		super('remove_block');
+		super('remove_block', 1, 1);
+		this.fill = { r: 151, g: 51, b: 51, a: 128 };
 	}
-
+	
 	action() {
 		const tileX = Math.floor((mouseX - 20) / tileSize);
 		const tileY = Math.floor((mouseY - 20) / tileSize);
