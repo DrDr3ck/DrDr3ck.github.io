@@ -328,9 +328,14 @@ function keyPressed() {
 		});
 
 		const crafter = new BCraftRecipe(10,selector.y+selector.h+10);
-		crafter.setRecipe([{name: 'iron', count:1},{name: 'iron', count:1}]);
+		crafter.setRecipe({description: "plank", items: [{name: 'wood', count:1},{name: 'wood', count:1}] });
 
 		const queue = new BCraftQueue(10, crafter.y+crafter.h+10,5);
+
+		crafter.components.push(new BFloatingButton(crafter.x+(80 + 10) * 4 + 10, crafter.y+5+80, "C", ()=>{
+			queue.addCraft(crafter.recipe);
+		}));
+		crafter.components.forEach(c => c.visible = true);
 
 		dialog.components.push(selector);
 		dialog.components.push(crafter);
