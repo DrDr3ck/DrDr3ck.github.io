@@ -87,6 +87,7 @@ class RemoveBlockTool extends ToolBase {
 		const tileY = Math.floor((mouseY - 20) / tileSize);
 		// check if block is free on this tile
 		const tile = tileMap.tiles[tileX][tileY];
+		if (!tile) { return; }
 		if (tile.front > 0) {
 			uiManager.addLogger("Removing front block");
 			jobManager.addJob(new RemoveBlockJob(tileX, tileY, 5000));
