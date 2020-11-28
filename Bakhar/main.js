@@ -271,11 +271,11 @@ function render() {
 		drawGame();
 	}
 	strokeWeight(1);
+	jobManager.draw();
 	uiManager.draw();
 	if (toolManager.currentTool) {
 		toolManager.currentTool.draw();
 	}
-	jobManager.draw();
 
 	if (toggleHelp) {
 		push();
