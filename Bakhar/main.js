@@ -351,9 +351,10 @@ function keyPressed() {
 		// ESC
 		if (toolManager.currentTool) {
 			toolManager.setTool(null);
-		} else {
-			// no tool, go back to start menu
+		} else if( uiManager.currentMenu ) {
 			uiManager.setMenu(null);
+		} else {
+			// no tool, no menu, go back to start menu
 			startClicked();
 		}
 	}
