@@ -124,12 +124,24 @@ function canJump(player, col, row) {
         if (enemyPawn(col + 1, row + 1) && isFree(col + 2, row + 2)) {
             return true;
         }
+        if (enemyPawn(col - 1, row - 1) && isFree(col - 2, row - 2)) {
+            return true;
+        }
+        if (enemyPawn(col + 1, row - 1) && isFree(col + 2, row - 2)) {
+            return true;
+        }
     }
     if (player === 2) {
         if (enemyPawn(col - 1, row - 1) && isFree(col - 2, row - 2)) {
             return true;
         }
         if (enemyPawn(col + 1, row - 1) && isFree(col + 2, row - 2)) {
+            return true;
+        }
+        if (enemyPawn(col - 1, row + 1) && isFree(col - 2, row + 2)) {
+            return true;
+        }
+        if (enemyPawn(col + 1, row + 1) && isFree(col + 2, row + 2)) {
             return true;
         }
     }
@@ -142,6 +154,9 @@ function deselectCurrentPawn(tileX, tileY) {
     }
     const val = board[tileX][tileY];
     if (!isCurrentPlayer(val)) {
+        return;
+    }
+    if( selectablePawns.length <=1 ) {
         return;
     }
     if (selectedPawn && selectedPawn.col === tileX && selectedPawn.row === tileY) {
@@ -172,9 +187,9 @@ function computeSelectable() {
             if (canJump(val, col, row)) {
                 if (!force) {
                     selectablePawns = [];
-                    addSelect(col, row);
                     force = true;
                 }
+                addSelect(col, row);
             }
             if (!force && canMove(val, col, row)) {
                 addSelect(col, row);
@@ -189,23 +204,42 @@ function computeMove(tileX, tileY) {
     if (curPlayer === 1) {
         let col = tileX - 1;
         const row = tileY + 1;
-        if (isFree(col, row)) {
+        if (!force && isFree(col, row)) {
             addMove(col, row);
+        } else if( enemyPawn(col, row) && isFree(col-1 ,row+1) ) {
+            addMove(col-1, row+1);
+        } else if( enemyPawn(col, row-2) && isFree(col-1 ,row-3) ) {
+            addMove(col-1, row-3);
         }
         col = tileX + 1;
-        if (isFree(col, row)) {
+        if (!force && isFree(col, row)) {
             addMove(col, row);
+        } else if( enemyPawn(col, row) && isFree(col+1 ,row+1) ) {
+            addMove(col+1, row+1);
+        } else if( enemyPawn(col, row-2) && isFree(col+1 ,row-3) ) {
+            addMove(col+1, row-3);
         }
     }
     if (curPlayer === 2) {
+        if( tileX === 0 && tileY === 5) {
+            console.log("");
+        }
         let col = tileX - 1;
         const row = tileY - 1;
-        if (isFree(col, row)) {
+        if (!force && isFree(col, row)) {
             addMove(col, row);
+        } else if( enemyPawn(col, row) && isFree(col-1 ,row-1) ) {
+            addMove(col-1, row-1);
+        } else if( enemyPawn(col, row+2) && isFree(col-1 ,row+3) ) {
+            addMove(col-1, row+3);
         }
         col = tileX + 1;
-        if (isFree(col, row)) {
+        if (!force && isFree(col, row)) {
             addMove(col, row);
+        } else if( enemyPawn(col, row) && isFree(col+1 ,row-1) ) {
+            addMove(col+1, row-1);
+        } else if( enemyPawn(col, row+2) && isFree(col+1 ,row+3) ) {
+            addMove(col+1, row+3);
         }
     }
 }
@@ -219,6 +253,15 @@ function nextPlayer() {
         uiManager.addLogger(`White turn`);
     }
     computeSelectable();
+}
+
+function isJumping(fromX, fromY, toX, toY) {
+    return Math.abs(fromX-toX)>1 || Math.abs(fromY-toY)>1;
+}
+
+function removePawn(fromX, dx, fromY, dy) {
+    // TODO
+    board[fromX+dx][fromY+dy] = 0;
 }
 
 function movePawn(tileX, tileY) {
@@ -235,6 +278,21 @@ function movePawn(tileX, tileY) {
     // move pawn
     board[tileX][tileY] = curPlayer;
     board[selectedPawn.col][selectedPawn.row] = 0;
+    // jump ?
+    if( isJumping(selectedPawn.col, selectedPawn.row, tileX, tileY) ) {
+        // remove a pawn !!
+        const dx = tileX > selectedPawn.col ? 1 : -1;
+        const dy = tileY > selectedPawn.row ? 1 : -1;
+        removePawn(selectedPawn.col, dx, selectedPawn.row, dy);
+        // may jump over another enemy pawn ?
+        if( canJump(curPlayer, tileX, tileY)) {
+            setSelectedPawn(tileX, tileY);
+            force = true;
+            computeMove(tileX, tileY);
+            return;
+        }
+    }
+    // reset
     selectedPawn = null;
     moves = [];
     gameState = PLAYER_MOVE;
@@ -255,7 +313,7 @@ function selectPawn(tileX, tileY) {
         return;
     }
     if (!canMove(val, tileX, tileY)) {
-        return;
+        //return;
     }
 
     setSelectedPawn(tileX, tileY);
@@ -263,7 +321,7 @@ function selectPawn(tileX, tileY) {
 }
 
 const xMargin = 100;
-const yMargin = 10;
+const yMargin = 20;
 
 function isInList(list, col, row) {
     let result = false;
@@ -300,7 +358,7 @@ function drawBoard() {
                         strokeWeight(2);
                         stroke(250);
                         if( force ) {
-                            stroke(250,50,50);
+                            stroke(250,250,50);
                         }
                     }
                 }
