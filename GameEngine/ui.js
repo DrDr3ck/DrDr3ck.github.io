@@ -58,7 +58,11 @@ class UIManager {
 		if (over) {
 			cursor('pointer');
 		} else {
-			cursor('default');
+			if (toolManager.currentTool) {
+				cursor(CROSS);
+			} else {
+				cursor('default');
+			}
 		}
 	}
 
@@ -584,7 +588,6 @@ class BItemSelector extends UIContainer {
 		const iStart = this.curRow * this.nbCols;
 		const iStop = Math.min(iStart + this.nbCols, this.components.length);
 		for (let i = iStart; i < iStop; i++) {
-			this.components[i].visible = true;
 			this.components[i].doDraw();
 		}
 		this.minus.draw();

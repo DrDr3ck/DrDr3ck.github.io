@@ -1,27 +1,6 @@
-class ToolManager {
-	constructor() {
-		this.currentTool = null;
-	}
-
-	setTool(tool) {
-		if (this.currentTool) {
-			this.currentTool.cancel();
-		}
-		this.currentTool = tool;
-		if (this.currentTool) {
-			this.currentTool.start();
-		}
-	}
-
-	mouseClicked() {
-		if (!this.currentTool) return;
-		this.currentTool.action();
-	}
-}
-
-class ToolBase {
+class TileToolBase extends ToolBase {
 	constructor(name, sizeX, sizeY) {
-		this.name = name;
+        super(name);
 		this.size = { x: sizeX, y: sizeY };
 		this.fill = { r: 51, g: 51, b: 51, a: 255 };
 	}
@@ -42,7 +21,7 @@ class ToolBase {
 	}
 }
 
-class InstallTool extends ToolBase {
+class InstallTool extends TileToolBase {
 	constructor(type, blockIndex) {
 		super(`install_${type}`, 1, 1);
 		this.blockIndex = blockIndex;
@@ -76,7 +55,7 @@ class InstallTool extends ToolBase {
 	}
 }
 
-class RemoveBlockTool extends ToolBase {
+class RemoveBlockTool extends TileToolBase {
 	constructor() {
 		super('remove_block', 1, 1);
 		this.fill = { r: 151, g: 51, b: 51, a: 128 };
