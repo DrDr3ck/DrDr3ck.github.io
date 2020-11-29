@@ -258,9 +258,14 @@ class BButtonTextBase extends BButtonBase {
 
 class BButton extends BButtonTextBase {
 	constructor(x, y, text, callback) {
-		const textSize = 60;
-		super(x, y, 400, textSize * 1.2, text, callback);
+		super(x, y, 0, 0, text, callback);
+		this.setTextSize(60);
+	}
+	
+	setTextSize(textSize) {
 		this.textSize = textSize;
+		this.w = 400;
+		this.h = textSize * 1.2;
 	}
 
 	doDraw() {
