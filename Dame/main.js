@@ -7,10 +7,12 @@ const jobManager = new JobManager();
 
 const GAME_START_STATE = 1;
 const GAME_PLAY_STATE = 2;
+const GAME_WIN_STATE = 3;
 let curState = GAME_START_STATE;
 const PLAYER_CHOOSE = 1;
 const PLAYER_SELECTED = 2;
 const PLAYER_MOVE = 3;
+const PLAYER_WIN = 4;
 let curPlayer = 0;
 let gameState = 0;
 let selectedPawn = null;
@@ -51,17 +53,19 @@ function setup() {
 
 const tileSize = 48;
 
-function initBoard() {
+function initBoard(empty = false) {
 	board = [];
 	for (let col = 0; col < 10; col++) {
 		board.push([ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ]);
-		for (let row = 0; row < 10; row++) {
-			const white = (row * 10 + col) % 2 === row % 2;
-			if (row <= 3 && !white) {
-				board[col][row] = 1;
-			}
-			if (row >= 6 && !white) {
-				board[col][row] = 2;
+		if (!empty) {
+			for (let row = 0; row < 10; row++) {
+				const white = (row * 10 + col) % 2 === row % 2;
+				if (row <= 3 && !white) {
+					board[col][row] = 1;
+				}
+				if (row >= 6 && !white) {
+					board[col][row] = 2;
+				}
 			}
 		}
 	}
@@ -115,27 +119,59 @@ function enemyPawn(col, row) {
 	return Math.abs(board[col][row]) === 3 - curPlayer;
 }
 
+function canPawnJumpEnemy(col, row, dx, dy) {
+	if (enemyPawn(col + dx, row + dy) && isFree(col + dx * 2, row + dy * 2)) {
+		return true;
+	}
+	return false;
+}
+
+function canQueenJumpEnemy(col, row, dx, dy) {
+	let curCol = col + dx;
+	let curRow = row + dy;
+	while (isFree(curCol, curRow)) {
+		curCol += dx;
+		curRow += dy;
+	}
+	if (canPawnJumpEnemy(curCol - dx, curRow - dy, dx, dy)) {
+		return true;
+	}
+	return false;
+}
+
 function canJump(pawnType, col, row) {
 	if (outOfBoard(col, row)) {
 		return false;
 	}
 	// check if 'pion' can jump over an enemy
 	if (pawnType === 1) {
-		if (enemyPawn(col - 1, row + 1) && isFree(col - 2, row + 2)) {
+		if (canPawnJumpEnemy(col, row, -1, 1)) {
 			return true;
 		}
-		if (enemyPawn(col + 1, row + 1) && isFree(col + 2, row + 2)) {
+		if (canPawnJumpEnemy(col, row, 1, 1)) {
 			return true;
 		}
-		if (enemyPawn(col - 1, row - 1) && isFree(col - 2, row - 2)) {
+		if (canPawnJumpEnemy(col, row, -1, -1)) {
 			return true;
 		}
-		if (enemyPawn(col + 1, row - 1) && isFree(col + 2, row - 2)) {
+		if (canPawnJumpEnemy(col, row, 1, -1)) {
 			return true;
 		}
 	}
 	if (pawnType === -1) {
 		// Queen
+		if (canQueenJumpEnemy(col, row, -1, 1)) {
+			return true;
+		}
+		if (canQueenJumpEnemy(col, row, 1, 1)) {
+			return true;
+		}
+		if (canQueenJumpEnemy(col, row, -1, -1)) {
+			return true;
+		}
+		if (canQueenJumpEnemy(col, row, 1, -1)) {
+			return true;
+		}
 	}
 	if (pawnType === 2) {
 		if (enemyPawn(col - 1, row - 1) && isFree(col - 2, row - 2)) {
@@ -148,6 +184,21 @@ function canJump(pawnType, col, row) {
 			return true;
 		}
 		if (enemyPawn(col + 1, row + 1) && isFree(col + 2, row + 2)) {
+			return true;
+		}
+	}
+	if (pawnType === -2) {
+		// Queen
+		if (canQueenJumpEnemy(col, row, -1, 1)) {
+			return true;
+		}
+		if (canQueenJumpEnemy(col, row, 1, 1)) {
+			return true;
+		}
+		if (canQueenJumpEnemy(col, row, -1, -1)) {
+			return true;
+		}
+		if (canQueenJumpEnemy(col, row, 1, -1)) {
 			return true;
 		}
 	}
@@ -218,89 +269,198 @@ function computeSelectable() {
 	console.log(JSON.stringify(selectablePawns));
 }
 
+function findEnemy(tileX, tileY, dx, dy) {
+	let col = tileX;
+	let row = tileY;
+	while (isFree(col, row)) {
+		col += dx;
+		row += dy;
+	}
+	if (enemyPawn(col, row)) {
+		return { col: col, row: row };
+	}
+	return null;
+}
+
+function addMoves(tileX, tileY, dx, dy) {
+	let col = tileX + dx;
+	let row = tileY + dy;
+	while (isFree(col, row)) {
+		addMove(col, row);
+		col += dx;
+		row += dy;
+	}
+}
+
 /**
  * Gets list of tile where selected pawn can move on
  * @param {*} tileX 
  * @param {*} tileY 
  */
 function computeMove(tileX, tileY) {
-    moves = [];
-    const val = board[tileX][tileY];
+	moves = [];
+	const val = board[tileX][tileY];
 	if (curPlayer === 1) {
 		let col = tileX - 1;
-        let row = tileY + 1;
-        // TODO: special case for Queen
-		if (!force && isFree(col, row)) {
-            addMove(col, row);
-            if( val === -1 ) {
-                col--;
-                row++;
-                while(isFree(col, row)) {
-                    addMove(col, row);
-                    col--;
-                    row++;
-                }
-            }
-		} else if (enemyPawn(col, row) && isFree(col - 1, row + 1)) {
-			addMove(col - 1, row + 1);
-		} else if (enemyPawn(col, row - 2) && isFree(col - 1, row - 3)) {
-			addMove(col - 1, row - 3);
+		let row = tileY + 1;
+
+		if (force && val === -1) {
+			// special case for Queen
+			// 1. get pawn/queen to jump over
+			let enemyPosition = findEnemy(col, row, -1, 1);
+			// 2. add all free move after this pawn/queen
+			if (enemyPosition) {
+				addMoves(enemyPosition.col, enemyPosition.row, -1, 1);
+			}
+			enemyPosition = findEnemy(col, tileY - 1, -1, -1);
+			// 2. add all free move after this pawn/queen
+			if (enemyPosition) {
+				addMoves(enemyPosition.col, enemyPosition.row, -1, -1);
+			}
+		} else {
+			if (!force && isFree(col, row)) {
+				addMove(col, row);
+				if (val === -1) {
+					// TODO, move this algo in a function and do the same for col-- and row--
+					col--;
+					row++;
+					while (isFree(col, row)) {
+						addMove(col, row);
+						col--;
+						row++;
+					}
+					if (enemyPawn(col, row) && isFree(col - 1, row + 1)) {
+						addMove(col - 1, row + 1);
+						col -= 2;
+						row += 2;
+						while (isFree(col, row)) {
+							addMove(col, row);
+							col--;
+							row++;
+						}
+					}
+				}
+			} else if (enemyPawn(col, row) && isFree(col - 1, row + 1)) {
+				addMove(col - 1, row + 1);
+			} else if (enemyPawn(col, row - 2) && isFree(col - 1, row - 3)) {
+				addMove(col - 1, row - 3);
+			}
 		}
-        col = tileX + 1;
-        row = tileY + 1;
-		if (!force && isFree(col, row)) {
-            addMove(col, row);
-            if( val === -1 ) {
-                col++;
-                row++;
-                while(isFree(col, row)) {
-                    addMove(col, row);
-                    col++;
-                    row++;
-                }
-            }
-		} else if (enemyPawn(col, row) && isFree(col + 1, row + 1)) {
-			addMove(col + 1, row + 1);
-		} else if (enemyPawn(col, row - 2) && isFree(col + 1, row - 3)) {
-			addMove(col + 1, row - 3);
+		col = tileX + 1;
+		row = tileY + 1;
+		if (force && val === -1) {
+			// special case for Queen
+			// 1. get pawn/queen to jump over
+			let enemyPosition = findEnemy(col, row, 1, 1);
+			// 2. add all free move after this pawn/queen
+			if (enemyPosition) {
+				addMoves(enemyPosition.col, enemyPosition.row, 1, 1);
+			}
+			enemyPosition = findEnemy(col, tileY - 1, 1, -1);
+			// 2. add all free move after this pawn/queen
+			if (enemyPosition) {
+				addMoves(enemyPosition.col, enemyPosition.row, 1, -1);
+			}
+		} else {
+			if (!force && isFree(col, row)) {
+				addMove(col, row);
+				if (val === -1) {
+					// TODO, move this algo in a function and do the same for col++ and row--
+					col++;
+					row++;
+					while (isFree(col, row)) {
+						addMove(col, row);
+						col++;
+						row++;
+					}
+					if (enemyPawn(col, row) && isFree(col + 1, row + 1)) {
+						addMove(col + 1, row + 1);
+						col += 2;
+						row += 2;
+						while (isFree(col, row)) {
+							addMove(col, row);
+							col++;
+							row++;
+						}
+					}
+				}
+			} else if (enemyPawn(col, row) && isFree(col + 1, row + 1)) {
+				addMove(col + 1, row + 1);
+			} else if (enemyPawn(col, row - 2) && isFree(col + 1, row - 3)) {
+				addMove(col + 1, row - 3);
+			}
 		}
 	}
 	if (curPlayer === 2) {
 		let col = tileX - 1;
 		let row = tileY - 1;
-		if (!force && isFree(col, row)) {
-            addMove(col, row);
-            if( val === -2 ) {
-                col--;
-                row--;
-                while(isFree(col, row)) {
-                    addMove(col, row);
-                    col--;
-                    row--;
-                }
-            }
-		} else if (enemyPawn(col, row) && isFree(col - 1, row - 1)) {
-			addMove(col - 1, row - 1);
-		} else if (enemyPawn(col, row + 2) && isFree(col - 1, row + 3)) {
-			addMove(col - 1, row + 3);
+		if (force && val === -2) {
+			// special case for Queen
+			// 1. get pawn/queen to jump over
+			let enemyPosition = findEnemy(col, row, -1, -1);
+			// 2. add all free move after this pawn/queen
+			if (enemyPosition) {
+				addMoves(enemyPosition.col, enemyPosition.row, -1, -1);
+			}
+			enemyPosition = findEnemy(col, tileY + 1, -1, 1);
+			// 2. add all free move after this pawn/queen
+			if (enemyPosition) {
+				addMoves(enemyPosition.col, enemyPosition.row, -1, 1);
+			}
+		} else {
+			if (!force && isFree(col, row)) {
+				addMove(col, row);
+				if (val === -2) {
+					// TODO, move this algo in a function and do the same for col-- and row++
+					col--;
+					row--;
+					while (isFree(col, row)) {
+						addMove(col, row);
+						col--;
+						row--;
+					}
+					// TODO if enemy
+				}
+			} else if (enemyPawn(col, row) && isFree(col - 1, row - 1)) {
+				addMove(col - 1, row - 1);
+			} else if (enemyPawn(col, row + 2) && isFree(col - 1, row + 3)) {
+				addMove(col - 1, row + 3);
+			}
 		}
-        col = tileX + 1;
-        row = tileY - 1;
-		if (!force && isFree(col, row)) {
-            addMove(col, row);
-            if( val === -2 ) {
-                col++;
-                row--;
-                while(isFree(col, row)) {
-                    addMove(col, row);
-                    col++;
-                    row--;
-                }
-            }
-		} else if (enemyPawn(col, row) && isFree(col + 1, row - 1)) {
-			addMove(col + 1, row - 1);
-		} else if (enemyPawn(col, row + 2) && isFree(col + 1, row + 3)) {
-			addMove(col + 1, row + 3);
+		col = tileX + 1;
+		row = tileY - 1;
+		if (force && val === -2) {
+			// special case for Queen
+			// 1. get pawn/queen to jump over
+			let enemyPosition = findEnemy(col, row, 1, -1);
+			// 2. add all free move after this pawn/queen
+			if (enemyPosition) {
+				addMoves(enemyPosition.col, enemyPosition.row, 1, -1);
+			}
+			enemyPosition = findEnemy(col, tileY + 1, 1, 1);
+			// 2. add all free move after this pawn/queen
+			if (enemyPosition) {
+				addMoves(enemyPosition.col, enemyPosition.row, 1, 1);
+			}
+		} else {
+			if (!force && isFree(col, row)) {
+				addMove(col, row);
+				if (val === -2) {
+					// TODO, move this algo in a function and do the same for col++ and row++
+					col++;
+					row--;
+					while (isFree(col, row)) {
+						addMove(col, row);
+						col++;
+						row--;
+					}
+					// TODO if enemy
+				}
+			} else if (enemyPawn(col, row) && isFree(col + 1, row - 1)) {
+				addMove(col + 1, row - 1);
+			} else if (enemyPawn(col, row + 2) && isFree(col + 1, row + 3)) {
+				addMove(col + 1, row + 3);
+			}
 		}
 	}
 }
@@ -312,9 +472,15 @@ function nextPlayer() {
 		uiManager.addLogger(`Black turn`);
 	} else {
 		uiManager.addLogger(`White turn`);
-    }
-    moves = [];
+	}
+	moves = [];
 	computeSelectable();
+	if (selectablePawns.length === 0) {
+		gameState = PLAYER_WIN;
+		curState = GAME_WIN_STATE;
+		curPlayer = 3 - curPlayer;
+		uiManager.setUI(menu);
+	}
 }
 
 /**
@@ -329,10 +495,10 @@ function isJumping(fromX, fromY, toX, toY) {
 }
 
 function removePawn(fromX, dx, fromY, dy) {
-    // TODO: change alggorithm is selected pawn is a Queen
-    if( board[fromX + dx][fromY + dy] === 0 ) {
-        return false;
-    }
+	// TODO: change alggorithm is selected pawn is a Queen
+	if (board[fromX + dx][fromY + dy] === 0) {
+		return false;
+	}
 	board[fromX + dx][fromY + dy] = 0;
 	return true;
 }
@@ -354,9 +520,16 @@ function movePawn(tileX, tileY) {
 		return;
 	}
 	// move pawn
-	board[tileX][tileY] = board[selectedPawn.col][selectedPawn.row];
+	let curPawnValue = board[selectedPawn.col][selectedPawn.row];
+	if( curPawnValue === 1 && tileY === 9 ) {
+		curPawnValue = -1;
+	}
+	if( curPawnValue === 2 && tileY === 0 ) {
+		curPawnValue = -2;
+	}
+	board[tileX][tileY] = curPawnValue;
 	board[selectedPawn.col][selectedPawn.row] = 0;
-	// jump ?
+	// has jump ?
 	if (isJumping(selectedPawn.col, selectedPawn.row, tileX, tileY)) {
 		// remove a pawn ?
 		const dx = tileX > selectedPawn.col ? 1 : -1;
@@ -454,12 +627,12 @@ function drawBoard() {
 				// Queen
 				fill(val === -1 ? 1 : 151);
 				ellipse(x + tileSize / 2, y + tileSize / 2, tileSize - 4, tileSize - 4);
-                ellipse(x + tileSize / 2, y + tileSize / 2, tileSize - 12, tileSize - 12);
-                push();
+				ellipse(x + tileSize / 2, y + tileSize / 2, tileSize - 12, tileSize - 12);
+				push();
 				textAlign(CENTER, CENTER);
 				textSize(36);
-                text('☥', x + tileSize / 2, y + 2 + tileSize / 2);
-                pop();
+				text('☥', x + tileSize / 2, y + 2 + tileSize / 2);
+				pop();
 			}
 			fill(250);
 			if (toggleDebug) {
@@ -479,11 +652,19 @@ function draw() {
 
 	drawBoard();
 
-	if (curState === GAME_START_STATE) {
+	if (curState === GAME_START_STATE || curState === GAME_WIN_STATE) {
 		background(51, 51, 51, 200);
 	}
 
 	uiManager.draw();
+
+	if (gameState === PLAYER_WIN) {
+		push();
+		textAlign(CENTER, CENTER);
+		textSize(50);
+		text(`${curPlayer === 1 ? 'Black' : 'White'} wins!`, width / 2, height / 2);
+		pop();
+	}
 
 	if (curState === GAME_PLAY_STATE) {
 		if (toolManager.currentTool) {
@@ -518,12 +699,13 @@ function mouseClicked() {
 function keyPressed() {
 	if (key === 'D') {
 		toggleDebug = !toggleDebug;
-    }
-    if( key === 'Q') {
-        initBoard();
-        curPlayer = 1;
-        nextPlayer();
-        board[0][3] = -1;
-	    board[1][6] = -2;
-    }
+	}
+	if (key === 'Q') {
+		initBoard(true);
+		board[2][3] = -1;
+		//board[5][6] = -2;
+		board[2][1] = 2;
+		curPlayer = 1;
+		nextPlayer();
+	}
 }
