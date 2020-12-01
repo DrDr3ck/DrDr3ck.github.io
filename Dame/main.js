@@ -488,13 +488,15 @@ function removePawn(fromX, fromY, toX, toY) {
 	let col = fromX+dx;
 	let row = fromY+dy;
 	let jump = false;
-	while( col < toX ) {
+	let diff = Math.abs(fromX-toX)-1;
+	while( diff > 0 ) {
 		if (board[col][row] !== 0) {
 			board[col][row] = 0;
 			jump = true;
 		}
 		col+=dx;
 		row+=dy;
+		diff--;
 	}
 	return jump;
 }
