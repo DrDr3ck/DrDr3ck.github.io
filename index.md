@@ -5,7 +5,11 @@
   </head>
   <body>
     <h2>Jeux</h2>
-    <a href="./Bakhar/">Bakhar</a>
+    <a href="./Dame/">Dame</a>
+    <br>
+    <a href="./MineSweeper">Mine sweeper</a>
+    <br>
+    <a href="./Tetris">Tetris</a>
     <h2>Mini jeux</h2>
     <!-- <a href="./Balle/">Balle</a>
     <br>
@@ -21,10 +25,6 @@
     <a href="./MatchingCard">Matching Cards</a>
     <br>
     <a href="./Set">Set</a>
-    <br>
-    <a href="./MineSweeper">Mine sweeper</a>
-    <br>
-    <a href="./Tetris">Tetris</a>
     <br>
     <a href="./ToDoList">To-Do List</a>
     <br>
