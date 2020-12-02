@@ -12,18 +12,37 @@ let curState = GAME_START_STATE;
 
 let toggleDebug = false;
 
-let m = 0;
+let ranDistance = 0;
+let bestRanDistance = 0;
+let diamond = 0;
+
+const continueValue = 10;
 
 function startClicked() {
 	curState = GAME_PLAY_STATE;
 	uiManager.setUI([]);
 	sprite.playAnimation('walk');
 	deco = [];
-	m = 0;
+	ranDistance = 0;
+}
+
+function continueClicked() {
+	curState = GAME_PLAY_STATE;
+	uiManager.setUI([]);
+	sprite.playAnimation('walk');
+	deco = [];
+	if( diamond >= continueValue ) {
+		diamond -= continueValue;
+		doSave();
+	} else {
+		ranDistance = 0;
+	}
 }
 
 const startButton = new BButton(200, 200, 'START', startClicked);
-startButton.setTextSize(45);
+const continueButton = new BButton(200, 300, `CONTINUE (-${continueValue}◈)`, continueClicked);
+startButton.setTextSize(40);
+continueButton.setTextSize(40);
 const menu = [ startButton ];
 uiManager.setUI(menu);
 
@@ -47,6 +66,8 @@ function preload() {
 let sprite = null;
 
 function setup() {
+	loadData();
+
 	canvas = createCanvas(800, 600);
 	canvas.parent('canvas');
 
@@ -101,6 +122,41 @@ class SmallTree extends EntityBase {
 	}
 }
 
+function getData() {
+	const data = {
+		diamond: diamond,
+		distance: Math.max(ranDistance, bestRanDistance),
+		volume: 0
+	};
+	return data;
+}
+
+const storageKey = 'RuNNeR';
+
+function doSave() {
+	const data = JSON.stringify(getData());
+	if (data && data !== 'null') {
+		localStorage.setItem(storageKey, data);
+		uiManager.addLogger('Saved');
+	}
+}
+
+function loadData() {
+	const storage = localStorage.getItem(storageKey);
+	const initialData = getData();
+	let data = initialData;
+	if (storage) {
+		data = JSON.parse(storage) || initialData;
+		for (var k in initialData) {
+			if (!data[k]) {
+				data[k] = initialData[k];
+			}
+		}
+	}
+	bestRanDistance = data.distance;
+	diamond = data.diamond;
+}
+
 let deco = [];
 
 function updateGame(elapsedTime) {
@@ -109,10 +165,16 @@ function updateGame(elapsedTime) {
 		if (sprite.collide(d.box())) {
 			curState = GAME_OVER_STATE;
 			sprite.playAnimation('idle');
+			if (menu.length === 1) {
+				menu.push(continueButton);
+			}
+			continueButton.enabled = diamond >= continueValue;
 			uiManager.setUI(menu);
+			doSave();
 		}
 	});
-	m += 0.1;
+	ranDistance += 0.1;
+	bestRanDistance = Math.max(bestRanDistance, ranDistance);
 
 	deco = deco.filter((d) => d.x > 0);
 	if (deco.length !== 2) {
@@ -152,23 +214,20 @@ function draw() {
 		background(51, 51, 51, 200);
 	}
 
-	if (m !== 0) {
+	if (ranDistance !== 0) {
 		push();
 		textSize(40);
 		fill(180);
-		text(`${Math.floor(m)} m`, 100, 100);
+		textAlign(LEFT);
+		text(`${Math.floor(ranDistance)} m`, 100, 100);
+		textAlign(CENTER);
+		text(`${diamond} ◈`, 400, 50);
+		textAlign(RIGHT);
+		text(`${Math.floor(bestRanDistance)} m`, width - 100, 100);
 		pop();
 	}
 
 	uiManager.draw();
-
-	if (curState === GAME_OVER_STATE) {
-		push();
-		textAlign(CENTER, CENTER);
-		textSize(50);
-		text('Looser !!');
-		pop();
-	}
 
 	if (curState === GAME_PLAY_STATE) {
 		if (toolManager.currentTool) {
