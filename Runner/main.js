@@ -15,6 +15,7 @@ let toggleDebug = false;
 function startClicked() {
 	curState = GAME_PLAY_STATE;
 	uiManager.setUI([]);
+	sprite.playAnimation("walk");
 }
 
 const startButton = new BButton(200, 200, 'START', startClicked);
@@ -32,11 +33,24 @@ function getRandomIntInclusive(min, max) {
 	return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+const spritesheet = new SpriteSheet();
+
+function preload() {
+	spritesheet.addSpriteSheet('idle', loadImage('./idle.png'), 60, 60);
+	spritesheet.addSpriteSheet('walk', loadImage('./walk.png'), 60, 60);
+}
+
+let sprite = null;
+
 function setup() {
 	canvas = createCanvas(800, 600);
 	canvas.parent('canvas');
 
 	frameRate(60);
+
+	sprite = new Sprite(50, height - margin - 54);
+	sprite.addAnimation('idle', [ 0, 1, 2, 3 ], 60, true);
+	sprite.addAnimation('walk', [ 0, 1, 2, 3, 4, 5 ], 60, true);
 
 	uiManager.addLogger('Run in the forest, run !!');
 	lastTime = Date.now();
@@ -82,7 +96,7 @@ function updateGame(elapsedTime) {
 
 	deco = deco.filter((d) => d.x > 0);
 	if (deco.length !== 2) {
-		if (random() > 0.70) {
+		if (random() > 0.7) {
 			deco.push(new SmallTree(1));
 		} else {
 			deco.push(new Tree(3));
@@ -95,6 +109,8 @@ function drawGame() {
 	fill(50, 150, 50);
 	rect(0, height - margin, width, margin);
 	deco.forEach((d) => d.draw());
+
+	sprite.draw();
 }
 
 function draw() {
@@ -104,9 +120,12 @@ function draw() {
 
 	uiManager.processInput();
 	uiManager.update(elapsedTime);
+	sprite.update(elapsedTime);
 
 	// draw game
-	updateGame(elapsedTime);
+	if( curState === GAME_PLAY_STATE ) {
+		updateGame(elapsedTime);
+	}
 	drawGame();
 
 	if (curState === GAME_START_STATE || curState === GAME_OVER_STATE) {
