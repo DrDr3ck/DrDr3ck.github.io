@@ -99,11 +99,11 @@ class Tree extends EntityBase {
 
 	draw() {
 		fill(139, 69, 19);
-		rect(this.x, height - margin - 100, 25, 100);
+		rect(this.x, height - margin - 50, 25, 50);
 	}
 
 	box() {
-		return { x: this.x, y: height - margin - 100, width: 25, height: 100 };
+		return { x: this.x, y: height - margin - 50, width: 25, height: 50 };
 	}
 }
 
