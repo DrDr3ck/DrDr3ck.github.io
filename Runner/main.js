@@ -12,10 +12,14 @@ let curState = GAME_START_STATE;
 
 let toggleDebug = false;
 
+let m = 0;
+
 function startClicked() {
 	curState = GAME_PLAY_STATE;
 	uiManager.setUI([]);
-	sprite.playAnimation("walk");
+	sprite.playAnimation('walk');
+	deco = [];
+	m = 0;
 }
 
 const startButton = new BButton(200, 200, 'START', startClicked);
@@ -76,6 +80,10 @@ class Tree extends EntityBase {
 		fill(139, 69, 19);
 		rect(this.x, height - margin - 100, 25, 100);
 	}
+
+	box() {
+		return { x: this.x, y: height - margin - 100, width: 25, height: 100 };
+	}
 }
 
 class SmallTree extends EntityBase {
@@ -87,12 +95,24 @@ class SmallTree extends EntityBase {
 		fill(139, 69, 19);
 		rect(this.x, height - margin - 120, 5, 50);
 	}
+
+	box() {
+		return { x: this.x, y: height - margin - 120, width: 5, height: 50 };
+	}
 }
 
 let deco = [];
 
 function updateGame(elapsedTime) {
-	deco.forEach((d) => d.update(elapsedTime));
+	deco.forEach((d) => {
+		d.update(elapsedTime);
+		if (sprite.collide(d.box())) {
+			curState = GAME_OVER_STATE;
+			sprite.playAnimation('idle');
+			uiManager.setUI(menu);
+		}
+	});
+	m += 0.1;
 
 	deco = deco.filter((d) => d.x > 0);
 	if (deco.length !== 2) {
@@ -123,13 +143,21 @@ function draw() {
 	sprite.update(elapsedTime);
 
 	// draw game
-	if( curState === GAME_PLAY_STATE ) {
+	if (curState === GAME_PLAY_STATE) {
 		updateGame(elapsedTime);
 	}
 	drawGame();
 
 	if (curState === GAME_START_STATE || curState === GAME_OVER_STATE) {
 		background(51, 51, 51, 200);
+	}
+
+	if (m !== 0) {
+		push();
+		textSize(40);
+		fill(180);
+		text(`${Math.floor(m)} m`, 100, 100);
+		pop();
 	}
 
 	uiManager.draw();
@@ -162,7 +190,7 @@ function keyPressed() {
 		toggleDebug = !toggleDebug;
 	}
 
-	if( key === ' ') {
+	if (key === ' ') {
 		sprite.jump();
 	}
 }
