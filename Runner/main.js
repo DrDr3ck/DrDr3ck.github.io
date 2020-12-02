@@ -31,7 +31,7 @@ function continueClicked() {
 	uiManager.setUI([]);
 	sprite.playAnimation('walk');
 	deco = [];
-	if( diamond >= continueValue ) {
+	if (diamond >= continueValue) {
 		diamond -= continueValue;
 		doSave();
 	} else {
@@ -240,6 +240,9 @@ function draw() {
 }
 
 function mouseClicked() {
+	if (curState === GAME_PLAY_STATE) {
+		sprite.jump();
+	}
 	toolManager.mouseClicked();
 	uiManager.mouseClicked();
 }
