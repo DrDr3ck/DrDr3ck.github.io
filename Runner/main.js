@@ -89,7 +89,7 @@ class SmallTree extends EntityBase {
 	}
 }
 
-let deco = [ new Tree(3), new SmallTree(1) ];
+let deco = [];
 
 function updateGame(elapsedTime) {
 	deco.forEach((d) => d.update(elapsedTime));
@@ -97,9 +97,9 @@ function updateGame(elapsedTime) {
 	deco = deco.filter((d) => d.x > 0);
 	if (deco.length !== 2) {
 		if (random() > 0.7) {
-			deco.push(new SmallTree(1));
+			deco.push(new SmallTree(2));
 		} else {
-			deco.push(new Tree(3));
+			deco.push(new Tree(5));
 		}
 	}
 }
@@ -160,5 +160,9 @@ function mouseClicked() {
 function keyPressed() {
 	if (key === 'D') {
 		toggleDebug = !toggleDebug;
+	}
+
+	if( key === ' ') {
+		sprite.jump();
 	}
 }
