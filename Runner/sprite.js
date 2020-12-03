@@ -8,7 +8,7 @@ class SpriteSheet {
 	}
 }
 
-const gravity = 2;
+const gravity = 1;
 
 class Sprite {
 	constructor(x, y) {
@@ -48,6 +48,7 @@ class Sprite {
 		this.index = this.index + this.speed;
 		this.position.y = Math.min(this.ground, this.position.y + this.vy);
 		this.vy = this.vy + gravity;
+		console.log(this.vy);
 	}
 
 	draw() {
@@ -65,11 +66,14 @@ class Sprite {
 
 	jump() {
 		if (this.position.y === this.ground) {
-			this.vy = -28;
+			this.vy = -15; //velocitySlider.value();
 		}
 	}
 
 	collide(rect2) {
+		if( !rect2 ) {
+			return false;
+		}
         const rect1 = {x: this.position.x+10, y: this.position.y, width: this.width-22, height: this.height};
 		if (
 			rect1.x < rect2.x + rect2.width &&

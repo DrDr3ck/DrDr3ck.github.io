@@ -24,6 +24,8 @@ function startClicked() {
 	sprite.playAnimation('walk');
 	deco = [];
 	ranDistance = 0;
+	uiManager.addLogger("Press SPACE to jump");
+	//uiManager.addLogger("Or click mouse button");
 }
 
 function continueClicked() {
@@ -65,6 +67,8 @@ function preload() {
 
 let sprite = null;
 
+let velocitySlider = null;
+
 function setup() {
 	loadData();
 
@@ -73,53 +77,14 @@ function setup() {
 
 	frameRate(60);
 
+	//velocitySlider = createSlider(-30,-10,-15);
+
 	sprite = new Sprite(50, height - margin - 54);
 	sprite.addAnimation('idle', [ 0, 1, 2, 3 ], 60, true);
 	sprite.addAnimation('walk', [ 0, 1, 2, 3, 4, 5 ], 60, true);
 
 	uiManager.addLogger('Run in the forest, run !!');
 	lastTime = Date.now();
-}
-
-class EntityBase {
-	constructor(speed) {
-		this.x = getRandomIntInclusive(810, 900);
-		this.speed = speed; // pixels per frame
-	}
-
-	update(elapsedTime) {
-		this.x -= this.speed;
-	}
-}
-
-class Tree extends EntityBase {
-	constructor(speed) {
-		super(speed);
-	}
-
-	draw() {
-		fill(139, 69, 19);
-		rect(this.x, height - margin - 50, 25, 50);
-	}
-
-	box() {
-		return { x: this.x, y: height - margin - 50, width: 25, height: 50 };
-	}
-}
-
-class SmallTree extends EntityBase {
-	constructor(speed) {
-		super(speed);
-	}
-
-	draw() {
-		fill(139, 69, 19);
-		rect(this.x, height - margin - 120, 5, 50);
-	}
-
-	box() {
-		return { x: this.x, y: height - margin - 120, width: 5, height: 50 };
-	}
 }
 
 function getData() {
@@ -177,7 +142,13 @@ function updateGame(elapsedTime) {
 	bestRanDistance = Math.max(bestRanDistance, ranDistance);
 
 	deco = deco.filter((d) => d.x > 0);
-	if (deco.length !== 2) {
+	let addDeco = true;
+	deco.forEach(d=> {
+		if( d.x > width*0.8 ) {
+			addDeco = false;
+		}
+	});
+	if ( addDeco ) {
 		if (random() > 0.7) {
 			deco.push(new SmallTree(2));
 		} else {
@@ -240,11 +211,11 @@ function draw() {
 }
 
 function mouseClicked() {
-	if (curState === GAME_PLAY_STATE) {
-		sprite.jump();
-	}
 	toolManager.mouseClicked();
 	uiManager.mouseClicked();
+	if (curState === GAME_PLAY_STATE) {
+		//sprite.jump();
+	}
 }
 
 function keyPressed() {
