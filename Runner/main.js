@@ -22,7 +22,7 @@ function startClicked() {
 	curState = GAME_PLAY_STATE;
 	uiManager.setUI([]);
 	sprite.playAnimation('walk');
-	deco = [];
+	entities = [];
 	ranDistance = 0;
 	uiManager.addLogger("Press SPACE to jump");
 	//uiManager.addLogger("Or click mouse button");
@@ -32,7 +32,7 @@ function continueClicked() {
 	curState = GAME_PLAY_STATE;
 	uiManager.setUI([]);
 	sprite.playAnimation('walk');
-	deco = [];
+	entities = [];
 	if (diamond >= continueValue) {
 		diamond -= continueValue;
 		doSave();
@@ -69,10 +69,12 @@ let sprite = null;
 
 let velocitySlider = null;
 
+let windowHeight = 600;
+
 function setup() {
 	loadData();
 
-	canvas = createCanvas(800, 600);
+	canvas = createCanvas(800, windowHeight);
 	canvas.parent('canvas');
 
 	frameRate(60);
@@ -122,10 +124,19 @@ function loadData() {
 	diamond = data.diamond;
 }
 
+let entities = [];
 let deco = [];
 
+deco.push(new Mountain(0.5));
+deco[0].x = 150;
+deco.push(new Mountain(0.5));
+deco[1].x = 300;
+deco.push(new Mountain(0.5));
+deco[2].x = 600;
+deco.push(new Mountain(0.5));
+
 function updateGame(elapsedTime) {
-	deco.forEach((d) => {
+	entities.forEach((d) => {
 		d.update(elapsedTime);
 		if (sprite.collide(d.box())) {
 			curState = GAME_OVER_STATE;
@@ -141,27 +152,38 @@ function updateGame(elapsedTime) {
 	ranDistance += 0.1;
 	bestRanDistance = Math.max(bestRanDistance, ranDistance);
 
-	deco = deco.filter((d) => d.x > 0);
-	let addDeco = true;
-	deco.forEach(d=> {
+	entities = entities.filter((d) => d.x > -20);
+	let addEntity = true;
+	entities.forEach(d=> {
 		if( d.x > width*0.8 ) {
-			addDeco = false;
+			addEntity = false;
 		}
 	});
-	if ( addDeco ) {
-		if (random() > 0.7) {
-			deco.push(new SmallTree(2));
-		} else {
-			deco.push(new Tree(5));
+	if ( addEntity ) {
+		if (random() < 0.7) {
+			entities.push(new Tree(5));
 		}
+	}
+
+	deco.forEach((d) => {
+		d.update(elapsedTime);
+	});
+	deco = deco.filter((d) => d.x > 0);
+	if (deco[deco.length-1].x < width) {
+		deco.push(new Mountain(0.5));
+		deco.push(new Mountain(0.5));
+		deco[deco.length-1].x += deco[deco.length-1].height*0.7;
 	}
 }
 
 function drawGame() {
+	strokeWeight(1);
+	stroke(50);
+	deco.forEach((d) => d.draw());
 	stroke(0);
 	fill(50, 150, 50);
 	rect(0, height - margin, width, margin);
-	deco.forEach((d) => d.draw());
+	entities.forEach((d) => d.draw());
 
 	sprite.draw();
 }

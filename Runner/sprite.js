@@ -48,7 +48,6 @@ class Sprite {
 		this.index = this.index + this.speed;
 		this.position.y = Math.min(this.ground, this.position.y + this.vy);
 		this.vy = this.vy + gravity;
-		console.log(this.vy);
 	}
 
 	draw() {
