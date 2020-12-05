@@ -16,6 +16,8 @@ let ranDistance = 0;
 let bestRanDistance = 0;
 let diamond = 0;
 
+let globalSpeed = 1;
+
 const continueValue = 10;
 
 function startClicked() {
@@ -157,6 +159,8 @@ function updateGame(elapsedTime) {
 	ranDistance += 0.1;
 	bestRanDistance = Math.max(bestRanDistance, ranDistance);
 
+	globalSpeed = 1 + 0.1*Math.floor(ranDistance/100);
+
 	entities = entities.filter((d) => d.x > -20);
 	let addEntity = true;
 	entities.forEach(d=> {
@@ -240,11 +244,11 @@ function draw() {
 }
 
 function mouseClicked() {
+	if (curState === GAME_PLAY_STATE && mouseY > height-groundLevel) {
+		sprite.jump();
+	}
 	toolManager.mouseClicked();
 	uiManager.mouseClicked();
-	if (curState === GAME_PLAY_STATE) {
-		//sprite.jump();
-	}
 }
 
 function keyPressed() {

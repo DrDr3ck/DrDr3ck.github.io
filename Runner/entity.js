@@ -9,7 +9,7 @@ class EntityBase {
 	}
 
 	update(elapsedTime) {
-		this.x -= this.speed;
+		this.x -= this.speed * globalSpeed;
 	}
 }
 
