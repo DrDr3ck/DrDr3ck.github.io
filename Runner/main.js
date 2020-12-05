@@ -169,10 +169,34 @@ function updateGame(elapsedTime) {
 		}
 	});
 	if ( addEntity ) {
-		if (random() < 0.5) {
+		if (random() < 0.7) {
 			entities.push(new Tree(5));
 		} else {
-			entities.push(new Diamond(5));
+			const r = random();
+			if( r < 0.7 ) {
+				entities.push(new Diamond(5));
+			} else if( r < 0.85 ) {
+				const diamond1 = new Diamond(5);
+				const diamond2 = new Diamond(5);
+				const diamond3 = new Diamond(5);
+				diamond2.x = diamond1.x+75;
+				diamond2.y -= 150;
+				diamond3.x = diamond2.x+75;
+				entities.push(diamond1);
+				entities.push(diamond2);
+				entities.push(diamond3);
+			} else {
+				const diamond1 = new Diamond(5);
+				const diamond2 = new Diamond(5);
+				const diamond3 = new Diamond(5);
+				diamond2.x = diamond1.x+75;
+				diamond1.y -= 150;
+				diamond3.y -= 150;
+				diamond3.x = diamond2.x+75;
+				entities.push(diamond1);
+				entities.push(diamond2);
+				entities.push(diamond3);
+			}
 		}
 	}
 
