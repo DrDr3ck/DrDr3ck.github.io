@@ -50,8 +50,6 @@ uiManager.setUI(menu);
 
 let lastTime = 0;
 
-const margin = 100;
-
 function getRandomIntInclusive(min, max) {
 	min = Math.ceil(min);
 	max = Math.floor(max);
@@ -69,19 +67,21 @@ let sprite = null;
 
 let velocitySlider = null;
 
-let windowHeight = 600;
+const groundLevel = screen.height > 400 ? 100 : 60;
+let windowHeight = screen.height > 600 ? 600 : 360;
+let windowWidth = 800;
 
 function setup() {
 	loadData();
 
-	canvas = createCanvas(800, windowHeight);
+	canvas = createCanvas(windowWidth, windowHeight);
 	canvas.parent('canvas');
 
 	frameRate(60);
 
 	//velocitySlider = createSlider(-30,-10,-15);
 
-	sprite = new Sprite(50, height - margin - 54);
+	sprite = new Sprite(50, height - groundLevel - 54);
 	sprite.addAnimation('idle', [ 0, 1, 2, 3 ], 60, true);
 	sprite.addAnimation('walk', [ 0, 1, 2, 3, 4, 5 ], 60, true);
 
@@ -139,14 +139,19 @@ function updateGame(elapsedTime) {
 	entities.forEach((d) => {
 		d.update(elapsedTime);
 		if (sprite.collide(d.box())) {
-			curState = GAME_OVER_STATE;
-			sprite.playAnimation('idle');
-			if (menu.length === 1) {
-				menu.push(continueButton);
+			if( d.isBonus() ) {
+				diamond++;
+				d.x = -100;
+			} else {
+				curState = GAME_OVER_STATE;
+				sprite.playAnimation('idle');
+				if (menu.length === 1) {
+					menu.push(continueButton);
+				}
+				continueButton.enabled = diamond >= continueValue;
+				uiManager.setUI(menu);
+				doSave();
 			}
-			continueButton.enabled = diamond >= continueValue;
-			uiManager.setUI(menu);
-			doSave();
 		}
 	});
 	ranDistance += 0.1;
@@ -160,8 +165,10 @@ function updateGame(elapsedTime) {
 		}
 	});
 	if ( addEntity ) {
-		if (random() < 0.7) {
+		if (random() < 0.5) {
 			entities.push(new Tree(5));
+		} else {
+			entities.push(new Diamond(5));
 		}
 	}
 
@@ -182,7 +189,7 @@ function drawGame() {
 	deco.forEach((d) => d.draw());
 	stroke(0);
 	fill(50, 150, 50);
-	rect(0, height - margin, width, margin);
+	rect(0, height - groundLevel, width, groundLevel);
 	entities.forEach((d) => d.draw());
 
 	sprite.draw();

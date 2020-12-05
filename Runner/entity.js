@@ -1,7 +1,11 @@
 class EntityBase {
 	constructor(speed) {
-		this.x = getRandomIntInclusive(810, 900);
-        this.speed = speed; // pixels per frame
+		this.x = getRandomIntInclusive(windowWidth+10, windowWidth+500);
+		this.speed = speed; // pixels per frame
+	}
+
+	isBonus() {
+		return false;
 	}
 
 	update(elapsedTime) {
@@ -31,11 +35,39 @@ class Tree extends EntityBase {
 
 	draw() {
 		fill(139, 69, 19);
-		rect(this.x, height - margin - 50, 25, 50);
+		rect(this.x, height - groundLevel - 50, 25, 50);
 	}
 
 	box() {
-		return { x: this.x, y: height - margin - 50, width: 25, height: 50 };
+		return { x: this.x, y: height - groundLevel - 50, width: 25, height: 50 };
+	}
+}
+
+class Diamond extends EntityBase {
+	constructor(speed) {
+		super(speed);
+	}
+
+	draw() {
+		fill(19, 39, 139);
+		const size = 15;
+		const dy = Math.sin(this.x/50) * 5;
+		beginShape();
+		vertex(this.x, height-groundLevel-size-5+dy);
+		vertex(this.x+size, height-groundLevel-size-size-5+dy);
+		vertex(this.x+size*2, height-groundLevel-size-5+dy);
+		vertex(this.x+size, height-groundLevel+size-size-5+dy);
+		endShape(CLOSE);
+		fill(19, 39, 239);
+		ellipse(this.x+size, height-groundLevel-size-5+dy,size*.7,size*.7);
+	}
+
+	isBonus() {
+		return true;
+	}
+
+	box() {
+		return { x: this.x, y: height - groundLevel - 5, width: 30, height: 30 };
 	}
 }
 
@@ -46,10 +78,10 @@ class SmallTree extends EntityBase {
 
 	draw() {
 		fill(139, 69, 19);
-		rect(this.x, height - margin - 120, 5, 50);
+		rect(this.x, height - groundLevel - 120, 5, 50);
 	}
 
 	box() {
-		return { x: this.x, y: height - margin - 120, width: 5, height: 50 };
+		return { x: this.x, y: height - groundLevel - 120, width: 5, height: 50 };
 	}
 }
