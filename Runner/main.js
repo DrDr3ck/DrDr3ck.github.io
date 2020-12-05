@@ -213,6 +213,11 @@ function updateGame(elapsedTime) {
 
 function drawGame() {
 	strokeWeight(1);
+	// sun
+	noStroke();
+	fill(255,231,0);
+	ellipse(150,250,50,50);
+
 	stroke(50);
 	deco.forEach((d) => d.draw());
 	stroke(0);
@@ -221,6 +226,9 @@ function drawGame() {
 	entities.forEach((d) => d.draw());
 
 	sprite.draw();
+
+	// sunshine ?
+	//background(255,231,0,25);
 }
 
 function draw() {
