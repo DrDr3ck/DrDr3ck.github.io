@@ -2,7 +2,7 @@ const uiManager = new UIManager();
 uiManager.loggerContainer = new LoggerContainer(600, 500, 240, 100);
 uiManager.loggerContainer.visible = true;
 
-const credit = "https://twitter.com/ScissorMarks";
+const credit = 'https://twitter.com/ScissorMarks';
 
 const toolManager = new ToolManager();
 const jobManager = new JobManager();
@@ -82,20 +82,21 @@ function getGroundLevel(x) {
 	return groundLevel;
 }
 
+const FPS = 60;
+
 function setup() {
 	loadData();
 
 	canvas = createCanvas(windowWidth, windowHeight);
 	canvas.parent('canvas');
 
-	frameRate(60);
+	frameRate(FPS);
 
 	//velocitySlider = createSlider(-30,-10,-15);
 
 	sprite = new Sprite(50, height - getGroundLevel(50) - 54);
-	sprite.addAnimation('idle', 'idle', [ 0, 1, 2, 3 ], 60, true);
-	sprite.addAnimation('walk', 'walk', [ 0, 1, 2, 3, 4, 5 ], 60, true);
-	sprite.scale = 1;
+	sprite.addAnimation('idle', 'idle', [ 0, 1, 2, 3 ], FPS, true);
+	sprite.addAnimation('walk', 'walk', [ 0, 1, 2, 3, 4, 5 ], FPS, true);
 
 	uiManager.addLogger('Run in the forest, run !!');
 	lastTime = Date.now();
@@ -141,7 +142,7 @@ let deco = [];
 
 deco.push(new Mountain(0.5));
 deco[0].x = 150;
-deco.push(new Mountain(0.5));
+deco.push(new Volcano(0.5));
 deco[1].x = 300;
 deco.push(new Mountain(0.5));
 deco[2].x = 600;
@@ -215,7 +216,11 @@ function updateGame(elapsedTime) {
 	});
 	deco = deco.filter((d) => d.x > 0);
 	if (deco[deco.length - 1].x < width) {
-		deco.push(new Mountain(0.5));
+		if (random() > 0.7) {
+			deco.push(new Volcano(0.5));
+		} else {
+			deco.push(new Mountain(0.5));
+		}
 		deco.push(new Mountain(0.5));
 		deco[deco.length - 1].x += deco[deco.length - 1].height * 0.7;
 	}
@@ -227,7 +232,7 @@ function getSkyColor(hour) {
 	} else if (hour < 8) {
 		return [ 70, 143, 175 ];
 	} else if (hour < 12) {
-		return [ 173, 241, 216];
+		return [ 173, 241, 216 ];
 	} else if (hour < 16) {
 		return [ 147, 230, 248 ];
 	} else if (hour < 20) {
@@ -239,33 +244,33 @@ function getSkyColor(hour) {
 
 function skyColor(hour) {
 	const c1 = getSkyColor(hour);
-	if( hour%4 < 3 ) {
+	if (hour % 4 < 3) {
 		return c1;
 	}
 	const from = color(c1[0], c1[1], c1[2]);
-	const c2 = getSkyColor((hour+4)%24);
+	const c2 = getSkyColor((hour + 4) % 24);
 	const to = color(c2[0], c2[1], c2[2]);
-	const sky = lerpColor(from, to, (hour%4)-3);
+	const sky = lerpColor(from, to, hour % 4 - 3);
 	return sky;
 }
 
 function sunPosition(hour) {
-	const summerHour = (hour+1)%24;
+	const summerHour = (hour + 1) % 24;
 	let x = 0;
 	let dy = 150;
 	if (summerHour < 8 || summerHour > 20) {
 		const nightHour = summerHour < 8 ? summerHour + 24 : summerHour;
-		x = map(nightHour, 20, 32, -50, windowWidth+50);
+		x = map(nightHour, 20, 32, -50, windowWidth + 50);
 		dy = 200;
 	} else {
-		x = map(summerHour, 8, 20, -50, windowWidth+50);
+		x = map(summerHour, 8, 20, -50, windowWidth + 50);
 	}
 	const y = Math.cos((x + 110) / 200) * 100 + dy;
 	return { x, y };
 }
 
 function sunColor(hour) {
-	if (hour < 8-1 || hour > 20-1) {
+	if (hour < 8 - 1 || hour > 20 - 1) {
 		fill(190);
 	} else {
 		fill(255, 231, 0);
@@ -305,7 +310,7 @@ function drawGame() {
 
 function drawSky(hour) {
 	const sky = skyColor(hour);
-	background(sky);//[0], sky[1], sky[2]);
+	background(sky); //[0], sky[1], sky[2]);
 }
 
 function draw() {
