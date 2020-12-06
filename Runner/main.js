@@ -2,6 +2,8 @@ const uiManager = new UIManager();
 uiManager.loggerContainer = new LoggerContainer(600, 500, 240, 100);
 uiManager.loggerContainer.visible = true;
 
+const credit = "https://twitter.com/ScissorMarks";
+
 const toolManager = new ToolManager();
 const jobManager = new JobManager();
 
@@ -65,6 +67,7 @@ const spritesheet = new SpriteSheet();
 function preload() {
 	spritesheet.addSpriteSheet('idle', loadImage('./idle.png'), 60, 60);
 	spritesheet.addSpriteSheet('walk', loadImage('./walk.png'), 60, 60);
+	spritesheet.addSpriteSheet('dino', loadImage('./dino01.png'), 24, 24);
 }
 
 let sprite = null;
@@ -74,6 +77,10 @@ let velocitySlider = null;
 const groundLevel = screen.height > 400 ? 100 : 60;
 let windowHeight = screen.height > 600 ? 600 : 360;
 let windowWidth = 800;
+
+function getGroundLevel(x) {
+	return groundLevel;
+}
 
 function setup() {
 	loadData();
@@ -85,9 +92,10 @@ function setup() {
 
 	//velocitySlider = createSlider(-30,-10,-15);
 
-	sprite = new Sprite(50, height - groundLevel - 54);
-	sprite.addAnimation('idle', [ 0, 1, 2, 3 ], 60, true);
-	sprite.addAnimation('walk', [ 0, 1, 2, 3, 4, 5 ], 60, true);
+	sprite = new Sprite(50, height - getGroundLevel(50) - 54);
+	sprite.addAnimation('idle', 'idle', [ 0, 1, 2, 3 ], 60, true);
+	sprite.addAnimation('walk', 'walk', [ 0, 1, 2, 3, 4, 5 ], 60, true);
+	sprite.scale = 1;
 
 	uiManager.addLogger('Run in the forest, run !!');
 	lastTime = Date.now();
@@ -271,6 +279,12 @@ function drawSun() {
 	ellipse(sun.x, sun.y, 50, 50);
 }
 
+function drawGround() {
+	stroke(0);
+	fill(50, 150, 50);
+	rect(0, height - groundLevel, width, groundLevel);
+}
+
 function drawGame() {
 	strokeWeight(1);
 	// sun
@@ -278,11 +292,11 @@ function drawGame() {
 
 	stroke(50);
 	deco.forEach((d) => d.draw());
-	stroke(0);
-	fill(50, 150, 50);
-	rect(0, height - groundLevel, width, groundLevel);
-	entities.forEach((d) => d.draw());
 
+	// draw ground
+	drawGround();
+
+	entities.forEach((d) => d.draw());
 	sprite.draw();
 
 	// sunshine ?

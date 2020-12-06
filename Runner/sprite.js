@@ -20,11 +20,12 @@ class Sprite {
 		this.index = 0;
 		this.speed = 0.1;
 		this.vy = 0;
+		this.scale = 1;
 	}
 
-	addAnimation(name, frameArray, frameSec, loop) {
+	addAnimation(name, sheetname, frameArray, frameSec, loop) {
 		let animations = [];
-		const sheet = spritesheet.sheets[name];
+		const sheet = spritesheet.sheets[sheetname];
 		this.width = sheet.width;
 		this.height = sheet.height;
 		for (const frame of frameArray) {
@@ -53,7 +54,7 @@ class Sprite {
 	draw() {
 		if (!this.state) return;
 		const index = Math.floor(this.index) % this.indexMax;
-        image(this.animations[this.state][index], this.position.x, this.position.y, this.width, this.height);
+        image(this.animations[this.state][index], this.position.x, this.position.y, this.width*this.scale, this.height*this.scale);
         /*
         push();
         noFill();
@@ -73,7 +74,7 @@ class Sprite {
 		if( !rect2 ) {
 			return false;
 		}
-        const rect1 = {x: this.position.x+10, y: this.position.y, width: this.width-22, height: this.height};
+        const rect1 = {x: this.position.x+10, y: this.position.y, width: this.width*this.scale-22, height: this.height*this.scale};
 		if (
 			rect1.x < rect2.x + rect2.width &&
 			rect1.x + rect1.width > rect2.x &&
