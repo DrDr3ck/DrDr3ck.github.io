@@ -247,10 +247,10 @@ function sunPosition(hour) {
 	let dy = 150;
 	if (summerHour < 8 || summerHour > 20) {
 		const nightHour = summerHour < 8 ? summerHour + 24 : summerHour;
-		x = map(nightHour, 20, 32, 0, windowWidth);
+		x = map(nightHour, 20, 32, -50, windowWidth+50);
 		dy = 200;
 	} else {
-		x = map(summerHour, 8, 20, 0, windowWidth);
+		x = map(summerHour, 8, 20, -50, windowWidth+50);
 	}
 	const y = Math.cos((x + 110) / 200) * 100 + dy;
 	return { x, y };
@@ -264,15 +264,17 @@ function sunColor(hour) {
 	}
 }
 
-function drawGame() {
-	strokeWeight(1);
-	// sun
+function drawSun() {
 	noStroke();
 	sunColor(hour);
 	sun = sunPosition(hour);
-	if (sun) {
-		ellipse(sun.x, sun.y, 50, 50);
-	}
+	ellipse(sun.x, sun.y, 50, 50);
+}
+
+function drawGame() {
+	strokeWeight(1);
+	// sun
+	drawSun();
 
 	stroke(50);
 	deco.forEach((d) => d.draw());
