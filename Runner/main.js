@@ -17,6 +17,8 @@ let bestRanDistance = 0;
 let diamond = 0;
 
 let globalSpeed = 1;
+const date = new Date();
+let hour = date.getHours();
 
 const continueValue = 10;
 
@@ -26,7 +28,7 @@ function startClicked() {
 	sprite.playAnimation('walk');
 	entities = [];
 	ranDistance = 0;
-	uiManager.addLogger("Press SPACE to jump");
+	uiManager.addLogger('Press SPACE to jump');
 	//uiManager.addLogger("Or click mouse button");
 }
 
@@ -141,7 +143,7 @@ function updateGame(elapsedTime) {
 	entities.forEach((d) => {
 		d.update(elapsedTime);
 		if (sprite.collide(d.box())) {
-			if( d.isBonus() ) {
+			if (d.isBonus()) {
 				diamond++;
 				d.x = -100;
 			} else {
@@ -159,29 +161,29 @@ function updateGame(elapsedTime) {
 	ranDistance += 0.1;
 	bestRanDistance = Math.max(bestRanDistance, ranDistance);
 
-	globalSpeed = 1 + 0.1*Math.floor(ranDistance/100);
+	globalSpeed = 1 + 0.1 * Math.floor(ranDistance / 100);
 
 	entities = entities.filter((d) => d.x > -20);
 	let addEntity = true;
-	entities.forEach(d=> {
-		if( d.x > width*0.8 ) {
+	entities.forEach((d) => {
+		if (d.x > width * 0.8) {
 			addEntity = false;
 		}
 	});
-	if ( addEntity ) {
+	if (addEntity) {
 		if (random() < 0.7) {
 			entities.push(new Tree(5));
 		} else {
 			const r = random();
-			if( r < 0.7 ) {
+			if (r < 0.7) {
 				entities.push(new Diamond(5));
-			} else if( r < 0.85 ) {
+			} else if (r < 0.85) {
 				const diamond1 = new Diamond(5);
 				const diamond2 = new Diamond(5);
 				const diamond3 = new Diamond(5);
-				diamond2.x = diamond1.x+75;
+				diamond2.x = diamond1.x + 75;
 				diamond2.y -= 150;
-				diamond3.x = diamond2.x+75;
+				diamond3.x = diamond2.x + 75;
 				entities.push(diamond1);
 				entities.push(diamond2);
 				entities.push(diamond3);
@@ -189,10 +191,10 @@ function updateGame(elapsedTime) {
 				const diamond1 = new Diamond(5);
 				const diamond2 = new Diamond(5);
 				const diamond3 = new Diamond(5);
-				diamond2.x = diamond1.x+75;
+				diamond2.x = diamond1.x + 75;
 				diamond1.y -= 150;
 				diamond3.y -= 150;
-				diamond3.x = diamond2.x+75;
+				diamond3.x = diamond2.x + 75;
 				entities.push(diamond1);
 				entities.push(diamond2);
 				entities.push(diamond3);
@@ -204,10 +206,61 @@ function updateGame(elapsedTime) {
 		d.update(elapsedTime);
 	});
 	deco = deco.filter((d) => d.x > 0);
-	if (deco[deco.length-1].x < width) {
+	if (deco[deco.length - 1].x < width) {
 		deco.push(new Mountain(0.5));
 		deco.push(new Mountain(0.5));
-		deco[deco.length-1].x += deco[deco.length-1].height*0.7;
+		deco[deco.length - 1].x += deco[deco.length - 1].height * 0.7;
+	}
+}
+
+function getSkyColor(hour) {
+	if (hour < 4) {
+		return [ 29, 55, 80 ];
+	} else if (hour < 8) {
+		return [ 70, 143, 175 ];
+	} else if (hour < 12) {
+		return [ 173, 241, 216];
+	} else if (hour < 16) {
+		return [ 147, 230, 248 ];
+	} else if (hour < 20) {
+		return [ 255, 202, 160 ];
+	} else if (hour < 24) {
+		return [ 117, 138, 193 ];
+	}
+}
+
+function skyColor(hour) {
+	const c1 = getSkyColor(hour);
+	if( hour%4 < 3 ) {
+		return c1;
+	}
+	const from = color(c1[0], c1[1], c1[2]);
+	const c2 = getSkyColor((hour+4)%24);
+	const to = color(c2[0], c2[1], c2[2]);
+	const sky = lerpColor(from, to, (hour%4)-3);
+	return sky;
+}
+
+function sunPosition(hour) {
+	const summerHour = (hour+1)%24;
+	let x = 0;
+	let dy = 150;
+	if (summerHour < 8 || summerHour > 20) {
+		const nightHour = summerHour < 8 ? summerHour + 24 : summerHour;
+		x = map(nightHour, 20, 32, 0, windowWidth);
+		dy = 200;
+	} else {
+		x = map(summerHour, 8, 20, 0, windowWidth);
+	}
+	const y = Math.cos((x + 110) / 200) * 100 + dy;
+	return { x, y };
+}
+
+function sunColor(hour) {
+	if (hour < 8-1 || hour > 20-1) {
+		fill(190);
+	} else {
+		fill(255, 231, 0);
 	}
 }
 
@@ -215,8 +268,11 @@ function drawGame() {
 	strokeWeight(1);
 	// sun
 	noStroke();
-	fill(255,231,0);
-	ellipse(150,250,50,50);
+	sunColor(hour);
+	sun = sunPosition(hour);
+	if (sun) {
+		ellipse(sun.x, sun.y, 50, 50);
+	}
 
 	stroke(50);
 	deco.forEach((d) => d.draw());
@@ -231,10 +287,16 @@ function drawGame() {
 	//background(255,231,0,25);
 }
 
+function drawSky(hour) {
+	const sky = skyColor(hour);
+	background(sky);//[0], sky[1], sky[2]);
+}
+
 function draw() {
 	const currentTime = Date.now();
 	const elapsedTime = currentTime - lastTime;
-	background(51);
+	// sky color
+	drawSky(hour);
 
 	uiManager.processInput();
 	uiManager.update(elapsedTime);
@@ -243,6 +305,8 @@ function draw() {
 	// draw game
 	if (curState === GAME_PLAY_STATE) {
 		updateGame(elapsedTime);
+		hour += 0.01;
+		hour = hour % 24;
 	}
 	drawGame();
 
@@ -273,10 +337,18 @@ function draw() {
 	}
 
 	lastTime = currentTime;
+
+	if (toggleDebug) {
+		push();
+		stroke(51);
+		textSize(50);
+		text(hour, 500, 200);
+		pop();
+	}
 }
 
 function mouseClicked() {
-	if (curState === GAME_PLAY_STATE && mouseY > height-groundLevel) {
+	if (curState === GAME_PLAY_STATE && mouseY > height - groundLevel) {
 		sprite.jump();
 	}
 	toolManager.mouseClicked();
@@ -290,5 +362,10 @@ function keyPressed() {
 
 	if (key === ' ') {
 		sprite.jump();
+	}
+
+	if (key === 'H') {
+		hour += 4;
+		hour = hour % 24;
 	}
 }
