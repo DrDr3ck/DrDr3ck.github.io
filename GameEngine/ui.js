@@ -648,6 +648,7 @@ class LoggerContainer extends UIComponent {
 	}
 
 	doDraw() {
+		noStroke();
 		textSize(16);
 		translate(this.x, this.y);
 		/*
