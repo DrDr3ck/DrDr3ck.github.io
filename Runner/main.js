@@ -67,7 +67,7 @@ const spritesheet = new SpriteSheet();
 function preload() {
 	spritesheet.addSpriteSheet('idle', loadImage('./idle.png'), 60, 60);
 	spritesheet.addSpriteSheet('walk', loadImage('./walk.png'), 60, 60);
-	spritesheet.addSpriteSheet('dino', loadImage('./dino01.png'), 24, 24);
+	spritesheet.addSpriteSheet('dead', loadImage('./dead.png'), 60, 60);
 }
 
 let sprite = null;
@@ -94,9 +94,10 @@ function setup() {
 
 	//velocitySlider = createSlider(-30,-10,-15);
 
-	sprite = new Sprite(50, height - getGroundLevel(50) - 54);
+	sprite = new Sprite(50, height - getGroundLevel(50) - 53);
 	sprite.addAnimation('idle', 'idle', [ 0, 1, 2, 3 ], FPS, true);
 	sprite.addAnimation('walk', 'walk', [ 0, 1, 2, 3, 4, 5 ], FPS, true);
+	sprite.addAnimation('dead', 'dead', [ 0 ], FPS, true);
 
 	uiManager.addLogger('Run in the forest, run !!');
 	lastTime = Date.now();
@@ -157,7 +158,13 @@ function updateGame(elapsedTime) {
 				d.x = -100;
 			} else {
 				curState = GAME_OVER_STATE;
-				sprite.playAnimation('idle');
+				sprite.playAnimation('dead');
+				setTimeout(function() {
+					if (curState === GAME_OVER_STATE) {
+						sprite.playAnimation('idle');
+						entities = [];
+					}
+				}, 5000);
 				if (menu.length === 1) {
 					menu.push(continueButton);
 				}
