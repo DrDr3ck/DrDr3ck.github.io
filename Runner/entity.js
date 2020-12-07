@@ -43,7 +43,6 @@ class Volcano extends Mountain {
 	}
 
 	draw() {
-		this.addSmokeParticle();
 		push();
 		noStroke();
 		this.smoke.forEach((particle) => {
@@ -66,6 +65,7 @@ class Volcano extends Mountain {
 
 	update(elapsedTime) {
 		super.update(elapsedTime);
+		this.addSmokeParticle();
 		for( let i = this.smoke.length-1; i >= 0; i-- ) {
 			const particle = this.smoke[i];
 			particle.x += particle.vx;
