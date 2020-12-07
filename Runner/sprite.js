@@ -67,7 +67,9 @@ class Sprite {
 	jump() {
 		if (this.position.y === this.ground) {
 			this.vy = -15; //velocitySlider.value();
+			return true;
 		}
+		return false;
 	}
 
 	collide(rect2) {

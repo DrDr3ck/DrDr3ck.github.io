@@ -26,7 +26,7 @@ const continueValue = 10;
 
 function startClicked() {
 	curState = GAME_PLAY_STATE;
-	uiManager.setUI([]);
+	startButton.visible = false;
 	sprite.playAnimation('walk');
 	entities = [];
 	ranDistance = 0;
@@ -36,23 +36,28 @@ function startClicked() {
 
 function continueClicked() {
 	curState = GAME_PLAY_STATE;
-	uiManager.setUI([]);
+	startButton.visible = false;
 	sprite.playAnimation('walk');
 	entities = [];
 	if (diamond >= continueValue) {
 		diamond -= continueValue;
-		doSave();
+		saveData(true);
 	} else {
 		ranDistance = 0;
 	}
 }
 
-const startButton = new BButton(200, 200, 'START', startClicked);
-const continueButton = new BButton(200, 300, `CONTINUE (-${continueValue}◈)`, continueClicked);
-startButton.setTextSize(40);
-continueButton.setTextSize(40);
-const menu = [ startButton ];
-uiManager.setUI(menu);
+function musicClicked() {
+	if (musicButton.enabled) {
+		musicButton.checked = !musicButton.checked;
+		saveData(false);
+	}
+}
+
+function speakerClicked() {
+	speakerButton.checked = !speakerButton.checked;
+	saveData(false);
+}
 
 let lastTime = 0;
 
@@ -64,10 +69,20 @@ function getRandomIntInclusive(min, max) {
 
 const spritesheet = new SpriteSheet();
 
+let ding = null;
+let jump = null;
+
 function preload() {
 	spritesheet.addSpriteSheet('idle', loadImage('./idle.png'), 60, 60);
 	spritesheet.addSpriteSheet('walk', loadImage('./walk.png'), 60, 60);
 	spritesheet.addSpriteSheet('dead', loadImage('./dead.png'), 60, 60);
+
+	ding = loadSound('./ding.wav');
+	ding.setVolume(0.125);
+	jump = loadSound('./jump.wav');
+	jump.setVolume(0.125);
+	death = loadSound('./death.wav');
+	death.setVolume(0.5);
 }
 
 let sprite = null;
@@ -84,7 +99,26 @@ function getGroundLevel(x) {
 
 const FPS = 60;
 
+const startButton = new BButton(200, 200, 'START', startClicked);
+const continueButton = new BButton(200, 300, `CONTINUE (-${continueValue}◈)`, continueClicked);
+const musicButton = new BFloatingButton(730, 70, '\uD83C\uDFB6', musicClicked);
+const speakerButton = new BFloatingButton(730 - 10 - 70, 70, '\uD83D\uDD0A', speakerClicked);
+
+function initUI() {
+	startButton.setTextSize(40);
+	continueButton.setTextSize(40);
+	continueButton.visible = false;
+	musicButton.setTextSize(50);
+	musicButton.checked = false;
+	musicButton.enabled = false;
+	speakerButton.setTextSize(50);
+
+	const menu = [ startButton, musicButton, speakerButton ];
+	uiManager.setUI(menu);
+}
+
 function setup() {
+	initUI();
 	loadData();
 
 	canvas = createCanvas(windowWidth, windowHeight);
@@ -107,18 +141,22 @@ function getData() {
 	const data = {
 		diamond: diamond,
 		distance: Math.max(ranDistance, bestRanDistance),
-		volume: 0
+		volume: 0.5,
+		music: musicButton.checked,
+		speaker: speakerButton.checked
 	};
 	return data;
 }
 
 const storageKey = 'RuNNeR';
 
-function doSave() {
+function saveData(verbose) {
 	const data = JSON.stringify(getData());
 	if (data && data !== 'null') {
 		localStorage.setItem(storageKey, data);
-		uiManager.addLogger('Saved');
+		if (verbose) {
+			uiManager.addLogger('Saved');
+		}
 	}
 }
 
@@ -129,13 +167,15 @@ function loadData() {
 	if (storage) {
 		data = JSON.parse(storage) || initialData;
 		for (var k in initialData) {
-			if (!data[k]) {
+			if (data[k] == undefined) {
 				data[k] = initialData[k];
 			}
 		}
 	}
 	bestRanDistance = data.distance;
 	diamond = data.diamond;
+	musicButton.checked = data.music;
+	speakerButton.checked = data.speaker;
 }
 
 let entities = [];
@@ -156,7 +196,13 @@ function updateGame(elapsedTime) {
 			if (d.isBonus()) {
 				diamond++;
 				d.x = -100;
+				if (speakerButton.checked) {
+					ding.play();
+				}
 			} else {
+				if (speakerButton.checked) {
+					death.play();
+				}
 				curState = GAME_OVER_STATE;
 				sprite.playAnimation('dead');
 				setTimeout(function() {
@@ -165,12 +211,10 @@ function updateGame(elapsedTime) {
 						entities = [];
 					}
 				}, 5000);
-				if (menu.length === 1) {
-					menu.push(continueButton);
-				}
+				continueButton.visible = true;
 				continueButton.enabled = diamond >= continueValue;
-				uiManager.setUI(menu);
-				doSave();
+				startButton.visible = true;
+				saveData(true);
 			}
 		}
 	});
@@ -377,7 +421,9 @@ function draw() {
 
 function mouseClicked() {
 	if (curState === GAME_PLAY_STATE && mouseY > height - groundLevel) {
-		sprite.jump();
+		if (sprite.jump() && speakerButton.checked) {
+			jump.play();
+		}
 	}
 	toolManager.mouseClicked();
 	uiManager.mouseClicked();
@@ -389,11 +435,20 @@ function keyPressed() {
 	}
 
 	if (key === ' ') {
-		sprite.jump();
+		if (sprite.jump() && speakerButton.checked) {
+			jump.play();
+		}
 	}
 
 	if (key === 'H') {
 		hour += 4;
 		hour = hour % 24;
+	}
+
+	if (key === 'm' || key === 'M') {
+		musicClicked();
+	}
+	if (key === 's' || key === 'S') {
+		speakerClicked();
 	}
 }
