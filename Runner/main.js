@@ -113,7 +113,7 @@ function initUI() {
 	musicButton.enabled = false;
 	speakerButton.setTextSize(50);
 
-	const menu = [ startButton, musicButton, speakerButton ];
+	const menu = [ startButton, continueButton, musicButton, speakerButton ];
 	uiManager.setUI(menu);
 }
 
