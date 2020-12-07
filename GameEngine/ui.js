@@ -261,7 +261,7 @@ class BButton extends BButtonTextBase {
 		super(x, y, 0, 0, text, callback);
 		this.setTextSize(60);
 	}
-	
+
 	setTextSize(textSize) {
 		this.textSize = textSize;
 		this.w = 400;
@@ -307,6 +307,7 @@ class BFloatingButton extends BButtonTextBase {
 		const textSize = 60;
 		super(x, y, textSize * 1.2, textSize * 1.2, text, callback);
 		this.textSize = textSize;
+		this.checked = true;
 	}
 
 	setTextSize(size) {
@@ -326,8 +327,9 @@ class BFloatingButton extends BButtonTextBase {
 			strokeWeight(Math.ceil(this.textSize / 30));
 		}
 		fill(9, 47, 18);
-
 		ellipse(this.x + this.w / 2, this.y - this.h / 2, this.w + extend, this.h + extend);
+
+		push();
 		if (this.over) {
 			stroke(188, 255, 219);
 			strokeWeight(Math.ceil(this.textSize / 30));
@@ -337,6 +339,11 @@ class BFloatingButton extends BButtonTextBase {
 		textAlign(CENTER, CENTER);
 		textSize(this.textSize);
 		drawText(this.text, this.x + this.w / 2, this.y - this.h / 2);
+		pop();
+
+		if (!this.checked) {
+			line(this.x+6, this.y-this.h, this.x + this.w-6, this.y);
+		}
 	}
 }
 
