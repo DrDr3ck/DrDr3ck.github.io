@@ -32,6 +32,14 @@ function startClicked() {
 	ranDistance = 0;
 	uiManager.addLogger('Press SPACE to jump');
 	//uiManager.addLogger("Or click mouse button");
+	continueButton.visible = false;
+
+	if( !musicSound.isPlaying() ) {
+		musicSound.loop();
+		if (!musicButton.checked) {
+			musicSound.pause();
+		}
+	}
 }
 
 function continueClicked() {
@@ -51,6 +59,11 @@ function musicClicked() {
 	if (musicButton.enabled) {
 		musicButton.checked = !musicButton.checked;
 		saveData(false);
+		if (musicButton.checked && musicSound.isPaused()) {
+			musicSound.loop();
+		} else if (!musicButton.checked && !musicSound.isPaused()) {
+			musicSound.pause();
+		}
 	}
 }
 
@@ -71,6 +84,8 @@ const spritesheet = new SpriteSheet();
 
 let ding = null;
 let jump = null;
+let death = null;
+let musicSound = null;
 
 function preload() {
 	spritesheet.addSpriteSheet('idle', loadImage('./idle.png'), 60, 60);
@@ -83,6 +98,9 @@ function preload() {
 	jump.setVolume(0.125);
 	death = loadSound('./death.wav');
 	death.setVolume(0.5);
+
+	musicSound = loadSound('./music-loop.wav');
+	musicSound.setVolume(0.125);
 }
 
 let sprite = null;
@@ -107,14 +125,13 @@ const speakerButton = new BFloatingButton(730 - 10 - 70, 70, '\uD83D\uDD0A', spe
 function initUI() {
 	startButton.setTextSize(40);
 	continueButton.setTextSize(40);
-	continueButton.visible = false;
 	musicButton.setTextSize(50);
 	musicButton.checked = false;
-	musicButton.enabled = false;
 	speakerButton.setTextSize(50);
 
 	const menu = [ startButton, continueButton, musicButton, speakerButton ];
 	uiManager.setUI(menu);
+	continueButton.visible = false;
 }
 
 function setup() {
@@ -126,14 +143,13 @@ function setup() {
 
 	frameRate(FPS);
 
-	//velocitySlider = createSlider(-30,-10,-15);
-
 	sprite = new Sprite(50, height - getGroundLevel(50) - 53);
 	sprite.addAnimation('idle', 'idle', [ 0, 1, 2, 3 ], FPS, true);
 	sprite.addAnimation('walk', 'walk', [ 0, 1, 2, 3, 4, 5 ], FPS, true);
 	sprite.addAnimation('dead', 'dead', [ 0 ], FPS, true);
 
 	uiManager.addLogger('Run in the forest, run !!');
+
 	lastTime = Date.now();
 }
 
@@ -361,7 +377,7 @@ function drawGame() {
 
 function drawSky(hour) {
 	const sky = skyColor(hour);
-	background(sky); //[0], sky[1], sky[2]);
+	background(sky);
 }
 
 function draw() {
@@ -440,15 +456,11 @@ function keyPressed() {
 		}
 	}
 
-	if (key === 'H') {
-		hour += 4;
-		hour = hour % 24;
-	}
-
 	if (key === 'm' || key === 'M') {
 		musicClicked();
 	}
 	if (key === 's' || key === 'S') {
 		speakerClicked();
 	}
+
 }
