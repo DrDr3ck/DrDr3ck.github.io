@@ -81,15 +81,55 @@ class Volcano extends Mountain {
 class Tree extends EntityBase {
 	constructor(speed) {
 		super(speed);
+		this.w = 20;
+		this.h = 50;
 	}
 
 	draw() {
 		fill(139, 69, 19);
-		rect(this.x, this.y - 50, 25, 50);
+		rect(this.x, this.y - this.h, this.w, this.h);
 	}
 
 	box() {
-		return { x: this.x, y: this.y - 50, width: 25, height: 50 };
+		return { x: this.x+2, y: this.y - this.h, width: this.w-4, height: this.h };
+	}
+}
+
+class RockyPeak extends EntityBase {
+	constructor(speed) {
+		super(speed);
+		this.color = getRandomIntInclusive(69,169);
+	}
+
+	draw() {
+		push();
+		fill(this.color);
+		stroke(51);
+		strokeWeight(1);
+		triangle(
+			this.x,
+			this.y,
+			this.x + 12,
+			this.y-50,
+			this.x + 25,
+			this.y
+		);
+		noStroke();
+		fill(50, 150, 50);
+		ellipse(this.x+1, this.y, 10);
+		ellipse(this.x+24, this.y, 12, 8);
+		ellipse(this.x+12, this.y, 16, 4);
+		fill(this.color-15);
+		arc(this.x+12, this.y-2, 16, 10, PI, PI*2, OPEN);
+		pop();
+		/* bbox
+		noFill();
+		stroke(51);
+		rect(this.x+10, this.y - 45, 5, 45);*/
+	}
+
+	box() {
+		return { x: this.x+10, y: this.y - 45, width: 5, height: 45 };
 	}
 }
 

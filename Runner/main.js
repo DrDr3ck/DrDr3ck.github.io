@@ -254,7 +254,11 @@ function updateGame(elapsedTime) {
 	});
 	if (addEntity) {
 		if (random() < 0.7) {
-			entities.push(new Tree(5));
+			if (random() < 0.7) {
+				entities.push(new RockyPeak(5));
+			} else {
+				entities.push(new Tree(5));
+			}
 		} else {
 			const r = random();
 			if (r < 0.7) {
