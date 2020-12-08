@@ -36,7 +36,7 @@ function startClicked() {
 	uiManager.addLogger("Or tap the ground");
 	continueButton.visible = false;
 
-	if( !musicSound.isPlaying() ) {
+	if( musicSound && !musicSound.isPlaying() ) {
 		musicSound.loop();
 		if (!musicButton.checked) {
 			musicSound.pause();
@@ -58,10 +58,10 @@ function continueClicked() {
 }
 
 function musicClicked() {
-	if (musicButton.enabled) {
+	if (musicSound && musicButton.enabled) {
 		musicButton.checked = !musicButton.checked;
 		saveData(false);
-		if (musicButton.checked && musicSound.isPaused()) {
+		if (musicButton.checked && !musicSound.isPlaying()) {
 			musicSound.loop();
 		} else if (!musicButton.checked && !musicSound.isPaused()) {
 			musicSound.pause();
@@ -100,9 +100,6 @@ function preload() {
 	jump.setVolume(0.125);
 	death = loadSound('./death.wav');
 	death.setVolume(0.5);
-
-	musicSound = loadSound('./music-loop.wav');
-	musicSound.setVolume(0.125);
 }
 
 let sprite = null;
@@ -140,6 +137,12 @@ let entities = [];
 let deco = [];
 
 function setup() {
+	musicSound = loadSound('./music-loop.wav', function() {
+		musicSound.setVolume(0.125);
+		uiManager.addLogger("music loaded");
+		musicButton.enabled = true;
+	});
+	
 	initUI();
 	loadData();
 
@@ -203,7 +206,7 @@ function loadData() {
 	}
 	bestRanDistance = data.distance;
 	diamond = data.diamond;
-	musicButton.checked = data.music;
+	musicButton.checked = false;
 	speakerButton.checked = data.speaker;
 }
 
