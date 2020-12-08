@@ -24,6 +24,8 @@ let hour = date.getHours();
 
 const continueValue = 10;
 
+let totalDistancePixel = 0;
+
 function startClicked() {
 	curState = GAME_PLAY_STATE;
 	startButton.visible = false;
@@ -31,7 +33,7 @@ function startClicked() {
 	entities = [];
 	ranDistance = 0;
 	uiManager.addLogger('Press SPACE to jump');
-	//uiManager.addLogger("Or click mouse button");
+	uiManager.addLogger("Or tap the ground");
 	continueButton.visible = false;
 
 	if( !musicSound.isPlaying() ) {
@@ -112,7 +114,7 @@ let windowHeight = screen.height > 600 ? 600 : 360;
 let windowWidth = 800;
 
 function getGroundLevel(x) {
-	return groundLevel;
+	return groundLevel - noise((x+totalDistancePixel)/1000)*50;
 }
 
 const FPS = 60;
@@ -134,6 +136,9 @@ function initUI() {
 	continueButton.visible = false;
 }
 
+let entities = [];
+let deco = [];
+
 function setup() {
 	initUI();
 	loadData();
@@ -149,6 +154,14 @@ function setup() {
 	sprite.addAnimation('dead', 'dead', [ 0 ], FPS, true);
 
 	uiManager.addLogger('Run in the forest, run !!');
+
+	deco.push(new Mountain(0.5));
+	deco[0].x = 150;
+	deco.push(new Volcano(0.5));
+	deco[1].x = 300;
+	deco.push(new Mountain(0.5));
+	deco[2].x = 600;
+	deco.push(new Mountain(0.5));
 
 	lastTime = Date.now();
 }
@@ -194,17 +207,6 @@ function loadData() {
 	speakerButton.checked = data.speaker;
 }
 
-let entities = [];
-let deco = [];
-
-deco.push(new Mountain(0.5));
-deco[0].x = 150;
-deco.push(new Volcano(0.5));
-deco[1].x = 300;
-deco.push(new Mountain(0.5));
-deco[2].x = 600;
-deco.push(new Mountain(0.5));
-
 function updateGame(elapsedTime) {
 	entities.forEach((d) => {
 		d.update(elapsedTime);
@@ -238,6 +240,7 @@ function updateGame(elapsedTime) {
 	bestRanDistance = Math.max(bestRanDistance, ranDistance);
 
 	globalSpeed = 1 + 0.1 * Math.floor(ranDistance / 100);
+	totalDistancePixel += 5*globalSpeed;
 
 	entities = entities.filter((d) => d.x > -20);
 	let addEntity = true;
@@ -355,6 +358,16 @@ function drawGround() {
 	stroke(0);
 	fill(50, 150, 50);
 	rect(0, height - groundLevel, width, groundLevel);
+
+	/*
+	push();
+	noStroke();
+	fill(70,170,70);
+	for( let i=0; i < width; i++) {
+		ellipse(i, height - getGroundLevel(i),1);
+	}
+	pop();
+	*/
 }
 
 function drawGame() {
@@ -424,15 +437,15 @@ function draw() {
 		jobManager.draw();
 	}
 
-	lastTime = currentTime;
-
 	if (toggleDebug) {
 		push();
 		stroke(51);
 		textSize(50);
-		text(hour, 500, 200);
+		text(totalDistancePixel, 500, 200);
 		pop();
 	}
+
+	lastTime = currentTime;
 }
 
 function mouseClicked() {

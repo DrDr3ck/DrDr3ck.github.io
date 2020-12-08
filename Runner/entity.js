@@ -1,7 +1,7 @@
 class EntityBase {
 	constructor(speed) {
 		this.x = getRandomIntInclusive(windowWidth + 10, windowWidth + 500);
-		this.y = windowHeight - groundLevel;
+		this.y = windowHeight - getGroundLevel(this.x);
 		this.speed = speed; // pixels per frame
 	}
 
