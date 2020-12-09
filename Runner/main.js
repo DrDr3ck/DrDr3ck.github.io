@@ -1,8 +1,6 @@
 const uiManager = new UIManager();
-uiManager.loggerContainer = new LoggerContainer(600, 500, 240, 100);
+uiManager.loggerContainer = new LoggerContainer(500, 500, 240, 100);
 uiManager.loggerContainer.visible = true;
-
-const credit = 'https://twitter.com/ScissorMarks';
 
 const toolManager = new ToolManager();
 const jobManager = new JobManager();
@@ -33,10 +31,10 @@ function startClicked() {
 	entities = [];
 	ranDistance = 0;
 	uiManager.addLogger('Press SPACE to jump');
-	uiManager.addLogger("Or tap the ground");
+	uiManager.addLogger('Or tap the ground');
 	continueButton.visible = false;
 
-	if( musicSound && !musicSound.isPlaying() ) {
+	if (musicSound && !musicSound.isPlaying()) {
 		musicSound.loop();
 		if (!musicButton.checked) {
 			musicSound.pause();
@@ -72,6 +70,30 @@ function musicClicked() {
 function speakerClicked() {
 	speakerButton.checked = !speakerButton.checked;
 	saveData(false);
+}
+
+function creditClicked() {
+	creditButton.enabled = false;
+	uiManager.addLogger(`===== CREDITS =====`);
+
+	setTimeout(function() {
+		uiManager.addLogger('Special thanks to Arks for the dino sprite.');
+	}, 1500);
+	setTimeout(function() {
+		uiManager.addLogger("https://twitter.com/ScissorMarks");
+	}, 4000);
+
+	setTimeout(function() {
+		uiManager.addLogger('Sounds from https://freesound.org/');
+	}, 5500);
+
+	setTimeout(function() {
+		uiManager.addLogger("Inspired by https://thecodingtrain.com/");
+	}, 7000);
+
+	setTimeout(function() {
+		creditButton.enabled = true;
+	}, 8500);
 }
 
 let lastTime = 0;
@@ -111,7 +133,7 @@ let windowHeight = screen.height > 600 ? 600 : 360;
 let windowWidth = 800;
 
 function getGroundLevel(x) {
-	return groundLevel - noise((x+totalDistancePixel)/1000)*50;
+	return groundLevel - noise((x + totalDistancePixel) / 1000) * 50;
 }
 
 const FPS = 60;
@@ -121,14 +143,17 @@ const continueButton = new BButton(200, 300, `CONTINUE (-${continueValue}◈)`, 
 const musicButton = new BFloatingButton(730, 70, '\uD83C\uDFB6', musicClicked);
 const speakerButton = new BFloatingButton(730 - 10 - 70, 70, '\uD83D\uDD0A', speakerClicked);
 
+const creditButton = new BFloatingButton(30, 70, 'C', creditClicked);
+
 function initUI() {
 	startButton.setTextSize(40);
 	continueButton.setTextSize(40);
+	creditButton.setTextSize(40);
 	musicButton.setTextSize(50);
 	musicButton.checked = false;
 	speakerButton.setTextSize(50);
 
-	const menu = [ startButton, continueButton, musicButton, speakerButton ];
+	const menu = [ startButton, continueButton, creditButton, musicButton, speakerButton ];
 	uiManager.setUI(menu);
 	continueButton.visible = false;
 }
@@ -139,10 +164,10 @@ let deco = [];
 function setup() {
 	musicSound = loadSound('./music-loop.wav', function() {
 		musicSound.setVolume(0.125);
-		uiManager.addLogger("music loaded");
+		uiManager.addLogger('music loaded');
 		musicButton.enabled = true;
 	});
-	
+
 	initUI();
 	loadData();
 
@@ -187,7 +212,7 @@ function saveData(verbose) {
 	if (data && data !== 'null') {
 		localStorage.setItem(storageKey, data);
 		if (verbose) {
-			uiManager.addLogger('Saved');
+			uiManager.addLogger('Progress saved');
 		}
 	}
 }
@@ -243,7 +268,7 @@ function updateGame(elapsedTime) {
 	bestRanDistance = Math.max(bestRanDistance, ranDistance);
 
 	globalSpeed = 1 + 0.1 * Math.floor(ranDistance / 100);
-	totalDistancePixel += 5*globalSpeed;
+	totalDistancePixel += 5 * globalSpeed;
 
 	entities = entities.filter((d) => d.x > -20);
 	let addEntity = true;
@@ -482,5 +507,4 @@ function keyPressed() {
 	if (key === 's' || key === 'S') {
 		speakerClicked();
 	}
-
 }
