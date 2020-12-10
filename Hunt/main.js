@@ -11,11 +11,13 @@ const GAME_OVER_STATE = 3;
 const GAME_NEXT_LEVEL_STATE = 4;
 let curState = GAME_START_STATE;
 
-const playerStart = {X:4, Y:6};
+const playerStart = { X: 4, Y: 6 };
 let lastTime = 0;
 let firstMove = false;
 let firstBlood = false; // kill an animal
 let firstInjury = false; // get injured by an animal or trap
+
+const textAnimations = [];
 
 function getRandomIntInclusive(min, max) {
 	min = Math.ceil(min);
@@ -65,16 +67,16 @@ function playSound(sound) {
 }
 
 function preload() {
-	spritesheet.addSpriteSheet('ground01', loadImage('./ground01.png'), 60, 60);
-	spritesheet.addSpriteSheet('player01', loadImage('./player01.png'), 60, 60);
-	spritesheet.addSpriteSheet('animal01', loadImage('./animal01.png'), 60, 60);
+	spritesheet.addSpriteSheet('ground01', loadImage('./misc/ground01.png'), 60, 60);
+	spritesheet.addSpriteSheet('player01', loadImage('./misc/player01.png'), 60, 60);
+	spritesheet.addSpriteSheet('sheep', loadImage('./misc/sheep.png'), 60, 60);
 
-	moveSound = loadSound("./move.ogg");
-	hitSound = loadSound("./hit.wav");
+	moveSound = loadSound('./misc/move.ogg');
+	hitSound = loadSound('./misc/hit.wav');
 	hitSound.setVolume(0.125);
-	gameOverSound = loadSound("./game_over.wav");
-	animalDeathSound = loadSound("./animal_death.wav");
-	nextLevelSound = loadSound("./next_level.wav");
+	gameOverSound = loadSound('./misc/game_over.wav');
+	animalDeathSound = loadSound('./misc/animal_death.wav');
+	nextLevelSound = loadSound('./misc/next_level.wav');
 }
 
 function initUI() {
@@ -91,55 +93,9 @@ function fight() {
 	// hurt animals that are in front of the player
 	playSound(hitSound);
 	const damage = world.player.getDamage();
-	for( let i=-1; i <= 1; i++) {
-		for( let j=-1; j <= 1; j++) {
-			world.hurt(world.player.tilePosition.X+i, world.player.tilePosition.Y+j, damage);
-		}
-	}
-}
-
-function movePlayer(move) {
-	if (!firstMove) {
-		firstMove = true;
-		uiManager.addLogger('Each move costs food');
-	}
-	let canMove = false;
-	if (move === 'UP' && world.isFree(world.player.tilePosition.X, world.player.tilePosition.Y - 1)) {
-		world.player.setTileY(world.player.tilePosition.Y - 1);
-		canMove = true;
-	}
-	if (move === 'DOWN' && world.isFree(world.player.tilePosition.X, world.player.tilePosition.Y + 1)) {
-		world.player.setTileY(world.player.tilePosition.Y + 1);
-		canMove = true;
-	}
-	if (move === 'LEFT' && world.isFree(world.player.tilePosition.X - 1, world.player.tilePosition.Y)) {
-		world.player.setTileX(world.player.tilePosition.X - 1);
-		canMove = true;
-	}
-	if (move === 'RIGHT' && world.isFree(world.player.tilePosition.X + 1, world.player.tilePosition.Y)) {
-		world.player.setTileX(world.player.tilePosition.X + 1);
-		canMove = true;
-	}
-	if (canMove) {
-		world.food = Math.max(0, world.food - 1);
-		playSound(moveSound);
-		world.move();
-		if (world.food === 0) {
-			// game over
-			curState = GAME_OVER_STATE;
-			playSound(gameOverSound);
-			startButton.visible = true;
-		} else {
-			// check if player is on 'next level' tile
-			if( world.player.tilePosition.X === world.nextTileLevel.X && world.player.tilePosition.Y === world.nextTileLevel.Y ) {
-				playSound(nextLevelSound);
-				curState = GAME_NEXT_LEVEL_STATE;
-				uiManager.addLogger("Next level!!!");
-				setTimeout(function() {
-					world.nextLevel();
-					curState = GAME_PLAY_STATE;
-				}, speakerButton.checked ? 2000 : 800);
-			}
+	for (let i = -1; i <= 1; i++) {
+		for (let j = -1; j <= 1; j++) {
+			world.hurt(world.player.tilePosition.X + i, world.player.tilePosition.Y + j, damage);
 		}
 	}
 }
@@ -157,7 +113,7 @@ function setup() {
 	lastTime = Date.now();
 
 	world.player = new Player(playerStart.X, playerStart.Y);
-	world.animals.push(new Animal('animal01', 2, 2));
+	world.animals.push(new Animal('sheep', 2, 2));
 }
 
 function drawGame() {
@@ -167,19 +123,28 @@ function drawGame() {
 	pop();
 	textSize(32);
 	fill(255, 128, 0);
-	let textY = 130;
+	let textY = 150;
 	text(`FOOD: ${world.food}`, 600, textY);
-	textY+=50;
+	textY += 50;
+	textY += 50;
 	if (world.selectedTile) {
 		text(`Tile ${world.selectedTile.X}/${world.selectedTile.Y}`, 600, textY);
 	}
-	textY+=50;
-	text(`LEVEL: ${world.level}`, 600, textY);
-	textY+=50;
+	textY += 50;
+
+	text(`LEVEL: ${world.level}`, 50, 45);
 }
 
 function updateGame(elapsedTime) {
 	world.update(elapsedTime);
+}
+
+function removeItems(myList, fct) {
+	myList.forEach((item, i) => {
+		if (fct(item)) {
+			textAnimations.splice(i, 1);
+		}
+	});
 }
 
 function draw() {
@@ -198,9 +163,14 @@ function draw() {
 	if (curState === GAME_PLAY_STATE) {
 		updateGame(elapsedTime);
 	}
+	textAnimations.forEach((anim) => anim.update(elapsedTime));
 	drawGame();
+	textAnimations.forEach((anim) => anim.draw());
+	removeItems(textAnimations, (item) => {
+		return item.currentTime === 0;
+	});
 
-	if (curState !== GAME_PLAY_STATE ) {
+	if (curState !== GAME_PLAY_STATE) {
 		background(51, 51, 51, 200);
 	}
 
@@ -227,16 +197,16 @@ function keyPressed() {
 	}
 	if (keyCode === 38) {
 		// UP
-		movePlayer('UP');
+		world.movePlayer('UP');
 	} else if (keyCode === 40) {
 		// DOWN
-		movePlayer('DOWN');
+		world.movePlayer('DOWN');
 	} else if (keyCode === 37) {
 		// LEFT
-		movePlayer('LEFT');
+		world.movePlayer('LEFT');
 	} else if (keyCode === 39) {
 		// RIGHT
-		movePlayer('RIGHT');
+		world.movePlayer('RIGHT');
 	} else if (keyCode === 32) {
 		// SPACE
 		fight();
