@@ -5,9 +5,21 @@ uiManager.loggerContainer.visible = true;
 const toolManager = new ToolManager();
 const jobManager = new JobManager();
 
+const GAME_START_STATE = 1;
+const GAME_PLAY_STATE = 2;
+const GAME_OVER_STATE = 3;
+let curState = GAME_START_STATE;
+
 let lastTime = 0;
 
+function preload() {
+}
+
+function initUI() {
+}
+
 function setup() {
+    initUI();
 	canvas = createCanvas(800, 600);
     canvas.parent('canvas');
 
@@ -15,6 +27,14 @@ function setup() {
 
     uiManager.addLogger('This is a logger');
     lastTime = Date.now();
+}
+
+function updateGame(elapsedTime) {
+
+}
+
+function drawGame() {
+
 }
 
 function draw() {
@@ -25,6 +45,12 @@ function draw() {
     uiManager.processInput();
 
     uiManager.update(elapsedTime);
+
+    // draw game
+	if (curState === GAME_PLAY_STATE) {
+		updateGame(elapsedTime);
+	}
+	drawGame();
 
     uiManager.draw();
 	if (toolManager.currentTool) {
