@@ -51,7 +51,7 @@ class World {
 
 	nextLevel() {
 		this.level++;
-		this.animals = [];
+		this.animals = [new Animal('sheep', 2, 2)];
 		this.player.setTileX(playerStart.X);
 		this.player.setTileY(playerStart.Y);
 	}
@@ -59,9 +59,9 @@ class World {
 	addFood(value) {
 		world.food = Math.max(0, world.food + value);
 		if( value < 0 ) {
-			textAnimations.push(new textAnimation(value, { X: 700, Y: 150 }, { X: 700, Y: 200 }, 1000));
+			allAnimations.push(new textAnimation(value, { X: 700, Y: 150 }, { X: 700, Y: 200 }, 1000));
 		} else {
-			textAnimations.push(new textAnimation(`+${value}`, { X: 700, Y: 150 }, { X: 700, Y: 100 }, 1000));
+			allAnimations.push(new textAnimation(`+${value}`, { X: 700, Y: 150 }, { X: 700, Y: 100 }, 1000));
 		}
 	}
 

@@ -17,7 +17,7 @@ let firstMove = false;
 let firstBlood = false; // kill an animal
 let firstInjury = false; // get injured by an animal or trap
 
-const textAnimations = [];
+const allAnimations = [];
 
 function getRandomIntInclusive(min, max) {
 	min = Math.ceil(min);
@@ -142,7 +142,7 @@ function updateGame(elapsedTime) {
 function removeItems(myList, fct) {
 	myList.forEach((item, i) => {
 		if (fct(item)) {
-			textAnimations.splice(i, 1);
+			allAnimations.splice(i, 1);
 		}
 	});
 }
@@ -163,10 +163,10 @@ function draw() {
 	if (curState === GAME_PLAY_STATE) {
 		updateGame(elapsedTime);
 	}
-	textAnimations.forEach((anim) => anim.update(elapsedTime));
+	allAnimations.forEach((anim) => anim.update(elapsedTime));
 	drawGame();
-	textAnimations.forEach((anim) => anim.draw());
-	removeItems(textAnimations, (item) => {
+	allAnimations.forEach((anim) => anim.draw());
+	removeItems(allAnimations, (item) => {
 		return item.currentTime === 0;
 	});
 
