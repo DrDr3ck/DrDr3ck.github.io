@@ -1,6 +1,9 @@
 const uiManager = new UIManager();
-uiManager.loggerContainer = new LoggerContainer(550, 500, 250, 100);
+const windowWidth = 1000;
+uiManager.loggerContainer = new LoggerContainer(windowWidth - 280, 520, 280, 80);
 uiManager.loggerContainer.visible = true;
+//uiManager.loggerContainer.drawBox = true;
+uiManager.loggerContainer.maxLines = 4;
 
 const toolManager = new ToolManager();
 const jobManager = new JobManager();
@@ -23,19 +26,31 @@ function startClicked() {
 }
 
 let startButton = null;
+let upgradeTowerButton = null;
+let upgradeTowerGold = 100;
 
-function preload() {}
+let underGroundImg = null;
+
+function preload() {
+	underGroundImg = loadImage("./underground.png");
+}
 
 function initUI() {
-	startButton = new BButton(200, 200, 'START', startClicked);
+	startButton = new BButton(width / 2 - 200, 200, 'START', startClicked);
 	startButton.setTextSize(40);
-	uiManager.setUI([ startButton ]);
+	upgradeTowerButton = new BFloatingButton(width / 2 - 15, height - 150, '\u2699', () => {
+		world.upgradeTower();
+	});
+	upgradeTowerButton.setTextSize(30);
+	uiManager.setUI([ startButton, upgradeTowerButton ]);
+	upgradeTowerButton.visible = false;
 }
 
 function setup() {
-	initUI();
-	canvas = createCanvas(800, 600);
+	canvas = createCanvas(windowWidth, 600);
 	canvas.parent('canvas');
+
+	initUI();
 
 	world = new World();
 
@@ -47,6 +62,13 @@ function setup() {
 
 function updateGame(elapsedTime) {
 	world.update(elapsedTime);
+	upgradeTowerButton.visible = world.gold >= upgradeTowerGold;
+
+	if( world.life <= 0 ) {
+		curState = GAME_OVER_STATE;
+		startButton.visible = true;
+		uiManager.addLogger("Tower destroyed!!");
+	}
 }
 
 function drawGame() {
@@ -82,7 +104,7 @@ function draw() {
 
 function mouseClicked() {
 	if (curState === GAME_PLAY_STATE) {
-		world.fireBullet(mouseX, mouseY);
+		world.fireBullet(mouseX+random(-2,2), mouseY+random(-2,2));
 	}
 	toolManager.mouseClicked();
 	uiManager.mouseClicked();
@@ -90,9 +112,17 @@ function mouseClicked() {
 
 function keyPressed() {
 	if (key === ' ') {
-		world.enemies.push(new GroundEnemy(-10, 0.1, 5));
+		if (world.enemies.length === 0) {
+			world.initWave();
+		}
 	}
 	if (key === 'a') {
-		world.enemies.push(new GroundEnemy(-10, 1, 20));
+		const enemy = new GroundEnemy(-10, 1, 20);
+		enemy.damage = 50;
+		enemy.life = 50;
+		world.enemies.push(enemy);
+	}
+	if (key === 'g') {
+		world.gold+=50;
 	}
 }
