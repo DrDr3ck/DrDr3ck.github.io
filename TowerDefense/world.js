@@ -32,6 +32,7 @@ class World {
 			new GroundEnemy(-20, 0.1, 5),
 			new GroundEnemy(width + 10, -0.08, 8)
 		];
+		soundManager.playSound("new_wave");
 	}
 
 	upgradeTower() {
@@ -76,7 +77,10 @@ class World {
 			this.bullets.push(
 				new Bullet({ X: this.towerX, Y: this.towerY + this.towerHeight * r }, { X: toX, Y: toY }, 2)
 			);
+		} else {
+			return;
 		}
+		soundManager.playSound("bow", random(0.8,1.2));
 	}
 
 	draw() {
@@ -166,6 +170,7 @@ class World {
 					enemy.moveBack();
 					enemy.life--;
 					bullet.y = height * 2; // move bullet far away below the window
+					soundManager.playSound("arrow_damage");
 				}
 			});
 		});
@@ -187,6 +192,7 @@ class World {
 			if (this.enemies[i].life <= 0) {
 				this.gold += this.enemies[i].gold;
 				this.enemies.splice(i, 1);
+				soundManager.playSound("argh",random(0,2));
 			}
 		}
 		if (this.enemies.length === 0) {

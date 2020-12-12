@@ -7,6 +7,7 @@ uiManager.loggerContainer.maxLines = 4;
 
 const toolManager = new ToolManager();
 const jobManager = new JobManager();
+const soundManager = new sndMgr();
 
 const GAME_START_STATE = 1;
 const GAME_PLAY_STATE = 2;
@@ -36,6 +37,11 @@ let underGroundImg = null;
 
 function preload() {
 	underGroundImg = loadImage("./underground.png");
+
+	soundManager.addSound("new_wave", loadSound("./new_wave.wav"));
+	soundManager.addSound("bow", loadSound("./bow01.wav"));
+	soundManager.addSound("argh", loadSound("./argh.wav"));
+	soundManager.addSound("arrow_damage", loadSound("./arrow_damage.wav"));
 }
 
 function initUI() {
