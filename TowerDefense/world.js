@@ -42,8 +42,14 @@ class World {
 		this.towerY = this.groundLevel - this.towerHeight;
 		this.maxBullets++;
 		uiManager.addLogger('Tower upgraded');
-		uiManager.addLogger(`Max life set to ${this.maxLife}`, 1000);
-		uiManager.addLogger(`Max bullets set to ${this.maxBullets}`, 2000);
+		this.displayHelp(1000);
+	}
+
+	displayHelp(time=0) {
+		helpButton.enabled = false;
+		uiManager.addLogger(`Max life set to ${this.maxLife}`, time);
+		uiManager.addLogger(`Max bullets set to ${this.maxBullets}`, time+1000);
+		setTimeout(()=>{helpButton.enabled = true;}, time+2000);
 	}
 
 	hitTower(hitValue) {

@@ -21,12 +21,15 @@ function startClicked() {
 	uiManager.addLogger('Click on enemies to kill them!');
 	curState = GAME_PLAY_STATE;
 	startButton.visible = false;
+	helpButton.enabled = true;
 	world.init();
 	world.initWave();
 }
 
 let startButton = null;
+let helpButton = null;
 let upgradeTowerButton = null;
+
 let upgradeTowerGold = 100;
 
 let underGroundImg = null;
@@ -42,7 +45,14 @@ function initUI() {
 		world.upgradeTower();
 	});
 	upgradeTowerButton.setTextSize(30);
-	uiManager.setUI([ startButton, upgradeTowerButton ]);
+
+	helpButton = new BFloatingButton(width / 2 - 15, height - 30, '\u003F', () => {
+		world.displayHelp();
+	});
+	helpButton.setTextSize(30);
+	helpButton.enabled = false;
+
+	uiManager.setUI([ startButton, upgradeTowerButton, helpButton ]);
 	upgradeTowerButton.visible = false;
 }
 
@@ -67,6 +77,7 @@ function updateGame(elapsedTime) {
 	if( world.life <= 0 ) {
 		curState = GAME_OVER_STATE;
 		startButton.visible = true;
+		helpButton.enabled = false;
 		uiManager.addLogger("Tower destroyed!!");
 	}
 }
