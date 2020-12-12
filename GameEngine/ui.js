@@ -7,9 +7,15 @@ class UIManager {
 		this.loggerContainer = null;
 	}
 
-	addLogger(text) {
+	addLogger(text, time = 0) {
 		if (this.loggerContainer) {
-			this.loggerContainer.addText(text);
+			if (time === 0) {
+				this.loggerContainer.addText(text);
+			} else {
+				setTimeout(() => {
+					this.loggerContainer.addText(text);
+				}, time);
+			}
 		}
 	}
 
@@ -342,7 +348,7 @@ class BFloatingButton extends BButtonTextBase {
 		pop();
 
 		if (!this.checked) {
-			line(this.x+6, this.y-this.h, this.x + this.w-6, this.y);
+			line(this.x + 6, this.y - this.h, this.x + this.w - 6, this.y);
 		}
 	}
 }
@@ -648,6 +654,8 @@ class LoggerContainer extends UIComponent {
 	constructor(x, y, w, h) {
 		super(x, y, w, h);
 		this.loggers = [];
+		this.drawBox = false;
+		this.maxLines = 5;
 	}
 
 	addText(text) {
@@ -658,15 +666,18 @@ class LoggerContainer extends UIComponent {
 		noStroke();
 		textSize(16);
 		translate(this.x, this.y);
-		/*
-		stroke(128);
-		noFill();
-		rect(0, 0, this.w, this.h);
-		*/
+		if (this.drawBox) {
+			push();
+			stroke(0);
+			strokeWeight(2);
+			noFill();
+			rect(0, 0, this.w, this.h);
+			pop();
+		}
 		const x = 0;
 		// only display the 5 last messages
-		const maxLogger = Math.min(5, this.loggers.length);
-		const minLogger = Math.max(0, this.loggers.length - 5);
+		const maxLogger = Math.min(this.maxLines, this.loggers.length);
+		const minLogger = Math.max(0, this.loggers.length - this.maxLines);
 		let y = this.h + 10 - maxLogger * 20;
 		for (let i = minLogger; i < this.loggers.length; i++) {
 			const logger = this.loggers[i];
