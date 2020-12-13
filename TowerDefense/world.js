@@ -30,16 +30,16 @@ class World {
 			this.groundsLevel[i] = this.groundLevel;
 		}
 		world.enemies = [
-			new GroundEnemy(-10, 0.1, 5),
-			new GroundEnemy(-20, 0.1, 5),
-			new GroundEnemy(-120, 0.1, 5),
-			new GroundEnemy(-130, 0.1, 5),
-			new GroundEnemy(-140, 0.1, 5),
-			new GroundEnemy(-150, 0.2, 3),
-			new GroundEnemy(-160, 0.2, 3),
-			new GroundEnemy(width + 10, -0.08, 8),
-			new GroundEnemy(width + 50, -0.08, 8),
-			new GroundEnemy(width + 90, -0.08, 8)
+			new GroundEnemy(-10, 0.5, 16),
+			new GroundEnemy(-20, 0.1, 16),
+			new GroundEnemy(-120, 0.1, 16),
+			new GroundEnemy(-130, 0.1, 16),
+			new GroundEnemy(-140, 0.1, 16),
+			new GroundEnemy(-150, 0.2, 10),
+			new GroundEnemy(-160, 0.2, 10),
+			new GroundEnemy(width + 10, -0.08, 24),
+			new GroundEnemy(width + 50, -0.08, 24),
+			new GroundEnemy(width + 90, -0.08, 24)
 		];
 		soundManager.playSound('new_wave');
 	}
@@ -77,7 +77,7 @@ class World {
 		} else if (x < this.towerX) {
 			r = map(x, 0, this.towerX, 1, 5);
 		}
-		r = Math.max(0.2,Math.floor(r) * 0.2);
+		r = Math.max(0.2, Math.floor(r) * 0.2);
 		return this.towerY + this.towerHeight * r;
 	}
 
@@ -87,10 +87,16 @@ class World {
 		}
 		if (toX > this.towerX + this.towerWidth) {
 			this.bullets.push(
-				new Bullet({ X: this.towerX + this.towerWidth, Y: this.getFireYPosition(toX) }, { X: toX, Y: toY }, this.bulletSpeed)
+				new Bullet(
+					{ X: this.towerX + this.towerWidth, Y: this.getFireYPosition(toX) },
+					{ X: toX, Y: toY },
+					this.bulletSpeed
+				)
 			);
 		} else if (toX < this.towerX) {
-			this.bullets.push(new Bullet({ X: this.towerX, Y: this.getFireYPosition(toX) }, { X: toX, Y: toY }, this.bulletSpeed));
+			this.bullets.push(
+				new Bullet({ X: this.towerX, Y: this.getFireYPosition(toX) }, { X: toX, Y: toY }, this.bulletSpeed)
+			);
 		} else {
 			return;
 		}
@@ -104,11 +110,11 @@ class World {
 		fill(150);
 		rect(this.towerX, this.towerY, this.towerWidth, this.towerHeight);
 		line(0, this.groundLevel, width, this.groundLevel);
-		const yFire = this.getFireYPosition(mouseX)
+		const yFire = this.getFireYPosition(mouseX);
 		if (mouseX > this.towerX + this.towerWidth) {
-			arc(this.towerX + this.towerWidth, yFire, 10,10,HALF_PI,PI+HALF_PI);
+			arc(this.towerX + this.towerWidth, yFire, 10, 10, HALF_PI, PI + HALF_PI);
 		} else if (mouseX < this.towerX) {
-			arc(this.towerX, yFire, 10,10,PI+HALF_PI,HALF_PI);
+			arc(this.towerX, yFire, 10, 10, PI + HALF_PI, HALF_PI);
 		}
 
 		// life of tower
@@ -218,7 +224,7 @@ class World {
 		}
 		if (this.enemies.length === 0) {
 			//prepare to next wave
-			nextButton.visible =true;
+			nextButton.visible = true;
 		}
 		// update enemies
 		this.enemies.forEach((enemy) => {
@@ -231,40 +237,50 @@ class World {
 	}
 }
 
-class Enemy {
+class Enemy extends Sprite {
 	constructor(x, y, speed, size) {
-		this.x = x;
-		this.y = y;
+		super(x, y);
 		this.speed = speed;
 		this.size = size;
 		this.life = 2;
 		this.damage = 2;
 		this.gold = 10;
+
+		this.addAnimation('run', 'soldat', [ 0, 1, 2, 3, 4, 5, 6 ], 60, true);
+
+		this.scale = this.size / 16;
 	}
 
 	draw() {
-		fill(150, 50, 50);
-		rect(this.x, this.y, this.size, this.size * 2);
+		if (toggleDebug) {
+			fill(150, 50, 50);
+			rect(this.position.x + this.size / 4, this.position.y, this.size / 2, this.size);
+		}
+
+		if (this.width) {
+			super.draw();
+		}
 	}
 
 	update(elapsedTime) {
-		this.x += this.speed;
-		this.y = world.getGroundLevel(this.x + this.size / 2) - this.size * 2;
+		super.update(elapsedTime);
+		this.position.x += this.speed;
+		this.position.y = world.getGroundLevel(this.position.x + this.size / 2) - this.size;
 	}
 
 	moveBack() {
-		if (this.x > width / 2) {
-			this.x += 2;
+		if (this.position.x > width / 2) {
+			this.position.x += 2;
 		} else {
-			this.x -= 2;
+			this.position.x -= 2;
 		}
 	}
 
 	hit(x, y) {
-		if (x < this.x || x > this.x + this.size) {
+		if (x < this.position.x + this.size / 4 || x > this.position.x + this.size / 2 + this.size / 4) {
 			return false;
 		}
-		if (y < this.y || y > this.y + this.size * 2) {
+		if (y < this.position.y || y > this.position.y + this.size) {
 			return false;
 		}
 		return true;

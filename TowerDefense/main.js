@@ -5,6 +5,8 @@ uiManager.loggerContainer.visible = true;
 //uiManager.loggerContainer.drawBox = true;
 uiManager.loggerContainer.maxLines = 4;
 
+const spritesheet = new SpriteSheet();
+
 const toolManager = new ToolManager();
 const jobManager = new JobManager();
 const soundManager = new sndMgr();
@@ -50,6 +52,8 @@ let upgradeTowerGold = 100;
 
 let underGroundImg = null;
 
+let toggleDebug = false;
+
 function preload() {
 	underGroundImg = loadImage('./underground.png');
 
@@ -57,6 +61,8 @@ function preload() {
 	soundManager.addSound('bow', loadSound('./bow01.wav'));
 	soundManager.addSound('argh', loadSound('./argh.wav'));
 	soundManager.addSound('arrow_damage', loadSound('./arrow_damage.wav'));
+
+	spritesheet.addSpriteSheet('soldat', loadImage('./soldat.png'), 16, 16);
 }
 
 function initUI() {
@@ -75,7 +81,7 @@ function initUI() {
 
 	nextButton = new BButton(width / 2 - 200, 200, 'NEXT WAVE', nextWaveClicked);
 
-	speakerButton = new BFloatingButton(width-70, 70, '\uD83D\uDD0A', speakerClicked);
+	speakerButton = new BFloatingButton(width - 70, 70, '\uD83D\uDD0A', speakerClicked);
 	speakerButton.setTextSize(50);
 
 	uiManager.setUI([ startButton, upgradeTowerButton, helpButton, nextButton, speakerButton ]);
@@ -137,7 +143,7 @@ function updateGame(elapsedTime) {
 	world.update(elapsedTime);
 	upgradeTowerButton.visible = world.gold >= upgradeTowerGold && world.maxLife < 250;
 
-	if (mouseIsPressed && canFire && !nextButton.visible && mouseY > 100 && mouseY < world.groundLevel ) {
+	if (mouseIsPressed && canFire && !nextButton.visible && mouseY > 100 && mouseY < world.groundLevel) {
 		world.fireBullet(mouseX + random(-2, 2), mouseY + random(-2, 2));
 		canFire = false;
 		setTimeout(() => {
@@ -205,5 +211,8 @@ function keyPressed() {
 	}
 	if (key === 'g') {
 		world.gold += 50;
+	}
+	if (key === 'D') {
+		toggleDebug = !toggleDebug;
 	}
 }
