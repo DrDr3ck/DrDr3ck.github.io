@@ -37,6 +37,7 @@ function nextWaveClicked() {
 function speakerClicked() {
 	speakerButton.checked = !speakerButton.checked;
 	soundManager.mute(!speakerButton.checked);
+	saveData();
 }
 
 let startButton = null;
@@ -87,6 +88,7 @@ function setup() {
 	canvas.parent('canvas');
 
 	initUI();
+	loadData();
 
 	world = new World();
 
@@ -94,6 +96,41 @@ function setup() {
 
 	uiManager.addLogger('How long will you survive!');
 	lastTime = Date.now();
+}
+
+function getData() {
+	const data = {
+		speaker: speakerButton.checked
+	};
+	return data;
+}
+
+const storageKey = 'ToWeRDeFeNSe';
+
+function saveData(verbose) {
+	const data = JSON.stringify(getData());
+	if (data && data !== 'null') {
+		localStorage.setItem(storageKey, data);
+		if (verbose) {
+			uiManager.addLogger('Progress saved');
+		}
+	}
+}
+
+function loadData() {
+	const storage = localStorage.getItem(storageKey);
+	const initialData = getData();
+	let data = initialData;
+	if (storage) {
+		data = JSON.parse(storage) || initialData;
+		for (var k in initialData) {
+			if (data[k] == undefined) {
+				data[k] = initialData[k];
+			}
+		}
+	}
+	speakerButton.checked = data.speaker;
+	soundManager.mute(!speakerButton.checked);
 }
 
 function updateGame(elapsedTime) {
