@@ -13,6 +13,8 @@ class World {
 	init() {
 		this.maxLife = 100;
 		this.life = this.maxLife;
+		this.bulletSpeed = 1.2;
+		this.bulletReloadTime = 500;
 		this.enemies = [];
 		this.bullets = [];
 		this.munitions = [];
@@ -49,6 +51,8 @@ class World {
 		this.life = this.maxLife;
 		this.towerY = this.groundLevel - this.towerHeight;
 		this.maxBullets++;
+		this.bulletReloadTime *= 0.95;
+		this.bulletSpeed *= 1.05;
 		uiManager.addLogger('Tower upgraded');
 		this.displayHelp(1000);
 	}
@@ -83,10 +87,10 @@ class World {
 		}
 		if (toX > this.towerX + this.towerWidth) {
 			this.bullets.push(
-				new Bullet({ X: this.towerX + this.towerWidth, Y: this.getFireYPosition(toX) }, { X: toX, Y: toY }, 2)
+				new Bullet({ X: this.towerX + this.towerWidth, Y: this.getFireYPosition(toX) }, { X: toX, Y: toY }, this.bulletSpeed)
 			);
 		} else if (toX < this.towerX) {
-			this.bullets.push(new Bullet({ X: this.towerX, Y: this.getFireYPosition(toX) }, { X: toX, Y: toY }, 2));
+			this.bullets.push(new Bullet({ X: this.towerX, Y: this.getFireYPosition(toX) }, { X: toX, Y: toY }, this.bulletSpeed));
 		} else {
 			return;
 		}

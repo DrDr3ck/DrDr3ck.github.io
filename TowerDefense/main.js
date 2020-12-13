@@ -34,10 +34,16 @@ function nextWaveClicked() {
 	nextButton.visible = false;
 }
 
+function speakerClicked() {
+	speakerButton.checked = !speakerButton.checked;
+	soundManager.mute(!speakerButton.checked);
+}
+
 let startButton = null;
 let helpButton = null;
 let upgradeTowerButton = null;
 let nextButton = null;
+let speakerButton = null;
 
 let upgradeTowerGold = 100;
 
@@ -68,7 +74,10 @@ function initUI() {
 
 	nextButton = new BButton(width / 2 - 200, 200, 'NEXT WAVE', nextWaveClicked);
 
-	uiManager.setUI([ startButton, upgradeTowerButton, helpButton, nextButton ]);
+	speakerButton = new BFloatingButton(width-70, 70, '\uD83D\uDD0A', speakerClicked);
+	speakerButton.setTextSize(50);
+
+	uiManager.setUI([ startButton, upgradeTowerButton, helpButton, nextButton, speakerButton ]);
 	upgradeTowerButton.visible = false;
 	nextButton.visible = false;
 }
@@ -91,12 +100,12 @@ function updateGame(elapsedTime) {
 	world.update(elapsedTime);
 	upgradeTowerButton.visible = world.gold >= upgradeTowerGold && world.maxLife < 250;
 
-	if (mouseIsPressed && canFire && !nextButton.visible ) {
+	if (mouseIsPressed && canFire && !nextButton.visible && mouseY > 100 && mouseY < world.groundLevel ) {
 		world.fireBullet(mouseX + random(-2, 2), mouseY + random(-2, 2));
 		canFire = false;
 		setTimeout(() => {
 			canFire = true;
-		}, 500);
+		}, world.bulletReloadTime);
 	}
 
 	if (world.life <= 0) {
