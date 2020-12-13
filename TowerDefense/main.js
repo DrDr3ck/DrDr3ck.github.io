@@ -27,9 +27,15 @@ function startClicked() {
 	world.initWave();
 }
 
+function nextWaveClicked() {
+	world.initWave();
+	nextButton.visible = false;
+}
+
 let startButton = null;
 let helpButton = null;
 let upgradeTowerButton = null;
+let nextButton = null;
 
 let upgradeTowerGold = 100;
 
@@ -38,7 +44,7 @@ let underGroundImg = null;
 function preload() {
 	underGroundImg = loadImage("./underground.png");
 
-	soundManager.addSound("new_wave", loadSound("./new_wave.wav"));
+	soundManager.addSound("new_wave", loadSound("./new_wave.wav"), 0.25);
 	soundManager.addSound("bow", loadSound("./bow01.wav"));
 	soundManager.addSound("argh", loadSound("./argh.wav"));
 	soundManager.addSound("arrow_damage", loadSound("./arrow_damage.wav"));
@@ -58,8 +64,11 @@ function initUI() {
 	helpButton.setTextSize(30);
 	helpButton.enabled = false;
 
-	uiManager.setUI([ startButton, upgradeTowerButton, helpButton ]);
+	nextButton = new BButton(width / 2 - 200, 200, 'NEXT WAVE', nextWaveClicked);
+
+	uiManager.setUI([ startButton, upgradeTowerButton, helpButton, nextButton ]);
 	upgradeTowerButton.visible = false;
+	nextButton.visible = false;
 }
 
 function setup() {
@@ -128,11 +137,13 @@ function mouseClicked() {
 }
 
 function keyPressed() {
+	/*
 	if (key === ' ') {
 		if (world.enemies.length === 0) {
 			world.initWave();
 		}
 	}
+	*/
 	if (key === 'a') {
 		const enemy = new GroundEnemy(-10, 1, 20);
 		enemy.damage = 50;

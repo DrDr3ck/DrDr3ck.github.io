@@ -30,9 +30,16 @@ class World {
 		world.enemies = [
 			new GroundEnemy(-10, 0.1, 5),
 			new GroundEnemy(-20, 0.1, 5),
-			new GroundEnemy(width + 10, -0.08, 8)
+			new GroundEnemy(-120, 0.1, 5),
+			new GroundEnemy(-130, 0.1, 5),
+			new GroundEnemy(-140, 0.1, 5),
+			new GroundEnemy(-150, 0.2, 3),
+			new GroundEnemy(-160, 0.2, 3),
+			new GroundEnemy(width + 10, -0.08, 8),
+			new GroundEnemy(width + 50, -0.08, 8),
+			new GroundEnemy(width + 90, -0.08, 8)
 		];
-		soundManager.playSound("new_wave");
+		soundManager.playSound('new_wave');
 	}
 
 	upgradeTower() {
@@ -46,15 +53,28 @@ class World {
 		this.displayHelp(1000);
 	}
 
-	displayHelp(time=0) {
+	displayHelp(time = 0) {
 		helpButton.enabled = false;
 		uiManager.addLogger(`Max life set to ${this.maxLife}`, time);
-		uiManager.addLogger(`Max bullets set to ${this.maxBullets}`, time+1000);
-		setTimeout(()=>{helpButton.enabled = true;}, time+2000);
+		uiManager.addLogger(`Max bullets set to ${this.maxBullets}`, time + 1000);
+		setTimeout(() => {
+			helpButton.enabled = true;
+		}, time + 2000);
 	}
 
 	hitTower(hitValue) {
 		this.life = Math.max(0, this.life - hitValue);
+	}
+
+	getFireYPosition(x) {
+		let r = 0;
+		if (x > this.towerX + this.towerWidth) {
+			r = map(x, this.towerX + this.towerWidth, width, 5, 1);
+		} else if (x < this.towerX) {
+			r = map(x, 0, this.towerX, 1, 5);
+		}
+		r = Math.max(0.2,Math.floor(r) * 0.2);
+		return this.towerY + this.towerHeight * r;
 	}
 
 	fireBullet(toX, toY) {
@@ -62,33 +82,30 @@ class World {
 			return;
 		}
 		if (toX > this.towerX + this.towerWidth) {
-			let r = map(toX, this.towerX + this.towerWidth, width, 5, 1);
-			r = Math.floor(r) * 0.2;
 			this.bullets.push(
-				new Bullet(
-					{ X: this.towerX + this.towerWidth, Y: this.towerY + this.towerHeight * r },
-					{ X: toX, Y: toY },
-					2
-				)
+				new Bullet({ X: this.towerX + this.towerWidth, Y: this.getFireYPosition(toX) }, { X: toX, Y: toY }, 2)
 			);
 		} else if (toX < this.towerX) {
-			let r = map(toX, 0, this.towerX, 1, 5);
-			r = Math.floor(r) * 0.2;
-			this.bullets.push(
-				new Bullet({ X: this.towerX, Y: this.towerY + this.towerHeight * r }, { X: toX, Y: toY }, 2)
-			);
+			this.bullets.push(new Bullet({ X: this.towerX, Y: this.getFireYPosition(toX) }, { X: toX, Y: toY }, 2));
 		} else {
 			return;
 		}
-		soundManager.playSound("bow", random(0.8,1.2));
+		soundManager.playSound('bow', random(0.8, 1.2));
 	}
 
 	draw() {
 		image(underGroundImg, 0, this.groundLevel);
 
+		// draw tower
 		fill(150);
 		rect(this.towerX, this.towerY, this.towerWidth, this.towerHeight);
 		line(0, this.groundLevel, width, this.groundLevel);
+		const yFire = this.getFireYPosition(mouseX)
+		if (mouseX > this.towerX + this.towerWidth) {
+			arc(this.towerX + this.towerWidth, yFire, 10,10,HALF_PI,PI+HALF_PI);
+		} else if (mouseX < this.towerX) {
+			arc(this.towerX, yFire, 10,10,PI+HALF_PI,HALF_PI);
+		}
 
 		// life of tower
 		fill(150, 0, 0);
@@ -170,7 +187,7 @@ class World {
 					enemy.moveBack();
 					enemy.life--;
 					bullet.y = height * 2; // move bullet far away below the window
-					soundManager.playSound("arrow_damage");
+					soundManager.playSound('arrow_damage');
 				}
 			});
 		});
@@ -192,12 +209,12 @@ class World {
 			if (this.enemies[i].life <= 0) {
 				this.gold += this.enemies[i].gold;
 				this.enemies.splice(i, 1);
-				soundManager.playSound("argh",random(0,2));
+				soundManager.playSound('argh', random(0.5, 1.5));
 			}
 		}
 		if (this.enemies.length === 0) {
 			//prepare to next wave
-			uiManager.addLogger('Press SPACE for next wave');
+			nextButton.visible =true;
 		}
 		// update enemies
 		this.enemies.forEach((enemy) => {
@@ -228,7 +245,7 @@ class Enemy {
 
 	update(elapsedTime) {
 		this.x += this.speed;
-		this.y = world.getGroundLevel(this.x+this.size/2)-this.size*2;
+		this.y = world.getGroundLevel(this.x + this.size / 2) - this.size * 2;
 	}
 
 	moveBack() {
