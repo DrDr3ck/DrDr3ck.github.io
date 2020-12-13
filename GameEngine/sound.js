@@ -3,7 +3,8 @@ class sndMgr {
 		this.sounds = {};
 	}
 
-	addSound(name, sound) {
+	addSound(name, sound, volume=1) {
+		sound.setVolume(volume);
 		this.sounds[name] = sound;
 	}
 
