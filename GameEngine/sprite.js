@@ -3,6 +3,13 @@ class SpriteSheet {
 		this.sheets = {};
 	}
 
+	/**
+	 * Adds a sprite sheet to the dictionary
+	 * @param {*} name name of the sprite sheet
+	 * @param {*} image image
+	 * @param {*} width width of one sprite
+	 * @param {*} height height of one sprite
+	 */
 	addSpriteSheet(name, image, width, height) {
 		this.sheets[name] = { width: width, height: height, image: image };
 	}
@@ -52,7 +59,7 @@ class Sprite {
 
 	draw() {
 		if (!this.state) return;
-		const index = Math.floor(this.index) % this.indexMax;
+		const index = this.index >= 0 ? Math.floor(this.index) % this.indexMax : Math.floor(-this.index) % this.indexMax;
 		image(
 			this.animations[this.state][index],
 			this.position.x,
