@@ -18,8 +18,10 @@ let lastTime = 0;
 
 let world = null;
 
+let canFire = true;
+
 function startClicked() {
-	uiManager.addLogger('Click on enemies to kill them!');
+	uiManager.addLogger('Hold mouse button to fire');
 	curState = GAME_PLAY_STATE;
 	startButton.visible = false;
 	helpButton.enabled = true;
@@ -42,12 +44,12 @@ let upgradeTowerGold = 100;
 let underGroundImg = null;
 
 function preload() {
-	underGroundImg = loadImage("./underground.png");
+	underGroundImg = loadImage('./underground.png');
 
-	soundManager.addSound("new_wave", loadSound("./new_wave.wav"), 0.25);
-	soundManager.addSound("bow", loadSound("./bow01.wav"));
-	soundManager.addSound("argh", loadSound("./argh.wav"));
-	soundManager.addSound("arrow_damage", loadSound("./arrow_damage.wav"));
+	soundManager.addSound('new_wave', loadSound('./new_wave.wav'), 0.25);
+	soundManager.addSound('bow', loadSound('./bow01.wav'));
+	soundManager.addSound('argh', loadSound('./argh.wav'));
+	soundManager.addSound('arrow_damage', loadSound('./arrow_damage.wav'));
 }
 
 function initUI() {
@@ -87,13 +89,21 @@ function setup() {
 
 function updateGame(elapsedTime) {
 	world.update(elapsedTime);
-	upgradeTowerButton.visible = world.gold >= upgradeTowerGold;
+	upgradeTowerButton.visible = world.gold >= upgradeTowerGold && world.maxLife < 250;
 
-	if( world.life <= 0 ) {
+	if (mouseIsPressed && canFire && !nextButton.visible ) {
+		world.fireBullet(mouseX + random(-2, 2), mouseY + random(-2, 2));
+		canFire = false;
+		setTimeout(() => {
+			canFire = true;
+		}, 500);
+	}
+
+	if (world.life <= 0) {
 		curState = GAME_OVER_STATE;
 		startButton.visible = true;
 		helpButton.enabled = false;
-		uiManager.addLogger("Tower destroyed!!");
+		uiManager.addLogger('Tower destroyed!!');
 	}
 }
 
@@ -129,9 +139,6 @@ function draw() {
 }
 
 function mouseClicked() {
-	if (curState === GAME_PLAY_STATE) {
-		world.fireBullet(mouseX+random(-2,2), mouseY+random(-2,2));
-	}
 	toolManager.mouseClicked();
 	uiManager.mouseClicked();
 }
@@ -151,6 +158,6 @@ function keyPressed() {
 		world.enemies.push(enemy);
 	}
 	if (key === 'g') {
-		world.gold+=50;
+		world.gold += 50;
 	}
 }
