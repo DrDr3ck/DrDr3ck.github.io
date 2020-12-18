@@ -2,6 +2,8 @@ class sndMgr {
 	constructor() {
 		this.sounds = {};
 		this.masterVolume = 1;
+		this.maxLoadingSounds = 0;
+		this.maxLoadedSounds = 0;
 	}
 
 	mute(value) {
@@ -12,9 +14,12 @@ class sndMgr {
 		}
 	}
 
-	addSound(name, sound, volume = 1) {
-		sound.setVolume(volume);
-		this.sounds[name] = sound;
+	addSound(name, filename, volume = 1) {
+		this.sounds[name] = loadSound(filename, (sound) => {
+			sound.setVolume(volume);
+			this.maxLoadedSounds++;
+		});
+		this.maxLoadingSounds++;
 	}
 
 	playSound(name, rate = 1) {

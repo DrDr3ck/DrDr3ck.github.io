@@ -1,17 +1,23 @@
 class SpriteSheet {
 	constructor() {
 		this.sheets = {};
+		this.maxLoadingImages = 0;
+		this.maxLoadedImages = 0;
 	}
 
 	/**
 	 * Adds a sprite sheet to the dictionary
 	 * @param {*} name name of the sprite sheet
-	 * @param {*} image image
+	 * @param {*} filename filename image
 	 * @param {*} width width of one sprite
 	 * @param {*} height height of one sprite
 	 */
-	addSpriteSheet(name, image, width, height) {
-		this.sheets[name] = { width: width, height: height, image: image };
+	addSpriteSheet(name, filename, width, height) {
+		loadImage(filename, (image)=> {
+			this.sheets[name] = { width: width, height: height, image: image };
+			this.maxLoadedImages++;
+		});
+		this.maxLoadingImages++;
 	}
 
 	drawSprite(sheetname, index, x, y) {

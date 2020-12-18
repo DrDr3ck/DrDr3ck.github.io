@@ -4,11 +4,13 @@ uiManager.loggerContainer.visible = true;
 
 const toolManager = new ToolManager();
 const jobManager = new JobManager();
+const soundManager = new sndMgr();
 
+const GAME_LOADING_STATE = 0;
 const GAME_START_STATE = 1;
 const GAME_PLAY_STATE = 2;
 const GAME_OVER_STATE = 3;
-let curState = GAME_START_STATE;
+let curState = GAME_LOADING_STATE;
 
 let toggleDebug = false;
 
@@ -80,7 +82,7 @@ function creditClicked() {
 		uiManager.addLogger('Special thanks to Arks for the dino sprite.');
 	}, 1500);
 	setTimeout(function() {
-		uiManager.addLogger("https://twitter.com/ScissorMarks");
+		uiManager.addLogger('https://twitter.com/ScissorMarks');
 	}, 4000);
 
 	setTimeout(function() {
@@ -88,7 +90,7 @@ function creditClicked() {
 	}, 5500);
 
 	setTimeout(function() {
-		uiManager.addLogger("Inspired by https://thecodingtrain.com/");
+		uiManager.addLogger('Inspired by https://thecodingtrain.com/');
 	}, 7000);
 
 	setTimeout(function() {
@@ -106,23 +108,11 @@ function getRandomIntInclusive(min, max) {
 
 const spritesheet = new SpriteSheet();
 
-let ding = null;
-let jump = null;
-let death = null;
 let musicSound = null;
 
-function preload() {
-	spritesheet.addSpriteSheet('idle', loadImage('./idle.png'), 60, 60);
-	spritesheet.addSpriteSheet('walk', loadImage('./walk.png'), 60, 60);
-	spritesheet.addSpriteSheet('dead', loadImage('./dead.png'), 60, 60);
+let loading = true;
 
-	ding = loadSound('./ding.wav');
-	ding.setVolume(0.125);
-	jump = loadSound('./jump.wav');
-	jump.setVolume(0.125);
-	death = loadSound('./death.wav');
-	death.setVolume(0.5);
-}
+function preload() {}
 
 let sprite = null;
 
@@ -162,6 +152,14 @@ let entities = [];
 let deco = [];
 
 function setup() {
+	spritesheet.addSpriteSheet('idle', './idle.png', 60, 60);
+	spritesheet.addSpriteSheet('walk', './walk.png', 60, 60);
+	spritesheet.addSpriteSheet('dead', './dead.png', 60, 60);
+
+	soundManager.addSound('ding', './ding.wav', 0.125);
+	soundManager.addSound('jump', './jump.wav', 0.125);
+	soundManager.addSound('death', './death.wav', 0.5);
+
 	musicSound = loadSound('./music-loop.wav', function() {
 		musicSound.setVolume(0.125);
 		uiManager.addLogger('music loaded');
@@ -175,21 +173,6 @@ function setup() {
 	canvas.parent('canvas');
 
 	frameRate(FPS);
-
-	sprite = new Sprite(50, height - getGroundLevel(50) - 53);
-	sprite.addAnimation('idle', 'idle', [ 0, 1, 2, 3 ], FPS, true);
-	sprite.addAnimation('walk', 'walk', [ 0, 1, 2, 3, 4, 5 ], FPS, true);
-	sprite.addAnimation('dead', 'dead', [ 0 ], FPS, true);
-
-	uiManager.addLogger('Run in the forest, run !!');
-
-	deco.push(new Mountain(0.5));
-	deco[0].x = 150;
-	deco.push(new Volcano(0.5));
-	deco[1].x = 300;
-	deco.push(new Mountain(0.5));
-	deco[2].x = 600;
-	deco.push(new Mountain(0.5));
 
 	lastTime = Date.now();
 }
@@ -243,11 +226,11 @@ function updateGame(elapsedTime) {
 				diamond++;
 				d.x = -100;
 				if (speakerButton.checked) {
-					ding.play();
+					soundManager.playSound('ding');
 				}
 			} else {
 				if (speakerButton.checked) {
-					death.play();
+					soundManager.playSound('death');
 				}
 				curState = GAME_OVER_STATE;
 				sprite.playAnimation('dead');
@@ -425,9 +408,43 @@ function drawSky(hour) {
 	background(sky);
 }
 
+function drawLoading() {
+	fill(0);
+	noStroke();
+	textSize(50);
+	textAlign(CENTER, CENTER);
+	text('Loading...', width / 2, height / 2);
+	if (
+		soundManager.maxLoadedSounds === soundManager.maxLoadingSounds &&
+		spritesheet.maxLoadedImages === spritesheet.maxLoadingImages
+	) {
+		curState = GAME_START_STATE;
+		textAlign(LEFT, BASELINE);
+		sprite = new RunnerSprite(50, height - getGroundLevel(50) - 53);
+		sprite.addAnimation('idle', 'idle', [ 0, 1, 2, 3 ], FPS, true);
+		sprite.addAnimation('walk', 'walk', [ 0, 1, 2, 3, 4, 5 ], FPS, true);
+		sprite.addAnimation('dead', 'dead', [ 0 ], FPS, true);
+
+		uiManager.addLogger('Run in the forest, run !!');
+
+		deco.push(new Mountain(0.5));
+		deco[0].x = 150;
+		deco.push(new Volcano(0.5));
+		deco[1].x = 300;
+		deco.push(new Mountain(0.5));
+		deco[2].x = 600;
+		deco.push(new Mountain(0.5));
+	}
+}
+
 function draw() {
 	const currentTime = Date.now();
 	const elapsedTime = currentTime - lastTime;
+
+	if (curState === GAME_LOADING_STATE) {
+		drawLoading();
+		return;
+	}
 	// sky color
 	drawSky(hour);
 
@@ -483,7 +500,7 @@ function draw() {
 function mouseClicked() {
 	if (curState === GAME_PLAY_STATE && mouseY > height - groundLevel) {
 		if (sprite.jump() && speakerButton.checked) {
-			jump.play();
+			soundManager.playSound('jump');
 		}
 	}
 	toolManager.mouseClicked();
@@ -497,7 +514,7 @@ function keyPressed() {
 
 	if (key === ' ') {
 		if (sprite.jump() && speakerButton.checked) {
-			jump.play();
+			soundManager.playSound('jump');
 		}
 	}
 

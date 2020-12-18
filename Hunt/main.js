@@ -67,9 +67,9 @@ function playSound(sound) {
 }
 
 function preload() {
-	spritesheet.addSpriteSheet('ground01', loadImage('./misc/ground01.png'), 60, 60);
-	spritesheet.addSpriteSheet('player01', loadImage('./misc/player01.png'), 60, 60);
-	spritesheet.addSpriteSheet('sheep', loadImage('./misc/sheep.png'), 60, 60);
+	spritesheet.addSpriteSheet('ground01', './misc/ground01.png', 60, 60);
+	spritesheet.addSpriteSheet('player01', './misc/player01.png', 60, 60);
+	spritesheet.addSpriteSheet('sheep', './misc/sheep.png', 60, 60);
 
 	moveSound = loadSound('./misc/move.ogg');
 	hitSound = loadSound('./misc/hit.wav');

@@ -1,3 +1,5 @@
+const enemyVictorious = -99999;
+
 class World {
 	constructor() {
 		this.init();
@@ -30,16 +32,17 @@ class World {
 			this.groundsLevel[i] = this.groundLevel;
 		}
 		world.enemies = [
-			new GroundEnemy(-10, 0.5, 16),
-			new GroundEnemy(-20, 0.1, 16),
-			new GroundEnemy(-120, 0.1, 16),
-			new GroundEnemy(-130, 0.1, 16),
-			new GroundEnemy(-140, 0.1, 16),
-			new GroundEnemy(-150, 0.2, 10),
-			new GroundEnemy(-160, 0.2, 10),
-			new GroundEnemy(width + 10, -0.08, 24),
-			new GroundEnemy(width + 50, -0.08, 24),
-			new GroundEnemy(width + 90, -0.08, 24)
+			new GroundEnemy(-10, 0.5, 32),
+			new GroundEnemy(-20, 0.1, 32),
+			new GroundEnemy(-120, 0.1, 32),
+			new GroundEnemy(-130, 0.1, 32),
+			new GroundEnemy(-140, 0.1, 32),
+			new GroundEnemy(-150, 0.2, 24),
+			new GroundEnemy(-160, 0.2, 24),
+			new GroundEnemy(width + 10, -0.08, 48),
+			new GroundEnemy(width + 50, -0.08, 48),
+			new GroundEnemy(width + 90, -0.08, 48),
+			new FlyingEnemy(-10, this.towerY - 32, 0.2, 64)
 		];
 		soundManager.playSound('new_wave');
 	}
@@ -216,10 +219,13 @@ class World {
 		}
 		// remove dead enemies
 		for (let i = this.enemies.length - 1; i >= 0; i--) {
-			if (this.enemies[i].life <= 0) {
-				this.gold += this.enemies[i].gold;
+			const enemy = this.enemies[i];
+			if (enemy.life <= 0) {
+				if (enemy.life !== enemyVictorious) {
+					soundManager.playSound('argh', random(0.5, 1.5));
+					this.gold += enemy.gold;
+				}
 				this.enemies.splice(i, 1);
-				soundManager.playSound('argh', random(0.5, 1.5));
 			}
 		}
 		if (this.enemies.length === 0) {
@@ -229,9 +235,13 @@ class World {
 		// update enemies
 		this.enemies.forEach((enemy) => {
 			enemy.update(elapsedTime);
-			if (enemy.x + enemy.size > width / 2 - this.towerWidth / 2 && enemy.x < width / 2 + this.towerWidth / 2) {
+			if (
+				enemy.position.x + enemy.size / 2 > width / 2 - this.towerWidth / 2 &&
+				enemy.position.x < width / 2 + this.towerWidth / 2
+			) {
 				this.hitTower(enemy.damage);
-				enemy.life = 0;
+				enemy.life = enemyVictorious;
+				// TODO: sound attack tower
 			}
 		});
 	}
@@ -246,9 +256,7 @@ class Enemy extends Sprite {
 		this.damage = 2;
 		this.gold = 10;
 
-		this.addAnimation('run', 'soldat', [ 0, 1, 2, 3, 4, 5, 6 ], 60, true);
-
-		this.scale = this.size / 16;
+		this.scale = this.size / 32;
 	}
 
 	draw() {
@@ -265,7 +273,6 @@ class Enemy extends Sprite {
 	update(elapsedTime) {
 		super.update(elapsedTime);
 		this.position.x += this.speed;
-		this.position.y = world.getGroundLevel(this.position.x + this.size / 2) - this.size;
 	}
 
 	moveBack() {
@@ -289,7 +296,34 @@ class Enemy extends Sprite {
 
 class GroundEnemy extends Enemy {
 	constructor(x, speed, size) {
-		super(x, world.groundLevel - size * 2, speed, size);
+		super(x, world.groundLevel - size, speed, size);
+		this.addAnimation('run', 'soldat', [ 0, 1, 2, 3, 4, 5 ], 60, true);
+	}
+
+	update(elapsedTime) {
+		super.update(elapsedTime);
+		this.position.y = world.getGroundLevel(this.position.x + this.size / 2) - this.size;
+	}
+}
+
+class FlyingEnemy extends Enemy {
+	constructor(x, y, speed, size) {
+		super(x, y, speed, size);
+		this.scale = this.size / 48;
+		this.life = 5;
+		this.damage = 5;
+		this.gold = 30;
+		this.addAnimation('run', 'flying_soldat', [ 0 ], 60, true);
+	}
+
+	hit(x, y) {
+		if (x < this.position.x + this.size / 4 || x > this.position.x + this.size / 2 + this.size / 4) {
+			return false;
+		}
+		if (y < this.position.y + 3 * this.size / 4 || y > this.position.y + this.size) {
+			return false;
+		}
+		return true;
 	}
 }
 

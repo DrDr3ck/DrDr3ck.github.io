@@ -1,16 +1,6 @@
-class SpriteSheet {
-	constructor() {
-		this.sheets = {};
-	}
-
-	addSpriteSheet(name, image, width, height) {
-		this.sheets[name] = { width: width, height: height, image: image };
-	}
-}
-
 const gravity = 1;
 
-class Sprite {
+class RunnerSprite {
 	constructor(x, y) {
 		this.position = { x: x, y: y };
 		this.animations = {};

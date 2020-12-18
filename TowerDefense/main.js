@@ -57,12 +57,13 @@ let toggleDebug = false;
 function preload() {
 	underGroundImg = loadImage('./underground.png');
 
-	soundManager.addSound('new_wave', loadSound('./new_wave.wav'), 0.25);
-	soundManager.addSound('bow', loadSound('./bow01.wav'));
-	soundManager.addSound('argh', loadSound('./argh.wav'));
-	soundManager.addSound('arrow_damage', loadSound('./arrow_damage.wav'));
+	soundManager.addSound('new_wave', './new_wave.wav', 0.25);
+	soundManager.addSound('bow', './bow01.wav');
+	soundManager.addSound('argh', './argh.wav');
+	soundManager.addSound('arrow_damage', './arrow_damage.wav');
 
-	spritesheet.addSpriteSheet('soldat', loadImage('./soldat.png'), 16, 16);
+	spritesheet.addSpriteSheet('soldat', './soldat.png', 32, 32);
+	spritesheet.addSpriteSheet('flying_soldat', './flying_soldat.png', 48, 48);
 }
 
 function initUI() {
