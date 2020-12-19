@@ -9,7 +9,7 @@ const spritesheet = new SpriteSheet();
 
 const toolManager = new ToolManager();
 const jobManager = new JobManager();
-const soundManager = new sndMgr();
+const soundManager = new SoundMgr();
 
 const GAME_START_STATE = 1;
 const GAME_PLAY_STATE = 2;

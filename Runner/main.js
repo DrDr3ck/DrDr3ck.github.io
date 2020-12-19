@@ -4,7 +4,7 @@ uiManager.loggerContainer.visible = true;
 
 const toolManager = new ToolManager();
 const jobManager = new JobManager();
-const soundManager = new sndMgr();
+const soundManager = new SoundMgr();
 
 const GAME_LOADING_STATE = 0;
 const GAME_START_STATE = 1;

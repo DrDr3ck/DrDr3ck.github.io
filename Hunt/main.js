@@ -1,17 +1,21 @@
 const uiManager = new UIManager();
-uiManager.loggerContainer = new LoggerContainer(500, 500, 240, 100);
+const windowWidth = 1200;
+const windowHeight = 800;
+uiManager.loggerContainer = new LoggerContainer(windowWidth-300, windowHeight-100, 240, 100);
 uiManager.loggerContainer.visible = true;
 
 const toolManager = new ToolManager();
 const jobManager = new JobManager();
+const soundManager = new SoundMgr();
 
+const GAME_LOADING_STATE = 0;
 const GAME_START_STATE = 1;
 const GAME_PLAY_STATE = 2;
 const GAME_OVER_STATE = 3;
 const GAME_NEXT_LEVEL_STATE = 4;
-let curState = GAME_START_STATE;
+let curState = GAME_LOADING_STATE;
 
-const playerStart = { X: 4, Y: 6 };
+const playerStart = { X: 4, Y: 9 };
 let lastTime = 0;
 let firstMove = false;
 let firstBlood = false; // kill an animal
@@ -43,40 +47,21 @@ function musicClicked() {
 
 function speakerClicked() {
 	speakerButton.checked = !speakerButton.checked;
+	soundManager.mute(!speakerButton.checked);
 }
 
-const startButton = new BButton(200, 200, 'START', startClicked);
-const speakerButton = new BFloatingButton(730 - 10 - 70, 70, '\uD83D\uDD0A', speakerClicked);
-const musicButton = new BFloatingButton(730, 70, '\uD83C\uDFB6', musicClicked);
+const startButton = new BButton((windowWidth-400)/2, 200, 'START', startClicked);
+const speakerButton = new BFloatingButton(windowWidth - 70 - 10 - 70, 70, '\uD83D\uDD0A', speakerClicked);
+const musicButton = new BFloatingButton(windowWidth - 70, 70, '\uD83C\uDFB6', musicClicked);
 
 const tileSize = 60;
-const world = new World(9, 7);
+const world = new World(15, 10);
 world.holes.push(7);
 world.holes.push(23);
 
 const spritesheet = new SpriteSheet();
-let moveSound = null;
-let hitSound = null;
-let animalDeathSound = null;
-let nextLevelSound = null;
 
-function playSound(sound) {
-	if (sound && speakerButton.checked) {
-		sound.play();
-	}
-}
-
-function preload() {
-	spritesheet.addSpriteSheet('ground01', './misc/ground01.png', 60, 60);
-	spritesheet.addSpriteSheet('player01', './misc/player01.png', 60, 60);
-	spritesheet.addSpriteSheet('sheep', './misc/sheep.png', 60, 60);
-
-	moveSound = loadSound('./misc/move.ogg');
-	hitSound = loadSound('./misc/hit.wav');
-	hitSound.setVolume(0.125);
-	gameOverSound = loadSound('./misc/game_over.wav');
-	animalDeathSound = loadSound('./misc/animal_death.wav');
-	nextLevelSound = loadSound('./misc/next_level.wav');
+function preload() {	
 }
 
 function initUI() {
@@ -90,8 +75,9 @@ function initUI() {
 }
 
 function fight() {
-	// hurt animals that are in front of the player
-	playSound(hitSound);
+	// TODO: hurt animals that are in front of the player
+	// TODO: 'fight' animation
+	soundManager.playSound('hit');
 	const damage = world.player.getDamage();
 	for (let i = -1; i <= 1; i++) {
 		for (let j = -1; j <= 1; j++) {
@@ -104,16 +90,41 @@ const FPS = 60;
 
 function setup() {
 	initUI();
-	canvas = createCanvas(800, 600);
+	canvas = createCanvas(windowWidth, windowHeight);
 	canvas.parent('canvas');
 
 	frameRate(FPS);
 
-	uiManager.addLogger('Survive!!! Hunt animals!');
-	lastTime = Date.now();
+	spritesheet.addSpriteSheet('ground01', './misc/ground01.png', 60, 60);
+	spritesheet.addSpriteSheet('player01', './misc/player01.png', 60, 60);
+	spritesheet.addSpriteSheet('bush01', './misc/bush01.png', 60, 60);
+	spritesheet.addSpriteSheet('sheep', './misc/sheep.png', 60, 60);
+	soundManager.addSound('move', './misc/move.ogg');
+	soundManager.addSound('hit', './misc/hit.wav', 0.125);
+	soundManager.addSound('game_over', './misc/game_over.wav');
+	soundManager.addSound('animal_death', './misc/animal_death.wav');
+	soundManager.addSound('next_level', './misc/next_level.wav');
 
-	world.player = new Player(playerStart.X, playerStart.Y);
-	world.animals.push(new Animal('sheep', 2, 2));
+	lastTime = Date.now();
+}
+
+function drawLoading() {
+	fill(0);
+	noStroke();
+	textSize(50);
+	textAlign(CENTER, CENTER);
+	text('Loading...', width / 2, height / 2);
+	if (
+		soundManager.maxLoadedSounds === soundManager.maxLoadingSounds &&
+		spritesheet.maxLoadedImages === spritesheet.maxLoadingImages
+	) {
+		curState = GAME_START_STATE;
+
+		world.player = new Player(playerStart.X, playerStart.Y);
+		world.animals.push(new Animal('sheep', 2, 2));
+		textAlign(LEFT, BASELINE);
+		uiManager.addLogger('Survive!!! Hunt animals!');
+	}
 }
 
 function drawGame() {
@@ -124,11 +135,11 @@ function drawGame() {
 	textSize(32);
 	fill(255, 128, 0);
 	let textY = 150;
-	text(`FOOD: ${world.food}`, 600, textY);
+	text(`FOOD: ${world.food}`, width-200, textY);
 	textY += 50;
 	textY += 50;
 	if (world.selectedTile) {
-		text(`Tile ${world.selectedTile.X}/${world.selectedTile.Y}`, 600, textY);
+		text(`Tile ${world.selectedTile.X}/${world.selectedTile.Y}`, width-200, textY);
 	}
 	textY += 50;
 
@@ -151,6 +162,10 @@ function draw() {
 	const currentTime = Date.now();
 	const elapsedTime = currentTime - lastTime;
 	background(51);
+	if (curState === GAME_LOADING_STATE) {
+		drawLoading();
+		return;
+	}
 
 	if (curState === GAME_PLAY_STATE) {
 		world.mouseMoved(mouseX - 50, mouseY - 50);

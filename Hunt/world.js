@@ -28,73 +28,122 @@ class textAnimation extends Animation {
 	doDraw() {
 		const dx = this.toPosition.X - this.fromPosition.X;
 		const dy = this.toPosition.Y - this.fromPosition.Y;
-		const rel = 1 - (this.currentTime / this.initialTime);
+		const rel = 1 - this.currentTime / this.initialTime;
 		noStroke();
 		textSize(32);
-		fill(255, 128, 0, this.alpha*(1-rel));
+		fill(255, 128, 0, this.alpha * (1 - rel));
 		text(this.text, this.fromPosition.X + dx * rel, this.fromPosition.Y + dy * rel);
 	}
 }
+
+const facing = [ 'TOP', 'RIGHT', 'BOTTOM', 'LEFT' ];
 
 class World {
 	constructor(sizeX, sizeY) {
 		this.size = { X: sizeX, Y: sizeY };
 		this.holes = [];
 		this.player = null;
+		this.playerFacing = facing[0];
 		this.animals = [];
 		this.selectedTile = null;
 		this.food = 0;
 		this.level = 1;
 
-		this.nextTileLevel = { X: 4, Y: 0 };
+		this.nextTileLevel = { X: 8, Y: 0 };
 	}
 
 	nextLevel() {
 		this.level++;
-		this.animals = [new Animal('sheep', 2, 2)];
+		this.animals = [ new Animal('sheep', 2, 2) ];
 		this.player.setTileX(playerStart.X);
 		this.player.setTileY(playerStart.Y);
+		this.playerFacing = facing[0];
+		this.player.playAnimation('idle_top');
 	}
 
 	addFood(value) {
 		world.food = Math.max(0, world.food + value);
-		if( value < 0 ) {
-			allAnimations.push(new textAnimation(value, { X: 700, Y: 150 }, { X: 700, Y: 200 }, 1000));
+		if (value < 0) {
+			allAnimations.push(new textAnimation(value, { X: width-100, Y: 150 }, { X: width-100, Y: 200 }, 1000));
 		} else {
-			allAnimations.push(new textAnimation(`+${value}`, { X: 700, Y: 150 }, { X: 700, Y: 100 }, 1000));
+			allAnimations.push(new textAnimation(`+${value}`, { X: width-100, Y: 150 }, { X: width-100, Y: 100 }, 1000));
 		}
 	}
 
+	setPlayerFacing(facingIdx) {
+		this.playerFacing = facing[facingIdx];
+		this.player.playAnimation(`idle_${this.playerFacing.toLowerCase()}`);
+	}
+
+	getDeltaX(facing) {
+		if( facing === 'TOP') {
+			return 0;
+		}
+		if( facing === 'BOTTOM') {
+			return 0;
+		}
+		if( facing === 'LEFT') {
+			return -1;
+		}
+		if( facing === 'RIGHT') {
+			return 1;
+		}
+		return 0;
+	}
+
+	getDeltaY(facing) {
+		if( facing === 'TOP') {
+			return -1;
+		}
+		if( facing === 'BOTTOM') {
+			return 1;
+		}
+		if( facing === 'LEFT') {
+			return 0;
+		}
+		if( facing === 'RIGHT') {
+			return 0;
+		}
+		return 0;
+	}
+
 	movePlayer(move) {
-		if (!firstMove) {
+		if (!firstMove && (move === 'UP' || move === 'DOWN')) {
 			firstMove = true;
 			uiManager.addLogger('Each move costs food');
 		}
 		let canMove = false;
-		if (move === 'UP' && this.isFree(this.player.tilePosition.X, this.player.tilePosition.Y - 1)) {
-			this.player.setTileY(this.player.tilePosition.Y - 1);
-			canMove = true;
+		if (move === 'UP') {
+			const dx = this.getDeltaX(this.playerFacing);
+			const dy = this.getDeltaY(this.playerFacing);
+			if (this.isFree(this.player.tilePosition.X+dx, this.player.tilePosition.Y+dy)) {
+				this.player.setTileX(this.player.tilePosition.X+dx);
+				this.player.setTileY(this.player.tilePosition.Y+dy);
+				canMove = true;
+			}
 		}
+		/*
 		if (move === 'DOWN' && this.isFree(this.player.tilePosition.X, this.player.tilePosition.Y + 1)) {
 			this.player.setTileY(this.player.tilePosition.Y + 1);
 			canMove = true;
 		}
-		if (move === 'LEFT' && this.isFree(this.player.tilePosition.X - 1, this.player.tilePosition.Y)) {
-			this.player.setTileX(this.player.tilePosition.X - 1);
-			canMove = true;
+		*/
+		if (move === 'LEFT') {
+			const facingIdx = facing.indexOf(this.playerFacing);
+			this.setPlayerFacing((facingIdx + 3) % 4);
 		}
-		if (move === 'RIGHT' && this.isFree(this.player.tilePosition.X + 1, this.player.tilePosition.Y)) {
-			this.player.setTileX(this.player.tilePosition.X + 1);
-			canMove = true;
+		if (move === 'RIGHT') {
+			const facingIdx = facing.indexOf(this.playerFacing);
+			this.setPlayerFacing((facingIdx + 1) % 4);
 		}
 		if (canMove) {
 			this.addFood(-1);
-			playSound(moveSound);
+			soundManager.playSound('move');
 			this.move();
 			if (this.food === 0) {
 				// game over
 				curState = GAME_OVER_STATE;
-				playSound(gameOverSound);
+				soundManager.playSound('game_over');
 				startButton.visible = true;
 			} else {
 				// check if player is on 'next level' tile
@@ -102,7 +151,7 @@ class World {
 					this.player.tilePosition.X === this.nextTileLevel.X &&
 					this.player.tilePosition.Y === this.nextTileLevel.Y
 				) {
-					playSound(nextLevelSound);
+					soundManager.playSound('next_level');
 					curState = GAME_NEXT_LEVEL_STATE;
 					uiManager.addLogger('Next level!!!');
 					setTimeout(function() {
@@ -119,10 +168,13 @@ class World {
 		for (let i = 0; i < this.size.X; i++) {
 			for (let j = 0; j < this.size.Y; j++) {
 				const idx = this.getIndex(i, j);
+				const x = i * tileSize;
+				const y = j * tileSize;
+				const idxSprite = noise(idx+this.level);
 				if (!this.holes.includes(idx)) {
-					const x = i * tileSize;
-					const y = j * tileSize;
-					spritesheet.drawSprite('ground01', (i + j) % 10, x, y);
+					spritesheet.drawSprite('ground01', Math.floor(idxSprite * 10), x, y);
+				} else {
+					spritesheet.drawSprite('bush01', Math.floor(idxSprite * 3), x, y);
 				}
 			}
 		}
@@ -201,8 +253,10 @@ class Entity extends Sprite {
 class Player extends Entity {
 	constructor(tileX, tileY) {
 		super(tileX, tileY);
-		this.addAnimation('idle', 'player01', [ 0, 1, 2, 3 ], FPS, true);
-		this.addAnimation('up', 'player01', [ 4, 5, 6, 7 ], FPS, true);
+		this.addAnimation('idle_top', 'player01', [ 0, 1, 2, 3 ], FPS, true);
+		this.addAnimation('idle_left', 'player01', [ 4, 5, 6, 7 ], FPS, true);
+		this.addAnimation('idle_right', 'player01', [ 8, 9, 10, 11 ], FPS, true);
+		this.addAnimation('idle_bottom', 'player01', [ 12, 13, 14, 15 ], FPS, true);
 	}
 
 	getDamage() {
@@ -241,7 +295,7 @@ class Animal extends Entity {
 			// animal is dead, add food to player
 			world.addFood(50);
 			this.playAnimation('dead');
-			playSound(animalDeathSound);
+			soundManager.playSound('animal_death');
 			if (!firstBlood) {
 				firstBlood = true;
 				uiManager.addLogger('Each kill gains food');

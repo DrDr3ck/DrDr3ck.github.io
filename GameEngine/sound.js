@@ -1,4 +1,4 @@
-class sndMgr {
+class SoundMgr {
 	constructor() {
 		this.sounds = {};
 		this.masterVolume = 1;
@@ -23,6 +23,9 @@ class sndMgr {
 	}
 
 	playSound(name, rate = 1) {
+		if (getMasterVolume() === 0) {
+			return;
+		}
 		const sound = this.sounds[name];
 		if (sound) {
 			sound.rate(rate);
