@@ -44,7 +44,7 @@ function initUI() {
 }
 
 function setup() {
-    spritesheet.addSpriteSheet('world', './sprites.png', 32, 32);
+	spritesheet.addSpriteSheet('world', './sprites.png', 32, 32);
 
 	initUI();
 	canvas = createCanvas(windowWidth, windowHeight);
@@ -58,15 +58,18 @@ function setup() {
 function updateGame(elapsedTime) {}
 
 function drawGame() {
-    sprite.draw();
+	sprite.draw();
 }
 
 function initGame() {
-    sprite = new Sprite(50, 50);
-    sprite.addAnimation('idle', 'world', [ 0 ], FPS, true);
-    sprite.addAnimation('wait1', 'world', [ 8,9,10,11,12,13,14,15 ], FPS, true);
-    sprite.addAnimation('wait2', 'world', [ 16,17,18,19,20,21,22,23 ], FPS, true);
-    sprite.playAnimation('wait2');
+	sprite = new Sprite(50, 50);
+	sprite.addAnimation('idle', 'world', [ 0 ], FPS, true);
+	sprite.addAnimation('wait1', 'world', [ 8, 9, 10, 11, 12, 13, 14, 15 ], FPS, true);
+	sprite.addAnimation('wait2', 'world', [ 16, 17, 18, 19, 20, 21, 22, 23 ], FPS, true);
+	sprite.addAnimation('wait3', 'world', [ 24, 25, 26, 27, 28, 29, 30, 31 ], FPS, true);
+	sprite.addAnimation('left', 'world', [ 32, 33, 34, 35, 36, 37, 38, 39 ], FPS, true);
+	sprite.addAnimation('right', 'world', [ 40, 41, 42, 43, 44, 45, 46, 47 ], FPS, true);
+	sprite.speed = 0.4;
 }
 
 function drawLoading() {
@@ -99,8 +102,23 @@ function draw() {
 
 	uiManager.processInput();
 
-    uiManager.update(elapsedTime);
-    sprite.update(elapsedTime);
+	uiManager.update(elapsedTime);
+
+	if (keyIsDown(LEFT_ARROW)) {
+		if (sprite.state !== 'left') {
+			sprite.playAnimation('left');
+		}
+	} else if (keyIsDown(RIGHT_ARROW)) {
+		if (sprite.state !== 'right') {
+			sprite.playAnimation('right');
+		}
+	}
+
+	if (keyIsDown(UP_ARROW)) {
+        // JUMP
+	}
+
+	sprite.update(elapsedTime);
 
 	// draw game
 	if (curState === GAME_PLAY_STATE) {
@@ -124,4 +142,27 @@ function mouseClicked() {
 		toolManager.mouseClicked();
 	}
 	uiManager.mouseClicked();
+}
+
+function keyPressed() {
+	/*
+	if (keyCode === 37) {
+		// LEFT
+		sprite.playAnimation('left');
+	} else if (keyCode === 39) {
+		// RIGHT
+		sprite.playAnimation('right');
+    }
+    */
+
+	if (key === 'm' || key === 'M') {
+		musicClicked();
+	}
+	if (key === 's' || key === 'S') {
+		speakerClicked();
+	}
+}
+
+function keyReleased() {
+	sprite.playAnimation('idle');
 }
