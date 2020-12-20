@@ -43,8 +43,8 @@ class Sprite {
 		this.width = sheet.width;
 		this.height = sheet.height;
 		for (const frame of frameArray) {
-			const x = this.width * frame;
-			const y = 0;
+			const x = (this.width * frame) % sheet.image.width;
+			const y = Math.floor( (this.width * frame) / sheet.image.width ) * this.height;
 			animations.push(sheet.image.get(x, y, this.width, this.height));
 		}
 		this.animations[name] = animations;
