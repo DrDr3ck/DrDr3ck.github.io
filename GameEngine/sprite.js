@@ -74,4 +74,8 @@ class Sprite {
 			this.height * this.scale
 		);
 	}
+
+	getBox() {
+        return {x:this.position.x, y: this.position.y, w: this.width, h: this.height};
+    }
 }
