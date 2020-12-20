@@ -64,7 +64,7 @@ class UIManager {
 		if (over) {
 			cursor('pointer');
 		} else {
-			if (toolManager.currentTool) {
+			if (toolManager && toolManager.currentTool) {
 				cursor(CROSS);
 			} else {
 				cursor('default');
@@ -107,7 +107,9 @@ class UIManager {
 			});
 		}
 		if (overComponent && overComponent.enabled) {
-			toolManager.setTool(null);
+			if( toolManager ) {
+				toolManager.setTool(null);
+			}
 			overComponent.clicked();
 		}
 	}
