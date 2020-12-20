@@ -24,7 +24,7 @@ function musicClicked() {
 }
 
 const FPS = 60;
-let sprite = null;
+let world = null;
 
 function speakerClicked() {
 	speakerButton.checked = !speakerButton.checked;
@@ -55,21 +55,25 @@ function setup() {
 	lastTime = Date.now();
 }
 
-function updateGame(elapsedTime) {}
+function updateGame(elapsedTime) {
+	world.update(elapsedTime);
+}
 
 function drawGame() {
-	sprite.draw();
+	world.draw();
 }
 
 function initGame() {
-	sprite = new Sprite(50, 50);
-	sprite.addAnimation('idle', 'world', [ 0 ], FPS, true);
-	sprite.addAnimation('wait1', 'world', [ 8, 9, 10, 11, 12, 13, 14, 15 ], FPS, true);
-	sprite.addAnimation('wait2', 'world', [ 16, 17, 18, 19, 20, 21, 22, 23 ], FPS, true);
-	sprite.addAnimation('wait3', 'world', [ 24, 25, 26, 27, 28, 29, 30, 31 ], FPS, true);
-	sprite.addAnimation('left', 'world', [ 32, 33, 34, 35, 36, 37, 38, 39 ], FPS, true);
-	sprite.addAnimation('right', 'world', [ 40, 41, 42, 43, 44, 45, 46, 47 ], FPS, true);
-	sprite.speed = 0.4;
+	world = new World();
+
+	// add walls
+	world.platforms.push(new Platform(300,windowHeight-100,200,10));
+	world.platforms.push(new Platform(100,windowHeight-200,200,20));
+	world.platforms.push(new Platform(300,windowHeight-250,200,10));
+	world.platforms.push(new Platform(300,windowHeight-400,200,10));
+	world.platforms.push(new Platform(300,windowHeight-550,200,10));
+
+	world.walls.push(new Wall(550,100,10,windowHeight));
 }
 
 function drawLoading() {
@@ -82,7 +86,7 @@ function drawLoading() {
 		soundManager.maxLoadedSounds === soundManager.maxLoadingSounds &&
 		spritesheet.maxLoadedImages === spritesheet.maxLoadingImages
 	) {
-		curState = GAME_START_STATE;
+		curState = GAME_PLAY_STATE; //GAME_START_STATE;
 
 		// init game
 		initGame();
@@ -105,26 +109,32 @@ function draw() {
 	uiManager.update(elapsedTime);
 
 	if (keyIsDown(LEFT_ARROW)) {
-		if (sprite.state !== 'left') {
-			sprite.playAnimation('left');
+		if (world.player.sprite.state !== 'left') {
+			world.player.sprite.playAnimation('left');
+			world.player.vx = -3;
+			world.player.inMove = true;
 		}
 	} else if (keyIsDown(RIGHT_ARROW)) {
-		if (sprite.state !== 'right') {
-			sprite.playAnimation('right');
+		if (world.player.sprite.state !== 'right') {
+			world.player.sprite.playAnimation('right');
+			world.player.vx = 3;
+			world.player.inMove = true;
 		}
 	}
 
 	if (keyIsDown(UP_ARROW)) {
-        // JUMP
+		// JUMP
+		if (!world.player.inMove) {
+			world.player.vy = -17.5;
+			world.player.inMove = true;
+		}
 	}
-
-	sprite.update(elapsedTime);
 
 	// draw game
 	if (curState === GAME_PLAY_STATE) {
 		updateGame(elapsedTime);
+		drawGame();
 	}
-	drawGame();
 
 	uiManager.draw();
 	if (toolManager && toolManager.currentTool) {
@@ -145,16 +155,6 @@ function mouseClicked() {
 }
 
 function keyPressed() {
-	/*
-	if (keyCode === 37) {
-		// LEFT
-		sprite.playAnimation('left');
-	} else if (keyCode === 39) {
-		// RIGHT
-		sprite.playAnimation('right');
-    }
-    */
-
 	if (key === 'm' || key === 'M') {
 		musicClicked();
 	}
@@ -164,5 +164,6 @@ function keyPressed() {
 }
 
 function keyReleased() {
-	sprite.playAnimation('idle');
+	world.player.sprite.playAnimation('idle');
+	world.player.vx = 0;
 }
