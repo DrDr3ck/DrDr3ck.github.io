@@ -1,11 +1,10 @@
 const uiManager = new UIManager();
-const windowWidth = 800;
-const windowHeight = 600;
+const windowWidth = 1440;
+const windowHeight = 900;
 uiManager.loggerContainer = new LoggerContainer(windowWidth-300, windowHeight-100, 240, 100);
 uiManager.loggerContainer.visible = true;
 
 const toolManager = new ToolManager();
-const jobManager = new JobManager();
 const soundManager = new SoundMgr();
 const spritesheet = new SpriteSheet();
 
@@ -78,7 +77,7 @@ function drawLoading() {
         // init game
         initGame();
 		textAlign(LEFT, BASELINE);
-		uiManager.addLogger('Game loaded');
+		uiManager.addLogger('Finish him!!!');
 	}
 }
 
@@ -105,7 +104,7 @@ function draw() {
 	if (toolManager.currentTool) {
 		toolManager.currentTool.draw();
 	}
-    jobManager.draw();
+    //jobManager.draw();
     
     lastTime = currentTime;
 }
