@@ -1,10 +1,11 @@
 const uiManager = new UIManager();
 const windowWidth = 1440;
 const windowHeight = 900;
-uiManager.loggerContainer = new LoggerContainer(windowWidth-300, windowHeight-100, 240, 100);
+uiManager.loggerContainer = new LoggerContainer(windowWidth - 300, windowHeight - 100, 240, 100);
 uiManager.loggerContainer.visible = true;
 
-const toolManager = new ToolManager();
+const toolManager = null;
+const jobManager = null;
 const soundManager = new SoundMgr();
 const spritesheet = new SpriteSheet();
 
@@ -16,12 +17,14 @@ let curState = GAME_LOADING_STATE;
 
 let lastTime = 0;
 
-function preload() {
-}
+function preload() {}
 
 function musicClicked() {
 	// TODO
 }
+
+const FPS = 60;
+let sprite = null;
 
 function speakerClicked() {
 	speakerButton.checked = !speakerButton.checked;
@@ -32,7 +35,7 @@ const speakerButton = new BFloatingButton(windowWidth - 70 - 10 - 70, 70, '\uD83
 const musicButton = new BFloatingButton(windowWidth - 70, 70, '\uD83C\uDFB6', musicClicked);
 
 function initUI() {
-    speakerButton.setTextSize(50);
+	speakerButton.setTextSize(50);
 	musicButton.setTextSize(50);
 	musicButton.enabled = false;
 	musicButton.checked = false;
@@ -41,25 +44,29 @@ function initUI() {
 }
 
 function setup() {
-    initUI();
+    spritesheet.addSpriteSheet('world', './sprites.png', 32, 32);
+
+	initUI();
 	canvas = createCanvas(windowWidth, windowHeight);
-    canvas.parent('canvas');
+	canvas.parent('canvas');
 
-    frameRate(60);
+	frameRate(FPS);
 
-    lastTime = Date.now();
+	lastTime = Date.now();
 }
 
-function updateGame(elapsedTime) {
-
-}
+function updateGame(elapsedTime) {}
 
 function drawGame() {
-
+    sprite.draw();
 }
 
 function initGame() {
-
+    sprite = new Sprite(50, 50);
+    sprite.addAnimation('idle', 'world', [ 0 ], FPS, true);
+    sprite.addAnimation('wait1', 'world', [ 8,9,10,11,12,13,14,15 ], FPS, true);
+    sprite.addAnimation('wait2', 'world', [ 16,17,18,19,20,21,22,23 ], FPS, true);
+    sprite.playAnimation('wait2');
 }
 
 function drawLoading() {
@@ -74,42 +81,47 @@ function drawLoading() {
 	) {
 		curState = GAME_START_STATE;
 
-        // init game
-        initGame();
+		// init game
+		initGame();
 		textAlign(LEFT, BASELINE);
 		uiManager.addLogger('Finish him!!!');
 	}
 }
 
 function draw() {
-    const currentTime = Date.now();
+	const currentTime = Date.now();
 	const elapsedTime = currentTime - lastTime;
-    background(51);
-    if (curState === GAME_LOADING_STATE) {
+	background(51);
+	if (curState === GAME_LOADING_STATE) {
 		drawLoading();
 		return;
 	}
 
-    uiManager.processInput();
+	uiManager.processInput();
 
     uiManager.update(elapsedTime);
+    sprite.update(elapsedTime);
 
-    // draw game
+	// draw game
 	if (curState === GAME_PLAY_STATE) {
 		updateGame(elapsedTime);
 	}
 	drawGame();
 
-    uiManager.draw();
-	if (toolManager.currentTool) {
+	uiManager.draw();
+	if (toolManager && toolManager.currentTool) {
 		toolManager.currentTool.draw();
 	}
-    //jobManager.draw();
-    
-    lastTime = currentTime;
+	if (jobManager) {
+		jobManager.draw();
+	}
+
+	lastTime = currentTime;
 }
 
 function mouseClicked() {
-	toolManager.mouseClicked();
+	if (toolManager) {
+		toolManager.mouseClicked();
+	}
 	uiManager.mouseClicked();
 }
