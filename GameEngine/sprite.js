@@ -13,7 +13,7 @@ class SpriteSheet {
 	 * @param {*} height height of one sprite
 	 */
 	addSpriteSheet(name, filename, width, height) {
-		loadImage(filename, (image)=> {
+		loadImage(filename, (image) => {
 			this.sheets[name] = { width: width, height: height, image: image };
 			this.maxLoadedImages++;
 		});
@@ -44,7 +44,7 @@ class Sprite {
 		this.height = sheet.height;
 		for (const frame of frameArray) {
 			const x = (this.width * frame) % sheet.image.width;
-			const y = Math.floor( (this.width * frame) / sheet.image.width ) * this.height;
+			const y = Math.floor(this.width * frame / sheet.image.width) * this.height;
 			animations.push(sheet.image.get(x, y, this.width, this.height));
 		}
 		this.animations[name] = animations;
@@ -65,7 +65,8 @@ class Sprite {
 
 	draw() {
 		if (!this.state) return;
-		const index = this.index >= 0 ? Math.floor(this.index) % this.indexMax : Math.floor(-this.index) % this.indexMax;
+		const index =
+			this.index >= 0 ? Math.floor(this.index) % this.indexMax : Math.floor(-this.index) % this.indexMax;
 		image(
 			this.animations[this.state][index],
 			this.position.x,
@@ -76,6 +77,15 @@ class Sprite {
 	}
 
 	getBox() {
-		return {x:this.position.x, y: this.position.y, w: this.width, h: this.height, top: this.position.y, bottom: this.position.y+this.height, left: this.position.x, right: this.position.y+this.width};
-    }
+		return {
+			x: this.position.x,
+			y: this.position.y,
+			w: this.width,
+			h: this.height,
+			top: this.position.y,
+			bottom: this.position.y + this.height,
+			left: this.position.x,
+			right: this.position.x + this.width
+		};
+	}
 }
