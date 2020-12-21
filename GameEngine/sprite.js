@@ -76,6 +76,6 @@ class Sprite {
 	}
 
 	getBox() {
-        return {x:this.position.x, y: this.position.y, w: this.width, h: this.height};
+		return {x:this.position.x, y: this.position.y, w: this.width, h: this.height, top: this.position.y, bottom: this.position.y+this.height, left: this.position.x, right: this.position.y+this.width};
     }
 }
