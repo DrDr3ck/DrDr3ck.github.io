@@ -109,24 +109,45 @@ function draw() {
 	uiManager.update(elapsedTime);
 
 	if (keyIsDown(LEFT_ARROW)) {
-		if (world.player.sprite.state !== 'left') {
-			world.player.sprite.playAnimation('left');
-			world.player.vx = -3;
-			world.player.inMove = true;
+		if (world.player2.sprite.state !== 'left') {
+			world.player2.sprite.playAnimation('left');
+			world.player2.vx = -3;
+			world.player2.inMove = true;
 		}
 	} else if (keyIsDown(RIGHT_ARROW)) {
-		if (world.player.sprite.state !== 'right') {
-			world.player.sprite.playAnimation('right');
-			world.player.vx = 3;
-			world.player.inMove = true;
+		if (world.player2.sprite.state !== 'right') {
+			world.player2.sprite.playAnimation('right');
+			world.player2.vx = 3;
+			world.player2.inMove = true;
+		}
+	}
+
+	if (keyIsDown(81)) { // Q or 65 A
+		if (world.player1.sprite.state !== 'left') {
+			world.player1.sprite.playAnimation('left');
+			world.player1.vx = -3;
+			world.player1.inMove = true;
+		}
+	} else if (keyIsDown(68)) { // D
+		if (world.player1.sprite.state !== 'right') {
+			world.player1.sprite.playAnimation('right');
+			world.player1.vx = 3;
+			world.player1.inMove = true;
 		}
 	}
 
 	if (keyIsDown(UP_ARROW)) {
 		// JUMP
-		if (!world.player.inMove) {
-			world.player.vy = -17.5;
-			world.player.inMove = true;
+		if (!world.player2.inMove) {
+			world.player2.vy = -17.5;
+			world.player2.inMove = true;
+		}
+	}
+	if (keyIsDown(90)) { // Z or 87 W
+		// JUMP
+		if (!world.player1.inMove) {
+			world.player1.vy = -17.5;
+			world.player1.inMove = true;
 		}
 	}
 
@@ -164,6 +185,10 @@ function keyPressed() {
 }
 
 function keyReleased() {
-	world.player.sprite.playAnimation('idle');
-	world.player.vx = 0;
+	// TODO: check if a key controller of player2 is still down or not
+	world.player2.sprite.playAnimation('idle');
+	world.player2.vx = 0;
+
+	world.player1.sprite.playAnimation('idle');
+	world.player1.vx = 0;
 }
