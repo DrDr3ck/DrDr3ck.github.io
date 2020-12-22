@@ -1,13 +1,13 @@
 const room1 = [
-	'XXXXXXXXXXX',
+	'XXXXXXXX XX',
+	'XX        X',
 	'X         X',
-	'X         X',
-	'X    X    X',
+	'XX   X    X',
 	'X    XX   X',
 	'X    XX   X',
 	'X     X   X',
 	'X     X   X',
-	'X         X',
+	'          X',
 	'X         X',
 	'XXXXXXXXXXX'
 ];
@@ -49,13 +49,13 @@ class World {
 	draw() {
 		stroke(0);
 		fill(50, 150, 50);
-		for (let c = 0; c < this.tiles.length; c++) {
-			for (let r = 0; r < this.tiles[0].length; r++) {
+		for (let r = 0; r < this.tiles.length; r++) {
+			for (let c = 0; c < this.tiles[0].length; c++) {
 				const tileIndex = this.tiles[r][c];
 				if (tileIndex === -1) {
-					rect(r * this.tileSize, c * this.tileSize, this.tileSize, this.tileSize);
+					rect(c * this.tileSize, r * this.tileSize, this.tileSize, this.tileSize);
 				} else {
-					spritesheet.drawSprite('wall', tileIndex, r * this.tileSize, c * this.tileSize);
+					spritesheet.drawSprite('wall', tileIndex, c * this.tileSize, r * this.tileSize);
 				}
 			}
 		}
@@ -86,12 +86,12 @@ String.prototype.replaceAt = function(index, replacement) {
 
 function getPattern(room, r, c) {
 	const pattern = [ '   ', '   ', '   ' ];
-	for (let i = 0; i < 3; i++) {
-		for (let j = 0; j < 3; j++) {
+	for (let i = 0; i < 3; i++) { // Y
+		for (let j = 0; j < 3; j++) { // X
 			if (r + i < 0 || r + i >= room.length || c + j < 0 || c + j >= room[0].length) {
-				pattern[j] = pattern[j].replaceAt(i, 'X'); // out of bound
+				pattern[i] = pattern[i].replaceAt(j, 'X'); // out of bound
 			} else if (room[r + i][c + j] === 1) {
-				pattern[j] = pattern[j].replaceAt(i, 'X'); // got a wall !!
+				pattern[i] = pattern[i].replaceAt(j, 'X'); // got a wall !!
 			}
 		}
 	}
