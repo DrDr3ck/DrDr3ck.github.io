@@ -41,14 +41,17 @@ function initUI() {
 	uiManager.setUI(menu);
 }
 
+const FPS = 30;
+
 function setup() {
     initUI();
 	canvas = createCanvas(windowWidth, windowHeight);
     canvas.parent('canvas');
 
-	frameRate(60);
+	frameRate(FPS);
 	
 	spritesheet.addSpriteSheet('wall', './DungeonWall.png', 32, 32);
+	spritesheet.addSpriteSheet('player', './player.png', 24, 32);
 
     lastTime = Date.now();
 }
@@ -96,14 +99,19 @@ function draw() {
 		return;
 	}
 
-    uiManager.processInput();
+	uiManager.processInput();
     uiManager.update(elapsedTime);
 
     // draw game
 	if (curState === GAME_PLAY_STATE) {
+		const verticalDirection = keyIsDown(68) ? "right" : (keyIsDown(81) ? "left" : "");
+		const horizontalDirection = keyIsDown(90) ? "up" : (keyIsDown(83) ? "down" : "");
+		world.player.stopMove();
+		world.player.startMove(`${verticalDirection}${horizontalDirection}` || "idle");
 		updateGame(elapsedTime);
 	}
 	drawGame();
+	text(elapsedTime, 10,50);
 
     uiManager.draw();
 	if (toolManager.currentTool) {
@@ -111,7 +119,7 @@ function draw() {
 	}
     jobManager.draw();
     
-    lastTime = currentTime;
+	lastTime = currentTime;
 }
 
 function mouseClicked() {

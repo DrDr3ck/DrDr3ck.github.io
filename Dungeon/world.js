@@ -12,10 +12,60 @@ const room1 = [
 	'XXXXXXXXXXX'
 ];
 
+class Player extends Sprite{
+	constructor(x,y) {
+		super(x,y);
+		this.addAnimation('idle', 'player', [13], FPS, false);
+		this.addAnimation('leftup', 'player', [0,1,2,3], FPS, true);
+		this.addAnimation('left', 'player', [4,5,6,7], FPS, true);
+		this.addAnimation('leftdown', 'player', [8,9,10,11], FPS, true);
+		this.addAnimation('down', 'player', [12,13,14,15], FPS, true);
+		this.addAnimation('rightdown', 'player', [16,17,18,19], FPS, true);
+		this.addAnimation('right', 'player', [20,21,22,23], FPS, true);
+		this.addAnimation('rightup', 'player', [24,25,26,27], FPS, true);
+		this.addAnimation('up', 'player', [28,29,30,31], FPS, true);
+		this.vx = 0;
+		this.vy = 0;
+	}
+
+	startMove(direction) {
+		if( direction.includes("down") ) {
+			this.vy=1;
+		}
+		if( direction.includes("up") ) {
+			this.vy=-1;
+		}
+		if( direction.includes("left") ) {
+			this.vx=-1;
+		}
+		if( direction.includes("right") ) {
+			this.vx=1;
+		}
+		if( this.state !== direction ) {
+			console.log(direction);
+			this.playAnimation(direction);
+		}
+	}
+
+	stopMove() {
+		this.vx = 0;
+		this.vy = 0;
+	}
+
+	update(elapsedTime) {
+		const speed = 2;
+		this.position.x += this.vx * speed;
+		this.position.y += this.vy * speed;
+		super.update(elapsedTime);
+	}
+}
+
 class World {
 	constructor(tileSize) {
 		this.tileSize = tileSize;
 		this.tiles = [];
+
+		this.player = new Player(96,96);
 
 		this.initRoom(room1);
 	}
@@ -59,10 +109,15 @@ class World {
 				}
 			}
 		}
+		this.player.draw();
 	}
 
-	update(elapsedTime) {}
+	update(elapsedTime) {
+		this.player.update(elapsedTime);
+	}
 }
+
+/**********************************************************************************/
 
 function same(pattern1, pattern2) {
 	if (pattern1.length !== pattern2.length) {
