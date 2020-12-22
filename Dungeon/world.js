@@ -1,40 +1,56 @@
+const room1 = [
+	'XXXXXXXXXXX',
+	'X         X',
+	'X         X',
+	'X    X    X',
+	'X    XX   X',
+	'X    XX   X',
+	'X     X   X',
+	'X     X   X',
+	'X         X',
+	'X         X',
+	'XXXXXXXXXXX'
+];
+
 class World {
-	constructor(tileSize, rows, cols) {
+	constructor(tileSize) {
 		this.tileSize = tileSize;
 		this.tiles = [];
-		for (let r = 0; r < rows; r++) {
+
+		this.initRoom(room1);
+	}
+
+	initRoom(originalRoom) {
+		const room = [];
+		for (let r = 0; r < originalRoom.length; r++) {
 			const tiles = [];
-			for (let c = 0; c < cols; c++) {
-				tiles.push(-1);
+			for (let c = 0; c < originalRoom[0].length; c++) {
+				if (originalRoom[r][c] === 'X') {
+					tiles.push(1);
+					tiles.push(1);
+				} else {
+					tiles.push(-1);
+					tiles.push(-1);
+				}
+			}
+			room.push(tiles);
+			room.push(tiles);
+		}
+		this.tiles = [];
+		for (let r = 0; r < room.length; r++) {
+			const tiles = [];
+			for (let c = 0; c < room[0].length; c++) {
+				tiles.push(getTileIndexFromPattern(getPattern(room, r, c)));
 			}
 			this.tiles.push(tiles);
-        }
-        
-        this.tiles[0][0] = 0;
-        this.tiles[1][0] = 1;
-        this.tiles[2][0] = 19;
-        this.tiles[0][1] = 13;
-
-		this.tiles[3][2] = 4;
-		this.tiles[3][3] = 11;
-		this.tiles[3][4] = 18;
-
-		[ 4, 5, 6 ].forEach((i) => {
-			this.tiles[i][2] = 5;
-			this.tiles[i][3] = 12;
-			this.tiles[i][4] = 19;
-		});
-
-		this.tiles[7][2] = 6;
-		this.tiles[7][3] = 13;
-		this.tiles[7][4] = 20;
+		}
 	}
 
 	draw() {
 		stroke(0);
 		fill(50, 150, 50);
-		for (let r = 0; r < this.tiles.length; r++) {
-			for (let c = 0; c < this.tiles[0].length; c++) {
+		for (let c = 0; c < this.tiles.length; c++) {
+			for (let r = 0; r < this.tiles[0].length; r++) {
 				const tileIndex = this.tiles[r][c];
 				if (tileIndex === -1) {
 					rect(r * this.tileSize, c * this.tileSize, this.tileSize, this.tileSize);
@@ -46,4 +62,89 @@ class World {
 	}
 
 	update(elapsedTime) {}
+}
+
+function same(pattern1, pattern2) {
+	if (pattern1.length !== pattern2.length) {
+		return false;
+	}
+	for (let i = 0; i < pattern1.length; i++) {
+		if (pattern1[i] !== pattern2[i]) {
+			return false;
+		}
+	}
+	return true;
+}
+
+String.prototype.replaceAt = function(index, replacement) {
+	if (index >= this.length) {
+		return this.valueOf();
+	}
+
+	return this.substring(0, index) + replacement + this.substring(index + 1);
+};
+
+function getPattern(room, r, c) {
+	const pattern = [ '   ', '   ', '   ' ];
+	for (let i = 0; i < 3; i++) {
+		for (let j = 0; j < 3; j++) {
+			if (r + i < 0 || r + i >= room.length || c + j < 0 || c + j >= room[0].length) {
+				pattern[j] = pattern[j].replaceAt(i, 'X'); // out of bound
+			} else if (room[r + i][c + j] === 1) {
+				pattern[j] = pattern[j].replaceAt(i, 'X'); // got a wall !!
+			}
+		}
+	}
+	return pattern;
+}
+
+function getTileIndexFromPattern(pattern) {
+	// pattern is an array 3x3 with X for wall and ' ' for nothing
+	if (pattern[1][1] !== 'X') {
+		return -1;
+	}
+	if (same(pattern, [ 'XXX', 'XXX', 'XX ' ])) {
+		return 0;
+	} else if (same(pattern, [ 'XXX', 'XXX', 'X  ' ])) {
+		return 1;
+	} else if (same(pattern, [ 'XXX', 'XXX', '   ' ])) {
+		return 19;
+	} else if (same(pattern, [ 'XXX', 'XXX', '  X' ])) {
+		return 2;
+	} else if (same(pattern, [ 'XXX', 'XXX', ' XX' ])) {
+		return 3;
+	} else if (same(pattern, [ 'XXX', 'XXX', 'XXX' ])) {
+		return 12;
+	} else if (same(pattern, [ 'XX ', 'XXX', 'XXX' ])) {
+		return 7;
+	} else if (same(pattern, [ 'X  ', 'XXX', 'XXX' ])) {
+		return 8;
+	} else if (same(pattern, [ '   ', 'XXX', 'XXX' ])) {
+		return 5;
+	} else if (same(pattern, [ '  X', 'XXX', 'XXX' ])) {
+		return 9;
+	} else if (same(pattern, [ ' XX', 'XXX', 'XXX' ])) {
+		return 10;
+	} else if (same(pattern, [ '   ', ' XX', ' XX' ])) {
+		return 4;
+	} else if (same(pattern, [ '   ', 'XX ', 'XX ' ])) {
+		return 6;
+	} else if (same(pattern, [ 'XX ', 'XX ', '   ' ])) {
+		return 20;
+	} else if (same(pattern, [ ' XX', ' XX', '   ' ])) {
+		return 18;
+	} else if (same(pattern, [ 'XX ', 'XX ', 'XX ' ])) {
+		return 13;
+	} else if (same(pattern, [ 'XXX', 'XX ', 'XX ' ])) {
+		return 13;
+	} else if (same(pattern, [ 'XX ', 'XX ', 'XXX' ])) {
+		return 13;
+	} else if (same(pattern, [ ' XX', ' XX', ' XX' ])) {
+		return 11;
+	} else if (same(pattern, [ 'XXX', ' XX', ' XX' ])) {
+		return 11;
+	} else if (same(pattern, [ ' XX', ' XX', 'XXX' ])) {
+		return 11;
+	}
+	return -1;
 }

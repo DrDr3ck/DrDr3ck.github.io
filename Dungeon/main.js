@@ -48,7 +48,7 @@ function setup() {
 
 	frameRate(60);
 	
-	spritesheet.addSpriteSheet('wall', './DungeonWall.png', 64, 64);
+	spritesheet.addSpriteSheet('wall', './DungeonWall.png', 32, 32);
 
     lastTime = Date.now();
 }
@@ -65,7 +65,7 @@ function drawGame() {
 }
 
 function initGame() {
-	world = new World(64,11,11);
+	world = new World(32);
 }
 
 function drawLoading() {
@@ -90,7 +90,7 @@ function drawLoading() {
 function draw() {
     const currentTime = Date.now();
 	const elapsedTime = currentTime - lastTime;
-    background(51);
+    background(129,144,160);
     if (curState === GAME_LOADING_STATE) {
 		drawLoading();
 		return;
