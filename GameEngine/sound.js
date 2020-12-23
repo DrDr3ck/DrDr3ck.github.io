@@ -22,14 +22,18 @@ class SoundMgr {
 		this.maxLoadingSounds++;
 	}
 
-	playSound(name, rate = 1) {
+	playSound(name, rate = 1, loop=false) {
 		if (getMasterVolume() === 0) {
 			return;
 		}
 		const sound = this.sounds[name];
 		if (sound) {
 			sound.rate(rate);
-			sound.play();
+			if( loop ) {
+				sound.loop();
+			} else {
+				sound.play();
+			}
 		}
 	}
 

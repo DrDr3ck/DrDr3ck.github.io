@@ -45,6 +45,13 @@ class Bullet {
 	}
 }
 
+class TiledObject extends Sprite {
+	constructor(tileX, tileY, name, frameArray) {
+		super(tileX*world.tileSize, tileY*world.tileSize);
+		this.addAnimation('static', name, frameArray, FPS, true);
+	}
+}
+
 class Player extends Sprite {
 	constructor(x, y, spritename='player') {
 		super(x, y);
@@ -139,6 +146,8 @@ class World {
 		this.player = new Player(96-8, 96);
 		this.enemy = new Player(500, 300, "enemy");
 
+		this.objects = [];
+
 		this.initRoom(room1);
 
 		this.bullets = [];
@@ -194,6 +203,7 @@ class World {
 				}
 			}
 		}
+		this.objects.forEach(object=>object.draw());
 		this.player.draw();
 		this.enemy.draw();
 		strokeWeight(2);
@@ -267,6 +277,7 @@ class World {
 		this.player.update(elapsedTime);
 		this.enemy.update(elapsedTime);
 		this.bullets.forEach(bullet=>bullet.update(elapsedTime));
+		this.objects.forEach(object=>object.update(elapsedTime));
 
 		this.bullets = this.bullets.filter(bullet => bullet.position.x < windowWidth && bullet.position.x > 0 && bullet.position.y > 0 && bullet.position.y < windowHeight);
 	}

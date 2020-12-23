@@ -51,8 +51,11 @@ function setup() {
 
 	spritesheet.addSpriteSheet('wall', './DungeonWall.png', 32, 32);
 	spritesheet.addSpriteSheet('floor', './DungeonFloor.png', 32, 32);
+	spritesheet.addSpriteSheet('key', './DungeonKey.png', 32, 32);
 	spritesheet.addSpriteSheet('player', './player48x64.png', 48, 64);
 	spritesheet.addSpriteSheet('enemy', './enemy48x64.png', 48, 64);
+
+	soundManager.addSound('walk', './walking.wav',0.25);
 
 	lastTime = Date.now();
 }
@@ -65,15 +68,10 @@ const translateX = 128;
 const translateY = 32;
 let toggleDebug = false;
 
-function getEndOfLine(
-	x1,
-	y1,
-	x2,
-	y2
-) {
-	const dx = x2-x1;
-	const dy = y2-y1;
-	return {x:x1+dx*windowWidth, y:y1+dy*windowWidth};
+function getEndOfLine(x1, y1, x2, y2) {
+	const dx = x2 - x1;
+	const dy = y2 - y1;
+	return { x: x1 + dx * windowWidth, y: y1 + dy * windowWidth };
 }
 
 function drawGame() {
@@ -113,6 +111,7 @@ function drawGame() {
 
 function initGame() {
 	world = new World(32);
+	world.objects.push(new TiledObject(9, 17, 'key', [ 0, 1, 2, 3 ]));
 }
 
 function drawLoading() {
@@ -150,8 +149,15 @@ function draw() {
 	if (curState === GAME_PLAY_STATE) {
 		const verticalDirection = keyIsDown(68) ? 'right' : keyIsDown(81) ? 'left' : '';
 		const horizontalDirection = keyIsDown(90) ? 'up' : keyIsDown(83) ? 'down' : '';
+		
+		const move = `${verticalDirection}${horizontalDirection}` || 'idle';
 		world.player.stopMove();
-		world.player.startMove(`${verticalDirection}${horizontalDirection}` || 'idle');
+		if( move === 'idle' ) {
+			soundManager.stopSound('walk');
+		} else if( world.player.state === 'idle') {
+			soundManager.playSound('walk',random(0.85,1.15),true);
+		}
+		world.player.startMove(move);
 		updateGame(elapsedTime);
 	}
 	drawGame();
@@ -175,10 +181,10 @@ function mouseClicked() {
 	toolManager.mouseClicked();
 	uiManager.mouseClicked();
 
-	const worldX = mouseX-translateX;
-	const worldY = mouseY-translateY;
+	const worldX = mouseX - translateX;
+	const worldY = mouseY - translateY;
 	// fire bullet
-	world.addBullet(new Bullet(world.player.position.x+24, world.player.position.y+32,worldX, worldY));
+	world.addBullet(new Bullet(world.player.position.x + 24, world.player.position.y + 32, worldX, worldY));
 }
 
 function keyPressed() {
