@@ -14,7 +14,7 @@ class SpriteSheet {
 	 */
 	addSpriteSheet(name, filename, width, height) {
 		loadImage(filename, (image) => {
-			this.sheets[name] = { width: width, height: height, image: image };
+			this.sheets[name] = { width: width, height: height, image: image, subimages:{} };
 			this.maxLoadedImages++;
 		});
 		this.maxLoadingImages++;
@@ -22,9 +22,12 @@ class SpriteSheet {
 
 	drawSprite(sheetname, index, x, y) {
 		const sheet = this.sheets[sheetname];
-		const tileX = index % (sheet.image.width/sheet.width);
-		const tileY = Math.floor(index / (sheet.image.width/sheet.width));
-		image(sheet.image.get(tileX*sheet.width, tileY*sheet.height, sheet.width, sheet.height), x, y, sheet.width, sheet.height);
+		if( !sheet.subimages[index] ) {
+			const tileX = index % (sheet.image.width/sheet.width);
+			const tileY = Math.floor(index / (sheet.image.width/sheet.width));	
+			sheet.subimages[index] = sheet.image.get(tileX*sheet.width, tileY*sheet.height, sheet.width, sheet.height);
+		}
+		image(sheet.subimages[index], x, y, sheet.width, sheet.height);	
 	}
 }
 
