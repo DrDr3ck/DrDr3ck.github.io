@@ -174,6 +174,11 @@ function draw() {
 function mouseClicked() {
 	toolManager.mouseClicked();
 	uiManager.mouseClicked();
+
+	const worldX = mouseX-translateX;
+	const worldY = mouseY-translateY;
+	// fire bullet
+	world.addBullet(new Bullet(world.player.position.x+24, world.player.position.y+32,worldX, worldY));
 }
 
 function keyPressed() {

@@ -3,10 +3,10 @@ const room1 = [
 	'X        XX',
 	'X         X',
 	'XX   X    X',
-	'X    XX   X',
-	'X    XX    ',
-	'X     X   X',
-	'X     X   X',
+	'XX   XX   X',
+	'XX   XX    ',
+	'XX    X   X',
+	'XXXXX X   X',
 	'X         X',
 	'X         X',
 	'XXXXXXXXXXX'
@@ -25,6 +25,25 @@ const room2 = [
 	'X    X    X',
 	'XXXXXXXXXXX'
 ];
+
+class Bullet {
+	constructor(x1,y1,x2,y2) {
+		this.position = {x:x1, y:y1};
+		const vector = createVector(x2-x1, y2-y1);
+		vector.normalize();
+		this.dx = vector.x*32;
+		this.dy = vector.y*32;
+	}
+
+	draw() {
+		line(this.position.x, this.position.y, this.position.x+this.dx, this.position.y+this.dy);
+	}
+
+	update() {
+		this.position.x += this.dx;
+		this.position.y += this.dy;
+	}
+}
 
 class Player extends Sprite {
 	constructor(x, y, spritename='player') {
@@ -121,6 +140,12 @@ class World {
 		this.enemy = new Player(500, 300, "enemy");
 
 		this.initRoom(room1);
+
+		this.bullets = [];
+	}
+
+	addBullet(bullet) {
+		this.bullets.push(bullet);
 	}
 
 	initRoom(originalRoom) {
@@ -171,6 +196,9 @@ class World {
 		}
 		this.player.draw();
 		this.enemy.draw();
+		strokeWeight(2);
+		stroke(255);
+		this.bullets.forEach(bullet=>bullet.draw());
 		if (toggleDebug) {
 			const box = this.player.getHitBox();
 			noFill();
@@ -237,6 +265,10 @@ class World {
 
 	update(elapsedTime) {
 		this.player.update(elapsedTime);
+		this.enemy.update(elapsedTime);
+		this.bullets.forEach(bullet=>bullet.update(elapsedTime));
+
+		this.bullets = this.bullets.filter(bullet => bullet.position.x < windowWidth && bullet.position.x > 0 && bullet.position.y > 0 && bullet.position.y < windowHeight);
 	}
 }
 
