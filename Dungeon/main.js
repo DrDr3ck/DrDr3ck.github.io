@@ -1,7 +1,7 @@
 const uiManager = new UIManager();
 const windowWidth = 1200;
 const windowHeight = 800;
-uiManager.loggerContainer = new LoggerContainer(windowWidth-300, windowHeight-100, 240, 100);
+uiManager.loggerContainer = new LoggerContainer(windowWidth - 300, windowHeight - 100, 240, 100);
 uiManager.loggerContainer.visible = true;
 
 const toolManager = new ToolManager();
@@ -17,8 +17,7 @@ let curState = GAME_LOADING_STATE;
 
 let lastTime = 0;
 
-function preload() {
-}
+function preload() {}
 
 function musicClicked() {
 	// TODO
@@ -33,7 +32,7 @@ const speakerButton = new BFloatingButton(windowWidth - 70 - 10 - 70, 70, '\uD83
 const musicButton = new BFloatingButton(windowWidth - 70, 70, '\uD83C\uDFB6', musicClicked);
 
 function initUI() {
-    speakerButton.setTextSize(50);
+	speakerButton.setTextSize(50);
 	musicButton.setTextSize(50);
 	musicButton.enabled = false;
 	musicButton.checked = false;
@@ -41,30 +40,75 @@ function initUI() {
 	uiManager.setUI(menu);
 }
 
-const FPS = 30;
+const FPS = 60;
 
 function setup() {
-    initUI();
+	initUI();
 	canvas = createCanvas(windowWidth, windowHeight);
-    canvas.parent('canvas');
+	canvas.parent('canvas');
 
 	frameRate(FPS);
-	
-	spritesheet.addSpriteSheet('wall', './DungeonWall.png', 32, 32);
-	spritesheet.addSpriteSheet('player', './player.png', 24, 32);
 
-    lastTime = Date.now();
+	spritesheet.addSpriteSheet('wall', './DungeonWall.png', 32, 32);
+	spritesheet.addSpriteSheet('floor', './DungeonFloor.png', 32, 32);
+	spritesheet.addSpriteSheet('player', './player48x64.png', 48, 64);
+	spritesheet.addSpriteSheet('enemy', './enemy48x64.png', 48, 64);
+
+	lastTime = Date.now();
 }
 
 function updateGame(elapsedTime) {
 	world.update(elapsedTime);
 }
 
+const translateX = 128;
+const translateY = 32;
+let toggleDebug = false;
+
+function getEndOfLine(
+	x1,
+	y1,
+	x2,
+	y2
+) {
+	const dx = x2-x1;
+	const dy = y2-y1;
+	return {x:x1+dx*windowWidth, y:y1+dy*windowWidth};
+}
+
 function drawGame() {
 	push();
-	translate(128,14);
+	translate(translateX, translateY);
 	world.draw();
 	pop();
+	if (toggleDebug) {
+		const endOfLine = getEndOfLine(
+			world.player.position.x + translateX + 24 * world.player.scale,
+			world.player.position.y + translateY + 32 * world.player.scale,
+			mouseX,
+			mouseY
+		);
+		const box = world.enemy.getHitBox();
+		lineRect(
+			world.player.position.x + translateX + 24 * world.player.scale,
+			world.player.position.y + translateY + 32 * world.player.scale,
+			endOfLine.x,
+			endOfLine.y,
+			box.x + translateX,
+			box.y + translateY,
+			box.w,
+			box.h
+		);
+		strokeWeight(1);
+		stroke(0);
+		line(
+			world.player.position.x + translateX + 24 * world.player.scale,
+			world.player.position.y + translateY + 32 * world.player.scale,
+			endOfLine.x,
+			endOfLine.y
+		);
+		//rect(192+translateX+96,32+192+translateY,96,96);
+	}
 }
 
 function initGame() {
@@ -83,46 +127,57 @@ function drawLoading() {
 	) {
 		curState = GAME_PLAY_STATE; //GAME_START_STATE;
 
-        // init game
-        initGame();
+		// init game
+		initGame();
 		textAlign(LEFT, BASELINE);
-		uiManager.addLogger('Game loaded');		
+		uiManager.addLogger('Game loaded');
 	}
 }
 
 function draw() {
-    const currentTime = Date.now();
+	const currentTime = Date.now();
 	const elapsedTime = currentTime - lastTime;
-    background(129,144,160);
-    if (curState === GAME_LOADING_STATE) {
+	background(129, 144, 160);
+	if (curState === GAME_LOADING_STATE) {
 		drawLoading();
 		return;
 	}
 
 	uiManager.processInput();
-    uiManager.update(elapsedTime);
+	uiManager.update(elapsedTime);
 
-    // draw game
+	// draw game
 	if (curState === GAME_PLAY_STATE) {
-		const verticalDirection = keyIsDown(68) ? "right" : (keyIsDown(81) ? "left" : "");
-		const horizontalDirection = keyIsDown(90) ? "up" : (keyIsDown(83) ? "down" : "");
+		const verticalDirection = keyIsDown(68) ? 'right' : keyIsDown(81) ? 'left' : '';
+		const horizontalDirection = keyIsDown(90) ? 'up' : keyIsDown(83) ? 'down' : '';
 		world.player.stopMove();
-		world.player.startMove(`${verticalDirection}${horizontalDirection}` || "idle");
+		world.player.startMove(`${verticalDirection}${horizontalDirection}` || 'idle');
 		updateGame(elapsedTime);
 	}
 	drawGame();
-	text(elapsedTime, 10,50);
+	if (toggleDebug) {
+		text(elapsedTime, 10, 50);
 
-    uiManager.draw();
+		text(world.player.position.x, 10, 100);
+		text(world.player.position.y, 10, 150);
+	}
+
+	uiManager.draw();
 	if (toolManager.currentTool) {
 		toolManager.currentTool.draw();
 	}
-    jobManager.draw();
-    
+	jobManager.draw();
+
 	lastTime = currentTime;
 }
 
 function mouseClicked() {
 	toolManager.mouseClicked();
 	uiManager.mouseClicked();
+}
+
+function keyPressed() {
+	if (key === 'D') {
+		toggleDebug = !toggleDebug;
+	}
 }
