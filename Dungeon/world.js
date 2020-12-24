@@ -148,7 +148,9 @@ class World {
 
 		this.objects = [];
 
-		this.initRoom(room1);
+		this.rooms = MazeGenerator.createLevel();
+
+		this.initRoom(this.rooms[0]);
 
 		this.bullets = [];
 	}
