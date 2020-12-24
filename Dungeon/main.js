@@ -180,4 +180,13 @@ function keyPressed() {
 	if (key === 'D') {
 		toggleDebug = !toggleDebug;
 	}
+
+	if( key === '+') {
+		world.curRoomIndex = (world.curRoomIndex+1) % world.rooms.length;
+		world.initRoom( world.rooms[world.curRoomIndex] );
+	}
+	if( key === '-') {
+		world.curRoomIndex = (world.curRoomIndex+world.rooms.length-1) % world.rooms.length;
+		world.initRoom( world.rooms[world.curRoomIndex] );
+	}
 }

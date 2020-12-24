@@ -20,24 +20,24 @@ class TinyLevel {
 		this.first = true;
 	}
 
-	getValue(i, j) {
-		if (i < 0 || i >= this.map.length) {
+	getValue(row, col) {
+		if (row < 0 || row >= this.map.length) {
 			return 0;
 		}
-		if (j < 0 || j >= this.map[0].length) {
+		if (col < 0 || col >= this.map[0].length) {
 			return 0;
 		}
-		return this.map[i][j];
+		return this.map[row][col];
 	}
 
-	isFreeSpot(i, j) {
-		if (i < 0 || i >= this.map.length) {
+	isFreeSpot(row, col) {
+		if (row < 0 || row >= this.map.length) {
 			return false;
 		}
-		if (j < 0 || j >= this.map[0].length) {
+		if (col < 0 || col >= this.map[0].length) {
 			return false;
 		}
-		return this.map[i][j] === ' ';
+		return this.map[row][col] === ' ';
 	}
 
 	/**
@@ -49,7 +49,7 @@ class TinyLevel {
 		spots.forEach((spot) => {
 			neighborDeltas.forEach((delta) => {
 				const i = spot.i + delta[0];
-				const j = spot.j + delta[0];
+				const j = spot.j + delta[1];
 				const val = this.getValue(i, j);
 				if (val !== 0 && val !== ' ' && val !== curRoomIndex && !indices.includes(val)) {
 					indices.push(val);
@@ -179,9 +179,11 @@ class MazeGenerator {
 		// add door access
 		const spotsRoom = level.getSpotsOfIndex(index);
 		const roomIndices = level.getRoomIndices(spotsRoom);
-		const spotReference = spotsRoom[0];
+        const spotReference = spotsRoom[0];
+        console.log("spotReference:", spotReference);
 		roomIndices.forEach((roomIndex) => {
-			const spotsOtherRoom = level.getSpotsOfIndex(roomIndex);
+            const spotsOtherRoom = level.getSpotsOfIndex(roomIndex);
+            console.log("spotsOtherRoom:", spotsOtherRoom);
 			// find wall(s) between spotsRoom and spotsOtherRoom
 			const walls = [];
 			spotsRoom.forEach((spot) => {
@@ -190,6 +192,7 @@ class MazeGenerator {
 					const j = spot.j + delta[1];
 					const spotIndex = spotsOtherRoom.findIndex((curSpot) => curSpot.i === i && curSpot.j === j);
 					if (spotIndex !== -1) {
+                        console.log("spotIndex:", spotIndex);
 						walls.push({
 							from: { i: spot.i - spotReference.i, j: spot.j - spotReference.j },
 							to: { i: i - spotReference.i, j: j - spotReference.j }
@@ -199,12 +202,18 @@ class MazeGenerator {
 			});
 			console.log('walls(', index, ',', roomIndex, '):', walls);
 			// add a door on room with its neighbor
-			if (walls[0].to.i === 1 && walls[0].to.j === 0) {
+			if (walls[0].to.i === 0 && walls[0].to.j === 1) {
 				const lastColumn = room[0].length - 1;
-                //room[1] = room[1].replaceAt(lastColumn, " ");
-                room[2] = room[2].replaceAt(lastColumn, " ");
-                //room[3] = room[3].replaceAt(lastColumn, " ");
-			}
+                room[2] = room[2].replaceAt(lastColumn, " "); // 1 or 2 or 3
+			} else if (walls[0].to.i === 1 && walls[0].to.j === 0) {
+                const lastRow = room.length - 1;
+                room[lastRow] = room[lastRow].replaceAt(2, " "); // 1 or 2 or 3
+            } else if (walls[0].to.i === -1 && walls[0].to.j === 0) {
+                room[0] = room[0].replaceAt(2, " "); // 1 or 2 or 3
+            } else if (walls[0].to.i === 0 && walls[0].to.j === -1) {
+                room[2] = room[2].replaceAt(0, " "); // 1 or 2 or 3
+            }
+
 		});
 		return room;
 	}
@@ -213,6 +222,6 @@ class MazeGenerator {
 test();
 
 function test() {
-	const rooms = MazeGenerator.createLevel();
-	console.log(rooms);
+	//const rooms = MazeGenerator.createLevel();
+	//console.log(rooms);
 }
