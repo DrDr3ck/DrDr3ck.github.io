@@ -27,16 +27,16 @@ const room2 = [
 ];
 
 class Bullet {
-	constructor(x1,y1,x2,y2) {
-		this.position = {x:x1, y:y1};
-		const vector = createVector(x2-x1, y2-y1);
+	constructor(x1, y1, x2, y2) {
+		this.position = { x: x1, y: y1 };
+		const vector = createVector(x2 - x1, y2 - y1);
 		vector.normalize();
-		this.dx = vector.x*32;
-		this.dy = vector.y*32;
+		this.dx = vector.x * 32;
+		this.dy = vector.y * 32;
 	}
 
 	draw() {
-		line(this.position.x, this.position.y, this.position.x+this.dx, this.position.y+this.dy);
+		line(this.position.x, this.position.y, this.position.x + this.dx, this.position.y + this.dy);
 	}
 
 	update() {
@@ -47,16 +47,16 @@ class Bullet {
 
 class TiledObject extends Sprite {
 	constructor(tileX, tileY, name, frameArray) {
-		super(tileX*world.tileSize, tileY*world.tileSize);
+		super(tileX * world.tileSize, tileY * world.tileSize);
 		this.addAnimation('static', name, frameArray, FPS, true);
 	}
 }
 
 class Player extends Sprite {
-	constructor(x, y, spritename='player') {
+	constructor(x, y, spritename = 'player') {
 		super(x, y);
 		this.addAnimation('idle', spritename, [ 13 ], FPS, false);
-		this.addAnimation('leftup',spritename, [ 0, 1, 2, 3 ], FPS, true);
+		this.addAnimation('leftup', spritename, [ 0, 1, 2, 3 ], FPS, true);
 		this.addAnimation('left', spritename, [ 4, 5, 6, 7 ], FPS, true);
 		this.addAnimation('leftdown', spritename, [ 8, 9, 10, 11 ], FPS, true);
 		this.addAnimation('down', spritename, [ 12, 13, 14, 15 ], FPS, true);
@@ -126,12 +126,12 @@ class Player extends Sprite {
 
 		if (world.hitExit(this.getFloorBox())) {
 			console.log('exit: switch to adjacent room');
-			if( this.position.x > 100 ) {
+			if (this.position.x > 100) {
 				world.initRoom(room2);
-				this.position.x = 32-8;
+				this.position.x = 32 - 8;
 			} else {
 				world.initRoom(room1);
-				this.position.x = 32*20-8;
+				this.position.x = 32 * 20 - 8;
 			}
 		}
 		super.update(elapsedTime);
@@ -143,8 +143,8 @@ class World {
 		this.tileSize = tileSize;
 		this.tiles = [];
 
-		this.player = new Player(96-8, 96);
-		this.enemy = new Player(500, 300, "enemy");
+		this.player = new Player(96 - 8, 96);
+		this.enemy = new Player(500, 300, 'enemy');
 
 		this.objects = [];
 
@@ -177,7 +177,7 @@ class World {
 		for (let r = 0; r < room.length; r++) {
 			const tiles = [];
 			for (let c = 0; c < room[0].length; c++) {
-				if (room[r][c] === -1 && (r===0||r===room.length-1||c===0||c===room[0].length-1)) {
+				if (room[r][c] === -1 && (r === 0 || r === room.length - 1 || c === 0 || c === room[0].length - 1)) {
 					tiles.push(-10); // Exit
 				} else {
 					tiles.push(getTileIndexFromPattern(getPattern(room, r, c)));
@@ -203,12 +203,12 @@ class World {
 				}
 			}
 		}
-		this.objects.forEach(object=>object.draw());
+		this.objects.forEach((object) => object.draw());
 		this.player.draw();
 		this.enemy.draw();
 		strokeWeight(2);
 		stroke(255);
-		this.bullets.forEach(bullet=>bullet.draw());
+		this.bullets.forEach((bullet) => bullet.draw());
 		if (toggleDebug) {
 			const box = this.player.getHitBox();
 			noFill();
@@ -274,12 +274,30 @@ class World {
 	}
 
 	update(elapsedTime) {
+		const verticalDirection = keyIsDown(68) ? 'right' : keyIsDown(81) ? 'left' : '';
+		const horizontalDirection = keyIsDown(90) ? 'up' : keyIsDown(83) ? 'down' : '';
+
+		const move = `${verticalDirection}${horizontalDirection}` || 'idle';
+		this.player.stopMove();
+		if (move === 'idle') {
+			soundManager.stopSound('walk');
+		} else if (this.player.state === 'idle') {
+			soundManager.playSound('walk', random(0.85, 1.15), true);
+		}
+		this.player.startMove(move);
+
 		this.player.update(elapsedTime);
 		this.enemy.update(elapsedTime);
-		this.bullets.forEach(bullet=>bullet.update(elapsedTime));
-		this.objects.forEach(object=>object.update(elapsedTime));
+		this.bullets.forEach((bullet) => bullet.update(elapsedTime));
+		this.objects.forEach((object) => object.update(elapsedTime));
 
-		this.bullets = this.bullets.filter(bullet => bullet.position.x < windowWidth && bullet.position.x > 0 && bullet.position.y > 0 && bullet.position.y < windowHeight);
+		this.bullets = this.bullets.filter(
+			(bullet) =>
+				bullet.position.x < windowWidth &&
+				bullet.position.x > 0 &&
+				bullet.position.y > 0 &&
+				bullet.position.y < windowHeight
+		);
 	}
 }
 
@@ -348,9 +366,9 @@ function getPattern(room, r, c) {
 		// Y
 		for (let j = 0; j <= 2; j++) {
 			// X
-			if (r -1 + i < 0 || r -1 + i >= room.length || c -1 + j < 0 || c -1 + j >= room[0].length) {
+			if (r - 1 + i < 0 || r - 1 + i >= room.length || c - 1 + j < 0 || c - 1 + j >= room[0].length) {
 				pattern[i] = pattern[i].replaceAt(j, 'X'); // out of bound
-			} else if (room[r -1 + i][c -1 + j] === 1) {
+			} else if (room[r - 1 + i][c - 1 + j] === 1) {
 				pattern[i] = pattern[i].replaceAt(j, 'X'); // got a wall !!
 			}
 		}
@@ -406,6 +424,6 @@ function getTileIndexFromPattern(pattern) {
 	} else if (same(pattern, [ ' XX', ' XX', 'XXX' ])) {
 		return 11;
 	}
-	console.log("unknown pattern:", pattern);
+	console.log('unknown pattern:', pattern);
 	return -1;
 }

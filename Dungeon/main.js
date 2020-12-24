@@ -55,7 +55,7 @@ function setup() {
 	spritesheet.addSpriteSheet('player', './player48x64.png', 48, 64);
 	spritesheet.addSpriteSheet('enemy', './enemy48x64.png', 48, 64);
 
-	soundManager.addSound('walk', './walking.wav',0.25);
+	soundManager.addSound('walk', './walking.wav', 0.25);
 
 	lastTime = Date.now();
 }
@@ -147,17 +147,6 @@ function draw() {
 
 	// draw game
 	if (curState === GAME_PLAY_STATE) {
-		const verticalDirection = keyIsDown(68) ? 'right' : keyIsDown(81) ? 'left' : '';
-		const horizontalDirection = keyIsDown(90) ? 'up' : keyIsDown(83) ? 'down' : '';
-		
-		const move = `${verticalDirection}${horizontalDirection}` || 'idle';
-		world.player.stopMove();
-		if( move === 'idle' ) {
-			soundManager.stopSound('walk');
-		} else if( world.player.state === 'idle') {
-			soundManager.playSound('walk',random(0.85,1.15),true);
-		}
-		world.player.startMove(move);
 		updateGame(elapsedTime);
 	}
 	drawGame();
