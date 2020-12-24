@@ -161,29 +161,64 @@ class MazeGenerator {
 		if (start) {
 			return startRoom;
 		}
-		return squareRoom;
+		const r = random();
+		if (r > 0.5) {
+			return squareRoom;
+		}
+		if (r > 0.3) {
+			return corridorHRoom;
+		}
+		if (r > 0.1) {
+			return corridorVRoom;
+		}
+		return LRoom;
 	}
 
 	static createRoomFromTinyRoom(tinyRoom, index, level) {
 		let room = [];
+		console.log('tinyRoom:', tinyRoom);
 		if (tinyRoom.length === 1 && tinyRoom[0].length === 1) {
 			// first room
 			room = [ 'XXXXX', 'X   X', 'X   X', 'X   X', 'XXXXX' ];
+		} else if (tinyRoom.length === 2 && tinyRoom[0].length === 1) {
+			// corridorVRoom
+			room.push('XXXXX');
+			for (let i = 0; i < 9; i++) {
+				room.push('X   X');
+			}
+			room.push('XXXXX');
+		} else if (tinyRoom.length === 1 && tinyRoom[0].length === 2) {
+			// corridorHRoom
+			room.push('XXXXXXXXXXX');
+			for (let i = 0; i < 3; i++) {
+				room.push('X         X');
+			}
+			room.push('XXXXXXXXXXX');
+		} else if ((tinyRoom.length === 2 && tinyRoom[0].includes(' ')) || tinyRoom[1].includes(' ')) {
+			// L shape
+			room.push('XXXXXXXXXXX');
+			for (let i = 0; i < 4; i++) {
+				room.push('X         X');
+			}
+			for (let i = 0; i < 5; i++) {
+				room.push('X   XXXXXXX');
+			}
+			room.push('XXXXXXXXXXX');
 		} else {
+			// square
 			room.push('XXXXXXXXXXX');
 			for (let i = 0; i < 9; i++) {
 				room.push('X         X');
 			}
 			room.push('XXXXXXXXXXX');
 		}
+		console.log('createRoom:', room);
 		// add door access
 		const spotsRoom = level.getSpotsOfIndex(index);
 		const roomIndices = level.getRoomIndices(spotsRoom);
-        const spotReference = spotsRoom[0];
-        console.log("spotReference:", spotReference);
+		const spotReference = spotsRoom[0];
 		roomIndices.forEach((roomIndex) => {
-            const spotsOtherRoom = level.getSpotsOfIndex(roomIndex);
-            console.log("spotsOtherRoom:", spotsOtherRoom);
+			const spotsOtherRoom = level.getSpotsOfIndex(roomIndex);
 			// find wall(s) between spotsRoom and spotsOtherRoom
 			const walls = [];
 			spotsRoom.forEach((spot) => {
@@ -192,7 +227,6 @@ class MazeGenerator {
 					const j = spot.j + delta[1];
 					const spotIndex = spotsOtherRoom.findIndex((curSpot) => curSpot.i === i && curSpot.j === j);
 					if (spotIndex !== -1) {
-                        console.log("spotIndex:", spotIndex);
 						walls.push({
 							from: { i: spot.i - spotReference.i, j: spot.j - spotReference.j },
 							to: { i: i - spotReference.i, j: j - spotReference.j }
@@ -201,19 +235,67 @@ class MazeGenerator {
 				});
 			});
 			console.log('walls(', index, ',', roomIndex, '):', walls);
-			// add a door on room with its neighbor
-			if (walls[0].to.i === 0 && walls[0].to.j === 1) {
-				const lastColumn = room[0].length - 1;
-                room[2] = room[2].replaceAt(lastColumn, " "); // 1 or 2 or 3
-			} else if (walls[0].to.i === 1 && walls[0].to.j === 0) {
-                const lastRow = room.length - 1;
-                room[lastRow] = room[lastRow].replaceAt(2, " "); // 1 or 2 or 3
-            } else if (walls[0].to.i === -1 && walls[0].to.j === 0) {
-                room[0] = room[0].replaceAt(2, " "); // 1 or 2 or 3
-            } else if (walls[0].to.i === 0 && walls[0].to.j === -1) {
-                room[2] = room[2].replaceAt(0, " "); // 1 or 2 or 3
-            }
 
+			function getLastRow(column) {
+				for( let i=room.length-1; i > 0; i-- ) {
+					console.log(i-1);
+					if( room[i-1].charAt(column) === " ") {
+						return i;
+					}
+				}
+				// should not happen
+				return room.length - 1;
+			}
+
+			function getLastColumn(row) {
+				return room[0].length - 1;
+			}
+
+			// add a door on room with its neighbor
+			if (walls[0].from.i === 0 && walls[0].from.j === 0) {
+				if (walls[0].to.i === 0 && walls[0].to.j === 1) {
+					const lastColumn = getLastColumn(2);
+					room[2] = room[2].replaceAt(lastColumn, ' '); // 1 or 2 or 3
+				} else if (walls[0].to.i === 1 && walls[0].to.j === 0) {
+					const lastRow = getLastRow(2);
+					room[lastRow] = room[lastRow].replaceAt(2, ' '); // 1 or 2 or 3
+				} else if (walls[0].to.i === -1 && walls[0].to.j === 0) {
+					room[0] = room[0].replaceAt(2, ' '); // 1 or 2 or 3
+				} else if (walls[0].to.i === 0 && walls[0].to.j === -1) {
+					room[2] = room[2].replaceAt(0, ' '); // 1 or 2 or 3
+				}
+			}
+			if (walls[0].from.i === 0 && walls[0].from.j === 1) {
+				if (walls[0].to.i === 0 && walls[0].to.j === 2) {
+					const lastColumn = getLastColumn(2);
+					room[2] = room[2].replaceAt(lastColumn, ' '); // 1 or 2 or 3
+				} else if (walls[0].to.i === -1 && walls[0].to.j === 1) {
+					room[0] = room[0].replaceAt(8, ' '); // 7 or 8 or 9
+				} else if (walls[0].to.i === 1 && walls[0].to.j === 1) {
+					const lastRow = getLastRow(8);
+					room[lastRow] = room[lastRow].replaceAt(8, ' '); // 7 8 9
+				}
+			}
+			if (walls[0].from.i === 1 && walls[0].from.j === 0) {
+				if (walls[0].to.i === 2 && walls[0].to.j === 0) {
+					const lastRow = getLastRow(2);
+					room[lastRow] = room[lastRow].replaceAt(2, ' '); // 1 or 2 or 3
+				} else if (walls[0].to.i === 1 && walls[0].to.j === 1) {
+					const lastColumn = getLastColumn(8);
+					room[8] = room[8].replaceAt(lastColumn, ' '); // 1 or 2 or 3
+				} else if (walls[0].to.i === 1 && walls[0].to.j === -1) {
+					room[8] = room[8].replaceAt(0, ' '); // 1 or 2 or 3
+				}
+			}
+			if (walls[0].from.i === 1 && walls[0].from.j === 1) {
+				if (walls[0].to.i === 1 && walls[0].to.j === 2) {
+					const lastColumn = getLastColumn(8);
+					room[8] = room[8].replaceAt(lastColumn, ' '); // 7 or 8 or 9
+				} else if (walls[0].to.i === 2 && walls[0].to.j === 1) {
+					const lastRow = getLastRow(8);
+					room[lastRow] = room[lastRow].replaceAt(8, ' '); // 7 or 8 or 9
+				}
+			}
 		});
 		return room;
 	}
