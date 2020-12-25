@@ -43,7 +43,7 @@ class TinyLevel {
 	/**
      * Gets list of room indices next to given spots
      */
-	getRoomIndices(spots) {
+	getNeighborRoomIndices(spots) {
 		const indices = [];
 		const curRoomIndex = this.map[spots[0].i][spots[0].j];
 		spots.forEach((spot) => {
@@ -136,16 +136,38 @@ class TinyLevel {
 	}
 }
 
+class Level {
+	constructor() {
+		this.rooms = MazeGenerator.createLevel();
+	}
+}
+
+class Room {
+	constructor(id, asciiRoom) {
+		this.id = id;
+		this.ascii = asciiRoom;
+		this.doors = [];
+	}
+
+	/**
+	 * Adds a door from fromTile of this current room
+	 * to toTile of the neighbor room of id roomId
+	 */
+	addDoor(fromTile, toTile, roomId) {
+		this.doors.push({ from: fromTile, to: toTile, id: roomId });
+	}
+}
+
 class MazeGenerator {
 	/**
      * Creates a level and returns a list of rooms in ascii format
      */
-	static createLevel() {
+	static createLevel(maxRooms=5) {
 		const level = new TinyLevel();
 		const tinyRooms = [];
 		tinyRooms.push(MazeGenerator.createTinyRoom(true));
 		level.addRoom(tinyRooms[0], tinyRooms.length);
-		while (tinyRooms.length !== 5) {
+		while (tinyRooms.length !== maxRooms) {
 			const tinyRoom = MazeGenerator.createTinyRoom();
 			tinyRooms.push(tinyRoom);
 			level.addRoom(tinyRoom, tinyRooms.length);
@@ -153,7 +175,17 @@ class MazeGenerator {
 		console.log('Map:', level.map);
 
 		const rooms = [];
-		tinyRooms.forEach((room, i) => rooms.push(MazeGenerator.createRoomFromTinyRoom(room, i + 1, level)));
+		const doors = [];
+		tinyRooms.forEach((room, i) => rooms.push(MazeGenerator.createRoomFromTinyRoom(room, i + 1, level, doors)));
+		console.log('doors:', doors);
+		doors.forEach(
+			door=>{
+				rooms[door.fromRoom-1].addDoor(door.fromTile, door.toTile, door.toRoom);
+				rooms[door.toRoom-1].addDoor(door.toTile, door.fromTile, door.fromRoom);
+			}
+		);
+
+		console.log('rooms:', rooms);
 		return rooms;
 	}
 
@@ -174,58 +206,58 @@ class MazeGenerator {
 		return LRoom;
 	}
 
-	static createRoomFromTinyRoom(tinyRoom, index, level) {
-		let room = [];
+	static createRoomFromTinyRoom(tinyRoom, roomIndex, level, doors) {
+		let asciiRoom = [];
 		console.log('tinyRoom:', tinyRoom);
 		if (tinyRoom.length === 1 && tinyRoom[0].length === 1) {
 			// first room
-			room = [ 'XXXXX', 'X   X', 'X   X', 'X   X', 'XXXXX' ];
+			asciiRoom = [ 'XXXXX', 'X   X', 'X   X', 'X   X', 'XXXXX' ];
 		} else if (tinyRoom.length === 2 && tinyRoom[0].length === 1) {
 			// corridorVRoom
-			room.push('XXXXX');
+			asciiRoom.push('XXXXX');
 			for (let i = 0; i < 9; i++) {
-				room.push('X   X');
+				asciiRoom.push('X   X');
 			}
-			room.push('XXXXX');
+			asciiRoom.push('XXXXX');
 		} else if (tinyRoom.length === 1 && tinyRoom[0].length === 2) {
 			// corridorHRoom
-			room.push('XXXXXXXXXXX');
+			asciiRoom.push('XXXXXXXXXXX');
 			for (let i = 0; i < 3; i++) {
-				room.push('X         X');
+				asciiRoom.push('X         X');
 			}
-			room.push('XXXXXXXXXXX');
+			asciiRoom.push('XXXXXXXXXXX');
 		} else if ((tinyRoom.length === 2 && tinyRoom[0].includes(' ')) || tinyRoom[1].includes(' ')) {
 			// L shape
-			room.push('XXXXXXXXXXX');
+			asciiRoom.push('XXXXXXXXXXX');
 			for (let i = 0; i < 4; i++) {
-				room.push('X         X');
+				asciiRoom.push('X         X');
 			}
 			for (let i = 0; i < 5; i++) {
-				room.push('X   XXXXXXX');
+				asciiRoom.push('X   XXXXXXX');
 			}
-			room.push('XXXXXXXXXXX');
+			asciiRoom.push('XXXXXXXXXXX');
 		} else {
 			// square
-			room.push('XXXXXXXXXXX');
+			asciiRoom.push('XXXXXXXXXXX');
 			for (let i = 0; i < 9; i++) {
-				room.push('X         X');
+				asciiRoom.push('X         X');
 			}
-			room.push('XXXXXXXXXXX');
+			asciiRoom.push('XXXXXXXXXXX');
 		}
-		console.log('createRoom:', room);
+		console.log('createRoom:', asciiRoom);
 		// add door access
-		const spotsRoom = level.getSpotsOfIndex(index);
-		const roomIndices = level.getRoomIndices(spotsRoom);
+		const spotsRoom = level.getSpotsOfIndex(roomIndex);
+		const neighborRoomIndices = level.getNeighborRoomIndices(spotsRoom);
 		const spotReference = spotsRoom[0];
-		roomIndices.forEach((roomIndex) => {
-			const spotsOtherRoom = level.getSpotsOfIndex(roomIndex);
+		neighborRoomIndices.forEach((neighborRoomIndex) => {
+			const spotsOtherRooms = level.getSpotsOfIndex(neighborRoomIndex);
 			// find wall(s) between spotsRoom and spotsOtherRoom
 			const walls = [];
 			spotsRoom.forEach((spot) => {
 				neighborDeltas.forEach((delta) => {
 					const i = spot.i + delta[0];
 					const j = spot.j + delta[1];
-					const spotIndex = spotsOtherRoom.findIndex((curSpot) => curSpot.i === i && curSpot.j === j);
+					const spotIndex = spotsOtherRooms.findIndex((curSpot) => curSpot.i === i && curSpot.j === j);
 					if (spotIndex !== -1) {
 						walls.push({
 							from: { i: spot.i - spotReference.i, j: spot.j - spotReference.j },
@@ -234,69 +266,80 @@ class MazeGenerator {
 					}
 				});
 			});
-			console.log('walls(', index, ',', roomIndex, '):', walls);
+			console.log('walls(', roomIndex, ',', neighborRoomIndex, '):', walls);
 
 			function getLastRow(column) {
-				for( let i=room.length-1; i > 0; i-- ) {
-					console.log(i-1);
-					if( room[i-1].charAt(column) === " ") {
+				for (let i = asciiRoom.length - 1; i > 0; i--) {
+					if (asciiRoom[i - 1].charAt(column) === ' ') {
 						return i;
 					}
 				}
 				// should not happen
-				return room.length - 1;
+				return asciiRoom.length - 1;
 			}
 
 			function getLastColumn(row) {
-				return room[0].length - 1;
+				return asciiRoom[0].length - 1;
 			}
 
-			// add a door on room with its neighbor
+			const doorSymbol = neighborRoomIndex;
+
+			function addDoor(row, col) {
+				asciiRoom[row] = asciiRoom[row].replaceAt(col, doorSymbol); // 1 or 2 or 3
+				const doorIndex = doors.findIndex(
+					(door) => door.fromRoom === neighborRoomIndex && door.toRoom === roomIndex
+				);
+				if (doorIndex === -1) {
+					doors.push({
+						fromRoom: roomIndex,
+						toRoom: neighborRoomIndex,
+						fromTile: { i: row, j: col },
+						toTile: { i: -1, j: -1 }
+					});
+				} else {
+					doors[doorIndex].toTile = { i: row, j: col };
+				}
+			}
+
+			// adds a door on room with its neighbor
 			if (walls[0].from.i === 0 && walls[0].from.j === 0) {
 				if (walls[0].to.i === 0 && walls[0].to.j === 1) {
-					const lastColumn = getLastColumn(2);
-					room[2] = room[2].replaceAt(lastColumn, ' '); // 1 or 2 or 3
+					addDoor(2, getLastColumn(2));
 				} else if (walls[0].to.i === 1 && walls[0].to.j === 0) {
-					const lastRow = getLastRow(2);
-					room[lastRow] = room[lastRow].replaceAt(2, ' '); // 1 or 2 or 3
+					addDoor(getLastRow(2), 2);
 				} else if (walls[0].to.i === -1 && walls[0].to.j === 0) {
-					room[0] = room[0].replaceAt(2, ' '); // 1 or 2 or 3
+					addDoor(0, 2);
 				} else if (walls[0].to.i === 0 && walls[0].to.j === -1) {
-					room[2] = room[2].replaceAt(0, ' '); // 1 or 2 or 3
+					addDoor(2, 0);
 				}
 			}
 			if (walls[0].from.i === 0 && walls[0].from.j === 1) {
 				if (walls[0].to.i === 0 && walls[0].to.j === 2) {
-					const lastColumn = getLastColumn(2);
-					room[2] = room[2].replaceAt(lastColumn, ' '); // 1 or 2 or 3
+					addDoor(2, getLastColumn(2));
 				} else if (walls[0].to.i === -1 && walls[0].to.j === 1) {
-					room[0] = room[0].replaceAt(8, ' '); // 7 or 8 or 9
+					addDoor(0, 8);
 				} else if (walls[0].to.i === 1 && walls[0].to.j === 1) {
-					const lastRow = getLastRow(8);
-					room[lastRow] = room[lastRow].replaceAt(8, ' '); // 7 8 9
+					addDoor(getLastRow(8), 8);
 				}
 			}
 			if (walls[0].from.i === 1 && walls[0].from.j === 0) {
 				if (walls[0].to.i === 2 && walls[0].to.j === 0) {
-					const lastRow = getLastRow(2);
-					room[lastRow] = room[lastRow].replaceAt(2, ' '); // 1 or 2 or 3
+					addDoor(getLastRow(2), 2);
 				} else if (walls[0].to.i === 1 && walls[0].to.j === 1) {
-					const lastColumn = getLastColumn(8);
-					room[8] = room[8].replaceAt(lastColumn, ' '); // 1 or 2 or 3
+					addDoor(8, getLastColumn(8));
 				} else if (walls[0].to.i === 1 && walls[0].to.j === -1) {
-					room[8] = room[8].replaceAt(0, ' '); // 1 or 2 or 3
+					addDoor(8, 0);
 				}
 			}
 			if (walls[0].from.i === 1 && walls[0].from.j === 1) {
 				if (walls[0].to.i === 1 && walls[0].to.j === 2) {
-					const lastColumn = getLastColumn(8);
-					room[8] = room[8].replaceAt(lastColumn, ' '); // 7 or 8 or 9
+					addDoor(8, getLastColumn(8));
 				} else if (walls[0].to.i === 2 && walls[0].to.j === 1) {
-					const lastRow = getLastRow(8);
-					room[lastRow] = room[lastRow].replaceAt(8, ' '); // 7 or 8 or 9
+					addDoor(getLastRow(8), 8);
 				}
 			}
 		});
+		const room = new Room(roomIndex, asciiRoom);
 		return room;
 	}
 }

@@ -125,14 +125,24 @@ class Player extends Sprite {
 		}
 
 		if (world.hitExit(this.getFloorBox())) {
-			console.log('exit: switch to adjacent room');
-			if (this.position.x > 100) {
-				world.initRoom(room2);
-				this.position.x = 32 - 8;
-			} else {
-				world.initRoom(room1);
-				this.position.x = 32 * 20 - 8;
-			}
+			// need to get the door position
+			world.doors.forEach((door) => {
+				const box = world.getBoxFromTinyTile(door.from);
+				if (world.collide(box, this.getFloorBox())) {
+					world.initRoom(world.rooms[door.id - 1]);
+					if(door.from.j < door.to.j) {
+						world.player.position.x = door.to.j * 64 - 8;
+					} else {
+						world.player.position.x = door.to.j * 64 - 8 + 32;
+					}
+					
+					if (door.from.i < door.to.i) {
+						world.player.position.y = door.to.i * 64 - 32;
+					} else {
+						world.player.position.y = door.to.i * 64 -8;
+					}
+				}
+			});
 		}
 		super.update(elapsedTime);
 	}
@@ -142,13 +152,15 @@ class World {
 	constructor(tileSize) {
 		this.tileSize = tileSize;
 		this.tiles = [];
+		this.doors = [];
 
 		this.player = new Player(96 - 8, 96);
 		this.enemy = new Player(500, 300, 'enemy');
 
 		this.objects = [];
 
-		this.rooms = MazeGenerator.createLevel();
+		this.rooms = MazeGenerator.createLevel(9);
+		console.log(this.rooms);
 		this.curRoomIndex = 0;
 
 		this.initRoom(this.rooms[this.curRoomIndex]);
@@ -160,12 +172,22 @@ class World {
 		this.bullets.push(bullet);
 	}
 
-	initRoom(originalRoom) {
+	getBoxFromTinyTile(tinyTilePosition) {
+		return {
+			x: tinyTilePosition.j * 64,
+			y: tinyTilePosition.i * 64,
+			w: 64,
+			h: 64
+		};
+	}
+
+	initRoom(tinyRoom) {
+		const asciiRoom = tinyRoom.ascii;
 		const room = [];
-		for (let r = 0; r < originalRoom.length; r++) {
+		for (let r = 0; r < asciiRoom.length; r++) {
 			const tiles = [];
-			for (let c = 0; c < originalRoom[0].length; c++) {
-				if (originalRoom[r][c] === 'X') {
+			for (let c = 0; c < asciiRoom[0].length; c++) {
+				if (asciiRoom[r][c] === 'X') {
 					tiles.push(1);
 					tiles.push(1);
 				} else {
@@ -188,6 +210,7 @@ class World {
 			}
 			this.tiles.push(tiles);
 		}
+		this.doors = tinyRoom.doors;
 	}
 
 	draw() {
@@ -206,9 +229,9 @@ class World {
 				}
 			}
 		}
-		this.objects.forEach((object) => object.draw());
+		//this.objects.forEach((object) => object.draw());
 		this.player.draw();
-		this.enemy.draw();
+		//this.enemy.draw();
 		strokeWeight(2);
 		stroke(255);
 		this.bullets.forEach((bullet) => bullet.draw());

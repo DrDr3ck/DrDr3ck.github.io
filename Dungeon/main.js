@@ -172,6 +172,7 @@ function mouseClicked() {
 
 	const worldX = mouseX - translateX;
 	const worldY = mouseY - translateY;
+	// TODO: if mouse out of dungeon, do not fire
 	// fire bullet
 	world.addBullet(new Bullet(world.player.position.x + 24, world.player.position.y + 32, worldX, worldY));
 }
