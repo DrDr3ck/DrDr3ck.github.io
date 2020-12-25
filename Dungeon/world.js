@@ -126,7 +126,7 @@ class Player extends Sprite {
 
 		if (world.hitExit(this.getFloorBox())) {
 			// need to get the door position
-			world.doors.forEach((door) => {
+			world.doors.every((door) => {
 				const box = world.getBoxFromTinyTile(door.from);
 				if (world.collide(box, this.getFloorBox())) {
 					world.initRoom(world.rooms[door.id - 1]);
@@ -141,7 +141,9 @@ class Player extends Sprite {
 					} else {
 						world.player.position.y = door.to.i * 64 -8;
 					}
+					return false;
 				}
+				return true;
 			});
 		}
 		super.update(elapsedTime);
@@ -182,6 +184,7 @@ class World {
 	}
 
 	initRoom(tinyRoom) {
+		uiManager.addLogger(`Moving to room ${tinyRoom.id}`);
 		const asciiRoom = tinyRoom.ascii;
 		const room = [];
 		for (let r = 0; r < asciiRoom.length; r++) {
