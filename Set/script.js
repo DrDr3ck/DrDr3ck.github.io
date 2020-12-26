@@ -217,7 +217,13 @@ function mousePressed() {
 			} else if (selected.length < 3) {
 				selected.push(cardIndex);
 				if (selected.length === 3) {
-					if (checkTriplet(board.cards[parseInt(selected[0])], board.cards[parseInt(selected[1])], board.cards[parseInt(selected[2])])) {
+					if (
+						checkTriplet(
+							board.cards[parseInt(selected[0])],
+							board.cards[parseInt(selected[1])],
+							board.cards[parseInt(selected[2])]
+						)
+					) {
 						triplet = selected;
 						selected = [];
 					}
@@ -242,7 +248,6 @@ function checkState(curTriplet, state) {
 }
 
 function checkTriplet(curTriplet) {
-    console.log(curTriplet);
 	return (
 		checkState(curTriplet, 'forme') &&
 		checkState(curTriplet, 'color') &&
