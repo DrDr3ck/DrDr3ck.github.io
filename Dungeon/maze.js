@@ -208,7 +208,6 @@ class MazeGenerator {
 
 	static createRoomFromTinyRoom(tinyRoom, roomIndex, level, doors) {
 		let asciiRoom = [];
-		console.log('tinyRoom:', tinyRoom);
 		if (tinyRoom.length === 1 && tinyRoom[0].length === 1) {
 			// first room
 			asciiRoom = [ 'XXXXX', 'X   X', 'X   X', 'X   X', 'XXXXX' ];
@@ -266,7 +265,7 @@ class MazeGenerator {
 					}
 				});
 			});
-			console.log('walls(', roomIndex, ',', neighborRoomIndex, '):', walls);
+			//console.log('walls(', roomIndex, ',', neighborRoomIndex, '):', walls);
 
 			function getLastRow(column) {
 				for (let i = asciiRoom.length - 1; i > 0; i--) {

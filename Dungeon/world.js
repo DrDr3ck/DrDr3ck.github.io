@@ -130,16 +130,16 @@ class Player extends Sprite {
 				const box = world.getBoxFromTinyTile(door.from);
 				if (world.collide(box, this.getFloorBox())) {
 					world.initRoom(world.rooms[door.id - 1]);
-					if(door.from.j < door.to.j) {
+					if (door.from.j < door.to.j) {
 						world.player.position.x = door.to.j * 64 - 8;
 					} else {
 						world.player.position.x = door.to.j * 64 - 8 + 32;
 					}
-					
+
 					if (door.from.i < door.to.i) {
 						world.player.position.y = door.to.i * 64 - 32;
 					} else {
-						world.player.position.y = door.to.i * 64 -8;
+						world.player.position.y = door.to.i * 64 - 8;
 					}
 					return false;
 				}
@@ -202,10 +202,14 @@ class World {
 			room.push(tiles);
 		}
 		this.tiles = [];
+		this.doors = tinyRoom.doors;
+		const hasLDoor = this.doors.some((door) => door.from.i === 5 && door.from.j === 8);
 		for (let r = 0; r < room.length; r++) {
 			const tiles = [];
 			for (let c = 0; c < room[0].length; c++) {
 				if (room[r][c] === -1 && (r === 0 || r === room.length - 1 || c === 0 || c === room[0].length - 1)) {
+					tiles.push(-10); // Exit
+				} else if (hasLDoor && r === 11 && (c === 16 || c === 17)) {
 					tiles.push(-10); // Exit
 				} else {
 					tiles.push(getTileIndexFromPattern(getPattern(room, r, c)));
@@ -213,7 +217,6 @@ class World {
 			}
 			this.tiles.push(tiles);
 		}
-		this.doors = tinyRoom.doors;
 	}
 
 	draw() {
@@ -316,7 +319,7 @@ class World {
 		this.player.startMove(move);
 
 		this.player.update(elapsedTime);
-		this.enemy.update(elapsedTime);
+		//this.enemy.update(elapsedTime);
 		this.bullets.forEach((bullet) => bullet.update(elapsedTime));
 		this.objects.forEach((object) => object.update(elapsedTime));
 
