@@ -55,14 +55,14 @@ function setup() {
 
 	frameRate(FPS);
 
-	spritesheet.addSpriteSheet('wall', './DungeonWall.png', 32, 32);
-	spritesheet.addSpriteSheet('floor', './DungeonFloor.png', 32, 32);
-	spritesheet.addSpriteSheet('key', './DungeonKey.png', 32, 32);
-	spritesheet.addSpriteSheet('player', './player48x64.png', 48, 64);
-	spritesheet.addSpriteSheet('enemy', './enemy48x64.png', 48, 64);
-	spritesheet.addSpriteSheet('player_ui', './UIPlayer.png', 64, 64);
+	spritesheet.addSpriteSheet('wall', './resources/DungeonWall.png', 32, 32);
+	spritesheet.addSpriteSheet('floor', './resources/DungeonFloor.png', 32, 32);
+	spritesheet.addSpriteSheet('key', './resources/DungeonKey.png', 32, 32);
+	spritesheet.addSpriteSheet('player', './resources/player48x64.png', 48, 64);
+	spritesheet.addSpriteSheet('enemy', './resources/enemy48x64.png', 48, 64);
+	spritesheet.addSpriteSheet('player_ui', './resources/UIPlayer.png', 64, 64);
 
-	soundManager.addSound('walk', './walking.wav', 0.25);
+	soundManager.addSound('walk', './resources/walking.wav', 0.25);
 
 	lastTime = Date.now();
 }
