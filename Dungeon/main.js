@@ -89,8 +89,8 @@ function updateGame(elapsedTime) {
 	world.update(elapsedTime);
 }
 
-const translateX = 128;
-const translateY = 32;
+let translateX = 128;
+let translateY = 32;
 let toggleDebug = false;
 let toggleHelp = false;
 
@@ -105,6 +105,46 @@ function drawGame() {
 	translate(translateX, translateY);
 	world.draw();
 	pop();
+
+	// draw slots for player
+	const maxSlotI = 3;
+	for (let i = 0; i < maxSlotI; i++) {
+		for (let j = 0; j < 2; j++) {
+			const index = i + j * maxSlotI;
+			if (index === world.player.slotIndex) {
+				stroke(150, 50, 50, 150);
+				noFill();
+				strokeWeight(3);
+				rect(800 + 68 * i - 1 + 128, 200 + 68 * j - 1 + 32, 66, 66);
+			}
+			if (toggleHelp) {
+				push();
+				const deltaX = 24;
+				const deltaY = j === 0 ? -5 : 64 + 5 + 16;
+				const x = 800 + 68 * i - 1 + deltaX + 128;
+				const y = deltaY + 200 + 68 * j + 32;
+				const text_size = 16;
+				drawKeyboardHelp(world.uiKeys[index], x, y, text_size);
+				pop();
+			}
+		}
+	}
+
+	if (toggleHelp) {
+		const text_size = 16;
+		spritesheet.drawSprite('player_ui', 2, 128+800 + 68 * 3, 232 + 68 * 0.5);
+		drawKeyboardHelp(';', 128+800 + 68 * 3 + 24, 232 + 32, text_size);
+		drawKeyboardHelp(',', 128+800 + 68 * 3 + 24, 232 + 32 + 68 + 10, text_size);
+
+		const x = 28;
+		const y = 80+32;
+		spritesheet.drawSprite('player_ui', 1, x, y);
+		drawKeyboardHelp('Z', x + 25, y - 5, text_size);
+		drawKeyboardHelp('S', x + 25, y - 5 + 18 + 10 + 64, text_size);
+		drawKeyboardHelp('Q', x + 25 - 32 - 18, y - 5 + 64, text_size);
+		drawKeyboardHelp('D', x + 25 + 32 + 18, y - 5 + 64, text_size);
+	}
+
 	if (toggleDebug) {
 		const endOfLine = getEndOfLine(
 			world.player.position.x + translateX + 24 * world.player.scale,
@@ -138,6 +178,7 @@ function drawGame() {
 function initGame() {
 	world = new World(32);
 	world.objects.push(new TiledObject(9, 17, 'key', [ 0, 1, 2, 3 ]));
+	world.objects.push(new TiledObject(10, 16, 'key', [ 4, 5, 6, 7 ]));
 }
 
 function drawLoading() {

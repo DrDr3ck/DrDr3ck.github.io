@@ -223,6 +223,15 @@ class World {
 			}
 			this.tiles.push(tiles);
 		}
+
+		translateX = 128;
+		translateY = 32;
+		if (this.tiles.length === 10) {
+			translateY += 3 * 64;
+		}
+		if (this.tiles[0].length === 10) {
+			translateX += 3 * 64;
+		}
 	}
 
 	draw() {
@@ -241,50 +250,8 @@ class World {
 				}
 			}
 		}
-		//this.objects.forEach((object) => object.draw());
+		this.objects.forEach((object) => object.draw());
 		this.player.draw();
-
-		if (toggleHelp) {
-			const x = -100;
-			const y = 80;
-			spritesheet.drawSprite('player_ui', 1, x, y);
-			const text_size = 16;
-			drawKeyboardHelp('Z', x + 25, y - 5, text_size);
-			drawKeyboardHelp('S', x + 25, y - 5 + 18 + 10 + 64, text_size);
-			drawKeyboardHelp('Q', x + 25 - 32 - 18, y - 5 + 64, text_size);
-			drawKeyboardHelp('D', x + 25 + 32 + 18, y - 5 + 64, text_size);
-		}
-
-		// draw slots for player
-		const maxSlotI = 3;
-		for (let i = 0; i < maxSlotI; i++) {
-			for (let j = 0; j < 2; j++) {
-				const index = i + j * maxSlotI;
-				if (index === this.player.slotIndex) {
-					stroke(150, 50, 50, 150);
-					noFill();
-					strokeWeight(3);
-					rect(800 + 68 * i - 1, 200 + 68 * j - 1, 66, 66);
-				}
-				if (toggleHelp) {
-					push();
-					const deltaX = 24;
-					const deltaY = j === 0 ? -5 : 64 + 5 + 16;
-					const x = 800 + 68 * i - 1 + deltaX;
-					const y = deltaY + 200 + 68 * j;
-					const text_size = 16;
-					drawKeyboardHelp(this.uiKeys[index], x, y, text_size);
-					pop();
-				}
-			}
-		}
-
-		if (toggleHelp) {
-			const text_size = 16;
-			spritesheet.drawSprite('player_ui', 2, 800 + 68 * 3, 200 + 68 * 0.5);
-			drawKeyboardHelp(';', 800 + 68 * 3+24, 200+32, text_size);
-			drawKeyboardHelp(',', 800 + 68 * 3+24, 200+32 + 68+10, text_size);
-		}
 
 		//this.enemy.draw();
 		strokeWeight(2);
