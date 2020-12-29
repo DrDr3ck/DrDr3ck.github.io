@@ -239,17 +239,23 @@ class BButtonBase extends UIComponent {
 	}
 }
 
-class BButtonTextBase extends BButtonBase {
-	// pure virtual
-	constructor(x, y, w, h, text, callback) {
+class BInteractiveButtonBase extends BButtonBase {
+	constructor(x, y, w, h, callback) {
 		super(x, y, w, h);
-		this.text = text;
 		this.callback = callback;
 	}
 
 	clicked() {
 		super.clicked();
 		this.callback();
+	}
+}
+
+class BButtonTextBase extends BInteractiveButtonBase {
+	// pure virtual
+	constructor(x, y, w, h, text, callback) {
+		super(x, y, w, h, callback);
+		this.text = text;
 	}
 
 	mouseOver(mx, my) {
@@ -363,6 +369,18 @@ class BFloatingButton extends BButtonTextBase {
 	}
 }
 
+class BImageButton extends BInteractiveButtonBase {
+	constructor(x,y,img, callback) {
+		super(x,y,img.width, img.height, callback);
+		this.img = img;
+	}
+
+	doDraw() {
+		image(this.img, x, y, this.w, this.h);
+	}
+
+}
+
 class BMenu extends BButtonBase {
 	constructor(title, x, y, img, nbColumns) {
 		super(x, y, 100, 100);
@@ -461,12 +479,11 @@ class BMenu extends BButtonBase {
 	}
 }
 
-class BMenuItem extends BButtonBase {
+class BMenuItem extends BInteractiveButtonBase {
 	constructor(menu, title, img, callback) {
-		super(0, 0, 100, 100);
+		super(0, 0, 100, 100, callback);
 		this.title = title;
 		this.img = img;
-		this.callback = callback;
 		this.visible = true;
 		this.menu = menu;
 	}
@@ -492,7 +509,6 @@ class BMenuItem extends BButtonBase {
 
 	clicked() {
 		super.clicked();
-		this.callback();
 		uiManager.setMenu(null);
 	}
 }
