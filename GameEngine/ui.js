@@ -376,7 +376,7 @@ class BImageButton extends BInteractiveButtonBase {
 	}
 
 	doDraw() {
-		image(this.img, x, y, this.w, this.h);
+		image(this.img, this.x, this.y, this.w, this.h);
 	}
 
 }

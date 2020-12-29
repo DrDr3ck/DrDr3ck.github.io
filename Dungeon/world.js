@@ -266,7 +266,6 @@ class World {
 					strokeWeight(3);
 					rect(800 + 68 * i - 1, 200 + 68 * j - 1, 66, 66);
 				}
-				spritesheet.drawSprite('player_ui', 0, 800 + 68 * i, 200 + 68 * j);
 				if (toggleHelp) {
 					push();
 					const deltaX = 24;

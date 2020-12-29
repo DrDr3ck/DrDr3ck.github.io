@@ -17,7 +17,9 @@ let curState = GAME_LOADING_STATE;
 
 let lastTime = 0;
 
-function preload() {}
+function preload() {
+	spritesheet.addSpriteSheet('player_ui', './resources/UIPlayer.png', 64, 64);
+}
 
 function musicClicked() {
 	// TODO
@@ -35,6 +37,8 @@ const helpButton = new BFloatingButton(20, 60, '\u003F', () => {
 	helpButton.checked = !helpButton.checked;
 });
 
+const slotButtons = [];
+
 function initUI() {
 	speakerButton.setTextSize(50);
 	musicButton.setTextSize(50);
@@ -43,6 +47,21 @@ function initUI() {
 	helpButton.setTextSize(30);
 	helpButton.checked = false;
 	const menu = [ speakerButton, musicButton, helpButton ];
+	const maxSlotI = 3;
+	for (let i = 0; i < maxSlotI; i++) {
+		for (let j = 0; j < 2; j++) {
+			const slot = new BImageButton(
+				800 + 68 * i + translateX,
+				translateY + 200 + 68 * j,
+				spritesheet.getImage('player_ui', 0),
+				() => {
+					world.player.slotIndex = i + j * maxSlotI;
+				}
+			);
+			slotButtons.push(slot);
+			menu.push(slot);
+		}
+	}
 	uiManager.setUI(menu);
 }
 
@@ -60,7 +79,6 @@ function setup() {
 	spritesheet.addSpriteSheet('key', './resources/DungeonKey.png', 32, 32);
 	spritesheet.addSpriteSheet('player', './resources/player48x64.png', 48, 64);
 	spritesheet.addSpriteSheet('enemy', './resources/enemy48x64.png', 48, 64);
-	spritesheet.addSpriteSheet('player_ui', './resources/UIPlayer.png', 64, 64);
 
 	soundManager.addSound('walk', './resources/walking.wav', 0.25);
 

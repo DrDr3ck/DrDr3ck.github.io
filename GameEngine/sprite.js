@@ -22,12 +22,17 @@ class SpriteSheet {
 
 	drawSprite(sheetname, index, x, y) {
 		const sheet = this.sheets[sheetname];
+		image(this.getImage(sheetname, index), x, y, sheet.width, sheet.height);	
+	}
+
+	getImage(sheetname,index) {
+		const sheet = this.sheets[sheetname];
 		if( !sheet.subimages[index] ) {
 			const tileX = index % (sheet.image.width/sheet.width);
 			const tileY = Math.floor(index / (sheet.image.width/sheet.width));	
 			sheet.subimages[index] = sheet.image.get(tileX*sheet.width, tileY*sheet.height, sheet.width, sheet.height);
 		}
-		image(sheet.subimages[index], x, y, sheet.width, sheet.height);	
+		return sheet.subimages[index];
 	}
 }
 
