@@ -107,11 +107,13 @@ class UIManager {
 			});
 		}
 		if (overComponent && overComponent.enabled) {
-			if( toolManager ) {
+			if (toolManager) {
 				toolManager.setTool(null);
 			}
 			overComponent.clicked();
+			return true;
 		}
+		return false;
 	}
 
 	update(elapsedTime) {
@@ -349,8 +351,14 @@ class BFloatingButton extends BButtonTextBase {
 		drawText(this.text, this.x + this.w / 2, this.y - this.h / 2);
 		pop();
 
-		if (!this.checked) {
-			line(this.x + 6, this.y - this.h, this.x + this.w - 6, this.y);
+		if (this.over) {
+			if (this.checked) {
+				line(this.x + 6, this.y - this.h, this.x + this.w - 6, this.y);
+			}
+		} else {
+			if (!this.checked) {
+				line(this.x + 6, this.y - this.h, this.x + this.w - 6, this.y);
+			}
 		}
 	}
 }

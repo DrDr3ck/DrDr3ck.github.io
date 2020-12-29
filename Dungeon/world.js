@@ -26,6 +26,19 @@ const room2 = [
 	'XXXXXXXXXXX'
 ];
 
+function drawKeyboardHelp(keyboard, x, y, text_size) {
+	textAlign(CENTER, CENTER);
+	textSize(text_size);
+	fill(240);
+	strokeWeight(1);
+	stroke(50);
+	rect(x, y - 1 - 16, 16, 18);
+	noStroke();
+	fill(50);
+	const text_align = text_size / 2;
+	text(keyboard, x + text_align, y + 1 - text_align);
+}
+
 class Bullet {
 	constructor(x1, y1, x2, y2) {
 		this.position = { x: x1, y: y1 };
@@ -67,6 +80,18 @@ class Player extends Sprite {
 		this.vx = 0;
 		this.vy = 0;
 		this.scale = 1;
+
+		this.slots = [];
+		this.slotIndex = 0;
+		this.maxSlots = 6;
+	}
+
+	nextSlot() {
+		this.slotIndex = (this.slotIndex + 1) % this.maxSlots;
+	}
+
+	prevSlot() {
+		this.slotIndex = (this.slotIndex + this.maxSlots - 1) % this.maxSlots;
 	}
 
 	getFloorBox() {
@@ -111,7 +136,7 @@ class Player extends Sprite {
 	}
 
 	update(elapsedTime) {
-		const speed = 2;
+		const speed = 3;
 		// check if player hit a wall
 		const box = this.getFloorBox();
 		box.x += this.vx * speed;
@@ -122,29 +147,6 @@ class Player extends Sprite {
 		box.y += this.vy * speed;
 		if (!world.hitWall(box)) {
 			this.position.y += this.vy * speed;
-		}
-
-		if (world.hitExit(this.getFloorBox())) {
-			// need to get the door position
-			world.doors.every((door) => {
-				const box = world.getBoxFromTinyTile(door.from);
-				if (world.collide(box, this.getFloorBox())) {
-					world.initRoom(world.rooms[door.id - 1]);
-					if (door.from.j < door.to.j) {
-						world.player.position.x = door.to.j * 64 - 8;
-					} else {
-						world.player.position.x = door.to.j * 64 - 8 + 32;
-					}
-
-					if (door.from.i < door.to.i) {
-						world.player.position.y = door.to.i * 64 - 32;
-					} else {
-						world.player.position.y = door.to.i * 64 - 8;
-					}
-					return false;
-				}
-				return true;
-			});
 		}
 		super.update(elapsedTime);
 	}
@@ -168,6 +170,8 @@ class World {
 		this.initRoom(this.rooms[this.curRoomIndex]);
 
 		this.bullets = [];
+
+		this.uiKeys = [ '&', 'é', '"', "'", '(', '-' ];
 	}
 
 	addBullet(bullet) {
@@ -209,8 +213,10 @@ class World {
 			for (let c = 0; c < room[0].length; c++) {
 				if (room[r][c] === -1 && (r === 0 || r === room.length - 1 || c === 0 || c === room[0].length - 1)) {
 					tiles.push(-10); // Exit
-				} else if (hasLDoor && r === 11 && (c === 16 || c === 17)) {
+				} else if (hasLDoor && r === 11 && c >= 16 && c <= 17) {
 					tiles.push(-10); // Exit
+				} else if (hasLDoor && r === 12 && c >= 15 && c <= 18) {
+					tiles.push(12); // Below Exit
 				} else {
 					tiles.push(getTileIndexFromPattern(getPattern(room, r, c)));
 				}
@@ -237,6 +243,50 @@ class World {
 		}
 		//this.objects.forEach((object) => object.draw());
 		this.player.draw();
+
+		if (toggleHelp) {
+			const x = -100;
+			const y = 80;
+			spritesheet.drawSprite('player_ui', 1, x, y);
+			const text_size = 16;
+			drawKeyboardHelp('Z', x + 25, y - 5, text_size);
+			drawKeyboardHelp('S', x + 25, y - 5 + 18 + 10 + 64, text_size);
+			drawKeyboardHelp('Q', x + 25 - 32 - 18, y - 5 + 64, text_size);
+			drawKeyboardHelp('D', x + 25 + 32 + 18, y - 5 + 64, text_size);
+		}
+
+		// draw slots for player
+		const maxSlotI = 3;
+		for (let i = 0; i < maxSlotI; i++) {
+			for (let j = 0; j < 2; j++) {
+				const index = i + j * maxSlotI;
+				if (index === this.player.slotIndex) {
+					stroke(150, 50, 50, 150);
+					noFill();
+					strokeWeight(3);
+					rect(800 + 68 * i - 1, 200 + 68 * j - 1, 66, 66);
+				}
+				spritesheet.drawSprite('player_ui', 0, 800 + 68 * i, 200 + 68 * j);
+				if (toggleHelp) {
+					push();
+					const deltaX = 24;
+					const deltaY = j === 0 ? -5 : 64 + 5 + 16;
+					const x = 800 + 68 * i - 1 + deltaX;
+					const y = deltaY + 200 + 68 * j;
+					const text_size = 16;
+					drawKeyboardHelp(this.uiKeys[index], x, y, text_size);
+					pop();
+				}
+			}
+		}
+
+		if (toggleHelp) {
+			const text_size = 16;
+			spritesheet.drawSprite('player_ui', 2, 800 + 68 * 3, 200 + 68 * 0.5);
+			drawKeyboardHelp(';', 800 + 68 * 3+24, 200+32, text_size);
+			drawKeyboardHelp(',', 800 + 68 * 3+24, 200+32 + 68+10, text_size);
+		}
+
 		//this.enemy.draw();
 		strokeWeight(2);
 		stroke(255);
@@ -319,6 +369,30 @@ class World {
 		this.player.startMove(move);
 
 		this.player.update(elapsedTime);
+
+		if (this.hitExit(this.player.getFloorBox())) {
+			// need to get the door position
+			this.doors.every((door) => {
+				const box = this.getBoxFromTinyTile(door.from);
+				if (this.collide(box, this.player.getFloorBox())) {
+					this.initRoom(this.rooms[door.id - 1]);
+					if (door.from.j < door.to.j) {
+						this.player.position.x = door.to.j * 64 - 8;
+					} else {
+						this.player.position.x = door.to.j * 64 - 8 + 32;
+					}
+
+					if (door.from.i < door.to.i) {
+						this.player.position.y = door.to.i * 64 - 32;
+					} else {
+						this.player.position.y = door.to.i * 64 - 8;
+					}
+					return false;
+				}
+				return true;
+			});
+		}
+
 		//this.enemy.update(elapsedTime);
 		this.bullets.forEach((bullet) => bullet.update(elapsedTime));
 		this.objects.forEach((object) => object.update(elapsedTime));

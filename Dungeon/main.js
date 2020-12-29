@@ -30,13 +30,19 @@ function speakerClicked() {
 
 const speakerButton = new BFloatingButton(windowWidth - 70 - 10 - 70, 70, '\uD83D\uDD0A', speakerClicked);
 const musicButton = new BFloatingButton(windowWidth - 70, 70, '\uD83C\uDFB6', musicClicked);
+const helpButton = new BFloatingButton(20, 60, '\u003F', () => {
+	toggleHelp = !toggleHelp;
+	helpButton.checked = !helpButton.checked;
+});
 
 function initUI() {
 	speakerButton.setTextSize(50);
 	musicButton.setTextSize(50);
 	musicButton.enabled = false;
 	musicButton.checked = false;
-	const menu = [ speakerButton, musicButton ];
+	helpButton.setTextSize(30);
+	helpButton.checked = false;
+	const menu = [ speakerButton, musicButton, helpButton ];
 	uiManager.setUI(menu);
 }
 
@@ -54,6 +60,7 @@ function setup() {
 	spritesheet.addSpriteSheet('key', './DungeonKey.png', 32, 32);
 	spritesheet.addSpriteSheet('player', './player48x64.png', 48, 64);
 	spritesheet.addSpriteSheet('enemy', './enemy48x64.png', 48, 64);
+	spritesheet.addSpriteSheet('player_ui', './UIPlayer.png', 64, 64);
 
 	soundManager.addSound('walk', './walking.wav', 0.25);
 
@@ -67,6 +74,7 @@ function updateGame(elapsedTime) {
 const translateX = 128;
 const translateY = 32;
 let toggleDebug = false;
+let toggleHelp = false;
 
 function getEndOfLine(x1, y1, x2, y2) {
 	const dx = x2 - x1;
@@ -168,13 +176,14 @@ function draw() {
 
 function mouseClicked() {
 	toolManager.mouseClicked();
-	uiManager.mouseClicked();
+	const uiClicked = uiManager.mouseClicked();
 
-	const worldX = mouseX - translateX;
-	const worldY = mouseY - translateY;
-	// TODO: if mouse out of dungeon, do not fire
-	// fire bullet
-	world.addBullet(new Bullet(world.player.position.x + 24, world.player.position.y + 32, worldX, worldY));
+	if (!uiClicked) {
+		const worldX = mouseX - translateX;
+		const worldY = mouseY - translateY;
+		// fire bullet
+		world.addBullet(new Bullet(world.player.position.x + 24, world.player.position.y + 32, worldX, worldY));
+	}
 }
 
 function keyPressed() {
@@ -182,12 +191,26 @@ function keyPressed() {
 		toggleDebug = !toggleDebug;
 	}
 
-	if( key === '+') {
-		world.curRoomIndex = (world.curRoomIndex+1) % world.rooms.length;
-		world.initRoom( world.rooms[world.curRoomIndex] );
+	if (key === ',') {
+		world.player.prevSlot();
 	}
-	if( key === '-') {
-		world.curRoomIndex = (world.curRoomIndex+world.rooms.length-1) % world.rooms.length;
-		world.initRoom( world.rooms[world.curRoomIndex] );
+	if (key === ';') {
+		world.player.nextSlot();
 	}
+	for (let i = 0; i < world.player.maxSlots; i++) {
+		if (key === world.uiKeys[i]) {
+			world.player.slotIndex = i;
+		}
+	}
+
+	/*
+	if (key === '+') {
+		world.curRoomIndex = (world.curRoomIndex + 1) % world.rooms.length;
+		world.initRoom(world.rooms[world.curRoomIndex]);
+	}
+	if (key === '-') {
+		world.curRoomIndex = (world.curRoomIndex + world.rooms.length - 1) % world.rooms.length;
+		world.initRoom(world.rooms[world.curRoomIndex]);
+	}
+	*/
 }
