@@ -50,7 +50,7 @@ function initUI() {
 	const maxSlotI = 3;
 	for (let i = 0; i < maxSlotI; i++) {
 		for (let j = 0; j < 2; j++) {
-			const slot = new BImageButton(
+			const slot = new BSlotButton(
 				800 + 68 * i + translateX,
 				translateY + 200 + 68 * j,
 				spritesheet.getImage('player_ui', 0),
@@ -79,6 +79,7 @@ function setup() {
 	spritesheet.addSpriteSheet('key', './resources/DungeonKey.png', 32, 32);
 	spritesheet.addSpriteSheet('player', './resources/player48x64.png', 48, 64);
 	spritesheet.addSpriteSheet('enemy', './resources/enemy48x64.png', 48, 64);
+	spritesheet.addSpriteSheet('weapon', './resources/DungeonWeapon.png', 48, 48);
 
 	soundManager.addSound('walk', './resources/walking.wav', 0.25);
 
@@ -132,12 +133,12 @@ function drawGame() {
 
 	if (toggleHelp) {
 		const text_size = 16;
-		spritesheet.drawSprite('player_ui', 2, 128+800 + 68 * 3, 232 + 68 * 0.5);
-		drawKeyboardHelp(';', 128+800 + 68 * 3 + 24, 232 + 32, text_size);
-		drawKeyboardHelp(',', 128+800 + 68 * 3 + 24, 232 + 32 + 68 + 10, text_size);
+		spritesheet.drawSprite('player_ui', 2, 128 + 800 + 68 * 3, 232 + 68 * 0.5);
+		drawKeyboardHelp(';', 128 + 800 + 68 * 3 + 24, 232 + 32, text_size);
+		drawKeyboardHelp(',', 128 + 800 + 68 * 3 + 24, 232 + 32 + 68 + 10, text_size);
 
 		const x = 28;
-		const y = 80+32;
+		const y = 80 + 32;
 		spritesheet.drawSprite('player_ui', 1, x, y);
 		drawKeyboardHelp('Z', x + 25, y - 5, text_size);
 		drawKeyboardHelp('S', x + 25, y - 5 + 18 + 10 + 64, text_size);
@@ -179,6 +180,9 @@ function initGame() {
 	world = new World(32);
 	world.objects.push(new TiledObject(9, 17, 'key', [ 0, 1, 2, 3 ]));
 	world.objects.push(new TiledObject(10, 16, 'key', [ 4, 5, 6, 7 ]));
+
+	slotButtons[0].setItem(spritesheet.getImage('weapon', 0));
+	slotButtons[2].setItem(spritesheet.getImage('weapon', 1));
 }
 
 function drawLoading() {

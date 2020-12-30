@@ -158,11 +158,29 @@ class Room {
 	}
 }
 
+class BSlotButton extends BImageButton {
+	constructor(x, y, img, callback) {
+		super(x, y, img, callback);
+		this.item = null;
+	}
+
+	setItem(img) {
+		this.item = img;
+	}
+
+	doDraw() {
+		super.doDraw();
+		if (this.item) {
+			image(this.item, this.x + 8, this.y + 8, 48, 48);
+		}
+	}
+}
+
 class MazeGenerator {
 	/**
      * Creates a level and returns a list of rooms in ascii format
      */
-	static createLevel(maxRooms=5) {
+	static createLevel(maxRooms = 5) {
 		const level = new TinyLevel();
 		const tinyRooms = [];
 		tinyRooms.push(MazeGenerator.createTinyRoom(true));
@@ -178,12 +196,10 @@ class MazeGenerator {
 		const doors = [];
 		tinyRooms.forEach((room, i) => rooms.push(MazeGenerator.createRoomFromTinyRoom(room, i + 1, level, doors)));
 		console.log('doors:', doors);
-		doors.forEach(
-			door=>{
-				rooms[door.fromRoom-1].addDoor(door.fromTile, door.toTile, door.toRoom);
-				rooms[door.toRoom-1].addDoor(door.toTile, door.fromTile, door.fromRoom);
-			}
-		);
+		doors.forEach((door) => {
+			rooms[door.fromRoom - 1].addDoor(door.fromTile, door.toTile, door.toRoom);
+			rooms[door.toRoom - 1].addDoor(door.toTile, door.fromTile, door.fromRoom);
+		});
 
 		console.log('rooms:', rooms);
 		return rooms;
