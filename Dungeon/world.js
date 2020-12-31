@@ -84,6 +84,8 @@ class Player extends Sprite {
 		this.slots = [];
 		this.slotIndex = 0;
 		this.maxSlots = 6;
+
+		this.life = 20;
 	}
 
 	nextSlot() {

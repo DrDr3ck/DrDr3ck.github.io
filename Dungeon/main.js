@@ -39,6 +39,8 @@ const helpButton = new BFloatingButton(20, 60, '\u003F', () => {
 
 const slotButtons = [];
 
+const hearts = [];
+
 function initUI() {
 	speakerButton.setTextSize(50);
 	musicButton.setTextSize(50);
@@ -77,9 +79,11 @@ function setup() {
 	spritesheet.addSpriteSheet('wall', './resources/DungeonWall.png', 32, 32);
 	spritesheet.addSpriteSheet('floor', './resources/DungeonFloor.png', 32, 32);
 	spritesheet.addSpriteSheet('key', './resources/DungeonKey.png', 32, 32);
+	spritesheet.addSpriteSheet('potion', './resources/DungeonPotion.png', 32, 32);
 	spritesheet.addSpriteSheet('player', './resources/player48x64.png', 48, 64);
 	spritesheet.addSpriteSheet('enemy', './resources/enemy48x64.png', 48, 64);
 	spritesheet.addSpriteSheet('weapon', './resources/DungeonWeapon.png', 48, 48);
+	spritesheet.addSpriteSheet('heart', './resources/heart.png', 32, 32);
 
 	soundManager.addSound('walk', './resources/walking.wav', 0.25);
 
@@ -107,6 +111,9 @@ function drawGame() {
 	world.draw();
 	pop();
 
+	// draw hearts
+	hearts.forEach((heart) => heart.draw());
+	
 	// draw slots for player
 	const maxSlotI = 3;
 	for (let i = 0; i < maxSlotI; i++) {
@@ -180,9 +187,21 @@ function initGame() {
 	world = new World(32);
 	world.objects.push(new TiledObject(9, 17, 'key', [ 0, 1, 2, 3 ]));
 	world.objects.push(new TiledObject(10, 16, 'key', [ 4, 5, 6, 7 ]));
+	world.objects.push(new TiledObject(8, 8, 'potion', [ 0, 1, 2, 3 ]));
 
 	slotButtons[0].setItem(spritesheet.getImage('weapon', 0));
 	slotButtons[2].setItem(spritesheet.getImage('weapon', 1));
+
+	for (let i = 0; i < 5; i++) {
+		const x = windowWidth / 2 - 16 - 80 + 40 * i;
+		const heartSprite = new Sprite(x, 5);
+		heartSprite.addAnimation('fullHearth', 'heart', [ 0 ], FPS, false);
+		heartSprite.addAnimation('noHearth', 'heart', [ 4 ], FPS, false);
+		heartSprite.addAnimation('halfHearth', 'heart', [ 2 ], FPS, false);
+		heartSprite.addAnimation('fullHalfHearth', 'heart', [ 1 ], FPS, false);
+		heartSprite.addAnimation('noHalfHearth', 'heart', [ 3 ], FPS, false);
+		hearts.push(heartSprite);
+	}
 }
 
 function drawLoading() {
@@ -266,14 +285,33 @@ function keyPressed() {
 		}
 	}
 
-	/*
+	let redrawHeart = false;
 	if (key === '+') {
-		world.curRoomIndex = (world.curRoomIndex + 1) % world.rooms.length;
-		world.initRoom(world.rooms[world.curRoomIndex]);
+		world.player.life = Math.min(world.player.life + 1, 20);
+		redrawHeart = true;
 	}
 	if (key === '-') {
-		world.curRoomIndex = (world.curRoomIndex + world.rooms.length - 1) % world.rooms.length;
-		world.initRoom(world.rooms[world.curRoomIndex]);
+		world.player.life = Math.max(world.player.life - 1, 0);
+		redrawHeart = true;
 	}
-	*/
+
+	if (redrawHeart) {
+		for (let i = 0; i < 5; i++) {
+			const limit = i * 4 + 4;
+			if (limit <= world.player.life) {
+				hearts[i].playAnimation('fullHearth');
+			} else if (limit - world.player.life >= 4) {
+				hearts[i].playAnimation('noHearth');
+			} else {
+				const idx = limit - world.player.life;
+				if (idx === 1) {
+					hearts[i].playAnimation('fullHalfHearth');
+				} else if (idx === 3) {
+					hearts[i].playAnimation('noHalfHearth');
+				} else {
+					hearts[i].playAnimation('halfHearth');
+				}
+			}
+		}
+	}
 }

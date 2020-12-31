@@ -50,6 +50,10 @@ class Sprite {
 	addAnimation(name, sheetname, frameArray, frameSec, loop) {
 		let animations = [];
 		const sheet = spritesheet.sheets[sheetname];
+		if( !sheet ) {
+			console.log(`Error: the sheetname '${sheetname}' does not exist`);
+			return;
+		}
 		this.width = sheet.width;
 		this.height = sheet.height;
 		for (const frame of frameArray) {
