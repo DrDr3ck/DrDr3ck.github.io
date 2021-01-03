@@ -2,8 +2,8 @@ class SoundMgr {
 	constructor() {
 		this.sounds = {};
 		this.masterVolume = 1;
-		this.maxLoadingSounds = 0;
-		this.maxLoadedSounds = 0;
+		this.soundToLoad = 0;
+		this.totalLoadedSounds = 0;
 	}
 
 	mute(value) {
@@ -17,9 +17,13 @@ class SoundMgr {
 	addSound(name, filename, volume = 1) {
 		this.sounds[name] = loadSound(filename, (sound) => {
 			sound.setVolume(volume);
-			this.maxLoadedSounds++;
+			this.totalLoadedSounds++;
 		});
-		this.maxLoadingSounds++;
+		this.soundToLoad++;
+	}
+
+	getSound(name) {
+		return this.sounds[name];
 	}
 
 	playSound(name, rate = 1, loop=false) {

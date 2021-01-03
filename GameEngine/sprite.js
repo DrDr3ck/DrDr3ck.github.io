@@ -1,8 +1,8 @@
 class SpriteSheet {
 	constructor() {
 		this.sheets = {};
-		this.maxLoadingImages = 0;
-		this.maxLoadedImages = 0;
+		this.totalImagesToLoad = 0;
+		this.totalLoadedImages = 0;
 	}
 
 	/**
@@ -15,9 +15,9 @@ class SpriteSheet {
 	addSpriteSheet(name, filename, width, height) {
 		loadImage(filename, (image) => {
 			this.sheets[name] = { width: width, height: height, image: image, subimages:{} };
-			this.maxLoadedImages++;
+			this.totalLoadedImages++;
 		});
-		this.maxLoadingImages++;
+		this.totalImagesToLoad++;
 	}
 
 	drawSprite(sheetname, index, x, y) {

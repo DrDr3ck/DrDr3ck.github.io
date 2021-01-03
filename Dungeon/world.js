@@ -196,6 +196,7 @@ class World {
 	addBullet(bullet) {
 		if( this.bullets.length < this.bulletsMax ) {
 			this.bullets.push(bullet);
+			soundManager.playSound('laser');
 		}
 	}
 

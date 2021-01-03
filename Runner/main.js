@@ -415,8 +415,8 @@ function drawLoading() {
 	textAlign(CENTER, CENTER);
 	text('Loading...', width / 2, height / 2);
 	if (
-		soundManager.maxLoadedSounds === soundManager.maxLoadingSounds &&
-		spritesheet.maxLoadedImages === spritesheet.maxLoadingImages
+		soundManager.totalLoadedSounds === soundManager.soundToLoad &&
+		spritesheet.totalLoadedImages === spritesheet.totalImagesToLoad
 	) {
 		curState = GAME_START_STATE;
 		textAlign(LEFT, BASELINE);

@@ -16,13 +16,19 @@ const GAME_OVER_STATE = 3;
 let curState = GAME_LOADING_STATE;
 
 let lastTime = 0;
+let musicSound = null;
 
 function preload() {
 	spritesheet.addSpriteSheet('player_ui', './resources/UIPlayer.png', 64, 64);
 }
 
 function musicClicked() {
-	// TODO
+	musicButton.checked = !musicButton.checked;
+	if (musicButton.checked && !musicSound.isPlaying()) {
+		musicSound.loop();
+	} else if (!musicButton.checked && !musicSound.isPaused()) {
+		musicSound.pause();
+	}
 }
 
 function speakerClicked() {
@@ -44,7 +50,6 @@ const hearts = [];
 function initUI() {
 	speakerButton.setTextSize(50);
 	musicButton.setTextSize(50);
-	musicButton.enabled = false;
 	musicButton.checked = false;
 	helpButton.setTextSize(30);
 	helpButton.checked = false;
@@ -86,6 +91,9 @@ function setup() {
 	spritesheet.addSpriteSheet('heart', './resources/heart.png', 32, 32);
 
 	soundManager.addSound('walk', './resources/walking.wav', 0.25);
+	soundManager.addSound('laser', './resources/laser5.wav', 0.25);
+
+	soundManager.addSound('music', './resources/space_atmosphere.mp3', 0.125);
 
 	lastTime = Date.now();
 }
@@ -218,6 +226,8 @@ function initGame() {
 		heartSprite.addAnimation('noHalfHearth', 'heart', [ 3 ], FPS, false);
 		hearts.push(heartSprite);
 	}
+
+	musicSound = soundManager.getSound("music");
 }
 
 function drawLoading() {
@@ -226,9 +236,16 @@ function drawLoading() {
 	textSize(50);
 	textAlign(CENTER, CENTER);
 	text('Loading...', width / 2, height / 2);
+	fill(50,50,150);
+	const total = soundManager.soundToLoad + spritesheet.totalImagesToLoad;
+	const current = soundManager.totalLoadedSounds + spritesheet.totalLoadedImages;
+	rect(width/4, height/4*3, (current/total)*width/2, height/10);
+	stroke(0);
+	noFill();
+	rect(width/4, height/4*3, width/2, height/10);
 	if (
-		soundManager.maxLoadedSounds === soundManager.maxLoadingSounds &&
-		spritesheet.maxLoadedImages === spritesheet.maxLoadingImages
+		soundManager.totalLoadedSounds === soundManager.soundToLoad &&
+		spritesheet.totalLoadedImages === spritesheet.totalImagesToLoad
 	) {
 		curState = GAME_PLAY_STATE; //GAME_START_STATE;
 
