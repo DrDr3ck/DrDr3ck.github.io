@@ -80,7 +80,7 @@ function setup() {
 	spritesheet.addSpriteSheet('floor', './resources/DungeonFloor.png', 32, 32);
 	spritesheet.addSpriteSheet('key', './resources/DungeonKey.png', 32, 32);
 	spritesheet.addSpriteSheet('potion', './resources/DungeonPotion.png', 32, 32);
-	spritesheet.addSpriteSheet('player', './resources/player48x64.png', 48, 64);
+	spritesheet.addSpriteSheet('player', './resources/robot48x64.png', 48, 64);
 	spritesheet.addSpriteSheet('enemy', './resources/enemy48x64.png', 48, 64);
 	spritesheet.addSpriteSheet('weapon', './resources/DungeonWeapon.png', 48, 48);
 	spritesheet.addSpriteSheet('heart', './resources/heart.png', 32, 32);
@@ -113,7 +113,7 @@ function drawGame() {
 
 	// draw hearts
 	hearts.forEach((heart) => heart.draw());
-	
+
 	// draw slots for player
 	const maxSlotI = 3;
 	for (let i = 0; i < maxSlotI; i++) {
@@ -136,6 +136,22 @@ function drawGame() {
 				pop();
 			}
 		}
+	}
+
+	// draw bullets left
+	noStroke();
+	strokeWeight(1);
+	fill(150, 50, 50);
+	for (let i = 0; i < world.bulletsMax - world.bullets.length; i++) {
+		rect(55, 255 + 40 * (world.bulletsMax - 1 - i), 15, 30);
+	}
+
+	stroke(150, 50, 50, 150);
+	noFill();
+	strokeWeight(3);
+	rect(50, 250, 25, 40 * world.bulletsMax);
+	for (let i = 1; i < world.bulletsMax; i++) {
+		line(50, 250 + 40 * i, 75, 250 + 40 * i);
 	}
 
 	if (toggleHelp) {
@@ -263,8 +279,18 @@ function mouseClicked() {
 	if (!uiClicked) {
 		const worldX = mouseX - translateX;
 		const worldY = mouseY - translateY;
-		// fire bullet
-		world.addBullet(new Bullet(world.player.position.x + 24, world.player.position.y + 32, worldX, worldY));
+		const tile = world.getTilePosition(worldX, worldY);
+		if (toggleDebug) {
+			console.log('tile position:', tile.X, tile.Y);
+		}
+		if (tile.X >= 0 && tile.Y >= 0) {
+			// fire bullet
+			world.addBullet(new Bullet(world.player.position.x + 24, world.player.position.y + 32, worldX, worldY));
+		}
+	}
+
+	if (toggleDebug) {
+		console.log('mouse position: ', mouseX, mouseY);
 	}
 }
 

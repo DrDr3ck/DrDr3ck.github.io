@@ -44,12 +44,15 @@ class Bullet {
 		this.position = { x: x1, y: y1 };
 		const vector = createVector(x2 - x1, y2 - y1);
 		vector.normalize();
-		this.dx = vector.x * 32;
-		this.dy = vector.y * 32;
+		const speed = 4;
+		this.dx = vector.x * speed;
+		this.dy = vector.y * speed;
 	}
 
 	draw() {
-		line(this.position.x, this.position.y, this.position.x + this.dx, this.position.y + this.dy);
+		// line(this.position.x, this.position.y, this.position.x + this.dx, this.position.y + this.dy);
+		const size = 16;
+		ellipse(this.position.x+this.dx/2, this.position.y+this.dy/2,size);
 	}
 
 	update() {
@@ -68,15 +71,15 @@ class TiledObject extends Sprite {
 class Player extends Sprite {
 	constructor(x, y, spritename = 'player') {
 		super(x, y);
-		this.addAnimation('idle', spritename, [ 13 ], FPS, false);
-		this.addAnimation('leftup', spritename, [ 0, 1, 2, 3 ], FPS, true);
-		this.addAnimation('left', spritename, [ 4, 5, 6, 7 ], FPS, true);
-		this.addAnimation('leftdown', spritename, [ 8, 9, 10, 11 ], FPS, true);
-		this.addAnimation('down', spritename, [ 12, 13, 14, 15 ], FPS, true);
-		this.addAnimation('rightdown', spritename, [ 16, 17, 18, 19 ], FPS, true);
-		this.addAnimation('right', spritename, [ 20, 21, 22, 23 ], FPS, true);
-		this.addAnimation('rightup', spritename, [ 24, 25, 26, 27 ], FPS, true);
-		this.addAnimation('up', spritename, [ 28, 29, 30, 31 ], FPS, true);
+		this.addAnimation('idle', spritename, [ 0, 1, 2, 3 ], FPS, false);
+		this.addAnimation('leftup', spritename, [ 4 ], FPS, true);
+		this.addAnimation('left', spritename, [ 4 ], FPS, true);
+		this.addAnimation('leftdown', spritename, [ 4 ], FPS, true);
+		this.addAnimation('down', spritename, [ 0, 1, 2, 3 ], FPS, true);
+		this.addAnimation('rightdown', spritename, [ 5 ], FPS, true);
+		this.addAnimation('right', spritename, [ 5 ], FPS, true);
+		this.addAnimation('rightup', spritename, [ 5 ], FPS, true);
+		this.addAnimation('up', spritename, [ 6 ], FPS, true);
 		this.vx = 0;
 		this.vy = 0;
 		this.scale = 1;
@@ -172,12 +175,28 @@ class World {
 		this.initRoom(this.rooms[this.curRoomIndex]);
 
 		this.bullets = [];
+		this.bulletsMax = 5;
 
 		this.uiKeys = [ '&', 'é', '"', "'", '(', '-' ];
 	}
 
+	getTilePosition(worldX, worldY) {
+		const tile = {X: -1, y: -1};
+		tile.X = Math.floor(worldX/this.tileSize);
+		tile.Y = Math.floor(worldY/this.tileSize);
+		if( tile.X > this.tiles[0].length ) {
+			tile.X = -1;
+		}
+		if( tile.Y > this.tiles.length ) {
+			tile.Y = -1;
+		}
+		return tile;
+	}
+
 	addBullet(bullet) {
-		this.bullets.push(bullet);
+		if( this.bullets.length < this.bulletsMax ) {
+			this.bullets.push(bullet);
+		}
 	}
 
 	getBoxFromTinyTile(tinyTilePosition) {
@@ -192,6 +211,7 @@ class World {
 	initRoom(tinyRoom) {
 		uiManager.addLogger(`Moving to room ${tinyRoom.id}`);
 		const asciiRoom = tinyRoom.ascii;
+		this.curRoomIndex = tinyRoom.id;
 		const room = [];
 		for (let r = 0; r < asciiRoom.length; r++) {
 			const tiles = [];
@@ -234,6 +254,8 @@ class World {
 		if (this.tiles[0].length === 10) {
 			translateX += 3 * 64;
 		}
+
+		this.bullets = [];
 	}
 
 	draw() {
@@ -244,7 +266,7 @@ class World {
 				const tileIndex = this.tiles[r][c];
 				if (tileIndex <= -1) {
 					//rect(c * this.tileSize, r * this.tileSize, this.tileSize, this.tileSize);
-					const rdm = noise(r, c);
+					const rdm = noise(r, c, this.curRoomIndex);
 					const wallIndex = rdm > 0.5 ? Math.floor(2 * (rdm - 0.5) * 8) : 1;
 					spritesheet.drawSprite('floor', wallIndex, c * this.tileSize, r * this.tileSize);
 				} else {
@@ -256,11 +278,15 @@ class World {
 		this.player.draw();
 
 		//this.enemy.draw();
-		strokeWeight(2);
-		stroke(255);
+		strokeWeight(1);
+		stroke(0);
+		fill(255);
 		this.bullets.forEach((bullet) => bullet.draw());
 		if (toggleDebug) {
-			const box = this.player.getHitBox();
+			let box = this.player.getHitBox();
+			noFill();
+			rect(box.x, box.y, box.w, box.h);
+			box = this.player.getFloorBox();
 			noFill();
 			rect(box.x, box.y, box.w, box.h);
 		}
