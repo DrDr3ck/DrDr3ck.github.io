@@ -39,6 +39,16 @@ class TiledObject extends Sprite {
 	constructor(tileX, tileY, name, frameArray) {
 		super(tileX * world.tileSize, tileY * world.tileSize);
 		this.addAnimation('static', name, frameArray, FPS, true);
+		this.name = name;
+	}
+
+	getBox() {
+		return {
+			x: this.position.x,
+			y: this.position.y,
+			w: this.width,
+			h: this.height
+		};
 	}
 }
 
@@ -460,13 +470,23 @@ class World {
 				needUpdate = true;
 			}
 		});
-		if( needUpdate ) {
-			this.updateHeart(this.player.life);
-		}
 
 		this.bullets.forEach((bullet) => bullet.update(elapsedTime));
 		this.enemyBullets.forEach((bullet) => bullet.update(elapsedTime));
-		this.objects.forEach((object) => object.update(elapsedTime));
+		this.objects.forEach((object) => {
+			object.update(elapsedTime);
+			// check if player hits the object
+			if (this.collide(this.player.getFloorBox(), object.getBox())) {
+				if( object.name === 'potion') {
+					object.position.x = 10000;
+					needUpdate = true;
+					this.player.life = Math.min(20, this.player.life + 2); // TODO: need to factorize code inside 'tiledobject'
+				}
+			}
+		});
+		if (needUpdate) {
+			this.updateHeart(this.player.life);
+		}
 
 		this.enemies = this.enemies.filter((enemy) => enemy.life > 0);
 

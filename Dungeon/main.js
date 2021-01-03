@@ -174,7 +174,8 @@ function drawGame() {
 			mouseX,
 			mouseY
 		);
-		const box = world.enemy.getHitBox();
+		if( world.enemies.length > 0 ) {
+		const box = world.enemies[0].getHitBox();
 		lineRect(
 			world.player.position.x + translateX + 24 * world.player.scale,
 			world.player.position.y + translateY + 32 * world.player.scale,
@@ -185,6 +186,7 @@ function drawGame() {
 			box.w,
 			box.h
 		);
+		}
 		strokeWeight(1);
 		stroke(0);
 		line(
@@ -341,8 +343,8 @@ function keyPressed() {
 				new Bullet(
 					enemy.position.x + 24,
 					enemy.position.y + 32,
-					world.player.position.x,
-					world.player.position.y
+					world.player.position.x+24,
+					world.player.position.y+32
 				)
 			);
 		}
