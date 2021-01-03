@@ -1,31 +1,3 @@
-const room1 = [
-	'XXXXXXXXXXX',
-	'X        XX',
-	'X         X',
-	'XX   X    X',
-	'XX   XX   X',
-	'XX   XX    ',
-	'XX    X   X',
-	'XXXXX X   X',
-	'X         X',
-	'X         X',
-	'XXXXXXXXXXX'
-];
-
-const room2 = [
-	'XXXXXXXXXXX',
-	'X         X',
-	'X         X',
-	'X         X',
-	'X         X',
-	'          X',
-	'X         X',
-	'X         X',
-	'X  X X X  X',
-	'X    X    X',
-	'XXXXXXXXXXX'
-];
-
 function drawKeyboardHelp(keyboard, x, y, text_size) {
 	textAlign(CENTER, CENTER);
 	textSize(text_size);
@@ -52,7 +24,7 @@ class Bullet {
 	draw() {
 		// line(this.position.x, this.position.y, this.position.x + this.dx, this.position.y + this.dy);
 		const size = 16;
-		ellipse(this.position.x+this.dx/2, this.position.y+this.dy/2,size);
+		ellipse(this.position.x + this.dx / 2, this.position.y + this.dy / 2, size);
 	}
 
 	update() {
@@ -68,35 +40,14 @@ class TiledObject extends Sprite {
 	}
 }
 
-class Player extends Sprite {
-	constructor(x, y, spritename = 'player') {
+class Entity extends Sprite {
+	constructor(x, y) {
 		super(x, y);
-		this.addAnimation('idle', spritename, [ 0, 1, 2, 3 ], FPS, false);
-		this.addAnimation('leftup', spritename, [ 4 ], FPS, true);
-		this.addAnimation('left', spritename, [ 4 ], FPS, true);
-		this.addAnimation('leftdown', spritename, [ 4 ], FPS, true);
-		this.addAnimation('down', spritename, [ 0, 1, 2, 3 ], FPS, true);
-		this.addAnimation('rightdown', spritename, [ 5 ], FPS, true);
-		this.addAnimation('right', spritename, [ 5 ], FPS, true);
-		this.addAnimation('rightup', spritename, [ 5 ], FPS, true);
-		this.addAnimation('up', spritename, [ 6 ], FPS, true);
 		this.vx = 0;
 		this.vy = 0;
 		this.scale = 1;
 
-		this.slots = [];
-		this.slotIndex = 0;
-		this.maxSlots = 6;
-
 		this.life = 20;
-	}
-
-	nextSlot() {
-		this.slotIndex = (this.slotIndex + 1) % this.maxSlots;
-	}
-
-	prevSlot() {
-		this.slotIndex = (this.slotIndex + this.maxSlots - 1) % this.maxSlots;
 	}
 
 	getFloorBox() {
@@ -157,6 +108,51 @@ class Player extends Sprite {
 	}
 }
 
+class Enemy extends Entity {
+	constructor(x, y, spritename = 'enemy') {
+		super(x, y);
+		const delta = 4 * 3;
+		this.addAnimation('idle', spritename, [ 0 + delta ], FPS, false);
+		this.addAnimation('leftup', spritename, [ 2 + delta ], FPS, true);
+		this.addAnimation('left', spritename, [ 2 + delta ], FPS, true);
+		this.addAnimation('leftdown', spritename, [ 2 + delta ], FPS, true);
+		this.addAnimation('down', spritename, [ 0 + delta ], FPS, true);
+		this.addAnimation('rightdown', spritename, [ 3 + delta ], FPS, true);
+		this.addAnimation('right', spritename, [ 3 + delta ], FPS, true);
+		this.addAnimation('rightup', spritename, [ 3 + delta ], FPS, true);
+		this.addAnimation('up', spritename, [ 1 + delta ], FPS, true);
+	}
+}
+
+class Player extends Entity {
+	constructor(x, y, spritename = 'player') {
+		super(x, y);
+		this.addAnimation('idle', spritename, [ 0, 1, 2, 3 ], FPS, false);
+		this.addAnimation('leftup', spritename, [ 4 ], FPS, true);
+		this.addAnimation('left', spritename, [ 4 ], FPS, true);
+		this.addAnimation('leftdown', spritename, [ 4 ], FPS, true);
+		this.addAnimation('down', spritename, [ 0, 1, 2, 3 ], FPS, true);
+		this.addAnimation('rightdown', spritename, [ 5 ], FPS, true);
+		this.addAnimation('right', spritename, [ 5 ], FPS, true);
+		this.addAnimation('rightup', spritename, [ 5 ], FPS, true);
+		this.addAnimation('up', spritename, [ 6 ], FPS, true);
+
+		this.slots = [];
+		this.slotIndex = 0;
+		this.maxSlots = 6;
+
+		this.life = 20;
+	}
+
+	nextSlot() {
+		this.slotIndex = (this.slotIndex + 1) % this.maxSlots;
+	}
+
+	prevSlot() {
+		this.slotIndex = (this.slotIndex + this.maxSlots - 1) % this.maxSlots;
+	}
+}
+
 class World {
 	constructor(tileSize) {
 		this.tileSize = tileSize;
@@ -164,7 +160,7 @@ class World {
 		this.doors = [];
 
 		this.player = new Player(96 - 8, 96);
-		this.enemy = new Player(500, 300, 'enemy');
+		this.enemies = [];
 
 		this.objects = [];
 
@@ -180,21 +176,33 @@ class World {
 		this.uiKeys = [ '&', 'é', '"', "'", '(', '-' ];
 	}
 
+	getFreeTile() {
+		const maxRows = this.tiles.length;
+		const maxCols = this.tiles[0].length;
+		let row = 0;
+		let column = 0;
+		while (this.tiles[row][column] !== -1) {
+			row = Math.floor(random(0, maxRows));
+			column = Math.floor(random(0, maxCols));
+		}
+		return { X: column, Y: row };
+	}
+
 	getTilePosition(worldX, worldY) {
-		const tile = {X: -1, y: -1};
-		tile.X = Math.floor(worldX/this.tileSize);
-		tile.Y = Math.floor(worldY/this.tileSize);
-		if( tile.X > this.tiles[0].length ) {
+		const tile = { X: -1, y: -1 };
+		tile.X = Math.floor(worldX / this.tileSize);
+		tile.Y = Math.floor(worldY / this.tileSize);
+		if (tile.X > this.tiles[0].length) {
 			tile.X = -1;
 		}
-		if( tile.Y > this.tiles.length ) {
+		if (tile.Y > this.tiles.length) {
 			tile.Y = -1;
 		}
 		return tile;
 	}
 
 	addBullet(bullet) {
-		if( this.bullets.length < this.bulletsMax ) {
+		if (this.bullets.length < this.bulletsMax) {
 			this.bullets.push(bullet);
 			soundManager.playSound('laser');
 		}
@@ -257,6 +265,14 @@ class World {
 		}
 
 		this.bullets = [];
+		this.enemies = [];
+		if (this.curRoomIndex !== 1) {
+			const freeTilePosition = this.getFreeTile();
+			console.log("freeTilePosition:", freeTilePosition);
+			this.enemies.push(
+				new Enemy(freeTilePosition.X * this.tileSize-16, freeTilePosition.Y * this.tileSize-40, 'enemy')
+			);
+		}
 	}
 
 	draw() {
@@ -278,7 +294,7 @@ class World {
 		this.objects.forEach((object) => object.draw());
 		this.player.draw();
 
-		//this.enemy.draw();
+		this.enemies.forEach((enemy) => enemy.draw());
 		strokeWeight(1);
 		stroke(0);
 		fill(255);
@@ -392,13 +408,15 @@ class World {
 		this.bullets.forEach((bullet) => bullet.update(elapsedTime));
 		this.objects.forEach((object) => object.update(elapsedTime));
 
-		this.bullets = this.bullets.filter(
-			(bullet) =>
-				bullet.position.x < windowWidth &&
-				bullet.position.x > 0 &&
-				bullet.position.y > 0 &&
-				bullet.position.y < windowHeight
-		);
+		this.bullets = this.bullets.filter((bullet) => {
+			const tilePosition = world.getTilePosition(bullet.position.x, bullet.position.y);
+			if (tilePosition.X >= 0 && tilePosition.Y >= 0) {
+				if (world.tiles[tilePosition.Y][tilePosition.X] <= -1) {
+					return true;
+				}
+			}
+			return false;
+		});
 	}
 }
 

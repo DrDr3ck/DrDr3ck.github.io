@@ -18,9 +18,7 @@ let curState = GAME_LOADING_STATE;
 let lastTime = 0;
 let musicSound = null;
 
-function preload() {
-	spritesheet.addSpriteSheet('player_ui', './resources/UIPlayer.png', 64, 64);
-}
+function preload() {}
 
 function musicClicked() {
 	musicButton.checked = !musicButton.checked;
@@ -51,25 +49,9 @@ function initUI() {
 	speakerButton.setTextSize(50);
 	musicButton.setTextSize(50);
 	musicButton.checked = false;
+	musicButton.enabled = false;
 	helpButton.setTextSize(30);
 	helpButton.checked = false;
-	const menu = [ speakerButton, musicButton, helpButton ];
-	const maxSlotI = 3;
-	for (let i = 0; i < maxSlotI; i++) {
-		for (let j = 0; j < 2; j++) {
-			const slot = new BSlotButton(
-				800 + 68 * i + translateX,
-				translateY + 200 + 68 * j,
-				spritesheet.getImage('player_ui', 0),
-				() => {
-					world.player.slotIndex = i + j * maxSlotI;
-				}
-			);
-			slotButtons.push(slot);
-			menu.push(slot);
-		}
-	}
-	uiManager.setUI(menu);
 }
 
 const FPS = 60;
@@ -81,19 +63,24 @@ function setup() {
 
 	frameRate(FPS);
 
+	spritesheet.addSpriteSheet('player_ui', './resources/UIPlayer.png', 64, 64);
+
 	spritesheet.addSpriteSheet('wall', './resources/DungeonWall.png', 32, 32);
 	spritesheet.addSpriteSheet('floor', './resources/DungeonFloor.png', 32, 32);
 	spritesheet.addSpriteSheet('key', './resources/DungeonKey.png', 32, 32);
 	spritesheet.addSpriteSheet('potion', './resources/DungeonPotion.png', 32, 32);
 	spritesheet.addSpriteSheet('player', './resources/robot48x64.png', 48, 64);
-	spritesheet.addSpriteSheet('enemy', './resources/enemy48x64.png', 48, 64);
+	spritesheet.addSpriteSheet('enemy', './resources/robot64x64.png', 64, 64);
 	spritesheet.addSpriteSheet('weapon', './resources/DungeonWeapon.png', 48, 48);
 	spritesheet.addSpriteSheet('heart', './resources/heart.png', 32, 32);
 
 	soundManager.addSound('walk', './resources/walking.wav', 0.25);
 	soundManager.addSound('laser', './resources/laser5.wav', 0.25);
 
-	soundManager.addSound('music', './resources/space_atmosphere.mp3', 0.125);
+	musicSound = loadSound('./resources/space_atmosphere.mp3', (sound) => {
+		sound.setVolume(0.125);
+		musicButton.enabled = true;
+	});
 
 	lastTime = Date.now();
 }
@@ -208,13 +195,30 @@ function drawGame() {
 }
 
 function initGame() {
+	const menu = [ speakerButton, musicButton, helpButton ];
+	const maxSlotI = 3;
+	for (let i = 0; i < maxSlotI; i++) {
+		for (let j = 0; j < 2; j++) {
+			const slot = new BSlotButton(
+				800 + 68 * i + translateX,
+				translateY + 200 + 68 * j,
+				spritesheet.getImage('player_ui', 0),
+				() => {
+					world.player.slotIndex = i + j * maxSlotI;
+				}
+			);
+			slotButtons.push(slot);
+			menu.push(slot);
+		}
+	}
+	uiManager.setUI(menu);
+
 	world = new World(32);
 	world.objects.push(new TiledObject(9, 17, 'key', [ 0, 1, 2, 3 ]));
 	world.objects.push(new TiledObject(10, 16, 'key', [ 4, 5, 6, 7 ]));
 	world.objects.push(new TiledObject(8, 8, 'potion', [ 0, 1, 2, 3 ]));
 
-	slotButtons[0].setItem(spritesheet.getImage('weapon', 0));
-	slotButtons[2].setItem(spritesheet.getImage('weapon', 1));
+	slotButtons[0].setItem(spritesheet.getImage('weapon', 2));
 
 	for (let i = 0; i < 5; i++) {
 		const x = windowWidth / 2 - 16 - 80 + 40 * i;
@@ -226,8 +230,6 @@ function initGame() {
 		heartSprite.addAnimation('noHalfHearth', 'heart', [ 3 ], FPS, false);
 		hearts.push(heartSprite);
 	}
-
-	musicSound = soundManager.getSound("music");
 }
 
 function drawLoading() {
@@ -236,13 +238,13 @@ function drawLoading() {
 	textSize(50);
 	textAlign(CENTER, CENTER);
 	text('Loading...', width / 2, height / 2);
-	fill(50,50,150);
+	fill(50, 50, 150);
 	const total = soundManager.soundToLoad + spritesheet.totalImagesToLoad;
 	const current = soundManager.totalLoadedSounds + spritesheet.totalLoadedImages;
-	rect(width/4, height/4*3, (current/total)*width/2, height/10);
+	rect(width / 4, height / 4 * 3, current / total * width / 2, height / 10);
 	stroke(0);
 	noFill();
-	rect(width/4, height/4*3, width/2, height/10);
+	rect(width / 4, height / 4 * 3, width / 2, height / 10);
 	if (
 		soundManager.totalLoadedSounds === soundManager.soundToLoad &&
 		spritesheet.totalLoadedImages === spritesheet.totalImagesToLoad
@@ -326,6 +328,10 @@ function keyPressed() {
 		if (key === world.uiKeys[i]) {
 			world.player.slotIndex = i;
 		}
+	}
+
+	if (key === 't') { // t for test
+		world.getFreeTile();
 	}
 
 	let redrawHeart = false;
