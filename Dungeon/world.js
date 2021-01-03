@@ -189,13 +189,13 @@ class World {
 	}
 
 	getTilePosition(worldX, worldY) {
-		const tile = { X: -1, y: -1 };
+		const tile = { X: -1, Y: -1 };
 		tile.X = Math.floor(worldX / this.tileSize);
 		tile.Y = Math.floor(worldY / this.tileSize);
-		if (tile.X > this.tiles[0].length) {
+		if (tile.X >= this.tiles[0].length) {
 			tile.X = -1;
 		}
-		if (tile.Y > this.tiles.length) {
+		if (tile.Y >= this.tiles.length) {
 			tile.Y = -1;
 		}
 		return tile;
@@ -411,6 +411,7 @@ class World {
 		this.bullets = this.bullets.filter((bullet) => {
 			const tilePosition = world.getTilePosition(bullet.position.x, bullet.position.y);
 			if (tilePosition.X >= 0 && tilePosition.Y >= 0) {
+				console.log("tilePosition:", tilePosition);
 				if (world.tiles[tilePosition.Y][tilePosition.X] <= -1) {
 					return true;
 				}
