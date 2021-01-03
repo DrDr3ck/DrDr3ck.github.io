@@ -19,6 +19,8 @@ class Bullet {
 		const speed = 4;
 		this.dx = vector.x * speed;
 		this.dy = vector.y * speed;
+
+		this.damage = 1;
 	}
 
 	draw() {
@@ -47,7 +49,7 @@ class Entity extends Sprite {
 		this.vy = 0;
 		this.scale = 1;
 
-		this.life = 20;
+		this.life = 5;
 	}
 
 	getFloorBox() {
@@ -170,6 +172,7 @@ class World {
 
 		this.initRoom(this.rooms[this.curRoomIndex]);
 
+		this.enemyBullets = [];
 		this.bullets = [];
 		this.bulletsMax = 5;
 
@@ -265,13 +268,16 @@ class World {
 		}
 
 		this.bullets = [];
+		this.enemyBullets = [];
 		this.enemies = [];
+		this.objects = [];
 		if (this.curRoomIndex !== 1) {
-			const freeTilePosition = this.getFreeTile();
-			console.log("freeTilePosition:", freeTilePosition);
+			let freeTilePosition = this.getFreeTile();
 			this.enemies.push(
-				new Enemy(freeTilePosition.X * this.tileSize-16, freeTilePosition.Y * this.tileSize-40, 'enemy')
+				new Enemy(freeTilePosition.X * this.tileSize - 16, freeTilePosition.Y * this.tileSize - 40, 'enemy')
 			);
+			freeTilePosition = this.getFreeTile();
+			this.objects.push(new TiledObject(freeTilePosition.X, freeTilePosition.Y, 'potion', [ 0, 1, 2, 3 ]));
 		}
 	}
 
@@ -299,6 +305,7 @@ class World {
 		stroke(0);
 		fill(255);
 		this.bullets.forEach((bullet) => bullet.draw());
+		this.enemyBullets.forEach((bullet) => bullet.draw());
 		if (toggleDebug) {
 			let box = this.player.getHitBox();
 			noFill();
@@ -319,6 +326,16 @@ class World {
 			rect1.y < rect2.y + rect2.h &&
 			rect1.h + rect1.y > rect2.y
 		) {
+			return true;
+		}
+		return false;
+	}
+
+	contains(box, position) {
+		if (!box || !position) {
+			return false;
+		}
+		if (position.x >= box.x && position.x <= box.x + box.w && position.y >= box.y && position.y <= box.y + box.h) {
 			return true;
 		}
 		return false;
@@ -366,6 +383,26 @@ class World {
 		return false;
 	}
 
+	updateHeart(life) {
+		for (let i = 0; i < 5; i++) {
+			const limit = i * 4 + 4;
+			if (limit <= life) {
+				hearts[i].playAnimation('fullHearth');
+			} else if (limit - life >= 4) {
+				hearts[i].playAnimation('noHearth');
+			} else {
+				const idx = limit - life;
+				if (idx === 1) {
+					hearts[i].playAnimation('fullHalfHearth');
+				} else if (idx === 3) {
+					hearts[i].playAnimation('noHalfHearth');
+				} else {
+					hearts[i].playAnimation('halfHearth');
+				}
+			}
+		}
+	}
+
 	update(elapsedTime) {
 		const verticalDirection = keyIsDown(68) ? 'right' : keyIsDown(81) ? 'left' : '';
 		const horizontalDirection = keyIsDown(90) ? 'up' : keyIsDown(83) ? 'down' : '';
@@ -404,14 +441,47 @@ class World {
 			});
 		}
 
-		//this.enemy.update(elapsedTime);
+		this.enemies.forEach((enemy) => {
+			enemy.update(elapsedTime);
+			const box = enemy.getHitBox();
+			this.bullets.forEach((bullet) => {
+				if (this.contains(box, bullet.position)) {
+					bullet.position.x = 10000; // move bullet out of world
+					enemy.life = Math.max(0, enemy.life - bullet.damage);
+				}
+			});
+		});
+		const playerBox = this.player.getHitBox();
+		let needUpdate = false;
+		this.enemyBullets.forEach((bullet) => {
+			if (this.contains(playerBox, bullet.position)) {
+				bullet.position.x = 10000; // move bullet out of world
+				this.player.life = Math.max(0, this.player.life - bullet.damage);
+				needUpdate = true;
+			}
+		});
+		if( needUpdate ) {
+			this.updateHeart(this.player.life);
+		}
+
 		this.bullets.forEach((bullet) => bullet.update(elapsedTime));
+		this.enemyBullets.forEach((bullet) => bullet.update(elapsedTime));
 		this.objects.forEach((object) => object.update(elapsedTime));
+
+		this.enemies = this.enemies.filter((enemy) => enemy.life > 0);
 
 		this.bullets = this.bullets.filter((bullet) => {
 			const tilePosition = world.getTilePosition(bullet.position.x, bullet.position.y);
 			if (tilePosition.X >= 0 && tilePosition.Y >= 0) {
-				console.log("tilePosition:", tilePosition);
+				if (world.tiles[tilePosition.Y][tilePosition.X] <= -1) {
+					return true;
+				}
+			}
+			return false;
+		});
+		this.enemyBullets = this.enemyBullets.filter((bullet) => {
+			const tilePosition = world.getTilePosition(bullet.position.x, bullet.position.y);
+			if (tilePosition.X >= 0 && tilePosition.Y >= 0) {
 				if (world.tiles[tilePosition.Y][tilePosition.X] <= -1) {
 					return true;
 				}

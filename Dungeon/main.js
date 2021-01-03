@@ -127,7 +127,8 @@ function drawGame() {
 				const x = 800 + 68 * i - 1 + deltaX + 128;
 				const y = deltaY + 200 + 68 * j + 32;
 				const text_size = 16;
-				drawKeyboardHelp(world.uiKeys[index], x, y, text_size);
+				//drawKeyboardHelp(world.uiKeys[index], x, y, text_size);
+				drawKeyboardHelp(index + 1, x, y, text_size);
 				pop();
 			}
 		}
@@ -162,6 +163,8 @@ function drawGame() {
 		drawKeyboardHelp('S', x + 25, y - 5 + 18 + 10 + 64, text_size);
 		drawKeyboardHelp('Q', x + 25 - 32 - 18, y - 5 + 64, text_size);
 		drawKeyboardHelp('D', x + 25 + 32 + 18, y - 5 + 64, text_size);
+
+		spritesheet.drawSprite('player_ui', 3, 128 + 800 + 68 * 3, 232 * 0.5);
 	}
 
 	if (toggleDebug) {
@@ -214,9 +217,8 @@ function initGame() {
 	uiManager.setUI(menu);
 
 	world = new World(32);
-	world.objects.push(new TiledObject(9, 17, 'key', [ 0, 1, 2, 3 ]));
-	world.objects.push(new TiledObject(10, 16, 'key', [ 4, 5, 6, 7 ]));
-	world.objects.push(new TiledObject(8, 8, 'potion', [ 0, 1, 2, 3 ]));
+	//world.objects.push(new TiledObject(9, 17, 'key', [ 0, 1, 2, 3 ]));
+	//world.objects.push(new TiledObject(10, 16, 'key', [ 4, 5, 6, 7 ]));
 
 	slotButtons[0].setItem(spritesheet.getImage('weapon', 2));
 
@@ -330,8 +332,20 @@ function keyPressed() {
 		}
 	}
 
-	if (key === 't') { // t for test
-		world.getFreeTile();
+	// t for test
+	if (key === 't') {
+		// fire an enemy bullet
+		if (world.enemies.length >= 1) {
+			const enemy = world.enemies[0];
+			world.enemyBullets.push(
+				new Bullet(
+					enemy.position.x + 24,
+					enemy.position.y + 32,
+					world.player.position.x,
+					world.player.position.y
+				)
+			);
+		}
 	}
 
 	let redrawHeart = false;
@@ -345,22 +359,6 @@ function keyPressed() {
 	}
 
 	if (redrawHeart) {
-		for (let i = 0; i < 5; i++) {
-			const limit = i * 4 + 4;
-			if (limit <= world.player.life) {
-				hearts[i].playAnimation('fullHearth');
-			} else if (limit - world.player.life >= 4) {
-				hearts[i].playAnimation('noHearth');
-			} else {
-				const idx = limit - world.player.life;
-				if (idx === 1) {
-					hearts[i].playAnimation('fullHalfHearth');
-				} else if (idx === 3) {
-					hearts[i].playAnimation('noHalfHearth');
-				} else {
-					hearts[i].playAnimation('halfHearth');
-				}
-			}
-		}
+		world.updateHeart(world.player.life);
 	}
 }
