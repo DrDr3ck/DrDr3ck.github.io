@@ -28,6 +28,8 @@
     <br>
     <a href="./Set">Set</a>
     <br>
+    <a href="./RandomList">Random List</a>
+    <br>
     <a href="./ToDoList">To-Do List</a>
     <br>
     <a href="./BoulderDash">Boulder Dash (in progress)</a>
