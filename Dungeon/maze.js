@@ -147,6 +147,10 @@ class Room {
 		this.id = id;
 		this.ascii = asciiRoom;
 		this.doors = [];
+		this.enemies = 1;
+		if (asciiRoom.length === 11 && asciiRoom[0].length === 11) {
+			this.enemies = Math.floor(random(2, 4));
+		}
 	}
 
 	/**

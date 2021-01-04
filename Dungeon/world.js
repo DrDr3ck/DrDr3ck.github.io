@@ -15,10 +15,10 @@ class Bullet {
 	constructor(x1, y1, x2, y2) {
 		this.position = { x: x1, y: y1 };
 		const vector = createVector(x2 - x1, y2 - y1);
-		if( vector.x === 0 ) {
+		if (vector.x === 0) {
 			vector.x = 1;
 		}
-		if( vector.y === 0 ) {
+		if (vector.y === 0) {
 			vector.y = 1;
 		}
 		vector.normalize();
@@ -129,7 +129,7 @@ class Entity extends Sprite {
 class Enemy extends Entity {
 	constructor(x, y, spritename = 'enemy') {
 		super(x, y);
-		const rdm = Math.floor(random(0,7.99));
+		const rdm = Math.floor(random(0, 7.99));
 		const delta = 4 * rdm;
 		this.addAnimation('idle', spritename, [ 0 + delta ], FPS, false);
 		this.addAnimation('leftup', spritename, [ 2 + delta ], FPS, true);
@@ -140,6 +140,24 @@ class Enemy extends Entity {
 		this.addAnimation('right', spritename, [ 3 + delta ], FPS, true);
 		this.addAnimation('rightup', spritename, [ 3 + delta ], FPS, true);
 		this.addAnimation('up', spritename, [ 1 + delta ], FPS, true);
+		this.timeBeforeFiring = random(1800,2200);
+	}
+
+	update(elapsedTime) {
+		super.update(elapsedTime);
+		this.timeBeforeFiring-=elapsedTime;
+		if( this.timeBeforeFiring <= 0 ) {
+			world.enemyBullets.push(
+				new Bullet(
+					this.position.x + 24,
+					this.position.y + 40,
+					world.player.position.x + 24,
+					world.player.position.y + 32
+				)
+			);
+			soundManager.playSound('laserEnemy');
+			this.timeBeforeFiring = random(800,1200);
+		}
 	}
 }
 
@@ -155,6 +173,7 @@ class Player extends Entity {
 		this.addAnimation('right', spritename, [ 5 ], FPS, true);
 		this.addAnimation('rightup', spritename, [ 5 ], FPS, true);
 		this.addAnimation('up', spritename, [ 6 ], FPS, true);
+		this.addAnimation('death', spritename, [ 7 ], FPS, true);
 
 		this.slots = []; // TODO: add item/weapon
 		this.slotIndex = 0;
@@ -296,11 +315,15 @@ class World {
 		this.objects = [];
 		this.exitBox = null;
 		if (this.curRoomIndex !== 1) {
-			let freeTilePosition = this.getFreeTile();
-			this.enemies.push(
-				new Enemy(freeTilePosition.X * this.tileSize - 16, freeTilePosition.Y * this.tileSize - 40, 'enemy')
-			);
-			freeTilePosition = this.getFreeTile();
+			if (tinyRoom.enemies > 0) {
+				for( let i=0; i < tinyRoom.enemies; i++ ) {
+					const freeTilePosition = this.getFreeTile();
+					this.enemies.push(
+						new Enemy(freeTilePosition.X * this.tileSize - 16, freeTilePosition.Y * this.tileSize - 40 + 4, 'enemy')
+					);
+				}
+			}
+			const freeTilePosition = this.getFreeTile();
 			this.objects.push(new TiledObject(freeTilePosition.X, freeTilePosition.Y, 'potion', [ 0, 1, 2, 3 ]));
 		}
 		if (this.curRoomIndex === 9) {
@@ -346,6 +369,7 @@ class World {
 		stroke(0);
 		fill(255);
 		this.bullets.forEach((bullet) => bullet.draw());
+		fill(255,50,50);
 		this.enemyBullets.forEach((bullet) => bullet.draw());
 		if (toggleDebug) {
 			let box = this.player.getHitBox();
@@ -446,8 +470,8 @@ class World {
 
 	update(elapsedTime) {
 		const right = 68;
-		const left = this.azerty ? 81 : 65 ;
-		const up = this.azerty ? 90 : 87 ;
+		const left = this.azerty ? 81 : 65;
+		const up = this.azerty ? 90 : 87;
 		const down = 83;
 		const verticalDirection = keyIsDown(right) ? 'right' : keyIsDown(left) ? 'left' : '';
 		const horizontalDirection = keyIsDown(up) ? 'up' : keyIsDown(down) ? 'down' : '';
@@ -493,7 +517,13 @@ class World {
 				if (this.contains(box, bullet.position)) {
 					bullet.position.x = 10000; // move bullet out of world
 					enemy.life = Math.max(0, enemy.life - bullet.damage);
-					soundManager.playSound(enemy.life > 0 ? 'hit' : 'kill', random(0.8,1.2));
+					soundManager.playSound(enemy.life > 0 ? 'hit' : 'kill', random(0.8, 1.2));
+					if (enemy.life === 0) {
+						const idx = this.rooms.findIndex((room) => room.id === this.curRoomIndex);
+						if (idx !== -1) {
+							this.rooms[idx].enemies--;
+						}
+					}
 				}
 			});
 		});
@@ -504,7 +534,13 @@ class World {
 				bullet.position.x = 10000; // move bullet out of world
 				this.player.life = Math.max(0, this.player.life - bullet.damage);
 				needUpdate = true;
-				soundManager.playSound('hit');
+				if( this.player.life > 0 ) {
+					soundManager.playSound('hit');
+				} else {
+					soundManager.playSound('game_over');
+					this.player.playAnimation("death");
+					curState = GAME_START_STATE;
+				}
 			}
 		});
 
@@ -557,6 +593,8 @@ class World {
 				this.initRoom(this.rooms[this.curRoomIndex]);
 				this.player.position.x = 96 - 8;
 				this.player.position.y = 96;
+
+				soundManager.playSound("next_level", 1.5);
 			}
 		}
 	}

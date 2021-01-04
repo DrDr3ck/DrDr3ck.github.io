@@ -80,6 +80,8 @@ function setup() {
 	soundManager.addSound('hit', './resources/hit.wav', 0.052);
 	soundManager.addSound('kill', './resources/kill.mp3', 0.125);
 	soundManager.addSound('potion', './resources/drop_potion.wav', 0.125);
+	soundManager.addSound('next_level', './resources/next_level.wav', 0.125);
+	soundManager.addSound('game_over', './resources/game_over.wav', 0.25);
 
 	musicSound = loadSound('./resources/space_atmosphere.mp3', (sound) => {
 		sound.setVolume(0.125);
@@ -203,6 +205,13 @@ function drawGame() {
 	}
 }
 
+function resetGame() {
+	if (world.player.life === 0) {
+		world = new World(32);
+		world.updateHeart(world.player.life);
+	}
+}
+
 function initGame() {
 	const menu = [ speakerButton, musicButton, helpButton ];
 	const maxSlotI = 3;
@@ -256,12 +265,8 @@ function drawLoading() {
 		soundManager.totalLoadedSounds === soundManager.soundToLoad &&
 		spritesheet.totalLoadedImages === spritesheet.totalImagesToLoad
 	) {
-		curState = GAME_PLAY_STATE; //GAME_START_STATE;
-
-		// init game
+		curState = GAME_START_STATE;
 		initGame();
-		textAlign(LEFT, BASELINE);
-		uiManager.addLogger('Defeat the Dungeon!!!');
 	}
 }
 
@@ -282,6 +287,17 @@ function draw() {
 		updateGame(elapsedTime);
 	}
 	drawGame();
+	if (curState === GAME_START_STATE) {
+		fill(0,0,0,150);
+		noStroke();
+		rect(0,0,windowWidth,windowHeight);
+		fill(0);
+		textSize(100);
+		textAlign(CENTER, CENTER);
+		text('Press A to Start', width / 2, height / 2);
+		fill(150);
+		text('Press A to Start', width / 2-3, height / 2-3);
+	}
 	if (toggleDebug) {
 		text(elapsedTime, 10, 50);
 
@@ -301,6 +317,9 @@ function draw() {
 function mouseClicked() {
 	toolManager.mouseClicked();
 	const uiClicked = uiManager.mouseClicked();
+	if (curState === GAME_START_STATE) {
+		return;
+	}
 
 	if (!uiClicked) {
 		// check if robot has a gun
@@ -340,6 +359,17 @@ document.addEventListener('keydown', (event) => {
 });
 
 function keyPressed() {
+	if (curState === GAME_START_STATE) {
+		if (key === 'a' || key === 'A') {
+			// init game
+			resetGame();
+			textAlign(LEFT, BASELINE);
+			uiManager.addLogger('Defeat the Dungeon!!!');
+			soundManager.playSound("next_level", 0.75);
+			curState = GAME_PLAY_STATE;
+		}
+		return;
+	}
 	if (toggleDebug) {
 		console.log('key:', key);
 		console.log('keyCode:', keyCode);
@@ -359,23 +389,6 @@ function keyPressed() {
 	for (let i = 0; i < world.player.maxSlots; i++) {
 		if (keyCode === 49 + i) {
 			world.player.slotIndex = i;
-		}
-	}
-
-	// t for test
-	if (key === 't') {
-		// fire an enemy bullet
-		if (world.enemies.length >= 1) {
-			const enemy = world.enemies[0];
-			world.enemyBullets.push(
-				new Bullet(
-					enemy.position.x + 24,
-					enemy.position.y + 32,
-					world.player.position.x + 24,
-					world.player.position.y + 32
-				)
-			);
-			soundManager.playSound('laserEnemy');
 		}
 	}
 
