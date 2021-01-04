@@ -258,7 +258,7 @@ function drawLoading() {
 		// init game
 		initGame();
 		textAlign(LEFT, BASELINE);
-		uiManager.addLogger('Game loaded');
+		uiManager.addLogger('Defeat the Dungeon!!!');
 	}
 }
 

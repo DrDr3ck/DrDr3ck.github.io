@@ -173,20 +173,18 @@ class World {
 
 		this.player = new Player(96 - 8, 96);
 		this.enemies = [];
-
 		this.objects = [];
-
-		this.rooms = MazeGenerator.createLevel(9);
-		console.log(this.rooms);
-		this.curRoomIndex = 0;
-
-		this.initRoom(this.rooms[this.curRoomIndex]);
-
 		this.enemyBullets = [];
 		this.bullets = [];
 		this.bulletsMax = 5;
 
 		this.uiKeys = [ '&', 'é', '"', "'", '(', '-' ];
+
+		this.level = 0;
+		// TODO: home made first level for tuto
+		this.rooms = MazeGenerator.createLevel(9);
+		this.curRoomIndex = 0;
+		this.initRoom(this.rooms[this.curRoomIndex]);
 	}
 
 	getFreeTile() {
@@ -231,7 +229,9 @@ class World {
 	}
 
 	initRoom(tinyRoom) {
-		uiManager.addLogger(`Moving to room ${tinyRoom.id}`);
+		if (toggleDebug) {
+			uiManager.addLogger(`Moving to room ${tinyRoom.id}`);
+		}
 		const asciiRoom = tinyRoom.ascii;
 		this.curRoomIndex = tinyRoom.id;
 		const room = [];
@@ -281,6 +281,7 @@ class World {
 		this.enemyBullets = [];
 		this.enemies = [];
 		this.objects = [];
+		this.exitBox = null;
 		if (this.curRoomIndex !== 1) {
 			let freeTilePosition = this.getFreeTile();
 			this.enemies.push(
@@ -288,6 +289,16 @@ class World {
 			);
 			freeTilePosition = this.getFreeTile();
 			this.objects.push(new TiledObject(freeTilePosition.X, freeTilePosition.Y, 'potion', [ 0, 1, 2, 3 ]));
+		}
+		if (this.curRoomIndex === 9) {
+			// Exit
+			const freeTilePosition = this.getFreeTile();
+			this.exitBox = {
+				x: freeTilePosition.X * this.tileSize,
+				y: freeTilePosition.Y * this.tileSize,
+				w: this.tileSize,
+				h: this.tileSize
+			};
 		}
 	}
 
@@ -308,6 +319,13 @@ class World {
 			}
 		}
 		this.objects.forEach((object) => object.draw());
+
+		if (this.exitBox) {
+			noStroke();
+			fill(50);
+			rect(this.exitBox.x, this.exitBox.y, this.exitBox.w, this.exitBox.h);
+		}
+
 		this.player.draw();
 
 		this.enemies.forEach((enemy) => enemy.draw());
@@ -372,7 +390,7 @@ class World {
 		return false;
 	}
 
-	hitExit(box) {
+	hitDoor(box) {
 		for (let r = 0; r < this.tiles.length; r++) {
 			for (let c = 0; c < this.tiles[0].length; c++) {
 				const tileIndex = this.tiles[r][c];
@@ -428,7 +446,7 @@ class World {
 
 		this.player.update(elapsedTime);
 
-		if (this.hitExit(this.player.getFloorBox())) {
+		if (this.hitDoor(this.player.getFloorBox())) {
 			// need to get the door position
 			this.doors.every((door) => {
 				const box = this.getBoxFromTinyTile(door.from);
@@ -477,7 +495,7 @@ class World {
 			object.update(elapsedTime);
 			// check if player hits the object
 			if (this.collide(this.player.getFloorBox(), object.getBox())) {
-				if( object.name === 'potion') {
+				if (object.name === 'potion') {
 					object.position.x = 10000;
 					needUpdate = true;
 					this.player.life = Math.min(20, this.player.life + 2); // TODO: need to factorize code inside 'tiledobject'
@@ -508,6 +526,19 @@ class World {
 			}
 			return false;
 		});
+
+		// Exit
+		if (this.exitBox) {
+			if (this.collide(this.exitBox, this.player.getFloorBox())) {
+				this.rooms = MazeGenerator.createLevel(9);
+				this.level++;
+				uiManager.addLogger(`Entering level ${this.level}`);
+				this.curRoomIndex = 0;
+				this.initRoom(this.rooms[this.curRoomIndex]);
+				this.player.position.x = 96 - 8;
+				this.player.position.y = 96;
+			}
+		}
 	}
 }
 
