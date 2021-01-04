@@ -76,6 +76,10 @@ function setup() {
 
 	soundManager.addSound('walk', './resources/walking.wav', 0.25);
 	soundManager.addSound('laser', './resources/laser5.wav', 0.25);
+	soundManager.addSound('laserEnemy', './resources/laser6.wav', 0.25);
+	soundManager.addSound('hit', './resources/hit.wav', 0.052);
+	soundManager.addSound('kill', './resources/kill.mp3', 0.125);
+	soundManager.addSound('potion', './resources/drop_potion.wav', 0.125);
 
 	musicSound = loadSound('./resources/space_atmosphere.mp3', (sound) => {
 		sound.setVolume(0.125);
@@ -156,15 +160,15 @@ function drawGame() {
 		drawKeyboardHelp('+', 128 + 800 + 68 * 3 + 24, 232 + 32, text_size);
 		drawKeyboardHelp('-', 128 + 800 + 68 * 3 + 24, 232 + 32 + 68 + 10, text_size);
 
-		const x = 28;
-		const y = 80 + 32;
+		const x = 32;
+		const y = 90;
 		spritesheet.drawSprite('player_ui', 1, x, y);
-		drawKeyboardHelp('Z', x + 25, y - 5, text_size);
+		drawKeyboardHelp(world.azerty ? 'Z' : 'Q', x + 25, y - 5, text_size);
 		drawKeyboardHelp('S', x + 25, y - 5 + 18 + 10 + 64, text_size);
-		drawKeyboardHelp('Q', x + 25 - 32 - 18, y - 5 + 64, text_size);
+		drawKeyboardHelp(world.azerty ? 'Q' : 'A', x + 25 - 32 - 18, y - 5 + 64, text_size);
 		drawKeyboardHelp('D', x + 25 + 32 + 18, y - 5 + 64, text_size);
 
-		spritesheet.drawSprite('player_ui', 3, 128 + 800 + 68 * 3, 232 * 0.5);
+		spritesheet.drawSprite('player_ui', 3, x, y + 64 + 25);
 	}
 
 	if (toggleDebug) {
@@ -174,18 +178,18 @@ function drawGame() {
 			mouseX,
 			mouseY
 		);
-		if( world.enemies.length > 0 ) {
-		const box = world.enemies[0].getHitBox();
-		lineRect(
-			world.player.position.x + translateX + 24 * world.player.scale,
-			world.player.position.y + translateY + 32 * world.player.scale,
-			endOfLine.x,
-			endOfLine.y,
-			box.x + translateX,
-			box.y + translateY,
-			box.w,
-			box.h
-		);
+		if (world.enemies.length > 0) {
+			const box = world.enemies[0].getHitBox();
+			lineRect(
+				world.player.position.x + translateX + 24 * world.player.scale,
+				world.player.position.y + translateY + 32 * world.player.scale,
+				endOfLine.x,
+				endOfLine.y,
+				box.x + translateX,
+				box.y + translateY,
+				box.w,
+				box.h
+			);
 		}
 		strokeWeight(1);
 		stroke(0);
@@ -221,7 +225,6 @@ function initGame() {
 	world = new World(32);
 	//world.objects.push(new TiledObject(9, 17, 'key', [ 0, 1, 2, 3 ]));
 	//world.objects.push(new TiledObject(10, 16, 'key', [ 4, 5, 6, 7 ]));
-
 	slotButtons[0].setItem(spritesheet.getImage('weapon', 2));
 
 	for (let i = 0; i < 5; i++) {
@@ -300,15 +303,19 @@ function mouseClicked() {
 	const uiClicked = uiManager.mouseClicked();
 
 	if (!uiClicked) {
-		const worldX = mouseX - translateX;
-		const worldY = mouseY - translateY;
-		const tile = world.getTilePosition(worldX, worldY);
-		if (toggleDebug) {
-			console.log('tile position:', tile.X, tile.Y);
-		}
-		if (tile.X >= 0 && tile.Y >= 0) {
-			// fire bullet
-			world.addBullet(new Bullet(world.player.position.x + 24, world.player.position.y + 32, worldX, worldY));
+		// check if robot has a gun
+		const gun = world.player.currentGun();
+		if (gun) {
+			const worldX = mouseX - translateX;
+			const worldY = mouseY - translateY;
+			const tile = world.getTilePosition(worldX, worldY);
+			if (toggleDebug) {
+				console.log('tile position:', tile.X, tile.Y);
+			}
+			if (tile.X >= 0 && tile.Y >= 0) {
+				// fire bullet
+				world.addBullet(new Bullet(world.player.position.x + 24, world.player.position.y + 32, worldX, worldY));
+			}
 		}
 	}
 
@@ -317,38 +324,40 @@ function mouseClicked() {
 	}
 }
 
-document.addEventListener('keydown',(event)=>{
-	if( event.key === 'z' && event.code === "KeyW" ) {
+document.addEventListener('keydown', (event) => {
+	if (event.key === 'z' && event.code === 'KeyW') {
 		world.azerty = true;
 	}
-	if( event.key === 'w' && event.code === "KeyW" ) {
+	if (event.key === 'w' && event.code === 'KeyW') {
 		world.azerty = false;
 	}
-	if( event.key === 'q' && event.code === "KeyA" ) {
+	if (event.key === 'q' && event.code === 'KeyA') {
 		world.azerty = true;
 	}
-	if( event.key === 'a' && event.code === "KeyA" ) {
+	if (event.key === 'a' && event.code === 'KeyA') {
 		world.azerty = false;
 	}
 });
 
 function keyPressed() {
-	if( toggleDebug){
-		console.log("key:", key);
-		console.log("keyCode:", keyCode);
+	if (toggleDebug) {
+		console.log('key:', key);
+		console.log('keyCode:', keyCode);
 	}
 	if (key === 'D') {
 		toggleDebug = !toggleDebug;
 	}
 
-	if (keyCode === 109 ) { // -
+	if (keyCode === 109) {
+		// -
 		world.player.prevSlot();
 	}
-	if (keyCode === 107) { // +
+	if (keyCode === 107) {
+		// +
 		world.player.nextSlot();
 	}
 	for (let i = 0; i < world.player.maxSlots; i++) {
-		if (keyCode === 49+i) {
+		if (keyCode === 49 + i) {
 			world.player.slotIndex = i;
 		}
 	}
@@ -362,10 +371,11 @@ function keyPressed() {
 				new Bullet(
 					enemy.position.x + 24,
 					enemy.position.y + 32,
-					world.player.position.x+24,
-					world.player.position.y+32
+					world.player.position.x + 24,
+					world.player.position.y + 32
 				)
 			);
+			soundManager.playSound('laserEnemy');
 		}
 	}
 

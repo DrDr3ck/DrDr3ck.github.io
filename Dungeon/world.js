@@ -15,6 +15,12 @@ class Bullet {
 	constructor(x1, y1, x2, y2) {
 		this.position = { x: x1, y: y1 };
 		const vector = createVector(x2 - x1, y2 - y1);
+		if( vector.x === 0 ) {
+			vector.x = 1;
+		}
+		if( vector.y === 0 ) {
+			vector.y = 1;
+		}
 		vector.normalize();
 		const speed = 4;
 		this.dx = vector.x * speed;
@@ -123,7 +129,8 @@ class Entity extends Sprite {
 class Enemy extends Entity {
 	constructor(x, y, spritename = 'enemy') {
 		super(x, y);
-		const delta = 4 * 3;
+		const rdm = Math.floor(random(0,7.99));
+		const delta = 4 * rdm;
 		this.addAnimation('idle', spritename, [ 0 + delta ], FPS, false);
 		this.addAnimation('leftup', spritename, [ 2 + delta ], FPS, true);
 		this.addAnimation('left', spritename, [ 2 + delta ], FPS, true);
@@ -149,11 +156,15 @@ class Player extends Entity {
 		this.addAnimation('rightup', spritename, [ 5 ], FPS, true);
 		this.addAnimation('up', spritename, [ 6 ], FPS, true);
 
-		this.slots = [];
+		this.slots = []; // TODO: add item/weapon
 		this.slotIndex = 0;
 		this.maxSlots = 6;
 
 		this.life = 20;
+	}
+
+	currentGun() {
+		return slotButtons[this.slotIndex].item; // todo: for now, use directly the button
 	}
 
 	nextSlot() {
@@ -482,6 +493,7 @@ class World {
 				if (this.contains(box, bullet.position)) {
 					bullet.position.x = 10000; // move bullet out of world
 					enemy.life = Math.max(0, enemy.life - bullet.damage);
+					soundManager.playSound(enemy.life > 0 ? 'hit' : 'kill', random(0.8,1.2));
 				}
 			});
 		});
@@ -492,6 +504,7 @@ class World {
 				bullet.position.x = 10000; // move bullet out of world
 				this.player.life = Math.max(0, this.player.life - bullet.damage);
 				needUpdate = true;
+				soundManager.playSound('hit');
 			}
 		});
 
@@ -505,6 +518,7 @@ class World {
 					object.position.x = 10000;
 					needUpdate = true;
 					this.player.life = Math.min(20, this.player.life + 2); // TODO: need to factorize code inside 'tiledobject'
+					soundManager.playSound('potion');
 				}
 			}
 		});
