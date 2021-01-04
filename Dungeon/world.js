@@ -171,6 +171,8 @@ class World {
 		this.tiles = [];
 		this.doors = [];
 
+		this.azerty = true;
+
 		this.player = new Player(96 - 8, 96);
 		this.enemies = [];
 		this.objects = [];
@@ -432,8 +434,12 @@ class World {
 	}
 
 	update(elapsedTime) {
-		const verticalDirection = keyIsDown(68) ? 'right' : keyIsDown(81) ? 'left' : '';
-		const horizontalDirection = keyIsDown(90) ? 'up' : keyIsDown(83) ? 'down' : '';
+		const right = 68;
+		const left = this.azerty ? 81 : 65 ;
+		const up = this.azerty ? 90 : 87 ;
+		const down = 83;
+		const verticalDirection = keyIsDown(right) ? 'right' : keyIsDown(left) ? 'left' : '';
+		const horizontalDirection = keyIsDown(up) ? 'up' : keyIsDown(down) ? 'down' : '';
 
 		const move = `${verticalDirection}${horizontalDirection}` || 'idle';
 		this.player.stopMove();

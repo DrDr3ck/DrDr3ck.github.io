@@ -153,8 +153,8 @@ function drawGame() {
 	if (toggleHelp) {
 		const text_size = 16;
 		spritesheet.drawSprite('player_ui', 2, 128 + 800 + 68 * 3, 232 + 68 * 0.5);
-		drawKeyboardHelp(';', 128 + 800 + 68 * 3 + 24, 232 + 32, text_size);
-		drawKeyboardHelp(',', 128 + 800 + 68 * 3 + 24, 232 + 32 + 68 + 10, text_size);
+		drawKeyboardHelp('+', 128 + 800 + 68 * 3 + 24, 232 + 32, text_size);
+		drawKeyboardHelp('-', 128 + 800 + 68 * 3 + 24, 232 + 32 + 68 + 10, text_size);
 
 		const x = 28;
 		const y = 80 + 32;
@@ -317,19 +317,38 @@ function mouseClicked() {
 	}
 }
 
+document.addEventListener('keydown',(event)=>{
+	if( event.key === 'z' && event.code === "KeyW" ) {
+		world.azerty = true;
+	}
+	if( event.key === 'w' && event.code === "KeyW" ) {
+		world.azerty = false;
+	}
+	if( event.key === 'q' && event.code === "KeyA" ) {
+		world.azerty = true;
+	}
+	if( event.key === 'a' && event.code === "KeyA" ) {
+		world.azerty = false;
+	}
+});
+
 function keyPressed() {
+	if( toggleDebug){
+		console.log("key:", key);
+		console.log("keyCode:", keyCode);
+	}
 	if (key === 'D') {
 		toggleDebug = !toggleDebug;
 	}
 
-	if (key === ',') {
+	if (keyCode === 109 ) { // -
 		world.player.prevSlot();
 	}
-	if (key === ';') {
+	if (keyCode === 107) { // +
 		world.player.nextSlot();
 	}
 	for (let i = 0; i < world.player.maxSlots; i++) {
-		if (key === world.uiKeys[i]) {
+		if (keyCode === 49+i) {
 			world.player.slotIndex = i;
 		}
 	}
