@@ -17,8 +17,11 @@ let curState = GAME_LOADING_STATE;
 
 let lastTime = 0;
 let musicSound = null;
+let menuImage = null;
 
-function preload() {}
+function preload() {
+	menuImage = loadImage("./resources/menu.png");
+}
 
 function musicClicked() {
 	musicButton.checked = !musicButton.checked;
@@ -287,17 +290,7 @@ function draw() {
 		updateGame(elapsedTime);
 	}
 	drawGame();
-	if (curState === GAME_START_STATE) {
-		fill(0,0,0,150);
-		noStroke();
-		rect(0,0,windowWidth,windowHeight);
-		fill(0);
-		textSize(100);
-		textAlign(CENTER, CENTER);
-		text('Press A to Start', width / 2, height / 2);
-		fill(150);
-		text('Press A to Start', width / 2-3, height / 2-3);
-	}
+	
 	if (toggleDebug) {
 		text(elapsedTime, 10, 50);
 
@@ -310,6 +303,10 @@ function draw() {
 		toolManager.currentTool.draw();
 	}
 	jobManager.draw();
+
+	if (curState === GAME_START_STATE) {
+		image(menuImage,width/2-menuImage.width/2,height/2-menuImage.height/2);
+	}
 
 	lastTime = currentTime;
 }
