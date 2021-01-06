@@ -20,7 +20,7 @@ let musicSound = null;
 let menuImage = null;
 
 function preload() {
-	menuImage = loadImage("./resources/menu.png");
+	menuImage = loadImage('./resources/menu.png');
 }
 
 function musicClicked() {
@@ -49,7 +49,8 @@ const slotButtons = [];
 
 const hearts = [];
 
-const standardWeapon = new Weapon(6,1.2);
+const standardWeapon = new Weapon(4, 1);
+const uziWeapon = new Weapon(8, 2);
 
 function initUI() {
 	speakerButton.setTextSize(50);
@@ -221,8 +222,8 @@ function resetGame() {
 function initGame() {
 	const menu = [ speakerButton, musicButton, helpButton ];
 	const maxSlotI = 3;
-	for (let i = 0; i < maxSlotI; i++) {
-		for (let j = 0; j < 2; j++) {
+	for (let j = 0; j < 2; j++) {
+		for (let i = 0; i < maxSlotI; i++) {
 			const slot = new BSlotButton(
 				800 + 68 * i + translateX,
 				translateY + 200 + 68 * j,
@@ -241,6 +242,7 @@ function initGame() {
 	//world.objects.push(new TiledObject(9, 17, 'key', [ 0, 1, 2, 3 ]));
 	//world.objects.push(new TiledObject(10, 16, 'key', [ 4, 5, 6, 7 ]));
 	slotButtons[0].setItem(spritesheet.getImage('weapon', 2));
+	slotButtons[1].setItem(spritesheet.getImage('weapon', 3));
 
 	for (let i = 0; i < 5; i++) {
 		const x = windowWidth / 2 - 16 - 80 + 40 * i;
@@ -293,7 +295,7 @@ function draw() {
 		updateGame(elapsedTime);
 	}
 	drawGame();
-	
+
 	if (toggleDebug) {
 		text(elapsedTime, 10, 50);
 
@@ -308,7 +310,7 @@ function draw() {
 	jobManager.draw();
 
 	if (curState === GAME_START_STATE) {
-		image(menuImage,width/2-menuImage.width/2,height/2-menuImage.height/2);
+		image(menuImage, width / 2 - menuImage.width / 2, height / 2 - menuImage.height / 2);
 	}
 
 	lastTime = currentTime;
@@ -333,7 +335,9 @@ function mouseClicked() {
 			}
 			if (tile.X >= 0 && tile.Y >= 0) {
 				// fire bullet
-				world.addBullet(gun.fireBullet(world.player.position.x + 24, world.player.position.y + 32, worldX, worldY));
+				world.addBullet(
+					gun.fireBullet(world.player.position.x + 24, world.player.position.y + 32, worldX, worldY)
+				);
 			}
 		}
 	}
@@ -401,7 +405,7 @@ function keyPressed() {
 			resetGame();
 			textAlign(LEFT, BASELINE);
 			uiManager.addLogger('Defeat the Dungeon!!!');
-			soundManager.playSound("next_level", 0.75);
+			soundManager.playSound('next_level', 0.75);
 			curState = GAME_PLAY_STATE;
 		}
 		return;
@@ -416,7 +420,7 @@ function keyPressed() {
 
 	if (key === 't') {
 		const calculator = new PathCalculator(world.tiles);
-		const path = calculator.findPath({X:2, Y:2}, {X:5, Y:7});
+		const path = calculator.findPath({ X: 2, Y: 2 }, { X: 5, Y: 7 });
 		console.log(path);
 	}
 

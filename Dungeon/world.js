@@ -192,6 +192,9 @@ class Player extends Entity {
 	}
 
 	currentGun() {
+		if( this.slotIndex === 1 ) {
+			return uziWeapon;
+		}
 		if (slotButtons[this.slotIndex].item) {
 			return standardWeapon; // todo: for now, use directly the BFloatingButton
 		}
