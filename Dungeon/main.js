@@ -35,18 +35,21 @@ function musicClicked() {
 function speakerClicked() {
 	speakerButton.checked = !speakerButton.checked;
 	soundManager.mute(!speakerButton.checked);
+	saveData();
 }
 
 const speakerButton = new BFloatingButton(windowWidth - 70 - 10 - 70, 70, '\uD83D\uDD0A', speakerClicked);
 const musicButton = new BFloatingButton(windowWidth - 70, 70, '\uD83C\uDFB6', musicClicked);
 const helpButton = new BFloatingButton(20, 60, '\u003F', () => {
-	toggleHelp = !toggleHelp;
 	helpButton.checked = !helpButton.checked;
+	saveData();
 });
 
 const slotButtons = [];
 
 const hearts = [];
+
+const standardWeapon = new Weapon(6,1.2);
 
 function initUI() {
 	speakerButton.setTextSize(50);
@@ -61,6 +64,7 @@ const FPS = 60;
 
 function setup() {
 	initUI();
+	loadData();
 	canvas = createCanvas(windowWidth, windowHeight);
 	canvas.parent('canvas');
 
@@ -101,7 +105,6 @@ function updateGame(elapsedTime) {
 let translateX = 128;
 let translateY = 32;
 let toggleDebug = false;
-let toggleHelp = false;
 
 function getEndOfLine(x1, y1, x2, y2) {
 	const dx = x2 - x1;
@@ -129,7 +132,7 @@ function drawGame() {
 				strokeWeight(3);
 				rect(800 + 68 * i - 1 + 128, 200 + 68 * j - 1 + 32, 66, 66);
 			}
-			if (toggleHelp) {
+			if (helpButton.checked) {
 				push();
 				const deltaX = 24;
 				const deltaY = j === 0 ? -5 : 64 + 5 + 16;
@@ -159,7 +162,7 @@ function drawGame() {
 		line(50, 250 + 40 * i, 75, 250 + 40 * i);
 	}
 
-	if (toggleHelp) {
+	if (helpButton.checked) {
 		const text_size = 16;
 		spritesheet.drawSprite('player_ui', 2, 128 + 800 + 68 * 3, 232 + 68 * 0.5);
 		drawKeyboardHelp('+', 128 + 800 + 68 * 3 + 24, 232 + 32, text_size);
@@ -330,7 +333,7 @@ function mouseClicked() {
 			}
 			if (tile.X >= 0 && tile.Y >= 0) {
 				// fire bullet
-				world.addBullet(new Bullet(world.player.position.x + 24, world.player.position.y + 32, worldX, worldY));
+				world.addBullet(gun.fireBullet(world.player.position.x + 24, world.player.position.y + 32, worldX, worldY));
 			}
 		}
 	}
@@ -355,6 +358,42 @@ document.addEventListener('keydown', (event) => {
 	}
 });
 
+function getData() {
+	const data = {
+		speaker: speakerButton.checked,
+		help: helpButton.checked
+	};
+	return data;
+}
+
+const storageKey = 'DrDr3ck/DUNG30N';
+
+function saveData() {
+	const data = JSON.stringify(getData());
+	if (data && data !== 'null') {
+		localStorage.setItem(storageKey, data);
+		console.log('saving ', data);
+		uiManager.addLogger('Saved');
+	}
+}
+
+function loadData() {
+	const storage = localStorage.getItem(storageKey);
+	const initialData = getData();
+	let data = initialData;
+	if (storage) {
+		data = JSON.parse(storage) || initialData;
+		for (var k in initialData) {
+			if (data[k] == undefined) {
+				data[k] = initialData[k];
+			}
+		}
+	}
+	helpButton.checked = data.help;
+	speakerButton.checked = data.speaker;
+	soundManager.mute(!speakerButton.checked);
+}
+
 function keyPressed() {
 	if (curState === GAME_START_STATE) {
 		if (key === 'a' || key === 'A') {
@@ -375,6 +414,12 @@ function keyPressed() {
 		toggleDebug = !toggleDebug;
 	}
 
+	if (key === 't') {
+		const calculator = new PathCalculator(world.tiles);
+		const path = calculator.findPath({X:2, Y:2}, {X:5, Y:7});
+		console.log(path);
+	}
+
 	if (keyCode === 109) {
 		// -
 		world.player.prevSlot();
@@ -387,19 +432,5 @@ function keyPressed() {
 		if (keyCode === 49 + i) {
 			world.player.slotIndex = i;
 		}
-	}
-
-	let redrawHeart = false;
-	if (key === '+') {
-		world.player.life = Math.min(world.player.life + 1, 20);
-		redrawHeart = true;
-	}
-	if (key === '-') {
-		world.player.life = Math.max(world.player.life - 1, 0);
-		redrawHeart = true;
-	}
-
-	if (redrawHeart) {
-		world.updateHeart(world.player.life);
 	}
 }

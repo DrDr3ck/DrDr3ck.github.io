@@ -12,21 +12,11 @@ function drawKeyboardHelp(keyboard, x, y, text_size) {
 }
 
 class Bullet {
-	constructor(x1, y1, x2, y2) {
-		this.position = { x: x1, y: y1 };
-		const vector = createVector(x2 - x1, y2 - y1);
-		if (vector.x === 0) {
-			vector.x = 1;
-		}
-		if (vector.y === 0) {
-			vector.y = 1;
-		}
-		vector.normalize();
-		const speed = 4;
-		this.dx = vector.x * speed;
-		this.dy = vector.y * speed;
-
-		this.damage = 1;
+	constructor(x, y, dx, dy, damage) {
+		this.position = { x, y };
+		this.dx = dx;
+		this.dy = dy;
+		this.damage = damage;
 	}
 
 	draw() {
@@ -38,6 +28,25 @@ class Bullet {
 	update() {
 		this.position.x += this.dx;
 		this.position.y += this.dy;
+	}
+}
+
+class Weapon {
+	constructor(speed, damage) {
+		this.speed = speed;
+		this.damage = damage;
+	}
+
+	fireBullet(x1, y1, x2, y2) {
+		const vector = createVector(x2 - x1, y2 - y1);
+		if (vector.x === 0) {
+			vector.x = 1;
+		}
+		if (vector.y === 0) {
+			vector.y = 1;
+		}
+		vector.normalize();
+		return new Bullet(x1, y1, vector.x * this.speed, vector.y * this.speed, this.damage);
 	}
 }
 
@@ -140,15 +149,15 @@ class Enemy extends Entity {
 		this.addAnimation('right', spritename, [ 3 + delta ], FPS, true);
 		this.addAnimation('rightup', spritename, [ 3 + delta ], FPS, true);
 		this.addAnimation('up', spritename, [ 1 + delta ], FPS, true);
-		this.timeBeforeFiring = random(1800,2200);
+		this.timeBeforeFiring = random(1800, 2200);
 	}
 
 	update(elapsedTime) {
 		super.update(elapsedTime);
-		this.timeBeforeFiring-=elapsedTime;
-		if( this.timeBeforeFiring <= 0 ) {
+		this.timeBeforeFiring -= elapsedTime;
+		if (this.timeBeforeFiring <= 0) {
 			world.enemyBullets.push(
-				new Bullet(
+				standardWeapon.fireBullet(
 					this.position.x + 24,
 					this.position.y + 40,
 					world.player.position.x + 24,
@@ -156,7 +165,7 @@ class Enemy extends Entity {
 				)
 			);
 			soundManager.playSound('laserEnemy');
-			this.timeBeforeFiring = random(800,1200);
+			this.timeBeforeFiring = random(800, 1200);
 		}
 	}
 }
@@ -183,7 +192,9 @@ class Player extends Entity {
 	}
 
 	currentGun() {
-		return slotButtons[this.slotIndex].item; // todo: for now, use directly the button
+		if (slotButtons[this.slotIndex].item) {
+			return standardWeapon; // todo: for now, use directly the BFloatingButton
+		}
 	}
 
 	nextSlot() {
@@ -316,10 +327,14 @@ class World {
 		this.exitBox = null;
 		if (this.curRoomIndex !== 1) {
 			if (tinyRoom.enemies > 0) {
-				for( let i=0; i < tinyRoom.enemies; i++ ) {
+				for (let i = 0; i < tinyRoom.enemies; i++) {
 					const freeTilePosition = this.getFreeTile();
 					this.enemies.push(
-						new Enemy(freeTilePosition.X * this.tileSize - 16, freeTilePosition.Y * this.tileSize - 40 + 4, 'enemy')
+						new Enemy(
+							freeTilePosition.X * this.tileSize - 16,
+							freeTilePosition.Y * this.tileSize - 40 + 4,
+							'enemy'
+						)
 					);
 				}
 			}
@@ -369,7 +384,7 @@ class World {
 		stroke(0);
 		fill(255);
 		this.bullets.forEach((bullet) => bullet.draw());
-		fill(255,50,50);
+		fill(255, 50, 50);
 		this.enemyBullets.forEach((bullet) => bullet.draw());
 		if (toggleDebug) {
 			let box = this.player.getHitBox();
@@ -534,11 +549,11 @@ class World {
 				bullet.position.x = 10000; // move bullet out of world
 				this.player.life = Math.max(0, this.player.life - bullet.damage);
 				needUpdate = true;
-				if( this.player.life > 0 ) {
+				if (this.player.life > 0) {
 					soundManager.playSound('hit');
 				} else {
 					soundManager.playSound('game_over');
-					this.player.playAnimation("death");
+					this.player.playAnimation('death');
 					curState = GAME_START_STATE;
 				}
 			}
@@ -550,16 +565,16 @@ class World {
 			object.update(elapsedTime);
 			// check if player hits the object
 			if (this.collide(this.player.getFloorBox(), object.getBox())) {
-				if (object.name === 'potion') {
+				if (object.name === 'potion') { // TODO: need to factorize code inside 'tiledobject'
 					object.position.x = 10000;
 					needUpdate = true;
-					this.player.life = Math.min(20, this.player.life + 2); // TODO: need to factorize code inside 'tiledobject'
+					this.player.life = Math.min(20, this.player.life + 2); 
 					soundManager.playSound('potion');
 				}
 			}
 		});
 		if (needUpdate) {
-			this.updateHeart(this.player.life);
+			this.updateHeart(Math.round(this.player.life));
 		}
 
 		this.enemies = this.enemies.filter((enemy) => enemy.life > 0);
@@ -594,7 +609,7 @@ class World {
 				this.player.position.x = 96 - 8;
 				this.player.position.y = 96;
 
-				soundManager.playSound("next_level", 1.5);
+				soundManager.playSound('next_level', 1.5);
 			}
 		}
 	}
