@@ -136,6 +136,109 @@ class TinyLevel {
 	}
 }
 
+/**
+ * Builds a path between two given tiles from a map of tiles
+ */
+class PathCalculator {
+	constructor(tiles) {
+		this.tiles = [];
+		for (let r = 0; r < tiles.length; r++) {
+			const row = [];
+			for (let c = 0; c < tiles[0].length; c++) {
+				if (tiles[r][c] === -1) {
+					row.push(999);
+				} else {
+					row.push(-999);
+				}
+			}
+			this.tiles.push(row);
+		}
+		this.neighbors = [ [ -1, 0 ], [ 0, -1 ], [ 0, 1 ], [ 1, 0 ], [ -1, -1 ], [ -1, 1 ], [ 1, 1 ], [ 1, -1 ] ];
+	}
+
+	exists(row, col) {
+		if (row < 0 || col < 0) {
+			return false;
+		}
+		if (row >= this.tiles.length || col >= this.tiles[0].length) {
+			return false;
+		}
+		return true;
+	}
+
+	isFree(row, col) {
+		if (this.exists(row, col)) {
+			return this.tiles[row][col] > 0;
+		}
+		return false;
+	}
+
+	getSmallerTile(pathTile) {
+		let pathPayCost = this.tiles[pathTile.Y][pathTile.X];
+		for (let i = 0; i < this.neighbors.length; i++) {
+			const row = pathTile.Y + this.neighbors[i][1];
+			const col = pathTile.X + this.neighbors[i][0];
+			if (this.exists(row, col)) {
+				const curPayCost = this.tiles[row][col];
+				if (curPayCost > 0 && curPayCost < pathPayCost) {
+					return { X: col, Y: row };
+				}
+			}
+		}
+		return null;
+	}
+
+	findPath(tileFrom, tileTo) {
+		function dist(x1, y1, x2, y2) {
+			return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2));
+		}
+		const path = [];
+		this.tiles[tileFrom.Y][tileFrom.X] = 1;
+		let curWave = [];
+		curWave.push(tileFrom);
+		while (curWave.length > 0) {
+			const nextWave = [];
+			curWave.forEach((tile) => {
+				const pathCost = this.tiles[tile.Y][tile.X];
+				// add distance to neighbors
+				for (let i = 0; i < this.neighbors.length; i++) {
+					const row = tile.Y + this.neighbors[i][1];
+					const col = tile.X + this.neighbors[i][0];
+					if (this.isFree(row, col)) {
+						const potentialCost = pathCost + dist(0, 0, this.neighbors[i][0], this.neighbors[i][1]);
+						if (potentialCost < this.tiles[row][col]) {
+							nextWave.push({ X: col, Y: row });
+							this.tiles[row][col] = potentialCost;
+						}
+					}
+					// todo: can stop if tileTo is reached
+				}
+			});
+			curWave = nextWave;
+		}
+		if (this.tiles[tileTo.X][tileTo.Y] !== 0) {
+			// get the path
+			path.push(tileTo);
+			let finish = false;
+			// loop
+			while (!finish) {
+				// get cur payCost of last element of the path
+				let pathTile = path[path.length - 1];
+				// find smaller payCost in the neighbors
+				const curTile = this.getSmallerTile(pathTile);
+				// add this new tile and restart until tile is the tileFrom one
+				path.push(curTile);
+				if (curTile.X === tileFrom.X && curTile.Y === tileFrom.Y) {
+					finish = true;
+				}
+			}
+		}
+
+		// path may be empty if no way to reach tileTo from tileFrom
+		return path;
+	}
+}
+
 class Level {
 	constructor() {
 		this.rooms = MazeGenerator.createLevel();
