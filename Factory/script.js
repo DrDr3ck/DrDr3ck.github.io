@@ -164,7 +164,7 @@ const loadDataFromStorage = () => {
     if( storage ) {
         data = JSON.parse(storage) || initialData;
         for (var k in initialData) {
-            if( !data[k] ) {
+            if (data[k] == undefined) {
                 data[k] = initialData[k];
             }
         }
