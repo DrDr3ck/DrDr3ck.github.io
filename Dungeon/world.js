@@ -12,29 +12,38 @@ function drawKeyboardHelp(keyboard, x, y, text_size) {
 }
 
 class Bullet {
-	constructor(x, y, dx, dy, damage) {
+	constructor(x, y, dx, dy, damage, rangeFrame) {
 		this.position = { x, y };
 		this.dx = dx;
 		this.dy = dy;
 		this.damage = damage;
+		this.rangeFrame = rangeFrame;
+		this.fade = rangeFrame/2;
 	}
 
-	draw() {
+	draw(r,g,b) {
 		// line(this.position.x, this.position.y, this.position.x + this.dx, this.position.y + this.dy);
 		const size = 16;
+		const a = this.rangeFrame > this.fade ? 255 : (this.rangeFrame/this.fade)*255;
+		fill(r,g,b,a);
 		ellipse(this.position.x + this.dx / 2, this.position.y + this.dy / 2, size);
 	}
 
-	update() {
+	update(elapsedTime) {
 		this.position.x += this.dx;
 		this.position.y += this.dy;
+		this.rangeFrame--;
+		if( this.rangeFrame <= 0 ) {
+			this.position.x = 10000;
+		}
 	}
 }
 
 class Weapon {
-	constructor(speed, damage) {
+	constructor(speed, damage, rangePixel=128) {
 		this.speed = speed;
 		this.damage = damage;
+		this.rangePixel = rangePixel;
 	}
 
 	fireBullet(x1, y1, x2, y2) {
@@ -46,7 +55,7 @@ class Weapon {
 			vector.y = 1;
 		}
 		vector.normalize();
-		return new Bullet(x1, y1, vector.x * this.speed, vector.y * this.speed, this.damage);
+		return new Bullet(x1, y1, vector.x * this.speed, vector.y * this.speed, this.damage, this.rangePixel/this.speed);
 	}
 }
 
@@ -217,7 +226,7 @@ class World {
 
 		this.azerty = true;
 
-		this.player = new Player(96 - 8, 96);
+		this.player = new Player(96 - 8+32+16, 96+16);
 		this.enemies = [];
 		this.objects = [];
 		this.enemyBullets = [];
@@ -385,10 +394,8 @@ class World {
 		this.enemies.forEach((enemy) => enemy.draw());
 		strokeWeight(1);
 		stroke(0);
-		fill(255);
-		this.bullets.forEach((bullet) => bullet.draw());
-		fill(255, 50, 50);
-		this.enemyBullets.forEach((bullet) => bullet.draw());
+		this.bullets.forEach((bullet) => bullet.draw(255,255,255));
+		this.enemyBullets.forEach((bullet) => bullet.draw(255,50,50));
 		if (toggleDebug) {
 			let box = this.player.getHitBox();
 			noFill();
@@ -609,8 +616,8 @@ class World {
 				uiManager.addLogger(`Entering level ${this.level}`);
 				this.curRoomIndex = 0;
 				this.initRoom(this.rooms[this.curRoomIndex]);
-				this.player.position.x = 96 - 8;
-				this.player.position.y = 96;
+				this.player.position.x = 96 - 8 + 32 + 16;
+				this.player.position.y = 96 + 16;
 
 				soundManager.playSound('next_level', 1.5);
 			}

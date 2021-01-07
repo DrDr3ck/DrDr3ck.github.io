@@ -49,8 +49,8 @@ const slotButtons = [];
 
 const hearts = [];
 
-const standardWeapon = new Weapon(4, 1);
-const uziWeapon = new Weapon(8, 2);
+const standardWeapon = new Weapon(4, 1, 256);
+const uziWeapon = new Weapon(8, 2, 128);
 
 function initUI() {
 	speakerButton.setTextSize(50);
@@ -336,7 +336,7 @@ function mouseClicked() {
 			if (tile.X >= 0 && tile.Y >= 0) {
 				// fire bullet
 				world.addBullet(
-					gun.fireBullet(world.player.position.x + 24, world.player.position.y + 32, worldX, worldY)
+					gun.fireBullet(world.player.position.x + 24, world.player.position.y + 40, worldX, worldY)
 				);
 			}
 		}
