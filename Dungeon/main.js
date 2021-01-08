@@ -82,6 +82,8 @@ function setup() {
 	spritesheet.addSpriteSheet('weapon', './resources/DungeonWeapon.png', 48, 48);
 	spritesheet.addSpriteSheet('heart', './resources/heart.png', 32, 32);
 
+	spritesheet.addSpriteSheet('life', './resources/life.png', 32, 32);
+
 	soundManager.addSound('walk', './resources/walking.wav', 0.25);
 	soundManager.addSound('laser', './resources/laser5.wav', 0.25);
 	soundManager.addSound('laserEnemy', './resources/laser6.wav', 0.25);
