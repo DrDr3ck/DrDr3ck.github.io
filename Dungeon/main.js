@@ -89,7 +89,8 @@ function setup() {
 	soundManager.addSound('laserEnemy', './resources/laser6.wav', 0.25);
 	soundManager.addSound('hit', './resources/hit.wav', 0.052);
 	soundManager.addSound('kill', './resources/kill.mp3', 0.125);
-	soundManager.addSound('potion', './resources/drop_potion.wav', 0.125);
+	soundManager.addSound('healing', './resources/healing.wav', 0.25);
+	soundManager.addSound('pick_up', './resources/pick_up.wav', 0.125);
 	soundManager.addSound('next_level', './resources/next_level.wav', 0.125);
 	soundManager.addSound('game_over', './resources/game_over.wav', 0.25);
 

@@ -240,9 +240,10 @@ class Player extends Entity {
 		if (this.slotIndex === 1) {
 			return uziWeapon;
 		}
-		if (slotButtons[this.slotIndex].item) {
+		if (this.slotIndex === 0) {
 			return standardWeapon; // todo: for now, use directly the BFloatingButton
 		}
+		return null;
 	}
 
 	nextSlot() {
@@ -251,6 +252,16 @@ class Player extends Entity {
 
 	prevSlot() {
 		this.slotIndex = (this.slotIndex + this.maxSlots - 1) % this.maxSlots;
+	}
+
+	addItem(item) {
+		// find a free slot
+		const slots = slotButtons.filter((button) => button.isAvailable());
+		if (slots.length === 0) {
+			return false;
+		}
+		slots[0].setItem(item);
+		return true;
 	}
 }
 
@@ -386,8 +397,14 @@ class World {
 					);
 				}
 			}
-			const freeTilePosition = this.getFreeTile();
-			this.objects.push(new TiledObject(freeTilePosition.X, freeTilePosition.Y, 'potion', [ 0, 1, 2, 3 ]));
+			if (tinyRoom.potions > 0) {
+				const freeTilePosition = this.getFreeTile();
+				this.objects.push(new TiledObject(freeTilePosition.X, freeTilePosition.Y, 'potion', [ 0, 1, 2, 3 ]));
+			}
+			if (tinyRoom.keys > 0) {
+				const freeTilePosition = this.getFreeTile();
+				this.objects.push(new TiledObject(freeTilePosition.X, freeTilePosition.Y, 'key', [ 0, 1, 2, 3 ]));
+			}
 		}
 		if (this.curRoomIndex === 9) {
 			// Exit
@@ -613,10 +630,26 @@ class World {
 			if (this.collide(this.player.getFloorBox(), object.getBox())) {
 				if (object.name === 'potion') {
 					// TODO: need to factorize code inside 'tiledobject'
-					object.position.x = 10000;
-					needUpdate = true;
-					this.player.life = Math.min(20, this.player.life + 2);
-					soundManager.playSound('potion');
+					if (this.player.life < 20) {
+						object.position.x = 10000;
+						needUpdate = true;
+						this.player.life = Math.min(20, this.player.life + 2);
+						soundManager.playSound('healing');
+						const idx = this.rooms.findIndex((room) => room.id === this.curRoomIndex);
+						if (idx !== -1) {
+							this.rooms[idx].potions--;
+						}
+					}
+				} else if (object.name === 'key') {
+					// add key to slots if a slot is free
+					if (this.player.addItem(spritesheet.getImage('key', 0))) {
+						object.position.x = 10000;
+						soundManager.playSound('pick_up');
+						const idx = this.rooms.findIndex((room) => room.id === this.curRoomIndex);
+						if (idx !== -1) {
+							this.rooms[idx].keys--;
+						}
+					}
 				}
 			}
 		});

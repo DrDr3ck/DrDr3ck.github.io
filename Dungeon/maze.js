@@ -251,6 +251,8 @@ class Room {
 		this.ascii = asciiRoom;
 		this.doors = [];
 		this.enemies = 1;
+		this.potions = 0;
+		this.keys = 0;
 		if (asciiRoom.length === 11 && asciiRoom[0].length === 11) {
 			this.enemies = Math.floor(random(2, 4));
 		}
@@ -273,6 +275,10 @@ class BSlotButton extends BImageButton {
 
 	setItem(img) {
 		this.item = img;
+	}
+
+	isAvailable() {
+		return !this.item;
 	}
 
 	doDraw() {
@@ -302,10 +308,20 @@ class MazeGenerator {
 		const rooms = [];
 		const doors = [];
 		tinyRooms.forEach((room, i) => rooms.push(MazeGenerator.createRoomFromTinyRoom(room, i + 1, level, doors)));
-		console.log('doors:', doors);
+		
 		doors.forEach((door) => {
 			rooms[door.fromRoom - 1].addDoor(door.fromTile, door.toTile, door.toRoom);
 			rooms[door.toRoom - 1].addDoor(door.toTile, door.fromTile, door.fromRoom);
+		});
+
+		// add potions and keys
+		rooms.forEach(room => {
+			if( random() > 0.2 ) {
+				room.potions++;
+			}
+			if( random() > 0.8 ) {
+				room.keys++;
+			}
 		});
 
 		console.log('rooms:', rooms);
