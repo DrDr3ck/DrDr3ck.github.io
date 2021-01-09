@@ -5,35 +5,32 @@
   </head>
   <body>
     <h2>Jeux</h2>
+    <a href="./Runner">Runner</a>
+    <br>
     <a href="./Dame/">Dame</a>
     <br>
     <a href="./MineSweeper">Mine sweeper</a>
     <br>
     <a href="./Tetris">Tetris</a>
-    <h2>Mini jeux</h2>
-    <!-- <a href="./Balle/">Balle</a>
     <br>
-    <a href="./CasseBrique/">CasseBrique</a>    
+    <a href="./MatchingCard">Matching Cards</a>
+    <h2>Jeux en cours de codage</h2>
+    <a href="./Dungeon">Dungeon</a>
     <br>
-    <a href="./Fleur/">Fleur</a>
-    <br>
-    <a href="./Pluie/">Pluie</a>
-    <br>
-    <a href="./Serpent/">Serpent</a> -->
-    <a href="./Runner">Runner</a>
+    <a href="./TowerDefense">Tower Defense</a>
     <br>
     <a href="./Mosquito">Mosquito Killer</a>
     <br>
-    <a href="./MatchingCard">Matching Cards</a>
+    <a href="./Hunt">Hunt</a>
     <br>
+    <a href="./BoulderDash">Boulder Dash (in progress)</a>
+    <h2>Applis</h2>
     <a href="./Set">Set</a>
     <br>
     <a href="./RandomList">Random List</a>
     <br>
     <a href="./ToDoList">To-Do List</a>
-    <br>
-    <a href="./BoulderDash">Boulder Dash (in progress)</a>
-    <h2>Concept</h2>
+    <h2>Effets</h2>
     <a href="./Steering/">Steering behaviors</a>
     <br>
     <a href="./LettreCercle/">LettreCercle</a>
