@@ -40,10 +40,18 @@ class Bullet {
 }
 
 class Weapon {
-	constructor(speed, damage, rangePixel = 128) {
+	/**
+	 * 
+	 * @param {speed of bullets in pixels} speed 
+	 * @param {damage} damage 
+	 * @param {range of bullets in pixels} rangePixel 
+	 * @param {frequence of bullets in milliseconds} frequency 
+	 */
+	constructor(speed, damage, range, frequency) {
 		this.speed = speed;
 		this.damage = damage;
-		this.rangePixel = rangePixel;
+		this.rangePixel = range;
+		this.frequency = frequency; // in millisecond
 	}
 
 	fireBullet(x1, y1, x2, y2) {
@@ -55,6 +63,7 @@ class Weapon {
 			vector.y = 1;
 		}
 		vector.normalize();
+
 		return new Bullet(
 			x1,
 			y1,
@@ -165,7 +174,7 @@ class Enemy extends Entity {
 		this.addAnimation('right', spritename, [ 3 + delta ], FPS, true);
 		this.addAnimation('rightup', spritename, [ 3 + delta ], FPS, true);
 		this.addAnimation('up', spritename, [ 1 + delta ], FPS, true);
-		this.timeBeforeFiring = random(1800, 2200);
+		this.timeBeforeFiring = random(800, 1200);
 
 		this.sprite = new Sprite(x + 16, y - 32);
 		for (let i = 0; i <= 6; i++) {
@@ -207,7 +216,7 @@ class Enemy extends Entity {
 				)
 			);
 			soundManager.playSound('laserEnemy');
-			this.timeBeforeFiring = random(800, 1200);
+			this.timeBeforeFiring = standardWeapon.frequency;
 		}
 		if (this.lifeTint > 0) {
 			this.lifeTint--;
@@ -234,14 +243,25 @@ class Player extends Entity {
 		this.maxSlots = 6;
 
 		this.life = 20;
+
+		this.timeBeforeFiring = 0;
+	}
+
+	update(elapsedTime) {
+		super.update(elapsedTime);
+		this.timeBeforeFiring = Math.max(0, this.timeBeforeFiring-elapsedTime);
 	}
 
 	currentGun() {
+		// todo: need to ask this.slots
+		if (this.slotIndex === 0) {
+			return standardWeapon;
+		}
 		if (this.slotIndex === 1) {
 			return uziWeapon;
 		}
-		if (this.slotIndex === 0) {
-			return standardWeapon; // todo: for now, use directly the BFloatingButton
+		if (this.slotIndex === 2) {
+			return bazookaWeapon;
 		}
 		return null;
 	}
@@ -294,9 +314,10 @@ class World {
 		const maxCols = this.tiles[0].length;
 		let row = 0;
 		let column = 0;
+		const delta = 3;
 		while (this.tiles[row][column] !== -1) {
-			row = Math.floor(random(0, maxRows));
-			column = Math.floor(random(0, maxCols));
+			row = Math.floor(random(delta, maxRows - delta));
+			column = Math.floor(random(delta, maxCols - delta));
 		}
 		return { X: column, Y: row };
 	}

@@ -49,8 +49,9 @@ const slotButtons = [];
 
 const hearts = [];
 
-const standardWeapon = new Weapon(4, 1, 256);
-const uziWeapon = new Weapon(8, 2, 128);
+const standardWeapon = new Weapon(4, 1, 256, 500);
+const uziWeapon = new Weapon(8, 2, 128, 250);
+const bazookaWeapon = new Weapon(4, 4, 1024, 1000);
 
 function initUI() {
 	speakerButton.setTextSize(50);
@@ -245,7 +246,8 @@ function initGame() {
 	//world.objects.push(new TiledObject(9, 17, 'key', [ 0, 1, 2, 3 ]));
 	//world.objects.push(new TiledObject(10, 16, 'key', [ 4, 5, 6, 7 ]));
 	slotButtons[0].setItem(spritesheet.getImage('weapon', 2));
-	slotButtons[1].setItem(spritesheet.getImage('weapon', 3));
+	slotButtons[1].setItem(spritesheet.getImage('weapon', 5));
+	slotButtons[2].setItem(spritesheet.getImage('weapon', 8));
 
 	for (let i = 0; i < 5; i++) {
 		const x = windowWidth / 2 - 16 - 80 + 40 * i;
@@ -329,7 +331,7 @@ function mouseClicked() {
 	if (!uiClicked) {
 		// check if robot has a gun
 		const gun = world.player.currentGun();
-		if (gun) {
+		if (gun && world.player.timeBeforeFiring === 0) {
 			const worldX = mouseX - translateX;
 			const worldY = mouseY - translateY;
 			const tile = world.getTilePosition(worldX, worldY);
@@ -341,6 +343,7 @@ function mouseClicked() {
 				world.addBullet(
 					gun.fireBullet(world.player.position.x + 24, world.player.position.y + 40, worldX, worldY)
 				);
+				world.player.timeBeforeFiring = gun.frequency;
 			}
 		}
 	}
