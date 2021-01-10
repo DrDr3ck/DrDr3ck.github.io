@@ -665,6 +665,11 @@ class World {
 						soundManager.playSound('pick_up');
 						this.curRoom.removeObjectOccurrence('key');
 					}
+				} else if (object.name === 'chest') {
+					// todo: check if player has the needed key to open this chest
+					//if( this.player.removeKey() ) {
+						object.playAnimation('open');
+					//}
 				}
 			}
 		});

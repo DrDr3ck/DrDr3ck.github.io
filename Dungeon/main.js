@@ -78,6 +78,7 @@ function setup() {
 	spritesheet.addSpriteSheet('floor', './resources/DungeonFloor.png', 32, 32);
 	spritesheet.addSpriteSheet('key', './resources/DungeonKey.png', 32, 32);
 	spritesheet.addSpriteSheet('potion', './resources/DungeonPotion.png', 32, 32);
+	spritesheet.addSpriteSheet('chest', './resources/DungeonChest.png', 64, 32);
 	spritesheet.addSpriteSheet('player', './resources/robot48x64.png', 48, 64);
 	spritesheet.addSpriteSheet('enemy', './resources/robot64x64.png', 64, 64);
 	spritesheet.addSpriteSheet('weapon', './resources/DungeonWeapon.png', 48, 48);
@@ -243,8 +244,15 @@ function initGame() {
 	uiManager.setUI(menu);
 
 	world = new World(32);
-	//world.objects.push(new TiledObject(9, 17, 'key', [ 0, 1, 2, 3 ]));
-	//world.objects.push(new TiledObject(10, 16, 'key', [ 4, 5, 6, 7 ]));
+	if (world.curRoomIndex === 1 && world.curRoom.objects.entities.length === 0) {
+		world.curRoom.objects.entities.push(
+			new TiledObject(2, 2, 'chest', [0])
+		);
+		world.curRoom.objects.entities.push(
+			new TiledObject(7, 7, 'key', [0,1,2,3])
+		);
+		world.curRoom.objects.entities[0].addAnimation('open', 'chest', [1], FPS, false);
+	}
 	slotButtons[0].setItem(spritesheet.getImage('weapon', 2));
 	slotButtons[1].setItem(spritesheet.getImage('weapon', 5));
 	slotButtons[2].setItem(spritesheet.getImage('weapon', 8));
