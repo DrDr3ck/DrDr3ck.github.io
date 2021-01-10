@@ -92,6 +92,7 @@ function setup() {
 	soundManager.addSound('hit', './resources/hit.wav', 0.052);
 	soundManager.addSound('kill', './resources/kill.mp3', 0.125);
 	soundManager.addSound('healing', './resources/healing.wav', 0.25);
+	soundManager.addSound('open_chest', './resources/open_chest.wav', 0.25);
 	soundManager.addSound('pick_up', './resources/pick_up.wav', 0.125);
 	soundManager.addSound('next_level', './resources/next_level.wav', 0.125);
 	soundManager.addSound('game_over', './resources/game_over.wav', 0.25);
@@ -245,13 +246,9 @@ function initGame() {
 
 	world = new World(32);
 	if (world.curRoomIndex === 1 && world.curRoom.objects.entities.length === 0) {
-		world.curRoom.objects.entities.push(
-			new TiledObject(2, 2, 'chest', [0])
-		);
-		world.curRoom.objects.entities.push(
-			new TiledObject(7, 7, 'key', [0,1,2,3])
-		);
-		world.curRoom.objects.entities[0].addAnimation('open', 'chest', [1], FPS, false);
+		world.curRoom.objects.entities.push(new TiledObject(2, 2, 'chest', [ 0 ]));
+		world.curRoom.objects.entities.push(new TiledObject(7, 7, 'key', [ 0, 1, 2, 3 ]));
+		world.curRoom.objects.entities[0].addAnimation('open', 'chest', [ 1 ], FPS, false);
 	}
 	slotButtons[0].setItem(spritesheet.getImage('weapon', 2));
 	slotButtons[1].setItem(spritesheet.getImage('weapon', 5));
@@ -362,6 +359,11 @@ function mouseClicked() {
 }
 
 document.addEventListener('keydown', (event) => {
+	/*
+	if (event.key === 'a' && event.code === 'KeyQ') {
+		world.azerty = true;
+	}
+	*/
 	if (event.key === 'z' && event.code === 'KeyW') {
 		world.azerty = true;
 	}
@@ -373,6 +375,13 @@ document.addEventListener('keydown', (event) => {
 	}
 	if (event.key === 'a' && event.code === 'KeyA') {
 		world.azerty = false;
+	}
+
+	if (event.key === 'q' && event.code === 'KeyQ') {
+		world.azerty = false;
+	}
+	if (event.key === 'a' && event.code === 'KeyQ') {
+		world.azerty = true;
 	}
 });
 
@@ -414,7 +423,7 @@ function loadData() {
 
 function keyPressed() {
 	if (curState === GAME_START_STATE) {
-		if (key === 'a' || key === 'A') {
+		if ((world.azerty && (key === 'a' || key === 'A')) || (!world.azerty && (key === 'q' || key === 'Q'))) {
 			// init game
 			resetGame();
 			textAlign(LEFT, BASELINE);

@@ -416,14 +416,18 @@ class World {
 					);
 				}
 			}
-			if(tinyRoom.objects.entities.length === 0 ) {
+			if (tinyRoom.objects.entities.length === 0) {
 				if (tinyRoom.getObjectCount('potion') > 0) {
 					const freeTilePosition = this.getFreeTile();
-					this.curRoom.objects.entities.push(new TiledObject(freeTilePosition.X, freeTilePosition.Y, 'potion', [ 0, 1, 2, 3 ]));
+					this.curRoom.objects.entities.push(
+						new TiledObject(freeTilePosition.X, freeTilePosition.Y, 'potion', [ 0, 1, 2, 3 ])
+					);
 				}
 				if (tinyRoom.getObjectCount('key') > 0) {
 					const freeTilePosition = this.getFreeTile();
-					this.curRoom.objects.entities.push(new TiledObject(freeTilePosition.X, freeTilePosition.Y, 'key', [ 0, 1, 2, 3 ]));
+					this.curRoom.objects.entities.push(
+						new TiledObject(freeTilePosition.X, freeTilePosition.Y, 'key', [ 0, 1, 2, 3 ])
+					);
 				}
 			}
 		}
@@ -668,7 +672,10 @@ class World {
 				} else if (object.name === 'chest') {
 					// todo: check if player has the needed key to open this chest
 					//if( this.player.removeKey() ) {
+					if (object.state !== 'open') {
+						soundManager.playSound('open_chest');
 						object.playAnimation('open');
+					}
 					//}
 				}
 			}
