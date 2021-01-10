@@ -191,8 +191,8 @@ function drawGame() {
 			mouseX,
 			mouseY
 		);
-		if (world.enemies.length > 0) {
-			const box = world.enemies[0].getHitBox();
+		if (world.enemies.count.length > 0) {
+			const box = world.enemies.entities[0].getHitBox();
 			lineRect(
 				world.player.position.x + translateX + 24 * world.player.scale,
 				world.player.position.y + translateY + 32 * world.player.scale,

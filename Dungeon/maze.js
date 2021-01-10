@@ -250,12 +250,27 @@ class Room {
 		this.id = id;
 		this.ascii = asciiRoom;
 		this.doors = [];
-		this.enemies = 1;
-		this.potions = 0;
-		this.keys = 0;
+		this.enemies = { count: 1, entities: [] };
 		if (asciiRoom.length === 11 && asciiRoom[0].length === 11) {
-			this.enemies = Math.floor(random(2, 4));
+			this.enemies.count = Math.floor(random(2, 4));
 		}
+		this.objects = {
+			potion: 0,
+			key: 0,
+			entities:[]
+		};
+	}
+
+	addObjectOccurrence(name) {
+		this.objects[name]++;
+	}
+
+	removeObjectOccurrence(name) {
+		this.objects[name]--;
+	}
+
+	getObjectCount(name) {
+		return this.objects[name];
 	}
 
 	/**
@@ -308,19 +323,19 @@ class MazeGenerator {
 		const rooms = [];
 		const doors = [];
 		tinyRooms.forEach((room, i) => rooms.push(MazeGenerator.createRoomFromTinyRoom(room, i + 1, level, doors)));
-		
+
 		doors.forEach((door) => {
 			rooms[door.fromRoom - 1].addDoor(door.fromTile, door.toTile, door.toRoom);
 			rooms[door.toRoom - 1].addDoor(door.toTile, door.fromTile, door.fromRoom);
 		});
 
 		// add potions and keys
-		rooms.forEach(room => {
-			if( random() > 0.2 ) {
-				room.potions++;
+		rooms.forEach((room) => {
+			if (random() > 0.2) {
+				room.addObjectOccurrence('potion');
 			}
-			if( random() > 0.8 ) {
-				room.keys++;
+			if (random() > 0.8) {
+				room.addObjectOccurrence('key');
 			}
 		});
 

@@ -249,7 +249,7 @@ class Player extends Entity {
 
 	update(elapsedTime) {
 		super.update(elapsedTime);
-		this.timeBeforeFiring = Math.max(0, this.timeBeforeFiring-elapsedTime);
+		this.timeBeforeFiring = Math.max(0, this.timeBeforeFiring - elapsedTime);
 	}
 
 	currentGun() {
@@ -294,8 +294,6 @@ class World {
 		this.azerty = true;
 
 		this.player = new Player(96 - 8 + 32 + 16, 96 + 16);
-		this.enemies = [];
-		this.objects = [];
 		this.enemyBullets = [];
 		this.bullets = [];
 		this.bulletsMax = 5;
@@ -306,6 +304,7 @@ class World {
 		// TODO: home made first level for tuto
 		this.rooms = MazeGenerator.createLevel(9);
 		this.curRoomIndex = 0;
+		this.curRoom = null;
 		this.initRoom(this.rooms[this.curRoomIndex]);
 	}
 
@@ -352,6 +351,7 @@ class World {
 	}
 
 	initRoom(tinyRoom) {
+		this.curRoom = tinyRoom;
 		if (toggleDebug) {
 			uiManager.addLogger(`Moving to room ${tinyRoom.id}`);
 		}
@@ -402,14 +402,12 @@ class World {
 
 		this.bullets = [];
 		this.enemyBullets = [];
-		this.enemies = [];
-		this.objects = [];
 		this.exitBox = null;
 		if (this.curRoomIndex !== 1) {
-			if (tinyRoom.enemies > 0) {
-				for (let i = 0; i < tinyRoom.enemies; i++) {
+			if (tinyRoom.enemies.count !== tinyRoom.enemies.entities.length) {
+				for (let i = tinyRoom.enemies.entities.length; i < tinyRoom.enemies.count; i++) {
 					const freeTilePosition = this.getFreeTile();
-					this.enemies.push(
+					tinyRoom.enemies.entities.push(
 						new Enemy(
 							freeTilePosition.X * this.tileSize - 16,
 							freeTilePosition.Y * this.tileSize - 40 + 4,
@@ -418,13 +416,15 @@ class World {
 					);
 				}
 			}
-			if (tinyRoom.potions > 0) {
-				const freeTilePosition = this.getFreeTile();
-				this.objects.push(new TiledObject(freeTilePosition.X, freeTilePosition.Y, 'potion', [ 0, 1, 2, 3 ]));
-			}
-			if (tinyRoom.keys > 0) {
-				const freeTilePosition = this.getFreeTile();
-				this.objects.push(new TiledObject(freeTilePosition.X, freeTilePosition.Y, 'key', [ 0, 1, 2, 3 ]));
+			if(tinyRoom.objects.entities.length === 0 ) {
+				if (tinyRoom.getObjectCount('potion') > 0) {
+					const freeTilePosition = this.getFreeTile();
+					this.curRoom.objects.entities.push(new TiledObject(freeTilePosition.X, freeTilePosition.Y, 'potion', [ 0, 1, 2, 3 ]));
+				}
+				if (tinyRoom.getObjectCount('key') > 0) {
+					const freeTilePosition = this.getFreeTile();
+					this.curRoom.objects.entities.push(new TiledObject(freeTilePosition.X, freeTilePosition.Y, 'key', [ 0, 1, 2, 3 ]));
+				}
 			}
 		}
 		if (this.curRoomIndex === 9) {
@@ -455,7 +455,7 @@ class World {
 				}
 			}
 		}
-		this.objects.forEach((object) => object.draw());
+		this.curRoom.objects.entities.forEach((object) => object.draw());
 
 		if (this.exitBox) {
 			noStroke();
@@ -465,7 +465,7 @@ class World {
 
 		this.player.draw();
 
-		this.enemies.forEach((enemy) => enemy.draw());
+		this.curRoom.enemies.entities.forEach((enemy) => enemy.draw());
 		strokeWeight(1);
 		stroke(0);
 		this.bullets.forEach((bullet) => bullet.draw(255, 255, 255));
@@ -609,7 +609,7 @@ class World {
 			});
 		}
 
-		this.enemies.forEach((enemy) => {
+		this.curRoom.enemies.entities.forEach((enemy) => {
 			enemy.update(elapsedTime);
 			const box = enemy.getHitBox();
 			this.bullets.forEach((bullet) => {
@@ -620,7 +620,7 @@ class World {
 					if (enemy.life === 0) {
 						const idx = this.rooms.findIndex((room) => room.id === this.curRoomIndex);
 						if (idx !== -1) {
-							this.rooms[idx].enemies--;
+							this.rooms[idx].enemies.count--;
 						}
 					}
 				}
@@ -645,7 +645,7 @@ class World {
 
 		this.bullets.forEach((bullet) => bullet.update(elapsedTime));
 		this.enemyBullets.forEach((bullet) => bullet.update(elapsedTime));
-		this.objects.forEach((object) => {
+		this.curRoom.objects.entities.forEach((object) => {
 			object.update(elapsedTime);
 			// check if player hits the object
 			if (this.collide(this.player.getFloorBox(), object.getBox())) {
@@ -656,20 +656,14 @@ class World {
 						needUpdate = true;
 						this.player.life = Math.min(20, this.player.life + 2);
 						soundManager.playSound('healing');
-						const idx = this.rooms.findIndex((room) => room.id === this.curRoomIndex);
-						if (idx !== -1) {
-							this.rooms[idx].potions--;
-						}
+						this.curRoom.removeObjectOccurrence('potion');
 					}
 				} else if (object.name === 'key') {
 					// add key to slots if a slot is free
 					if (this.player.addItem(spritesheet.getImage('key', 0))) {
 						object.position.x = 10000;
 						soundManager.playSound('pick_up');
-						const idx = this.rooms.findIndex((room) => room.id === this.curRoomIndex);
-						if (idx !== -1) {
-							this.rooms[idx].keys--;
-						}
+						this.curRoom.removeObjectOccurrence('key');
 					}
 				}
 			}
@@ -678,7 +672,7 @@ class World {
 			this.updateHeart(Math.round(this.player.life));
 		}
 
-		this.enemies = this.enemies.filter((enemy) => enemy.life > 0);
+		this.curRoom.enemies.entities = this.curRoom.enemies.entities.filter((enemy) => enemy.life > 0);
 
 		this.bullets = this.bullets.filter((bullet) => {
 			const tilePosition = world.getTilePosition(bullet.position.x, bullet.position.y);
