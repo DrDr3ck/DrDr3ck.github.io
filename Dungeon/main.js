@@ -49,10 +49,6 @@ const slotButtons = [];
 
 const hearts = [];
 
-const standardWeapon = new Weapon(4, 1, 256, 500);
-const uziWeapon = new Weapon(8, 2, 128, 250);
-const bazookaWeapon = new Weapon(4, 4, 1024, 1000);
-
 function initUI() {
 	speakerButton.setTextSize(50);
 	musicButton.setTextSize(50);
@@ -225,6 +221,10 @@ function resetGame() {
 	}
 }
 
+const standardWeapon = new Weapon(4, 1, 256, 500);
+const uziWeapon = new Weapon(8, 2, 128, 250);
+const bazookaWeapon = new Weapon(4, 4, 1024, 1000);
+
 function initGame() {
 	const menu = [ speakerButton, musicButton, helpButton ];
 	const maxSlotI = 3;
@@ -250,9 +250,9 @@ function initGame() {
 		world.curRoom.objects.entities.push(new TiledObject(7, 7, 'key', [ 0, 1, 2, 3 ]));
 		world.curRoom.objects.entities[0].addAnimation('open', 'chest', [ 1 ], FPS, false);
 	}
-	slotButtons[0].setItem(spritesheet.getImage('weapon', 2));
-	slotButtons[1].setItem(spritesheet.getImage('weapon', 5));
-	slotButtons[2].setItem(spritesheet.getImage('weapon', 8));
+	world.player.addItem(standardWeapon, 2);
+	world.player.addItem(uziWeapon, 5);
+	world.player.addItem(bazookaWeapon, 8);
 
 	for (let i = 0; i < 5; i++) {
 		const x = windowWidth / 2 - 16 - 80 + 40 * i;

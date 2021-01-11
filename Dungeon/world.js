@@ -39,7 +39,13 @@ class Bullet {
 	}
 }
 
-class Weapon {
+class Item {
+	constructor(type) {
+		this.type = type;
+	}
+}
+
+class Weapon extends Item {
 	/**
 	 * 
 	 * @param {speed of bullets in pixels} speed 
@@ -48,6 +54,7 @@ class Weapon {
 	 * @param {frequence of bullets in milliseconds} frequency 
 	 */
 	constructor(speed, damage, range, frequency) {
+		super('weapon');
 		this.speed = speed;
 		this.damage = damage;
 		this.rangePixel = range;
@@ -238,7 +245,7 @@ class Player extends Entity {
 		this.addAnimation('up', spritename, [ 6 ], FPS, true);
 		this.addAnimation('death', spritename, [ 7 ], FPS, true);
 
-		this.slots = []; // TODO: add item/weapon
+		this.slots = [ { id: -1 }, { id: -1 }, { id: -1 }, { id: -1 }, { id: -1 }, { id: -1 } ];
 		this.slotIndex = 0;
 		this.maxSlots = 6;
 
@@ -247,23 +254,34 @@ class Player extends Entity {
 		this.timeBeforeFiring = 0;
 	}
 
+	/**
+	 * Removes a potential key from slots
+	 * \return true if key was found
+	 */
+	removeKey() {
+		const idx = this.slots.findIndex(slot=> slot.object && slot.object.type === 'key');
+		if( idx < 0 ) {
+			return false;
+		}
+		this.slots[idx].object = null;
+		this.slots[idx].id = -1;
+		slotButtons[idx].setItem(null);
+		return true;
+	}
+
 	update(elapsedTime) {
 		super.update(elapsedTime);
 		this.timeBeforeFiring = Math.max(0, this.timeBeforeFiring - elapsedTime);
 	}
 
 	currentGun() {
-		// todo: need to ask this.slots
-		if (this.slotIndex === 0) {
-			return standardWeapon;
+		if (this.slots[this.slotIndex].id === -1) {
+			return null;
 		}
-		if (this.slotIndex === 1) {
-			return uziWeapon;
+		if (this.slots[this.slotIndex].object.type !== 'weapon') {
+			return null;
 		}
-		if (this.slotIndex === 2) {
-			return bazookaWeapon;
-		}
-		return null;
+		return this.slots[this.slotIndex].object;
 	}
 
 	nextSlot() {
@@ -274,13 +292,15 @@ class Player extends Entity {
 		this.slotIndex = (this.slotIndex + this.maxSlots - 1) % this.maxSlots;
 	}
 
-	addItem(item) {
+	addItem(object, spriteIndex) {
 		// find a free slot
-		const slots = slotButtons.filter((button) => button.isAvailable());
-		if (slots.length === 0) {
+		const slotIndex = this.slots.findIndex((slot) => slot.id === -1);
+		if (slotIndex < 0) {
 			return false;
 		}
-		slots[0].setItem(item);
+		// set object to slot AND slotButton
+		this.slots[slotIndex] = { object, id: spriteIndex };
+		slotButtons[slotIndex].setItem(spritesheet.getImage(object.type, spriteIndex));
 		return true;
 	}
 }
@@ -301,7 +321,7 @@ class World {
 		this.uiKeys = [ '&', 'é', '"', "'", '(', '-' ];
 
 		this.level = 0;
-		// TODO: home made first level for tuto
+		// TODO: home made first level for tutorial
 		this.rooms = MazeGenerator.createLevel(9);
 		this.curRoomIndex = 0;
 		this.curRoom = null;
@@ -664,17 +684,18 @@ class World {
 					}
 				} else if (object.name === 'key') {
 					// add key to slots if a slot is free
-					if (this.player.addItem(spritesheet.getImage('key', 0))) {
+					if (this.player.addItem(new Item('key'), 0)) {
 						object.position.x = 10000;
 						soundManager.playSound('pick_up');
 						this.curRoom.removeObjectOccurrence('key');
 					}
 				} else if (object.name === 'chest') {
 					// todo: check if player has the needed key to open this chest
-					//if( this.player.removeKey() ) {
 					if (object.state !== 'open') {
-						soundManager.playSound('open_chest');
-						object.playAnimation('open');
+						if (this.player.removeKey()) {
+							soundManager.playSound('open_chest');
+							object.playAnimation('open');
+						}
 					}
 					//}
 				}
