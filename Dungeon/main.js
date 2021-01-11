@@ -261,8 +261,23 @@ function initGame() {
 
 	world = new World(32);
 	if (world.curRoomIndex === 1 && world.curRoom.objects.entities.length === 0) {
-		world.curRoom.objects.entities.push(new TiledObject(2, 2, 'chest', [ 0 ]));
-		world.curRoom.objects.entities.push(new TiledObject(7, 7, 'key', [ 0, 1, 2, 3 ]));
+		world.curRoom.objects.entities.push(new TiledObject(2, 2, 'chest', [ 0 ], (object, player) => {
+			if (object.state !== 'open') {
+				if (player.removeKey()) {
+					soundManager.playSound('open_chest');
+					object.playAnimation('open');
+				}
+			}
+		}));
+		world.curRoom.objects.entities.push(
+			new TiledObject(7, 7, 'key', [ 0, 1, 2, 3 ], (object, player) => {
+				if (player.addItem(new Item('key'), 0)) {
+					object.position.x = 10000;
+					soundManager.playSound('pick_up');
+					world.curRoom.removeObjectOccurrence('key');
+				}
+			})
+		);
 		world.curRoom.objects.entities[0].addAnimation('open', 'chest', [ 1 ], FPS, false);
 	}
 	world.player.addItem(standardWeapon, 2);

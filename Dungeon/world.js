@@ -83,10 +83,11 @@ class Weapon extends Item {
 }
 
 class TiledObject extends Sprite {
-	constructor(tileX, tileY, name, frameArray) {
+	constructor(tileX, tileY, name, frameArray, callback) {
 		super(tileX * world.tileSize, tileY * world.tileSize);
 		this.addAnimation('static', name, frameArray, FPS, true);
 		this.name = name;
+		this.callback = callback;
 	}
 
 	getBox() {
@@ -96,6 +97,10 @@ class TiledObject extends Sprite {
 			w: this.width,
 			h: this.height
 		};
+	}
+
+	interact(player) {
+		this.callback(this, player);
 	}
 }
 
@@ -265,8 +270,8 @@ class Player extends Entity {
 	 * \return true if key was found
 	 */
 	removeKey() {
-		const idx = this.slots.findIndex(slot=> slot.object && slot.object.type === 'key');
-		if( idx < 0 ) {
+		const idx = this.slots.findIndex((slot) => slot.object && slot.object.type === 'key');
+		if (idx < 0) {
 			return false;
 		}
 		this.slots[idx].object = null;
@@ -449,13 +454,27 @@ class World {
 				if (tinyRoom.getObjectCount('potion') > 0) {
 					const freeTilePosition = this.getFreeTile();
 					this.curRoom.objects.entities.push(
-						new TiledObject(freeTilePosition.X, freeTilePosition.Y, 'potion', [ 0, 1, 2, 3 ])
+						new TiledObject(freeTilePosition.X, freeTilePosition.Y, 'potion', [ 0, 1, 2, 3 ], (object, player) => {
+							if (player.life < 20) {
+								object.position.x = 10000;
+								player.needUpdate = true;
+								player.life = Math.min(20, player.life + 2);
+								soundManager.playSound('healing');
+								world.curRoom.removeObjectOccurrence('potion');
+							}
+						})
 					);
 				}
 				if (tinyRoom.getObjectCount('key') > 0) {
 					const freeTilePosition = this.getFreeTile();
 					this.curRoom.objects.entities.push(
-						new TiledObject(freeTilePosition.X, freeTilePosition.Y, 'key', [ 0, 1, 2, 3 ])
+						new TiledObject(freeTilePosition.X, freeTilePosition.Y, 'key', [ 0, 1, 2, 3 ], (object, player) => {
+							if (player.addItem(new Item('key'), 0)) {
+								object.position.x = 10000;
+								soundManager.playSound('pick_up');
+								world.curRoom.removeObjectOccurrence('key');
+							}
+						})
 					);
 				}
 			}
@@ -660,12 +679,12 @@ class World {
 			});
 		});
 		const playerBox = this.player.getHitBox();
-		let needUpdate = false;
+		this.player.needUpdate = false;
 		this.enemyBullets.forEach((bullet) => {
 			if (this.contains(playerBox, bullet.position)) {
 				bullet.position.x = 10000; // move bullet out of world
 				this.player.life = Math.max(0, this.player.life - bullet.damage);
-				needUpdate = true;
+				this.player.needUpdate = true;
 				if (this.player.life > 0) {
 					soundManager.playSound('hit');
 				} else {
@@ -682,35 +701,10 @@ class World {
 			object.update(elapsedTime);
 			// check if player hits the object
 			if (this.collide(this.player.getFloorBox(), object.getBox())) {
-				if (object.name === 'potion') {
-					// TODO: need to factorize code inside 'tiledobject'
-					if (this.player.life < 20) {
-						object.position.x = 10000;
-						needUpdate = true;
-						this.player.life = Math.min(20, this.player.life + 2);
-						soundManager.playSound('healing');
-						this.curRoom.removeObjectOccurrence('potion');
-					}
-				} else if (object.name === 'key') {
-					// add key to slots if a slot is free
-					if (this.player.addItem(new Item('key'), 0)) {
-						object.position.x = 10000;
-						soundManager.playSound('pick_up');
-						this.curRoom.removeObjectOccurrence('key');
-					}
-				} else if (object.name === 'chest') {
-					// todo: check if player has the needed key to open this chest
-					if (object.state !== 'open') {
-						if (this.player.removeKey()) {
-							soundManager.playSound('open_chest');
-							object.playAnimation('open');
-						}
-					}
-					//}
-				}
+				object.interact(this.player);
 			}
 		});
-		if (needUpdate) {
+		if (this.player.needUpdate) {
 			this.updateHeart(Math.round(this.player.life));
 		}
 
