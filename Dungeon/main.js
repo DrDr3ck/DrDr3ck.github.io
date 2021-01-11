@@ -103,6 +103,21 @@ function setup() {
 
 function updateGame(elapsedTime) {
 	world.update(elapsedTime);
+	if (mouseIsPressed && world.player.gun && world.player.timeBeforeFiring === 0) {
+		const worldX = mouseX - translateX;
+		const worldY = mouseY - translateY;
+		const tile = world.getTilePosition(worldX, worldY);
+		if (toggleDebug) {
+			console.log('tile position:', tile.X, tile.Y);
+		}
+		if (tile.X >= 0 && tile.Y >= 0) {
+			// fire bullet
+			world.addBullet(
+				world.player.gun.fireBullet(world.player.position.x + 24, world.player.position.y + 40, worldX, worldY)
+			);
+			world.player.timeBeforeFiring = world.player.gun.frequency;
+		}
+	}
 }
 
 let translateX = 128;
@@ -333,26 +348,6 @@ function mouseClicked() {
 		return;
 	}
 
-	if (!uiClicked) {
-		// check if robot has a gun
-		const gun = world.player.currentGun();
-		if (gun && world.player.timeBeforeFiring === 0) {
-			const worldX = mouseX - translateX;
-			const worldY = mouseY - translateY;
-			const tile = world.getTilePosition(worldX, worldY);
-			if (toggleDebug) {
-				console.log('tile position:', tile.X, tile.Y);
-			}
-			if (tile.X >= 0 && tile.Y >= 0) {
-				// fire bullet
-				world.addBullet(
-					gun.fireBullet(world.player.position.x + 24, world.player.position.y + 40, worldX, worldY)
-				);
-				world.player.timeBeforeFiring = gun.frequency;
-			}
-		}
-	}
-
 	if (toggleDebug) {
 		console.log('mouse position: ', mouseX, mouseY);
 	}
@@ -458,6 +453,7 @@ function keyPressed() {
 	for (let i = 0; i < world.player.maxSlots; i++) {
 		if (keyCode === 49 + i) {
 			world.player.slotIndex = i;
+			world.player.updateGun();
 		}
 	}
 }

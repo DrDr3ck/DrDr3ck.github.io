@@ -252,6 +252,12 @@ class Player extends Entity {
 		this.life = 20;
 
 		this.timeBeforeFiring = 0;
+
+		this.gun = null;
+	}
+
+	updateGun() {
+		this.gun = world.player.currentGun();
 	}
 
 	/**
@@ -286,10 +292,12 @@ class Player extends Entity {
 
 	nextSlot() {
 		this.slotIndex = (this.slotIndex + 1) % this.maxSlots;
+		this.updateGun();
 	}
 
 	prevSlot() {
 		this.slotIndex = (this.slotIndex + this.maxSlots - 1) % this.maxSlots;
+		this.updateGun();
 	}
 
 	addItem(object, spriteIndex) {
@@ -301,6 +309,7 @@ class Player extends Entity {
 		// set object to slot AND slotButton
 		this.slots[slotIndex] = { object, id: spriteIndex };
 		slotButtons[slotIndex].setItem(spritesheet.getImage(object.type, spriteIndex));
+		this.updateGun();
 		return true;
 	}
 }
