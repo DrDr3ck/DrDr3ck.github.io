@@ -236,7 +236,7 @@ function resetGame() {
 	}
 }
 
-const standardWeapon = new Weapon(4, 1, 256, 500);
+const standardWeapon = weaponGenerator(true); //new Weapon(4, 1, 256, 500);
 const uziWeapon = new Weapon(8, 2, 128, 250);
 const bazookaWeapon = new Weapon(4, 4, 1024, 1000);
 
@@ -251,6 +251,7 @@ function initGame() {
 				spritesheet.getImage('player_ui', 0),
 				() => {
 					world.player.slotIndex = i + j * maxSlotI;
+					world.player.updateGun()
 				}
 			);
 			slotButtons.push(slot);
@@ -261,14 +262,18 @@ function initGame() {
 
 	world = new World(32);
 	if (world.curRoomIndex === 1 && world.curRoom.objects.entities.length === 0) {
-		world.curRoom.objects.entities.push(new TiledObject(2, 2, 'chest', [ 0 ], (object, player) => {
-			if (object.state !== 'open') {
-				if (player.removeKey()) {
-					soundManager.playSound('open_chest');
-					object.playAnimation('open');
+		world.curRoom.objects.entities.push(
+			new TiledObject(2, 2, 'chest', [ 0 ], (object, player) => {
+				if (object.state !== 'open') {
+					if (player.removeKey()) {
+						soundManager.playSound('open_chest');
+						object.playAnimation('open');
+						const newGun = weaponGenerator();
+						player.addItem(newGun, Math.round(random(2, 8)));
+					}
 				}
-			}
-		}));
+			})
+		);
 		world.curRoom.objects.entities.push(
 			new TiledObject(7, 7, 'key', [ 0, 1, 2, 3 ], (object, player) => {
 				if (player.addItem(new Item('key'), 0)) {

@@ -82,6 +82,17 @@ class Weapon extends Item {
 	}
 }
 
+function weaponGenerator(standard = false) {
+	if (standard) {
+		return new Weapon(4, 1, 256, 500);
+	}
+	const speed = Math.round(random(2, 8));
+	const damage = Math.round(random(1, 4));
+	const range = Math.round(random(128, 1024));
+	const frequency = Math.round(random(25, 100)) * 10;
+	return new Weapon(speed, damage, range, frequency);
+}
+
 class TiledObject extends Sprite {
 	constructor(tileX, tileY, name, frameArray, callback) {
 		super(tileX * world.tileSize, tileY * world.tileSize);
@@ -454,28 +465,62 @@ class World {
 				if (tinyRoom.getObjectCount('potion') > 0) {
 					const freeTilePosition = this.getFreeTile();
 					this.curRoom.objects.entities.push(
-						new TiledObject(freeTilePosition.X, freeTilePosition.Y, 'potion', [ 0, 1, 2, 3 ], (object, player) => {
-							if (player.life < 20) {
-								object.position.x = 10000;
-								player.needUpdate = true;
-								player.life = Math.min(20, player.life + 2);
-								soundManager.playSound('healing');
-								world.curRoom.removeObjectOccurrence('potion');
+						new TiledObject(
+							freeTilePosition.X,
+							freeTilePosition.Y,
+							'potion',
+							[ 0, 1, 2, 3 ],
+							(object, player) => {
+								if (player.life < 20) {
+									object.position.x = 10000;
+									player.needUpdate = true;
+									player.life = Math.min(20, player.life + 2);
+									soundManager.playSound('healing');
+									world.curRoom.removeObjectOccurrence('potion');
+								}
 							}
-						})
+						)
 					);
 				}
 				if (tinyRoom.getObjectCount('key') > 0) {
 					const freeTilePosition = this.getFreeTile();
 					this.curRoom.objects.entities.push(
-						new TiledObject(freeTilePosition.X, freeTilePosition.Y, 'key', [ 0, 1, 2, 3 ], (object, player) => {
-							if (player.addItem(new Item('key'), 0)) {
-								object.position.x = 10000;
-								soundManager.playSound('pick_up');
-								world.curRoom.removeObjectOccurrence('key');
+						new TiledObject(
+							freeTilePosition.X,
+							freeTilePosition.Y,
+							'key',
+							[ 0, 1, 2, 3 ],
+							(object, player) => {
+								if (player.addItem(new Item('key'), 0)) {
+									object.position.x = 10000;
+									soundManager.playSound('pick_up');
+									world.curRoom.removeObjectOccurrence('key');
+								}
 							}
-						})
+						)
 					);
+				}
+
+				if (tinyRoom.getObjectCount('chest') > 0) {
+					const freeTilePosition = this.getFreeTile();
+					const chestSprite = new TiledObject(
+						freeTilePosition.X,
+						freeTilePosition.Y,
+						'chest',
+						[ 0 ],
+						(object, player) => {
+							if (object.state !== 'open') {
+								if (player.removeKey()) {
+									soundManager.playSound('open_chest');
+									object.playAnimation('open');
+									const newGun = weaponGenerator();
+									player.addItem(newGun, Math.round(random(2, 8)));
+								}
+							}
+						}
+					);
+					this.curRoom.objects.entities.push(chestSprite);
+					chestSprite.addAnimation('open', 'chest', [ 1 ], FPS, false);
 				}
 			}
 		}

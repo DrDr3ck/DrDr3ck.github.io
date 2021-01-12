@@ -257,7 +257,8 @@ class Room {
 		this.objects = {
 			potion: 0,
 			key: 0,
-			entities:[]
+			chest: 0,
+			entities: []
 		};
 	}
 
@@ -329,13 +330,16 @@ class MazeGenerator {
 			rooms[door.toRoom - 1].addDoor(door.toTile, door.fromTile, door.fromRoom);
 		});
 
-		// add potions and keys
+		// add potions, keys, chests...
 		rooms.forEach((room) => {
 			if (random() > 0.2) {
 				room.addObjectOccurrence('potion');
 			}
+
 			if (random() > 0.8) {
 				room.addObjectOccurrence('key');
+			} else if (random() > 0.8) {
+				room.addObjectOccurrence('chest');
 			}
 		});
 
