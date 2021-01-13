@@ -272,6 +272,70 @@ class Player extends Entity {
 		this.gun = null;
 	}
 
+	dropItem() {
+		if (this.slots[this.slotIndex].id === -1) {
+			// nothing to do: no item on this slot
+			return;
+		}
+		// find a free tile next to the player
+		const playerTile = world.getTilePosition(this.position.x, this.position.y);
+		const freeTiles = [];
+		[ -1, 0, 1, 2, 3 ].forEach((row) => {
+			[ -1, 2 ].forEach((col) => {
+				if (world.isFreeTile(row + playerTile.Y, col + playerTile.X)) {
+					freeTiles.push({ X: col + playerTile.X, Y: row + playerTile.Y });
+				}
+			});
+		});
+		[ -1, 3 ].forEach((row) => {
+			[ -1, 0, 1, 2 ].forEach((col) => {
+				if (world.isFreeTile(row + playerTile.Y, col + playerTile.X)) {
+					freeTiles.push({ X: col + playerTile.X, Y: row + playerTile.Y });
+				}
+			});
+		});
+		freeTiles.sort(() => 0.5 - Math.random());
+		if (freeTiles.length === 0) {
+			// cannot drop: no space left
+		}
+
+		const tile = freeTiles[0];
+		let toRemove = false;
+		const object = this.slots[this.slotIndex].object;
+		if (object.type === 'key') {
+			world.curRoom.objects.entities.push(
+				new TiledObject(tile.X, tile.Y, 'key', [ 0, 1, 2, 3 ], (object, player) => {
+					if (player.addItem(new Item('key'), 0)) {
+						object.position.x = 10000;
+						soundManager.playSound('pick_up');
+						world.curRoom.removeObjectOccurrence('key');
+					}
+				})
+			);
+			toRemove = true;
+		} else if (object.type === 'weapon') {
+			world.curRoom.objects.entities.push(
+				new TiledObject(tile.X, tile.Y, 'weapon', [ this.slots[this.slotIndex].id ], (object, player) => {
+					// todo: add weapon
+					/*
+					if (player.addItem(new Item('key'), 0)) {
+						object.position.x = 10000;
+						soundManager.playSound('pick_up');
+						world.curRoom.removeObjectOccurrence('key');
+					}
+					*/
+				})
+			);
+			toRemove = true;
+		}
+
+		if (toRemove) {
+			this.slots[this.slotIndex].object = null;
+			this.slots[this.slotIndex].id = -1;
+			slotButtons[this.slotIndex].setItem(null);
+		}
+	}
+
 	updateGun() {
 		this.gun = world.player.currentGun();
 	}
@@ -351,6 +415,10 @@ class World {
 		this.curRoomIndex = 0;
 		this.curRoom = null;
 		this.initRoom(this.rooms[this.curRoomIndex]);
+	}
+
+	isFreeTile(row, column) {
+		return this.tiles[row][column] === -1;
 	}
 
 	getFreeTile() {

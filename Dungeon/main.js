@@ -204,8 +204,8 @@ function drawGame() {
 			mouseX,
 			mouseY
 		);
-		if (world.enemies.count.length > 0) {
-			const box = world.enemies.entities[0].getHitBox();
+		if (world.curRoom.enemies.entities.length > 0) {
+			const box = world.curRoom.enemies.entities[0].getHitBox();
 			lineRect(
 				world.player.position.x + translateX + 24 * world.player.scale,
 				world.player.position.y + translateY + 32 * world.player.scale,
@@ -436,6 +436,17 @@ function loadData() {
 	soundManager.mute(!speakerButton.checked);
 }
 
+function mouseWheel(event) {
+	if( event.delta > 0 ) {
+		world.player.prevSlot();
+	}
+	if( event.delta < 0 ) {
+		world.player.nextSlot();
+	}
+	//uncomment to block page scrolling
+	return false;
+  }
+
 function keyPressed() {
 	if (curState === GAME_START_STATE) {
 		if ((world.azerty && (key === 'a' || key === 'A')) || (!world.azerty && (key === 'q' || key === 'Q'))) {
@@ -460,6 +471,11 @@ function keyPressed() {
 		const calculator = new PathCalculator(world.tiles);
 		const path = calculator.findPath({ X: 2, Y: 2 }, { X: 5, Y: 7 });
 		console.log(path);
+	}
+
+	if( keyCode === 88 ) { // x
+		// drop the current item
+		world.player.dropItem();
 	}
 
 	if (keyCode === 109) {
