@@ -1,3 +1,5 @@
+// Trello: https://trello.com/b/v36swcyX/dungeon
+
 const uiManager = new UIManager();
 const windowWidth = 1200;
 const windowHeight = 800;
@@ -164,6 +166,32 @@ function drawGame() {
 		}
 	}
 
+	// draw stuff of current slot
+	// draw item stuff
+	if (world.player.curSlot().id !== -1) {
+		push();
+		fill(128, 128, 28, 50);
+		rect(928, 400, 200, 200, 5);
+		textAlign(LEFT, TOP);
+		textSize(15);
+		fill(0);
+		noStroke();
+		const delta = 4;
+		const object = world.player.curSlot().object;
+		if (object.type === 'key') {
+			text("It's a key!!", 928 + delta, 400 + delta);
+		} else if (object.type === 'weapon') {
+			const dps = Math.round(10000 * object.damage / object.frequency);
+			text(`DPS: ${dps / 10}`, 928 + delta, 400 + delta);
+			const speed = Math.round(10000/(32*16/object.speed))/10;
+			text(`Speed: ${speed} tiles / sec`, 928 + delta, 400 + delta + 15 + delta);
+			text(`Frequency: ${Math.round(10000/object.frequency)/10} bullets / sec`, 928 + delta, 400 + delta + 2*(15 + delta));
+			text(`Damage: ${object.damage} PV`, 928 + delta, 400 + delta + 3*(15 + delta));
+			text(`Range: ${Math.round(10*object.rangePixel/32)/10} tiles`, 928 + delta, 400 + delta + 4*(15 + delta));
+		}
+		pop();
+	}
+
 	// draw bullets left
 	noStroke();
 	strokeWeight(1);
@@ -251,7 +279,7 @@ function initGame() {
 				spritesheet.getImage('player_ui', 0),
 				() => {
 					world.player.slotIndex = i + j * maxSlotI;
-					world.player.updateGun()
+					world.player.updateGun();
 				}
 			);
 			slotButtons.push(slot);
@@ -437,15 +465,15 @@ function loadData() {
 }
 
 function mouseWheel(event) {
-	if( event.delta > 0 ) {
+	if (event.delta > 0) {
 		world.player.prevSlot();
 	}
-	if( event.delta < 0 ) {
+	if (event.delta < 0) {
 		world.player.nextSlot();
 	}
 	//uncomment to block page scrolling
 	return false;
-  }
+}
 
 function keyPressed() {
 	if (curState === GAME_START_STATE) {
@@ -473,7 +501,8 @@ function keyPressed() {
 		console.log(path);
 	}
 
-	if( keyCode === 88 ) { // x
+	if (keyCode === 88) {
+		// x
 		// drop the current item
 		world.player.dropItem();
 	}

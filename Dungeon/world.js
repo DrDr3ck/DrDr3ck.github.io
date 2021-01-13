@@ -360,14 +360,18 @@ class Player extends Entity {
 		this.timeBeforeFiring = Math.max(0, this.timeBeforeFiring - elapsedTime);
 	}
 
+	curSlot() {
+		return this.slots[this.slotIndex];
+	}
+
 	currentGun() {
-		if (this.slots[this.slotIndex].id === -1) {
+		if (this.curSlot().id === -1) {
 			return null;
 		}
-		if (this.slots[this.slotIndex].object.type !== 'weapon') {
+		if (this.curSlot().object.type !== 'weapon') {
 			return null;
 		}
-		return this.slots[this.slotIndex].object;
+		return this.curSlot().object;
 	}
 
 	nextSlot() {
@@ -605,6 +609,8 @@ class World {
 	}
 
 	draw() {
+
+		// draw room
 		stroke(0);
 		fill(50, 150, 50);
 		for (let r = 0; r < this.tiles.length; r++) {
