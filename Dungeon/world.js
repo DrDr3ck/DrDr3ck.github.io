@@ -59,6 +59,7 @@ class Weapon extends Item {
 		this.damage = damage;
 		this.rangePixel = range;
 		this.frequency = frequency; // in millisecond
+		this.spriteIndex = Math.round(Math.random()*6+2);
 	}
 
 	fireBullet(x1, y1, x2, y2) {
@@ -93,12 +94,13 @@ function weaponGenerator(standard = false) {
 	return new Weapon(speed, damage, range, frequency);
 }
 
-class TiledObject extends Sprite {
+class TiledItem extends Sprite {
 	constructor(tileX, tileY, name, frameArray, callback) {
 		super(tileX * world.tileSize, tileY * world.tileSize);
 		this.addAnimation('static', name, frameArray, FPS, true);
 		this.name = name;
 		this.callback = callback;
+		this.item = null;
 	}
 
 	getBox() {
@@ -205,6 +207,7 @@ class Enemy extends Entity {
 		}
 		this.sprite.playAnimation('6');
 
+		this.life = Math.round(random(5,20));
 		this.maxLife = this.life;
 		this.lifeTint = 0;
 	}
@@ -304,7 +307,7 @@ class Player extends Entity {
 		const object = this.slots[this.slotIndex].object;
 		if (object.type === 'key') {
 			world.curRoom.objects.entities.push(
-				new TiledObject(tile.X, tile.Y, 'key', [ 0, 1, 2, 3 ], (object, player) => {
+				new TiledItem(tile.X, tile.Y, 'key', [ 0, 1, 2, 3 ], (object, player) => {
 					if (player.addItem(new Item('key'), 0)) {
 						object.position.x = 10000;
 						soundManager.playSound('pick_up');
@@ -314,17 +317,17 @@ class Player extends Entity {
 			);
 			toRemove = true;
 		} else if (object.type === 'weapon') {
+			const item = new TiledItem(tile.X, tile.Y, 'weapon', [ this.slots[this.slotIndex].id ], (object, player) => {
+				// add weapon
+				if (player.addItem(object.item, object.item.spriteIndex)) {
+					object.position.x = 10000;
+					object.item = null;
+					soundManager.playSound('pick_up');
+				}
+			});
+			item.item = this.slots[this.slotIndex].object;
 			world.curRoom.objects.entities.push(
-				new TiledObject(tile.X, tile.Y, 'weapon', [ this.slots[this.slotIndex].id ], (object, player) => {
-					// todo: add weapon
-					/*
-					if (player.addItem(new Item('key'), 0)) {
-						object.position.x = 10000;
-						soundManager.playSound('pick_up');
-						world.curRoom.removeObjectOccurrence('key');
-					}
-					*/
-				})
+				item
 			);
 			toRemove = true;
 		}
@@ -537,7 +540,7 @@ class World {
 				if (tinyRoom.getObjectCount('potion') > 0) {
 					const freeTilePosition = this.getFreeTile();
 					this.curRoom.objects.entities.push(
-						new TiledObject(
+						new TiledItem(
 							freeTilePosition.X,
 							freeTilePosition.Y,
 							'potion',
@@ -557,7 +560,7 @@ class World {
 				if (tinyRoom.getObjectCount('key') > 0) {
 					const freeTilePosition = this.getFreeTile();
 					this.curRoom.objects.entities.push(
-						new TiledObject(
+						new TiledItem(
 							freeTilePosition.X,
 							freeTilePosition.Y,
 							'key',
@@ -575,7 +578,7 @@ class World {
 
 				if (tinyRoom.getObjectCount('chest') > 0) {
 					const freeTilePosition = this.getFreeTile();
-					const chestSprite = new TiledObject(
+					const chestSprite = new TiledItem(
 						freeTilePosition.X,
 						freeTilePosition.Y,
 						'chest',
