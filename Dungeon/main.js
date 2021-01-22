@@ -210,9 +210,12 @@ function drawGame() {
 
 	if (helpButton.checked) {
 		const text_size = 16;
-		spritesheet.drawSprite('player_ui', 2, 128 + 800 + 68 * 3, 232 + 68 * 0.5);
-		drawKeyboardHelp('+', 128 + 800 + 68 * 3 + 24, 232 + 32, text_size);
-		drawKeyboardHelp('-', 128 + 800 + 68 * 3 + 24, 232 + 32 + 68 + 10, text_size);
+		spritesheet.drawSprite('player_ui', 2, 128 + 800 + 68 * 3, 232 - 32 -8  + 68 * 0.5);
+		drawKeyboardHelp('+', 128 + 800 + 68 * 3 + 24, 232-8, text_size);
+		drawKeyboardHelp('-', 128 + 800 + 68 * 3 + 24, 232-8 + 68 + 10, text_size);
+
+		spritesheet.drawSprite('player_ui', 4, 128 + 800 + 68 * 3, 232 + 32 + 68 * 0.5);
+		drawKeyboardHelp('X', 128 + 800 + 68 * 3 + 24, 232 +32 + 16 + 68 + 10, text_size);
 
 		const x = 32;
 		const y = 90;
