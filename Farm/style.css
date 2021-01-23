@@ -1,0 +1,27 @@
+html, body {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+h1 {
+    margin: 0;
+}
+
+#header {
+    width: 100%;
+    display: flex;
+    /* This centers our sketch horizontally. */
+    justify-content: center;
+    user-select: none;
+}
+
+#canvas {
+    display: flex;
+    /* This centers our sketch horizontally. */
+    justify-content: center;
+}
