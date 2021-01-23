@@ -14,7 +14,7 @@ class SpriteSheet {
 	 */
 	addSpriteSheet(name, filename, width, height) {
 		loadImage(filename, (image) => {
-			this.sheets[name] = { width: width, height: height, image: image, subimages:{} };
+			this.sheets[name] = { width: width, height: height, image: image, subimages: {} };
 			this.totalLoadedImages++;
 		});
 		this.totalImagesToLoad++;
@@ -22,15 +22,35 @@ class SpriteSheet {
 
 	drawSprite(sheetname, index, x, y) {
 		const sheet = this.sheets[sheetname];
-		image(this.getImage(sheetname, index), x, y, sheet.width, sheet.height);	
+		image(this.getImage(sheetname, index), x, y, sheet.width, sheet.height);
 	}
 
-	getImage(sheetname,index) {
+	drawScaledSprite(sheetname, index, x, y, scale = 1) {
 		const sheet = this.sheets[sheetname];
-		if( !sheet.subimages[index] ) {
-			const tileX = index % (sheet.image.width/sheet.width);
-			const tileY = Math.floor(index / (sheet.image.width/sheet.width));	
-			sheet.subimages[index] = sheet.image.get(tileX*sheet.width, tileY*sheet.height, sheet.width, sheet.height);
+		image(
+			this.getImage(sheetname, index),
+			x,
+			y,
+			sheet.width * scale,
+			sheet.height * scale,
+			0,
+			0,
+			sheet.width,
+			sheet.height
+		);
+	}
+
+	getImage(sheetname, index) {
+		const sheet = this.sheets[sheetname];
+		if (!sheet.subimages[index]) {
+			const tileX = index % (sheet.image.width / sheet.width);
+			const tileY = Math.floor(index / (sheet.image.width / sheet.width));
+			sheet.subimages[index] = sheet.image.get(
+				tileX * sheet.width,
+				tileY * sheet.height,
+				sheet.width,
+				sheet.height
+			);
 		}
 		return sheet.subimages[index];
 	}
@@ -50,7 +70,7 @@ class Sprite {
 	addAnimation(name, sheetname, frameArray, frameSec, loop) {
 		let animations = [];
 		const sheet = spritesheet.sheets[sheetname];
-		if( !sheet ) {
+		if (!sheet) {
 			console.log(`Error: the sheetname '${sheetname}' does not exist`);
 			return;
 		}
