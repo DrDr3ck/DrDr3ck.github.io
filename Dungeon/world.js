@@ -122,7 +122,6 @@ class Entity extends Sprite {
 		super(x, y);
 		this.vx = 0;
 		this.vy = 0;
-		this.scale = 1;
 
 		this.life = 5;
 	}
