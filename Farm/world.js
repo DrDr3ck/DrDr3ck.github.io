@@ -139,11 +139,11 @@ class Entity extends Sprite {
 		this.vy = 0;
 		this.canJump = false;
 
-		this.addAnimation('idle', 'farm_robot', [ 0, 1, 2, 3 ], FPS, false);
+		this.addAnimation('idle', 'farm_robot', [ 0, 1, 2, 3, 4, 5 ], FPS, false);
 		this.addAnimation('down', 'farm_robot', [ 0 ], FPS, false);
-		this.addAnimation('left', 'farm_robot', [ 4 ], FPS, false);
-		this.addAnimation('right', 'farm_robot', [ 5 ], FPS, false);
-		this.addAnimation('up', 'farm_robot', [ 6 ], FPS, false);
+		this.addAnimation('left', 'farm_robot', [ 6 ], FPS, false);
+		this.addAnimation('right', 'farm_robot', [ 7,8,9,10 ], FPS, false);
+		this.addAnimation('up', 'farm_robot', [ 11 ], FPS, false);
 
 		this.debugTilePosition = null;
 	}
