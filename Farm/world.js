@@ -10,6 +10,8 @@ class World {
 	}
 
 	draw() {
+		this.player.draw();
+
 		this.chunks.forEach((chunk) => {
 			// TODO: check if this chunk needs to be displayed according to position of the chunk in the camera
 			const iChunk = chunk.id * chunk.width * this.scale * this.tileSize;
@@ -42,7 +44,7 @@ class World {
 			}
 		});
 
-		this.player.draw();
+		
 
 		if (toggleDebug) {
 			ellipse(this.player.position.x, this.player.position.y, 2);
@@ -52,7 +54,7 @@ class World {
 	}
 
 	getPlayerTilePosition() {
-		return this.getTilePosition(this.player.position.x, this.player.position.y + this.tileSize * this.scale / 2);
+		return this.getTilePosition(this.player.position.x, this.player.position.y + this.tileSize * this.scale / 2 + 2);
 	}
 
 	getTilePosition(worldX, worldY) {
@@ -60,15 +62,24 @@ class World {
 		return { column: Math.floor(worldX / tileSize), row: Math.floor(worldY / tileSize) };
 	}
 
+	getChunk(column, row) {
+		const chunkId = Math.floor(column / this.chunks[0].width);
+		const chunk = this.chunks.filter((chunk) => chunk.id === chunkId)[0];
+		return chunk;
+	}
+
+	getColumnPositionInChunk(chunk, column) {
+		if (column < 0) {
+			column += Math.ceil(-column / chunk.width) * chunk.width;
+		}
+		return column % chunk.width;
+	}
+
 	isSolid(column, row) {
 		// get chunk id according to column
-		const chunkWidth = this.chunks[0].width;
-		const chunkId = Math.floor(column / chunkWidth);
-		const chunk = this.chunks.filter((chunk) => chunk.id === chunkId)[0];
-		if (column < 0) {
-			column += Math.ceil(-column / chunkWidth) * chunkWidth;
-		}
-		const value = chunk.tiles[column % chunkWidth][row];
+		const chunk = this.getChunk(column, row);
+		const colChunk = this.getColumnPositionInChunk(chunk, column);
+		const value = chunk.tiles[colChunk][row];
 		return value >= 0 && value <= 3;
 	}
 
@@ -140,6 +151,31 @@ class Entity extends Sprite {
 		this.addAnimation('up', 'farm_robot', [ 11 ], FPS, false);
 
 		this.debugTilePosition = null;
+	}
+
+	execute() {
+		// execute an action on the current tile
+		// ex: if entity has a 'hoe' in hand, he will 'plow' the current tile if possible
+		const tilePosition = world.getPlayerTilePosition();
+		const chunk = world.getChunk(tilePosition.column, tilePosition.row);
+		const colChunk = world.getColumnPositionInChunk(chunk, tilePosition.column);
+		const rowChunk = tilePosition.row + 1;
+
+		if (chunk.tiles[colChunk][rowChunk - 1] === 8) { // for debug only
+			chunk.tiles[colChunk][rowChunk - 1] = 9; // for debug only
+		} else if (chunk.tiles[colChunk][rowChunk - 1] === 9) { // for debug only
+			chunk.tiles[colChunk][rowChunk - 1] = 10; // for debug only
+		} else if (chunk.tiles[colChunk][rowChunk - 1] === 10) { // for debug only
+			chunk.tiles[colChunk][rowChunk - 1] = 11; // for debug only
+		} else if (chunk.tiles[colChunk][rowChunk] === 0) {
+			chunk.tiles[colChunk][rowChunk] = 1;
+			chunk.tiles[colChunk][rowChunk - 1] = -1;
+		} else if (chunk.tiles[colChunk][rowChunk] === 1) {
+			chunk.tiles[colChunk][rowChunk] = 2;
+			chunk.tiles[colChunk][rowChunk - 1] = -1;
+		} else if (chunk.tiles[colChunk][rowChunk] === 2) {
+			chunk.tiles[colChunk][rowChunk - 1] = 8;
+		}
 	}
 
 	startMove(direction) {

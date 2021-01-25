@@ -222,4 +222,8 @@ function keyPressed() {
 	if (key === 'D') {
 		toggleDebug = !toggleDebug;
 	}
+
+	if (key === 'e' || key === 'E') {
+		world.player.execute();
+	}
 }
