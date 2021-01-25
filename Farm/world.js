@@ -5,22 +5,21 @@ class World {
 		this.tileSize = 32;
 		this.archive = {};
 
-		this.player = new Entity(width / 2 - this.tileSize * this.scale / 2, 0);
+		this.player = new Entity(0, 0);
 		this.player.scale = this.scale;
-		this.playerPosition = { ...this.player.position };
 	}
 
 	draw() {
 		this.chunks.forEach((chunk) => {
-			// TODO: check if this chunk needs to be displayed according to iStart and position of the chunk
-			const iChunk = chunk.id * chunk.width * this.scale * this.tileSize + width / 2 - 144 * this.scale;
+			// TODO: check if this chunk needs to be displayed according to position of the chunk in the camera
+			const iChunk = chunk.id * chunk.width * this.scale * this.tileSize;
 			for (let i = 0; i < chunk.width; i++) {
 				for (let j = 0; j < chunk.height; j++) {
 					if (chunk.tiles[i][j] !== -1) {
 						spritesheet.drawScaledSprite(
 							'farm_tile',
 							chunk.tiles[i][j],
-							(i - iStart) * this.tileSize * this.scale + iChunk,
+							i * this.tileSize * this.scale + iChunk,
 							j * this.tileSize * this.scale,
 							this.scale
 						);
@@ -33,7 +32,7 @@ class World {
 							stroke(128);
 						}
 						rect(
-							(i - iStart) * this.tileSize * this.scale + iChunk,
+							i * this.tileSize * this.scale + iChunk,
 							j * this.tileSize * this.scale,
 							this.tileSize * this.scale,
 							this.tileSize * this.scale
@@ -47,19 +46,18 @@ class World {
 
 		if (toggleDebug) {
 			ellipse(this.player.position.x, this.player.position.y, 2);
-			text(JSON.stringify(this.player.debugTilePosition), 100, -100);
-			text(iStart, 100, -200);
-			text(`${this.player.position.x}-${width / 2 - this.tileSize * world.scale / 2}`, 100, -150);
+			text(`${this.player.position.x}-${width / 2 - this.tileSize * world.scale / 2}`, 0, -150);
+			text(JSON.stringify(this.player.debugTilePosition), 0, -100);
 		}
 	}
 
 	getPlayerTilePosition() {
-		return this.getTilePosition(this.playerPosition.x, this.playerPosition.y + this.tileSize * this.scale / 2);
+		return this.getTilePosition(this.player.position.x, this.player.position.y + this.tileSize * this.scale / 2);
 	}
 
 	getTilePosition(worldX, worldY) {
 		const tileSize = this.tileSize * this.scale;
-		return { column: Math.floor(worldX / tileSize - 4.875), row: Math.floor(worldY / tileSize) };
+		return { column: Math.floor(worldX / tileSize), row: Math.floor(worldY / tileSize) };
 	}
 
 	isSolid(column, row) {
@@ -77,21 +75,17 @@ class World {
 	update(elapsedTime) {
 		// max
 		const lastChunk = this.chunks[this.chunks.length - 1];
-		let chunkLimit =
-			this.tileSize * this.scale * lastChunk.width / 2 +
-			this.tileSize * this.scale * lastChunk.width * lastChunk.id;
+		let chunkLimit = this.tileSize * this.scale * lastChunk.width * lastChunk.id;
 		// check if a new chunk needs to be added
-		let curChunkLimit = iStart * this.tileSize * this.scale + width / 2;
+		let curChunkLimit = world.player.position.x + width / 2;
 		if (chunkLimit < curChunkLimit) {
 			this.chunks.push(new Chunk(lastChunk.id + 1));
 		}
 
 		// min
 		const firstChunk = this.chunks[0];
-		chunkLimit =
-			-this.tileSize * this.scale * lastChunk.width / 2 +
-			this.tileSize * this.scale * lastChunk.width * firstChunk.id;
-		curChunkLimit = iStart * this.tileSize * this.scale - width / 2;
+		chunkLimit = this.tileSize * this.scale * lastChunk.width * firstChunk.id;
+		curChunkLimit = world.player.position.x - width / 2;
 		if (chunkLimit > curChunkLimit) {
 			this.chunks.unshift(new Chunk(firstChunk.id - 1));
 		}
@@ -142,7 +136,7 @@ class Entity extends Sprite {
 		this.addAnimation('idle', 'farm_robot', [ 0, 1, 2, 3, 4, 5 ], FPS, false);
 		this.addAnimation('down', 'farm_robot', [ 0 ], FPS, false);
 		this.addAnimation('left', 'farm_robot', [ 6 ], FPS, false);
-		this.addAnimation('right', 'farm_robot', [ 7,8,9,10 ], FPS, false);
+		this.addAnimation('right', 'farm_robot', [ 7, 8, 9, 10 ], FPS, false);
 		this.addAnimation('up', 'farm_robot', [ 11 ], FPS, false);
 
 		this.debugTilePosition = null;

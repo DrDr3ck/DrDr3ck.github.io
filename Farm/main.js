@@ -110,24 +110,20 @@ function setup() {
 	lastTime = Date.now();
 }
 
-let iStart = 0;
-
 function updateGame(elapsedTime) {
 	let state = 'idle';
 	if (keyIsDown(LEFT_ARROW)) {
-		world.playerPosition.x -= 1 * world.scale;
+		world.player.position.x -= 1 * world.scale;
 		state = 'left';
 	}
 	if (keyIsDown(RIGHT_ARROW)) {
-		world.playerPosition.x += 1 * world.scale;
+		world.player.position.x += 1 * world.scale;
 		state = 'right';
 	}
-	if (keyIsDown(UP_ARROW) && world.player.canJump ) {
-		world.player.vy = -1.1*world.scale;
+	if (keyIsDown(UP_ARROW) && world.player.canJump) {
+		world.player.vy = -1.1 * world.scale;
 		world.player.canJump = false;
 	}
-	world.playerPosition.y = world.player.position.y;
-	iStart = (world.playerPosition.x - (width / 2 - world.tileSize * world.scale / 2)) / (world.tileSize * world.scale);
 	if (world.player.state !== state) {
 		world.player.playAnimation(state);
 	}
@@ -137,31 +133,31 @@ function updateGame(elapsedTime) {
 // TODO: create world chunk by chunk
 function drawGame() {
 	push();
-	const tileSize = 32;
-	translate(tileSize * 0, tileSize * 13);
+	const deltaX = width / 2 - world.tileSize * world.scale / 2;
+	translate(deltaX - world.player.position.x, world.tileSize * 13);
 	world.draw();
+	/*
+	spritesheet.drawScaledSprite('farm_animal', 0, 11*tileSize*scale, 1*tileSize*scale, scale);
+
+	spritesheet.drawScaledSprite('farm_animal', 1, 15*tileSize*scale, 2*tileSize*scale, scale);
+
+	spritesheet.drawScaledSprite('farm_animal', 2, 8*tileSize*scale, 2*tileSize*scale, scale);
+
+	spritesheet.drawScaledSprite('farm_animal', 3, 2*tileSize*scale, 2*tileSize*scale, scale);
+	
+	*/
 	pop();
 	if (toggleDebug) {
 		stroke(255);
 		line(600, 0, 600, 800);
 	}
-	/*
-	spritesheet.drawScaledSprite('farm_animal', 0, (11-iStart)*tileSize*scale, 1*tileSize*scale, scale);
-
-	spritesheet.drawScaledSprite('farm_animal', 1, (15-iStart)*tileSize*scale, 2*tileSize*scale, scale);
-
-	spritesheet.drawScaledSprite('farm_animal', 2, (8-iStart)*tileSize*scale, 2*tileSize*scale, scale);
-
-	spritesheet.drawScaledSprite('farm_animal', 3, (2-iStart)*tileSize*scale, 2*tileSize*scale, scale);
-	pop();
-	*/
 }
 
 function initGame() {
 	const menu = [ startButton ];
 	uiManager.setUI(menu);
 
-	noiseSeed(99);
+	noiseSeed(5000);
 	world = new World();
 	world.update(0);
 }
