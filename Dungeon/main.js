@@ -408,11 +408,6 @@ function mouseClicked() {
 }
 
 document.addEventListener('keydown', (event) => {
-	/*
-	if (event.key === 'a' && event.code === 'KeyQ') {
-		world.azerty = true;
-	}
-	*/
 	if (event.key === 'z' && event.code === 'KeyW') {
 		world.azerty = true;
 	}
