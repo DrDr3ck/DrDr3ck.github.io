@@ -197,14 +197,19 @@ function initGame() {
 		});
 		slotButtons.push(slot);
 	}
-	uiManager.setUI(menu);
-	slotButtons[0].setItem(spritesheet.getImage('seed_vegetable', 0));
-	slotButtons[1].setItem(spritesheet.getImage('seed_vegetable', 2));
-	slotButtons[5].setItem(spritesheet.getImage('seed_vegetable', 1));
+	uiManager.setUI(menu);	
 
 	noiseSeed(5000);
 	world = new World();
 	world.update(0);
+
+	world.player.addItem(new Item('navet','seed'), 0);
+	world.player.addItem(new Item('carotte','seed'), 2);
+	world.player.addItem(new Item('tomate','seed'), 4);
+
+	world.player.addItem(new Item('tomate','vegetable'), 5);
+	world.player.addItem(new Item('carotte','vegetable'), 3);
+	world.player.addItem(new Item('navet','vegetable'), 1);
 }
 
 function drawLoading() {

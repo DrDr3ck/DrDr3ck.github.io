@@ -151,15 +151,24 @@ class Chunk {
 	}
 }
 
-class Plant {
+class Item {
+	constructor(type, category) {
+		this.type = type;
+		this.category = category;
+	}
+}
+
+class Plant extends Item {
 	constructor(type, column, row) {
+		super(type, 'plant');
 		this.column = column;
 		this.row = row;
-		this.type = type; // type of the seed/plant
-		if( type === "navet" ) {
-			this.indices = [9,10,11]; // 12
-		} else if( type === "carotte" ) {
-			this.indices = [13,14,15]; // 16
+		if (type === 'navet') {
+			this.indices = [ 9, 10, 11 ]; // 12
+		} else if (type === 'carotte') {
+			this.indices = [ 13, 14, 15 ]; // 16
+		} else if (type === 'tomate') {
+			this.indices = [ 17, 18, 19, 20, 21, 22, 23 ]; // 24
 		}
 		this.time = 2000; // in milliseconds
 	}
@@ -169,9 +178,9 @@ class Plant {
 		// if time to grow, change sprite in chunk
 		if (this.time <= 0) {
 			const plantIndex = chunk.tiles[this.column][this.row];
-			const idx = this.indices.find( i => i === plantIndex );
-			if ( idx >= 0 ) {
-				chunk.tiles[this.column][this.row] = plantIndex+1;
+			const idx = this.indices.find((i) => i === plantIndex);
+			if (idx >= 0) {
+				chunk.tiles[this.column][this.row] = plantIndex + 1;
 				this.time = 2000;
 			}
 		}
@@ -196,6 +205,17 @@ class Entity extends Sprite {
 		this.debugTilePosition = null;
 
 		this.slotIndex = 0;
+		this.slots = [ { item: null }, { item: null }, { item: null }, { item: null }, { item: null }, { item: null } ];
+	}
+
+	addItem(item, index) {
+		// TODO: find free item ?
+		const slotIndex = this.slots.findIndex((slot) => slot.item === null);
+		if (slotIndex < 0) {
+			return;
+		}
+		this.slots[slotIndex] = { item };
+		slotButtons[slotIndex].setItem(spritesheet.getImage('seed_vegetable', index));
 	}
 
 	execute() {
@@ -213,9 +233,17 @@ class Entity extends Sprite {
 			chunk.tiles[colChunk][rowChunk] = 2;
 			chunk.tiles[colChunk][rowChunk - 1] = 8;
 		} else if (chunk.tiles[colChunk][rowChunk] === 2 && chunk.tiles[colChunk][rowChunk - 1] < 9) {
-			// add a plant to chunk
-			chunk.addPlant(this.slotIndex === 0 ? 'navet' : 'carotte', colChunk, rowChunk - 1);
-		} else if (chunk.tiles[colChunk][rowChunk] === 2 && (chunk.tiles[colChunk][rowChunk - 1] === 12 || chunk.tiles[colChunk][rowChunk - 1] === 16)) {
+			// check if player is carrying a seed
+			const item = this.slots[this.slotIndex].item;
+			console.log(JSON.stringify(item));
+			if (item && item.category === 'seed') {
+				// add a plant to chunk
+				chunk.addPlant(item.type, colChunk, rowChunk - 1);
+			}
+		} else if (
+			chunk.tiles[colChunk][rowChunk] === 2 &&
+			([12,16,24].includes(chunk.tiles[colChunk][rowChunk - 1]))
+		) {
 			// harvest a plant
 			chunk.tiles[colChunk][rowChunk] = 1;
 			chunk.tiles[colChunk][rowChunk - 1] = 8;
@@ -253,12 +281,12 @@ class Entity extends Sprite {
 	draw() {
 		super.draw();
 		// draw selected item on top of entity if any
-		if( slotButtons[this.slotIndex].item !== null ) {
-			fill(200,200,200,128);
+		if (slotButtons[this.slotIndex].item !== null) {
+			fill(200, 200, 200, 128);
 			stroke(0);
 			strokeWeight(1);
-			ellipse(this.position.x+32, this.position.y-32, 40 , 40);
-			image(slotButtons[this.slotIndex].item, this.position.x+16, this.position.y-32-16);
+			ellipse(this.position.x + 32, this.position.y - 32, 40, 40);
+			image(slotButtons[this.slotIndex].item, this.position.x + 16, this.position.y - 32 - 16);
 		}
 	}
 
