@@ -136,7 +136,9 @@ class Chunk {
 	}
 
 	addPlant(name, column, row) {
-		this.plants.push(new Plant(name, column, row));
+		const plant = new Plant(name, column, row);
+		this.tiles[column][row] = plant.indices[0]; // planting a seed
+		this.plants.push(plant);
 	}
 
 	removePlantAt(column, row) {
@@ -154,6 +156,11 @@ class Plant {
 		this.column = column;
 		this.row = row;
 		this.type = type; // type of the seed/plant
+		if( type === "navet" ) {
+			this.indices = [9,10,11]; // 12
+		} else if( type === "carotte" ) {
+			this.indices = [13,14,15]; // 16
+		}
 		this.time = 2000; // in milliseconds
 	}
 
@@ -161,14 +168,10 @@ class Plant {
 		this.time = Math.max(0, this.time - elapsedTime);
 		// if time to grow, change sprite in chunk
 		if (this.time <= 0) {
-			if (chunk.tiles[this.column][this.row] === 8) {
-				chunk.tiles[this.column][this.row] = 9;
-				this.time = 2000;
-			} else if (chunk.tiles[this.column][this.row] === 9) {
-				chunk.tiles[this.column][this.row] = 10;
-				this.time = 2000;
-			} else if (chunk.tiles[this.column][this.row] === 10) {
-				chunk.tiles[this.column][this.row] = 11;
+			const plantIndex = chunk.tiles[this.column][this.row];
+			const idx = this.indices.find( i => i === plantIndex );
+			if ( idx >= 0 ) {
+				chunk.tiles[this.column][this.row] = plantIndex+1;
 				this.time = 2000;
 			}
 		}
@@ -205,17 +208,17 @@ class Entity extends Sprite {
 
 		if (chunk.tiles[colChunk][rowChunk] === 0) {
 			chunk.tiles[colChunk][rowChunk] = 1;
-			chunk.tiles[colChunk][rowChunk - 1] = -1;
+			chunk.tiles[colChunk][rowChunk - 1] = 8;
 		} else if (chunk.tiles[colChunk][rowChunk] === 1) {
 			chunk.tiles[colChunk][rowChunk] = 2;
-			chunk.tiles[colChunk][rowChunk - 1] = -1;
-		} else if (chunk.tiles[colChunk][rowChunk] === 2 && chunk.tiles[colChunk][rowChunk - 1] < 8) {
+			chunk.tiles[colChunk][rowChunk - 1] = 8;
+		} else if (chunk.tiles[colChunk][rowChunk] === 2 && chunk.tiles[colChunk][rowChunk - 1] < 9) {
 			// add a plant to chunk
-			chunk.tiles[colChunk][rowChunk - 1] = 8; // planting a seed
-			chunk.addPlant('navet', colChunk, rowChunk - 1);
-		} else if (chunk.tiles[colChunk][rowChunk] === 2 && chunk.tiles[colChunk][rowChunk - 1] === 11) {
+			chunk.addPlant(this.slotIndex === 0 ? 'navet' : 'carotte', colChunk, rowChunk - 1);
+		} else if (chunk.tiles[colChunk][rowChunk] === 2 && (chunk.tiles[colChunk][rowChunk - 1] === 12 || chunk.tiles[colChunk][rowChunk - 1] === 16)) {
 			// harvest a plant
-			chunk.tiles[colChunk][rowChunk - 1] = -1;
+			chunk.tiles[colChunk][rowChunk] = 1;
+			chunk.tiles[colChunk][rowChunk - 1] = 8;
 			chunk.removePlantAt(colChunk, rowChunk - 1);
 		}
 	}

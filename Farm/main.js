@@ -199,6 +199,7 @@ function initGame() {
 	}
 	uiManager.setUI(menu);
 	slotButtons[0].setItem(spritesheet.getImage('seed_vegetable', 0));
+	slotButtons[1].setItem(spritesheet.getImage('seed_vegetable', 2));
 	slotButtons[5].setItem(spritesheet.getImage('seed_vegetable', 1));
 
 	noiseSeed(5000);
