@@ -44,8 +44,6 @@ class World {
 			}
 		});
 
-		
-
 		if (toggleDebug) {
 			ellipse(this.player.position.x, this.player.position.y, 2);
 			text(`${this.player.position.x}-${width / 2 - this.tileSize * world.scale / 2}`, 0, -150);
@@ -54,7 +52,10 @@ class World {
 	}
 
 	getPlayerTilePosition() {
-		return this.getTilePosition(this.player.position.x, this.player.position.y + this.tileSize * this.scale / 2 + 2);
+		return this.getTilePosition(
+			this.player.position.x,
+			this.player.position.y + this.tileSize * this.scale / 2 + 2
+		);
 	}
 
 	getTilePosition(worldX, worldY) {
@@ -84,15 +85,15 @@ class World {
 	}
 
 	update(elapsedTime) {
+		// check if a new chunk needs to be added
 		// max
 		const lastChunk = this.chunks[this.chunks.length - 1];
 		let chunkLimit = this.tileSize * this.scale * lastChunk.width * lastChunk.id;
-		// check if a new chunk needs to be added
+
 		let curChunkLimit = world.player.position.x + width / 2;
 		if (chunkLimit < curChunkLimit) {
 			this.chunks.push(new Chunk(lastChunk.id + 1));
 		}
-
 		// min
 		const firstChunk = this.chunks[0];
 		chunkLimit = this.tileSize * this.scale * lastChunk.width * firstChunk.id;
@@ -101,6 +102,9 @@ class World {
 			this.chunks.unshift(new Chunk(firstChunk.id - 1));
 		}
 
+		this.chunks.forEach((chunk) => chunk.update(elapsedTime));
+
+		// update player
 		this.player.update(elapsedTime);
 	}
 }
@@ -111,6 +115,7 @@ class Chunk {
 		this.width = 9;
 		this.height = 6;
 		this.tiles = [];
+		this.plants = [];
 		for (let i = 0; i < this.width; i++) {
 			const zRandom = noise((xChunk * this.width + i) * 0.1);
 			const jTop = Math.round(zRandom * 4);
@@ -130,9 +135,44 @@ class Chunk {
 		}
 	}
 
-	draw() {}
+	addPlant(name, column, row) {
+		this.plants.push(new Plant(name, column, row));
+	}
 
-	update(elapsedTime) {}
+	removePlantAt(column, row) {
+		this.plants = this.plants.filter((plant) => plant.column !== column || plant.row !== row);
+	}
+
+	update(elapsedTime) {
+		// update time for plants
+		this.plants.forEach((plant) => plant.update(elapsedTime, this));
+	}
+}
+
+class Plant {
+	constructor(type, column, row) {
+		this.column = column;
+		this.row = row;
+		this.type = type; // type of the seed/plant
+		this.time = 2000; // in milliseconds
+	}
+
+	update(elapsedTime, chunk) {
+		this.time = Math.max(0, this.time - elapsedTime);
+		// if time to grow, change sprite in chunk
+		if (this.time <= 0) {
+			if (chunk.tiles[this.column][this.row] === 8) {
+				chunk.tiles[this.column][this.row] = 9;
+				this.time = 2000;
+			} else if (chunk.tiles[this.column][this.row] === 9) {
+				chunk.tiles[this.column][this.row] = 10;
+				this.time = 2000;
+			} else if (chunk.tiles[this.column][this.row] === 10) {
+				chunk.tiles[this.column][this.row] = 11;
+				this.time = 2000;
+			}
+		}
+	}
 }
 
 const gravity = 0.1;
@@ -151,6 +191,8 @@ class Entity extends Sprite {
 		this.addAnimation('up', 'farm_robot', [ 11 ], FPS, false);
 
 		this.debugTilePosition = null;
+
+		this.slotIndex = 0;
 	}
 
 	execute() {
@@ -161,21 +203,25 @@ class Entity extends Sprite {
 		const colChunk = world.getColumnPositionInChunk(chunk, tilePosition.column);
 		const rowChunk = tilePosition.row + 1;
 
-		if (chunk.tiles[colChunk][rowChunk - 1] === 8) { // for debug only
-			chunk.tiles[colChunk][rowChunk - 1] = 9; // for debug only
-		} else if (chunk.tiles[colChunk][rowChunk - 1] === 9) { // for debug only
-			chunk.tiles[colChunk][rowChunk - 1] = 10; // for debug only
-		} else if (chunk.tiles[colChunk][rowChunk - 1] === 10) { // for debug only
-			chunk.tiles[colChunk][rowChunk - 1] = 11; // for debug only
-		} else if (chunk.tiles[colChunk][rowChunk] === 0) {
+		if (chunk.tiles[colChunk][rowChunk] === 0) {
 			chunk.tiles[colChunk][rowChunk] = 1;
 			chunk.tiles[colChunk][rowChunk - 1] = -1;
 		} else if (chunk.tiles[colChunk][rowChunk] === 1) {
 			chunk.tiles[colChunk][rowChunk] = 2;
 			chunk.tiles[colChunk][rowChunk - 1] = -1;
-		} else if (chunk.tiles[colChunk][rowChunk] === 2) {
-			chunk.tiles[colChunk][rowChunk - 1] = 8;
+		} else if (chunk.tiles[colChunk][rowChunk] === 2 && chunk.tiles[colChunk][rowChunk - 1] < 8) {
+			// add a plant to chunk
+			chunk.tiles[colChunk][rowChunk - 1] = 8; // planting a seed
+			chunk.addPlant('navet', colChunk, rowChunk - 1);
+		} else if (chunk.tiles[colChunk][rowChunk] === 2 && chunk.tiles[colChunk][rowChunk - 1] === 11) {
+			// harvest a plant
+			chunk.tiles[colChunk][rowChunk - 1] = -1;
+			chunk.removePlantAt(colChunk, rowChunk - 1);
 		}
+	}
+
+	updateItemInHand(index) {
+		this.slotIndex = index;
 	}
 
 	startMove(direction) {
@@ -199,6 +245,18 @@ class Entity extends Sprite {
 	stopMove() {
 		this.vx = 0;
 		this.vy = 0;
+	}
+
+	draw() {
+		super.draw();
+		// draw selected item on top of entity if any
+		if( slotButtons[this.slotIndex].item !== null ) {
+			fill(200,200,200,128);
+			stroke(0);
+			strokeWeight(1);
+			ellipse(this.position.x+32, this.position.y-32, 40 , 40);
+			image(slotButtons[this.slotIndex].item, this.position.x+16, this.position.y-32-16);
+		}
 	}
 
 	update(elapsedTime) {
@@ -234,5 +292,27 @@ class Entity extends Sprite {
 		}
 		*/
 		super.update(elapsedTime);
+	}
+}
+
+class BSlotButton extends BImageButton {
+	constructor(x, y, img, callback) {
+		super(x, y, img, callback);
+		this.item = null;
+	}
+
+	setItem(img) {
+		this.item = img;
+	}
+
+	isAvailable() {
+		return !this.item;
+	}
+
+	doDraw() {
+		super.doDraw();
+		if (this.item) {
+			image(this.item, this.x + 8, this.y + 8, 48, 48);
+		}
 	}
 }

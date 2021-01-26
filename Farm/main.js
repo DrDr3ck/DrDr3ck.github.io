@@ -78,7 +78,7 @@ const helpButton = new BFloatingButton(20, 60, '\u003F', () => {
 
 function startClicked() {
 	curState = GAME_PLAY_STATE;
-	uiManager.setUI([ speakerButton, musicButton, helpButton ]);
+	uiManager.setUI([ speakerButton, musicButton, helpButton, ...slotButtons ]);
 }
 
 const startButton = new BButton(130, 580, 'START', startClicked);
@@ -105,22 +105,52 @@ function setup() {
 
 	spritesheet.addSpriteSheet('farm_tile', './resources/farm_tile.png', 32, 32);
 	spritesheet.addSpriteSheet('farm_animal', './resources/farm_animal.png', 32, 32);
+	spritesheet.addSpriteSheet('seed_vegetable', './resources/farm_seed_vegetable.png', 32, 32);
+	spritesheet.addSpriteSheet('farm_ui', './resources/farm_ui.png', 64, 64);
 	spritesheet.addSpriteSheet('farm_robot', './resources/farm_robot.png', 32, 48);
 
 	lastTime = Date.now();
 }
 
+let azerty = true;
+
+document.addEventListener('keydown', (event) => {
+	if (event.key === 'z' && event.code === 'KeyW') {
+		azerty = true;
+	}
+	if (event.key === 'w' && event.code === 'KeyW') {
+		azerty = false;
+	}
+	if (event.key === 'q' && event.code === 'KeyA') {
+		azerty = true;
+	}
+	if (event.key === 'a' && event.code === 'KeyA') {
+		azerty = false;
+	}
+
+	if (event.key === 'q' && event.code === 'KeyQ') {
+		azerty = false;
+	}
+	if (event.key === 'a' && event.code === 'KeyQ') {
+		azerty = true;
+	}
+});
+
 function updateGame(elapsedTime) {
 	let state = 'idle';
-	if (keyIsDown(LEFT_ARROW)) {
+	const right = 68;
+	const left = azerty ? 81 : 65;
+	const up = azerty ? 90 : 87;
+	//const down = 83;
+	if (keyIsDown(LEFT_ARROW) || keyIsDown(left)) {
 		world.player.position.x -= 1 * world.scale;
 		state = 'left';
 	}
-	if (keyIsDown(RIGHT_ARROW)) {
+	if (keyIsDown(RIGHT_ARROW) || keyIsDown(right)) {
 		world.player.position.x += 1 * world.scale;
 		state = 'right';
 	}
-	if (keyIsDown(UP_ARROW) && world.player.canJump) {
+	if ((keyIsDown(UP_ARROW) || keyIsDown(up)) && world.player.canJump) {
 		world.player.vy = -1.1 * world.scale;
 		world.player.canJump = false;
 	}
@@ -151,11 +181,25 @@ function drawGame() {
 		stroke(255);
 		line(600, 0, 600, 800);
 	}
+	stroke(150, 50, 50, 150);
+	noFill();
+	strokeWeight(3);
+	rect(400 + 68 * world.player.slotIndex - 1, 700 - 1, 66, 66);
 }
+
+const slotButtons = [];
 
 function initGame() {
 	const menu = [ startButton ];
+	for (let i = 0; i < 6; i++) {
+		const slot = new BSlotButton(400 + 68 * i, 700, spritesheet.getImage('farm_ui', 0), () => {
+			world.player.updateItemInHand(i);
+		});
+		slotButtons.push(slot);
+	}
 	uiManager.setUI(menu);
+	slotButtons[0].setItem(spritesheet.getImage('seed_vegetable', 0));
+	slotButtons[5].setItem(spritesheet.getImage('seed_vegetable', 1));
 
 	noiseSeed(5000);
 	world = new World();
@@ -216,6 +260,17 @@ function draw() {
 function mouseClicked() {
 	toolManager.mouseClicked();
 	uiManager.mouseClicked();
+}
+
+function mouseWheel(event) {
+	if (event.delta > 0) {
+		world.player.slotIndex = (world.player.slotIndex + slotButtons.length - 1) % slotButtons.length;
+	}
+	if (event.delta < 0) {
+		world.player.slotIndex = (world.player.slotIndex + 1) % slotButtons.length;
+	}
+	//uncomment to block page scrolling
+	return false;
 }
 
 function keyPressed() {
