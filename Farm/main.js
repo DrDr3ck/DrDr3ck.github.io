@@ -284,7 +284,17 @@ function keyPressed() {
 		toggleDebug = !toggleDebug;
 	}
 
-	if (key === 'e' || key === 'E') {
+	if (key === ' ') {
+		// interact
 		world.player.execute();
+	}
+
+	if( key === 'e' || key === 'E') {
+		world.player.pickUpItems();
+	}
+
+	if( key === 'x' || key === 'X' ) {
+		// drop item
+		world.player.dropSlotItem();
 	}
 }

@@ -7,6 +7,8 @@ class World {
 
 		this.player = new Entity(0, 0);
 		this.player.scale = this.scale;
+
+		this.items = []; // TODO: per chunk ?
 	}
 
 	draw() {
@@ -60,6 +62,8 @@ class World {
 			}
 		});
 
+		this.items.forEach((item) => item.draw());
+
 		if (toggleDebug) {
 			ellipse(this.player.position.x, this.player.position.y, 2);
 			text(`${this.player.position.x}-${width / 2 - this.tileSize * world.scale / 2}`, 0, -150);
@@ -69,7 +73,7 @@ class World {
 
 	getPlayerTilePosition() {
 		return this.getTilePosition(
-			this.player.position.x+this.tileSize * this.scale / 2,
+			this.player.position.x + this.tileSize * this.scale / 2,
 			this.player.position.y + this.tileSize * this.scale / 2 + 2
 		);
 	}
@@ -121,7 +125,7 @@ class World {
 
 	hitWall(box) {
 		this.collidedTiles = [];
-		const tilePosition = this.getPlayerTilePosition();
+		const tilePosition = this.getTilePosition(box.x+box.w/2, box.y+box.h/2);
 		for (let r = tilePosition.row - 1; r <= tilePosition.row + 2; r++) {
 			for (let c = tilePosition.column - 1; c <= tilePosition.column + 2; c++) {
 				if (this.isSolid(c, r)) {
@@ -187,6 +191,8 @@ class World {
 
 		this.chunks.forEach((chunk) => chunk.update(elapsedTime));
 
+		this.items.forEach((item) => item.update(elapsedTime));
+
 		// update player
 		this.player.update(elapsedTime);
 	}
@@ -224,6 +230,14 @@ class Chunk {
 		this.plants.push(plant);
 	}
 
+	getPlantType(column, row) {
+		const plant = this.plants.filter((plant) => plant.column === column && plant.row === row);
+		if( plant.length === 0 ) {
+			return null;
+		}
+		return plant[0].type;
+	}
+
 	removePlantAt(column, row) {
 		this.plants = this.plants.filter((plant) => plant.column !== column || plant.row !== row);
 	}
@@ -241,6 +255,74 @@ class Item {
 	}
 }
 
+class DroppedItem extends Item {
+	constructor(type, category, position, vector) {
+		super(type, category);
+		if (type === 'navet') {
+			if (category == 'seed') {
+				this.img = spritesheet.getImage('seed_vegetable', 0);
+			} else {
+				this.img = spritesheet.getImage('seed_vegetable', 1);
+			}
+		} else if (type === 'carotte') {
+			if (category == 'seed') {
+				this.img = spritesheet.getImage('seed_vegetable', 2);
+			} else {
+				this.img = spritesheet.getImage('seed_vegetable', 3);
+			}
+		} else if (type === 'tomate') {
+			if (category == 'seed') {
+				this.img = spritesheet.getImage('seed_vegetable', 4);
+			} else {
+				this.img = spritesheet.getImage('seed_vegetable', 5);
+			}
+		}
+		this.vx = vector.x;
+		this.vy = vector.y;
+		this.x = position.x;
+		this.y = position.y;
+	}
+
+	draw() {
+		image(this.img, this.x, this.y);
+		if (toggleDebug) {
+			rect(this.x, this.y, world.tileSize, world.tileSize);
+		}
+	}
+
+	getBox() {
+		return {
+			x: this.x,
+			y: this.y,
+			w: world.tileSize,
+			h: world.tileSize
+		};
+	}
+
+	update(elapsedTime) {
+		this.vy = Math.min(15, this.vy + gravity);
+		// check if item hit the ground
+		const box = this.getBox();
+		box.x += this.vx;
+		if (!world.hitWall(box)) {
+			this.x += this.vx;
+		} else {
+			this.vx = -this.vx/3;
+		}
+		box.x -= this.vx;
+		box.y += this.vy;
+		if (!world.hitWall(box)) {
+			this.y += this.vy;
+		} else {
+			this.vy = -this.vy/3;
+			if( Math.abs(this.vy) <= 0.1 ) {
+				this.vy = 0;
+				this.vx = 0;
+			}
+		}
+	}
+}
+
 class Plant extends Item {
 	constructor(type, column, row) {
 		super(type, 'plant');
@@ -253,7 +335,7 @@ class Plant extends Item {
 		} else if (type === 'tomate') {
 			this.indices = [ 17, 18, 19, 20, 21, 22, 23 ]; // 24
 		}
-		this.time = 2000; // in milliseconds
+		this.time = 200; // in milliseconds
 	}
 
 	update(elapsedTime, chunk) {
@@ -264,7 +346,7 @@ class Plant extends Item {
 			const idx = this.indices.find((i) => i === plantIndex);
 			if (idx >= 0) {
 				chunk.tiles[this.column][this.row] = plantIndex + 1;
-				this.time = 2000;
+				this.time = 200;
 			}
 		}
 	}
@@ -291,14 +373,38 @@ class Entity extends Sprite {
 		this.slots = [ { item: null }, { item: null }, { item: null }, { item: null }, { item: null }, { item: null } ];
 	}
 
-	addItem(item, index) {
+	dropSlotItem() {
+		const item = this.slots[this.slotIndex].item;
+		if (!item) {
+			// nothing to do: no item on this slot
+			return;
+		}
+
+		world.items.push(new DroppedItem(item.type, item.category, this.position, { x: random(3)-1, y: -random(2) }));
+	}
+
+	/**
+	 * Picks all items that are on the floor (next to the player)
+	 */
+	pickUpItems() {
+		function dist(x1, y1, x2, y2) {
+			return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2));
+		}
+		const playerGroundPosition = {x: world.player.position.x+world.player.width*world.scale/2, y: world.player.position.y+world.player.height*world.scale*0.8};
+		const maxDistance = world.tileSize * world.scale;
+		const pickedItems = world.items.filter(item => dist(item.x, item.y, playerGroundPosition.x, playerGroundPosition.y) < maxDistance);
+		// TODO: put pickedItems in slots
+		world.items = world.items.filter(item => dist(item.x, item.y, playerGroundPosition.x, playerGroundPosition.y) >= maxDistance);
+	}
+
+	addItem(item, itemSpriteIndex) {
 		// TODO: find free item ?
 		const slotIndex = this.slots.findIndex((slot) => slot.item === null);
 		if (slotIndex < 0) {
 			return;
 		}
 		this.slots[slotIndex] = { item };
-		slotButtons[slotIndex].setItem(spritesheet.getImage('seed_vegetable', index));
+		slotButtons[slotIndex].setItem(spritesheet.getImage('seed_vegetable', itemSpriteIndex));
 	}
 
 	getBox() {
@@ -334,7 +440,25 @@ class Entity extends Sprite {
 			// harvest a plant
 			chunk.tiles[colChunk][rowChunk] = 1;
 			chunk.tiles[colChunk][rowChunk - 1] = 8;
+			const type = chunk.getPlantType(colChunk, rowChunk - 1);
 			chunk.removePlantAt(colChunk, rowChunk - 1);
+			// drop items: seed + plant
+			console.log("type:", type);
+			if( type ) {
+				const iChunk = chunk.id * chunk.width * world.scale * world.tileSize;
+				const worldPosition = {x: iChunk+colChunk*world.tileSize*world.scale, y: (rowChunk-1)*world.tileSize*world.scale+world.tileSize };
+				world.items.push(
+					new DroppedItem(type, "seed", worldPosition, { x: random(3)-1, y: -random(3) })
+				);
+				if( random(1) > 0.9 ) { // two seeds !!
+					world.items.push(
+						new DroppedItem(type, "seed", worldPosition, { x: random(3)-1, y: -random(3) })
+					);	
+				}
+				world.items.push(
+					new DroppedItem(type, "vegetable", worldPosition, { x: random(3)-1, y: -random(3) })
+				);
+			}
 		}
 	}
 
