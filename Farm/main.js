@@ -203,13 +203,13 @@ function initGame() {
 	world = new World();
 	world.update(0);
 
-	world.player.addItem(new Item('navet','seed'), 0);
-	world.player.addItem(new Item('carotte','seed'), 2);
-	world.player.addItem(new Item('tomate','seed'), 4);
+	world.player.addItemInSlots(new Item('navet','seed'), 0);
+	world.player.addItemInSlots(new Item('carotte','seed'), 2);
+	world.player.addItemInSlots(new Item('tomate','seed'), 4);
 
-	world.player.addItem(new Item('tomate','vegetable'), 5);
-	world.player.addItem(new Item('carotte','vegetable'), 3);
-	world.player.addItem(new Item('navet','vegetable'), 1);
+	world.player.addItemInSlots(new Item('tomate','vegetable'), 5);
+	world.player.addItemInSlots(new Item('carotte','vegetable'), 3);
+	world.player.addItemInSlots(new Item('navet','vegetable'), 1);
 }
 
 function drawLoading() {
@@ -291,6 +291,16 @@ function keyPressed() {
 
 	if( key === 'e' || key === 'E') {
 		world.player.pickUpItems();
+	}
+
+	if( key === ',') {
+		// previous slot
+		world.player.slotIndex = (world.player.slotIndex + slotButtons.length - 1) % slotButtons.length;
+	}
+
+	if( key === ';') {
+		// previous slot
+		world.player.slotIndex = (world.player.slotIndex + 1) % slotButtons.length;
 	}
 
 	if( key === 'x' || key === 'X' ) {
