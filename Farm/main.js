@@ -143,11 +143,11 @@ function updateGame(elapsedTime) {
 	const up = azerty ? 90 : 87;
 	//const down = 83;
 	if (keyIsDown(LEFT_ARROW) || keyIsDown(left)) {
-		world.player.position.x -= 1 * world.scale;
+		world.player.vx = -0.5 * world.scale;
 		state = 'left';
 	}
 	if (keyIsDown(RIGHT_ARROW) || keyIsDown(right)) {
-		world.player.position.x += 1 * world.scale;
+		world.player.vx = 0.5 * world.scale;
 		state = 'right';
 	}
 	if ((keyIsDown(UP_ARROW) || keyIsDown(up)) && world.player.canJump) {

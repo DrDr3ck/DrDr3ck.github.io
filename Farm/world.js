@@ -12,6 +12,22 @@ class World {
 	draw() {
 		this.player.draw();
 
+		if (toggleDebug) {
+			rect(this.player.position.x, this.player.position.y, 32 * this.scale, 48 * this.scale);
+			this.collidedTiles.forEach((collideTile) => {
+				if (collideTile.solid) {
+					if (collideTile.collide) {
+						fill(255, 0, 0);
+					} else {
+						fill(255);
+					}
+				} else {
+					fill(255, 128);
+				}
+				rect(collideTile.x, collideTile.y, collideTile.w, collideTile.h);
+			});
+		}
+
 		this.chunks.forEach((chunk) => {
 			// TODO: check if this chunk needs to be displayed according to position of the chunk in the camera
 			const iChunk = chunk.id * chunk.width * this.scale * this.tileSize;
@@ -53,7 +69,7 @@ class World {
 
 	getPlayerTilePosition() {
 		return this.getTilePosition(
-			this.player.position.x,
+			this.player.position.x+this.tileSize * this.scale / 2,
 			this.player.position.y + this.tileSize * this.scale / 2 + 2
 		);
 	}
@@ -82,6 +98,73 @@ class World {
 		const colChunk = this.getColumnPositionInChunk(chunk, column);
 		const value = chunk.tiles[colChunk][row];
 		return value >= 0 && value <= 3;
+	}
+
+	collide(rect1, rect2) {
+		if (!rect1 || !rect2) {
+			return false;
+		}
+		if (rect1.x >= rect2.x + rect2.w) {
+			return false;
+		}
+		if (rect2.x >= rect1.x + rect1.w) {
+			return false;
+		}
+		if (rect1.y >= rect2.y + rect2.h) {
+			return false;
+		}
+		if (rect2.y >= rect1.y + rect1.h) {
+			return false;
+		}
+		return true;
+	}
+
+	hitWall(box) {
+		this.collidedTiles = [];
+		const tilePosition = this.getPlayerTilePosition();
+		for (let r = tilePosition.row - 1; r <= tilePosition.row + 2; r++) {
+			for (let c = tilePosition.column - 1; c <= tilePosition.column + 2; c++) {
+				if (this.isSolid(c, r)) {
+					if (
+						this.collide(box, {
+							x: c * this.tileSize * this.scale,
+							y: r * this.tileSize * this.scale,
+							w: this.tileSize * this.scale,
+							h: this.tileSize * this.scale
+						})
+					) {
+						this.collidedTiles.push({
+							x: c * this.tileSize * this.scale,
+							y: r * this.tileSize * this.scale,
+							w: this.tileSize * this.scale,
+							h: this.tileSize * this.scale,
+							solid: true,
+							collide: true
+						});
+						return true;
+					} else {
+						this.collidedTiles.push({
+							x: c * this.tileSize * this.scale,
+							y: r * this.tileSize * this.scale,
+							w: this.tileSize * this.scale,
+							h: this.tileSize * this.scale,
+							solid: true,
+							collide: false
+						});
+					}
+				} else {
+					this.collidedTiles.push({
+						x: c * this.tileSize * this.scale,
+						y: r * this.tileSize * this.scale,
+						w: this.tileSize * this.scale,
+						h: this.tileSize * this.scale,
+						solid: false,
+						collide: false
+					});
+				}
+			}
+		}
+		return false;
 	}
 
 	update(elapsedTime) {
@@ -218,6 +301,10 @@ class Entity extends Sprite {
 		slotButtons[slotIndex].setItem(spritesheet.getImage('seed_vegetable', index));
 	}
 
+	getBox() {
+		return { x: this.position.x, y: this.position.y, w: 32 * 2, h: 48 * 2 };
+	}
+
 	execute() {
 		// execute an action on the current tile
 		// ex: if entity has a 'hoe' in hand, he will 'plow' the current tile if possible
@@ -242,7 +329,7 @@ class Entity extends Sprite {
 			}
 		} else if (
 			chunk.tiles[colChunk][rowChunk] === 2 &&
-			([12,16,24].includes(chunk.tiles[colChunk][rowChunk - 1]))
+			[ 12, 16, 24 ].includes(chunk.tiles[colChunk][rowChunk - 1])
 		) {
 			// harvest a plant
 			chunk.tiles[colChunk][rowChunk] = 1;
@@ -292,26 +379,10 @@ class Entity extends Sprite {
 
 	update(elapsedTime) {
 		const speed = 3;
+		this.vy = Math.min(15, this.vy + gravity);
 
-		// check where is the entity
-		const tilePosition = world.getPlayerTilePosition();
-		this.debugTilePosition = tilePosition;
-		if (world.isSolid(tilePosition.column, tilePosition.row + 1)) {
-			// 1. if entity is on a tile, set vy to 0
-			if (this.vy > 0) {
-				this.vy = 0;
-				this.canJump = true;
-			}
-		} else {
-			// 2. if entity is in the air, add gravity to vy
-			this.vy = Math.min(15, this.vy + gravity);
-		}
-
-		this.position.x += this.vx * speed;
-		this.position.y += this.vy * speed;
-		/*
-		// check if entity hit a wall
-		const box = this.getFloorBox();
+		// check if entity hit a solid tile
+		const box = this.getBox();
 		box.x += this.vx * speed;
 		if (!world.hitWall(box)) {
 			this.position.x += this.vx * speed;
@@ -320,8 +391,12 @@ class Entity extends Sprite {
 		box.y += this.vy * speed;
 		if (!world.hitWall(box)) {
 			this.position.y += this.vy * speed;
+		} else {
+			this.vy /= 2;
+			this.canJump = true;
 		}
-		*/
+		this.vx = 0;
+
 		super.update(elapsedTime);
 	}
 }
