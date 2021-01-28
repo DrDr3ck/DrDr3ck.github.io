@@ -376,7 +376,12 @@ class BImageButton extends BInteractiveButtonBase {
 	}
 
 	doDraw() {
+		push();
+		if( this.over ) {
+			tint(255, 200);
+		}
 		image(this.img, this.x, this.y, this.w, this.h);
+		pop();
 	}
 
 }
