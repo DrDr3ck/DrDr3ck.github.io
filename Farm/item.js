@@ -221,7 +221,7 @@ class Entity extends Sprite {
 	}
 
 	getBox() {
-		return { x: this.position.x, y: this.position.y, w: 32 * 2, h: 48 * 2 };
+		return { x: this.position.x + 10, y: this.position.y, w: 32 * 2 - 20, h: 48 * 2 };
 	}
 
 	execute() {
@@ -233,20 +233,33 @@ class Entity extends Sprite {
 		const colChunk = world.getColumnPositionInChunk(chunk, tilePosition.column);
 		const rowChunk = tilePosition.row + 1;
 
-		if (chunk.tiles[colChunk][rowChunk] === 0) {
+		const item = this.slots[this.slotIndex].item;
+
+		if (item && item.category === 'vegetable' && item.count > 0) {
+			// check if player is carrying a vegetable
+			item.count--;
+			// transform seed into vegetable
+			world.items.push(
+				new DroppedItem(item.name, 'seed', world.player.position, { x: random(3) - 1, y: -random(3) })
+			);
+			if (random(1) > 0.8) {
+				// two seeds !!
+				world.items.push(
+					new DroppedItem(item.name, 'seed', world.player.position, { x: random(3) - 1, y: -random(3) })
+				);
+			}
+		} else if (chunk.tiles[colChunk][rowChunk] === 0) {
 			// TODO: check if player has a 'shovel'
 			chunk.tiles[colChunk][rowChunk] = 1;
 			chunk.tiles[colChunk][rowChunk - 1] = 8;
 		} else if (chunk.tiles[colChunk][rowChunk] === 1) {
 			// check if player has a 'hoe'
-			const item = this.slots[this.slotIndex].item;
 			if (item && item.category === 'tool' && item.name === 'hoe' && item.count > 0) {
 				chunk.tiles[colChunk][rowChunk] = 2;
 				chunk.tiles[colChunk][rowChunk - 1] = 8;
 			}
 		} else if (chunk.tiles[colChunk][rowChunk] === 2 && chunk.tiles[colChunk][rowChunk - 1] < 9) {
 			// check if player is carrying a seed
-			const item = this.slots[this.slotIndex].item;
 			// check if seed count > 0
 			if (item && item.category === 'seed' && item.count > 0) {
 				// add a plant to chunk
@@ -269,13 +282,6 @@ class Entity extends Sprite {
 					x: iChunk + colChunk * world.tileSize * world.scale,
 					y: (rowChunk - 1) * world.tileSize * world.scale + world.tileSize
 				};
-				/*
-				world.items.push(new DroppedItem(type, 'seed', worldPosition, { x: random(3) - 1, y: -random(3) }));
-				if (random(1) > 0.9) {
-					// two seeds !!
-					world.items.push(new DroppedItem(type, 'seed', worldPosition, { x: random(3) - 1, y: -random(3) }));
-				}
-				*/
 				world.items.push(
 					new DroppedItem(type, 'vegetable', worldPosition, { x: random(3) - 1, y: -random(3) })
 				);

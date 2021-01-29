@@ -53,10 +53,15 @@ class Inventory {
 			new BSlotButton(120 + 70, 120, spritesheet.getImage('farm_ui', 3), () => {
 				this.currentTabIndex = 1;
 			}),
-			new BSlotButton(120 + 70*2, 120, spritesheet.getImage('farm_ui', 4), () => {
+			new BSlotButton(120 + 70 * 2, 120, spritesheet.getImage('farm_ui', 4), () => {
 				this.currentTabIndex = 2;
 			})
 		];
+		const closeDialogButton = new BFloatingButton(windowWidth - 150, 160, '\u2716', () => {
+			this.popup();
+		});
+		closeDialogButton.setTextSize(32);
+		this.tabButtons.push(closeDialogButton);
 		this.currentTabIndex = 0;
 		this.tabButtons.forEach((tab) => (tab.visible = false));
 	}
@@ -80,7 +85,7 @@ class Inventory {
 			const y = 120;
 			fill(128, 128, 100);
 			rect(x, y, tileSize, tileSize);
-			image(item.img, x + tileSize / 2, y + tileSize / 2);
+			image(item.img, x + tileSize / 2, y + tileSize / 2, 48, 48, 0, 0);
 			fill(0);
 			text(item.count, x + tileSize - 2, y + 2);
 		});
@@ -111,7 +116,10 @@ class Inventory {
 		if (idx !== -1) {
 			throw `Item ${itemName} already created in category ${categoryName}`;
 		}
-		const img = spritesheet.getImage(categoryName === 'tool' ? 'farm_tools' : 'seed_vegetable', getSpriteIndex(itemName, categoryName));
+		const img = spritesheet.getImage(
+			categoryName === 'tool' ? 'farm_tools' : 'seed_vegetable',
+			getSpriteIndex(itemName, categoryName)
+		);
 		category.createItem(itemName, img, count);
 	}
 

@@ -78,9 +78,14 @@ const helpButton = new BFloatingButton(20, 60, '\u003F', () => {
 
 function startClicked() {
 	curState = GAME_PLAY_STATE;
-	const inventoryButton = new BImageButton(windowWidth - 70 - 10, windowHeight - 100, spritesheet.getImage('farm_ui', 1), () => {
-		world.inventory.popup();
-	});
+	const inventoryButton = new BImageButton(
+		windowWidth - 70 - 10,
+		windowHeight - 100,
+		spritesheet.getImage('farm_ui', 1),
+		() => {
+			world.inventory.popup();
+		}
+	);
 	uiManager.setUI([ speakerButton, musicButton, helpButton, inventoryButton, ...slotButtons ]);
 	uiManager.currentUI.push(...world.inventory.tabButtons);
 }
@@ -181,7 +186,7 @@ function drawGame() {
 	
 	*/
 	pop();
-	if( world.inventory.visible ) {
+	if (world.inventory.visible) {
 		world.inventory.draw();
 	}
 	if (toggleDebug) {
@@ -191,7 +196,7 @@ function drawGame() {
 	stroke(150, 50, 50, 150);
 	noFill();
 	strokeWeight(3);
-	rect(400 + 68 * world.player.slotIndex - 1, windowHeight-100 - 1, 66, 66);
+	rect(400 + 68 * world.player.slotIndex - 1, windowHeight - 100 - 1, 66, 66);
 }
 
 const slotButtons = [];
@@ -199,7 +204,7 @@ const slotButtons = [];
 function initGame() {
 	const menu = [ startButton ];
 	for (let i = 0; i < 7; i++) {
-		const slot = new BSlotButton(400 + 68 * i, windowHeight-100, spritesheet.getImage('farm_ui', 0), () => {
+		const slot = new BSlotButton(400 + 68 * i, windowHeight - 100, spritesheet.getImage('farm_ui', 0), () => {
 			world.player.updateItemInHand(i);
 		});
 		slotButtons.push(slot);
@@ -210,10 +215,10 @@ function initGame() {
 	world = new World();
 	world.update(0);
 
-	world.player.addItemInSlots( world.inventory.getCountedItem('navet', 'seed'));
-	world.player.addItemInSlots( world.inventory.getCountedItem('carotte', 'seed'));
-	world.player.addItemInSlots( world.inventory.getCountedItem('tomate', 'seed'));
-	world.player.addItemInSlots( world.inventory.getCountedItem('hoe', 'tool'));
+	world.player.addItemInSlots(world.inventory.getCountedItem('navet', 'seed'));
+	world.player.addItemInSlots(world.inventory.getCountedItem('carotte', 'seed'));
+	world.player.addItemInSlots(world.inventory.getCountedItem('tomate', 'seed'));
+	world.player.addItemInSlots(world.inventory.getCountedItem('hoe', 'tool'));
 }
 
 function drawLoading() {
@@ -288,12 +293,13 @@ function keyPressed() {
 		toggleDebug = !toggleDebug;
 	}
 
-	if (key === ' ') {
+	//if (key === ' ') {
+	if (key === 'e' || key === 'E') {
 		// interact
 		world.player.execute();
 	}
 
-	if (key === 'e' || key === 'E') {
+	if (key === 'a' || key === 'A') {
 		world.player.pickUpItems();
 	}
 
@@ -313,7 +319,13 @@ function keyPressed() {
 	}
 
 	if (key === 'i' || key === 'I') {
-		// drop item
+		s;
 		world.inventory.popup();
+	}
+
+	if (keyCode === ESCAPE) {
+		if (world.inventory.visible) {
+			world.inventory.popup();
+		}
 	}
 }
