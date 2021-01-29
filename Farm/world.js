@@ -1,26 +1,26 @@
-class CountedItem {
-	constructor(name, img) {
-		this.name = name;
-		this.count = 0;
-		this.img = img;
-	}
-}
-
 class Category {
 	constructor(name) {
 		this.name = name;
 		this.countedItems = [];
 	}
 
+	getCountedItem(itemName) {
+		const idx = this.countedItems.findIndex((item) => item.name === itemName);
+		if (idx === -1) {
+			throw `no counted item for ${itemName} of category ${this.name}`;
+		}
+		return this.countedItems[idx];
+	}
+
 	createItem(name, img, count = 0) {
-		const item = new CountedItem(name, img);
+		const item = new CountedItem(name, this.name, img);
 		item.count = count;
 		this.countedItems.push(item);
 	}
 
 	addItem(name, nb) {
 		// find item
-		const idx = this.countedItems.indexOf((item) => item.name === name);
+		const idx = this.countedItems.findIndex((item) => item.name === name);
 		if (idx === -1) {
 			throw `Item ${item} does not exist on this category ${this.name}`;
 		}
@@ -29,7 +29,7 @@ class Category {
 
 	removeItem(name, nb) {
 		// find item
-		const idx = this.countedItems.indexOf((item) => item.name === name);
+		const idx = this.countedItems.findIndex((item) => item.name === name);
 		if (idx === -1) {
 			throw `Item ${item} does not exist on this category ${this.name}`;
 		}
@@ -52,6 +52,9 @@ class Inventory {
 			}),
 			new BSlotButton(120 + 70, 120, spritesheet.getImage('farm_ui', 3), () => {
 				this.currentTabIndex = 1;
+			}),
+			new BSlotButton(120 + 70*2, 120, spritesheet.getImage('farm_ui', 4), () => {
+				this.currentTabIndex = 2;
 			})
 		];
 		this.currentTabIndex = 0;
@@ -79,7 +82,7 @@ class Inventory {
 			rect(x, y, tileSize, tileSize);
 			image(item.img, x + tileSize / 2, y + tileSize / 2);
 			fill(0);
-			text(item.count, x + tileSize-2, y+2);
+			text(item.count, x + tileSize - 2, y + 2);
 		});
 
 		this.popupTime = max(0, this.popupTime - 16);
@@ -92,7 +95,15 @@ class Inventory {
 		return category;
 	}
 
-	createItem(itemName, categoryName, count=0) {
+	getCategory(categoryName) {
+		const idx = this.categories.findIndex((cat) => cat.name === categoryName);
+		if (idx === -1) {
+			throw `no category for ${categoryName}`;
+		}
+		return this.categories[idx];
+	}
+
+	createItem(itemName, categoryName, count = 0) {
 		// find category or create it
 		let idx = this.categories.findIndex((cat) => cat.name === categoryName);
 		const category = idx === -1 ? this.createCategory(categoryName) : this.categories[idx];
@@ -100,8 +111,13 @@ class Inventory {
 		if (idx !== -1) {
 			throw `Item ${itemName} already created in category ${categoryName}`;
 		}
-		const img = spritesheet.getImage('seed_vegetable', getSpriteIndex(itemName, categoryName));
+		const img = spritesheet.getImage(categoryName === 'tool' ? 'farm_tools' : 'seed_vegetable', getSpriteIndex(itemName, categoryName));
 		category.createItem(itemName, img, count);
+	}
+
+	getCountedItem(itemName, categoryName) {
+		const category = this.getCategory(categoryName);
+		return category.getCountedItem(itemName);
 	}
 
 	popup() {
@@ -130,6 +146,11 @@ const fillInventory = (inventory) => {
 	inventory.createItem('navet', categoryName);
 	inventory.createItem('carotte', categoryName);
 	inventory.createItem('tomate', categoryName);
+	categoryName = 'tool';
+	inventory.createCategory(categoryName);
+	inventory.createItem('hoe', categoryName, 1);
+	inventory.createItem('pickaxe', categoryName);
+	inventory.createItem('shovel', categoryName);
 };
 
 class World {
@@ -374,7 +395,7 @@ class Chunk {
 		if (plant.length === 0) {
 			return null;
 		}
-		return plant[0].type;
+		return plant[0].name;
 	}
 
 	removePlantAt(column, row) {

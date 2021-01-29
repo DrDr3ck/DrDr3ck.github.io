@@ -112,6 +112,7 @@ function setup() {
 	spritesheet.addSpriteSheet('seed_vegetable', './resources/farm_seed_vegetable.png', 32, 32);
 	spritesheet.addSpriteSheet('farm_ui', './resources/farm_ui.png', 64, 64);
 	spritesheet.addSpriteSheet('farm_robot', './resources/farm_robot.png', 32, 48);
+	spritesheet.addSpriteSheet('farm_tools', './resources/farm_tools.png', 32, 32);
 
 	lastTime = Date.now();
 }
@@ -197,7 +198,7 @@ const slotButtons = [];
 
 function initGame() {
 	const menu = [ startButton ];
-	for (let i = 0; i < 6; i++) {
+	for (let i = 0; i < 7; i++) {
 		const slot = new BSlotButton(400 + 68 * i, windowHeight-100, spritesheet.getImage('farm_ui', 0), () => {
 			world.player.updateItemInHand(i);
 		});
@@ -209,13 +210,10 @@ function initGame() {
 	world = new World();
 	world.update(0);
 
-	world.player.addItemInSlots(new Item('navet', 'seed'), 0);
-	world.player.addItemInSlots(new Item('carotte', 'seed'), 2);
-	world.player.addItemInSlots(new Item('tomate', 'seed'), 4);
-
-	world.player.addItemInSlots(new Item('tomate', 'vegetable'), 5);
-	world.player.addItemInSlots(new Item('carotte', 'vegetable'), 3);
-	world.player.addItemInSlots(new Item('navet', 'vegetable'), 1);
+	world.player.addItemInSlots( world.inventory.getCountedItem('navet', 'seed'));
+	world.player.addItemInSlots( world.inventory.getCountedItem('carotte', 'seed'));
+	world.player.addItemInSlots( world.inventory.getCountedItem('tomate', 'seed'));
+	world.player.addItemInSlots( world.inventory.getCountedItem('hoe', 'tool'));
 }
 
 function drawLoading() {
