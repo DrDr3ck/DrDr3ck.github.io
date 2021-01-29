@@ -1,30 +1,136 @@
+class CountedItem {
+	constructor(name, img) {
+		this.name = name;
+		this.count = 0;
+		this.img = img;
+	}
+}
+
+class Category {
+	constructor(name) {
+		this.name = name;
+		this.countedItems = [];
+	}
+
+	createItem(name, img, count = 0) {
+		const item = new CountedItem(name, img);
+		item.count = count;
+		this.countedItems.push(item);
+	}
+
+	addItem(name, nb) {
+		// find item
+		const idx = this.countedItems.indexOf((item) => item.name === name);
+		if (idx === -1) {
+			throw `Item ${item} does not exist on this category ${this.name}`;
+		}
+		this.countedItems[idx].count += nb;
+	}
+
+	removeItem(name, nb) {
+		// find item
+		const idx = this.countedItems.indexOf((item) => item.name === name);
+		if (idx === -1) {
+			throw `Item ${item} does not exist on this category ${this.name}`;
+		}
+		if (this.countedItems[idx].count < nb) {
+			return false;
+		}
+		this.countedItems[idx].count -= nb;
+		return true;
+	}
+}
+
 class Inventory {
 	constructor() {
 		this.popupTime = 255;
 		this.visible = false;
+		this.categories = [];
+		this.tabButtons = [
+			new BSlotButton(120, 120, spritesheet.getImage('farm_ui', 2), () => {
+				this.currentTabIndex = 0;
+			}),
+			new BSlotButton(120 + 70, 120, spritesheet.getImage('farm_ui', 3), () => {
+				this.currentTabIndex = 1;
+			})
+		];
+		this.currentTabIndex = 0;
+		this.tabButtons.forEach((tab) => (tab.visible = false));
 	}
 
 	draw() {
 		push();
 		stroke(12);
 		strokeWeight(1);
-		fill(128, 255-this.popupTime);
-		translate(100,90);
-		rect(0,0,windowWidth-200,windowHeight-200);
-		this.popupTime = max(0, this.popupTime-16);
+		fill(128, 255 - this.popupTime);
+		translate(100, 90);
+		rect(0, 0, windowWidth - 200, windowHeight - 200);
+		fill(128, 128, 100);
+		rect(15, 25, windowWidth - 200 - 100, 74);
+
+		const tileSize = world.tileSize * world.scale;
+		textSize(16);
+		textAlign(RIGHT, TOP);
+		imageMode(CENTER);
+		this.categories[this.currentTabIndex].countedItems.forEach((item, i) => {
+			const x = 20 + 70 * i;
+			const y = 120;
+			fill(128, 128, 100);
+			rect(x, y, tileSize, tileSize);
+			image(item.img, x + tileSize / 2, y + tileSize / 2);
+			fill(0);
+			text(item.count, x + tileSize-2, y+2);
+		});
+
+		this.popupTime = max(0, this.popupTime - 16);
 		pop();
 	}
 
+	createCategory(name) {
+		const category = new Category(name);
+		this.categories.push(category);
+		return category;
+	}
+
+	createItem(itemName, categoryName, count=0) {
+		// find category or create it
+		let idx = this.categories.findIndex((cat) => cat.name === categoryName);
+		const category = idx === -1 ? this.createCategory(categoryName) : this.categories[idx];
+		idx = category.countedItems.findIndex((item) => item.name === itemName);
+		if (idx !== -1) {
+			throw `Item ${itemName} already created in category ${categoryName}`;
+		}
+		const img = spritesheet.getImage('seed_vegetable', getSpriteIndex(itemName, categoryName));
+		category.createItem(itemName, img, count);
+	}
+
 	popup() {
-		if( this.visible ) {
+		if (this.visible) {
+			// hide buttons
+			this.tabButtons.forEach((tab) => (tab.visible = false));
 			this.popupTime = 0;
 			this.visible = false;
 		} else {
+			// show buttons
+			this.tabButtons.forEach((tab) => (tab.visible = true));
 			this.popupTime = 255;
 			this.visible = true;
 		}
 	}
 }
+
+const fillInventory = (inventory) => {
+	let categoryName = 'seed';
+	inventory.createCategory(categoryName);
+	inventory.createItem('navet', categoryName, 15);
+	inventory.createItem('carotte', categoryName, 5);
+	inventory.createItem('tomate', categoryName, 5);
+	categoryName = 'vegetable';
+	inventory.createCategory(categoryName);
+	inventory.createItem('navet', categoryName);
+	inventory.createItem('carotte', categoryName);
+	inventory.createItem('tomate', categoryName);
+};
 
 class World {
 	constructor() {
@@ -39,6 +145,7 @@ class World {
 		this.items = []; // TODO: per chunk ?
 
 		this.inventory = new Inventory();
+		fillInventory(this.inventory);
 	}
 
 	draw() {

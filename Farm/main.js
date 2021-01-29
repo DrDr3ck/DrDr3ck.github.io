@@ -82,6 +82,7 @@ function startClicked() {
 		world.inventory.popup();
 	});
 	uiManager.setUI([ speakerButton, musicButton, helpButton, inventoryButton, ...slotButtons ]);
+	uiManager.currentUI.push(...world.inventory.tabButtons);
 }
 
 const startButton = new BButton(130, 580, 'START', startClicked);

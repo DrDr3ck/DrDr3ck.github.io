@@ -199,6 +199,7 @@ class Entity extends Sprite {
 		} else if (chunk.tiles[colChunk][rowChunk] === 2 && chunk.tiles[colChunk][rowChunk - 1] < 9) {
 			// check if player is carrying a seed
 			const item = this.slots[this.slotIndex].item;
+			// TODO: check if seed count > 0
 			if (item && item.category === 'seed') {
 				// add a plant to chunk
 				chunk.addPlant(item.type, colChunk, rowChunk - 1);
