@@ -142,8 +142,6 @@ class Entity extends Sprite {
 		this.addAnimation('right', 'farm_robot', [ 7, 8, 9, 10 ], FPS, false);
 		this.addAnimation('up', 'farm_robot', [ 11 ], FPS, false);
 
-		this.debugTilePosition = null;
-
 		this.slotIndex = 0;
 		this.slots = slotButtons.map(() => {
 			return { item: null };
@@ -248,43 +246,47 @@ class Entity extends Sprite {
 					new DroppedItem(item.name, 'seed', world.player.position, { x: random(3) - 1, y: -random(3) })
 				);
 			}
-		} else if (chunk.tiles[colChunk][rowChunk] === 0) {
-			// TODO: check if player has a 'shovel'
-			chunk.tiles[colChunk][rowChunk] = 1;
-			chunk.tiles[colChunk][rowChunk - 1] = 8;
-		} else if (chunk.tiles[colChunk][rowChunk] === 1) {
-			// check if player has a 'hoe'
-			if (item && item.category === 'tool' && item.name === 'hoe' && item.count > 0) {
+		} else if (item && item.category === 'tool' && item.name === 'shovel' && item.count > 0) {
+			if (chunk.tiles[colChunk][rowChunk] === 0 || chunk.tiles[colChunk][rowChunk] === 1) {
+				chunk.tiles[colChunk][rowChunk - 1] = -1;
+				chunk.tiles[colChunk][rowChunk] = -1;
+				chunk.tiles[colChunk][rowChunk + 1] = 1;
+			}
+		} else if (item && item.category === 'tool' && item.name === 'hoe' && item.count > 0) {
+			if (chunk.tiles[colChunk][rowChunk] === 0) {
+				chunk.tiles[colChunk][rowChunk] = 1;
+				chunk.tiles[colChunk][rowChunk - 1] = 8;
+			} else if (chunk.tiles[colChunk][rowChunk] === 1) {
 				chunk.tiles[colChunk][rowChunk] = 2;
 				chunk.tiles[colChunk][rowChunk - 1] = 8;
+			} else if (
+				chunk.tiles[colChunk][rowChunk] === 2 &&
+				[ 12, 16, 24 ].includes(chunk.tiles[colChunk][rowChunk - 1])
+			) {
+				// harvest a plant
+				chunk.tiles[colChunk][rowChunk] = 1;
+				chunk.tiles[colChunk][rowChunk - 1] = 8;
+				const type = chunk.getPlantType(colChunk, rowChunk - 1);
+				chunk.removePlantAt(colChunk, rowChunk - 1);
+				// drop items: seed + plant
+				if (type) {
+					const iChunk = chunk.id * chunk.width * world.scale * world.tileSize;
+					const worldPosition = {
+						x: iChunk + colChunk * world.tileSize * world.scale,
+						y: (rowChunk - 1) * world.tileSize * world.scale + world.tileSize
+					};
+					world.items.push(
+						new DroppedItem(type, 'vegetable', worldPosition, { x: random(3) - 1, y: -random(3) })
+					);
+				}
 			}
-		} else if (chunk.tiles[colChunk][rowChunk] === 2 && chunk.tiles[colChunk][rowChunk - 1] < 9) {
+		} else if (item && item.category === 'seed' && item.count > 0) {
 			// check if player is carrying a seed
 			// check if seed count > 0
-			if (item && item.category === 'seed' && item.count > 0) {
+			if (chunk.tiles[colChunk][rowChunk] === 2 && chunk.tiles[colChunk][rowChunk - 1] < 9) {
 				// add a plant to chunk
 				chunk.addPlant(item.name, colChunk, rowChunk - 1);
 				item.count--;
-			}
-		} else if (
-			chunk.tiles[colChunk][rowChunk] === 2 &&
-			[ 12, 16, 24 ].includes(chunk.tiles[colChunk][rowChunk - 1])
-		) {
-			// harvest a plant
-			chunk.tiles[colChunk][rowChunk] = 1;
-			chunk.tiles[colChunk][rowChunk - 1] = 8;
-			const type = chunk.getPlantType(colChunk, rowChunk - 1);
-			chunk.removePlantAt(colChunk, rowChunk - 1);
-			// drop items: seed + plant
-			if (type) {
-				const iChunk = chunk.id * chunk.width * world.scale * world.tileSize;
-				const worldPosition = {
-					x: iChunk + colChunk * world.tileSize * world.scale,
-					y: (rowChunk - 1) * world.tileSize * world.scale + world.tileSize
-				};
-				world.items.push(
-					new DroppedItem(type, 'vegetable', worldPosition, { x: random(3) - 1, y: -random(3) })
-				);
 			}
 		}
 	}

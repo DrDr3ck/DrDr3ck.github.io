@@ -157,8 +157,8 @@ const fillInventory = (inventory) => {
 	categoryName = 'tool';
 	inventory.createCategory(categoryName);
 	inventory.createItem('hoe', categoryName, 1);
-	inventory.createItem('pickaxe', categoryName);
-	inventory.createItem('shovel', categoryName);
+	inventory.createItem('pickaxe', categoryName, 1);
+	inventory.createItem('shovel', categoryName, 1);
 };
 
 class World {
@@ -196,6 +196,7 @@ class World {
 			});
 		}
 
+		const scaledTileSize = this.tileSize * this.scale;
 		this.chunks.forEach((chunk) => {
 			// TODO: check if this chunk needs to be displayed according to position of the chunk in the camera
 			const iChunk = chunk.id * chunk.width * this.scale * this.tileSize;
@@ -205,8 +206,8 @@ class World {
 						spritesheet.drawScaledSprite(
 							'farm_tile',
 							chunk.tiles[i][j],
-							i * this.tileSize * this.scale + iChunk,
-							j * this.tileSize * this.scale,
+							i * scaledTileSize + iChunk,
+							j * scaledTileSize,
 							this.scale
 						);
 					}
@@ -217,23 +218,34 @@ class World {
 						} else {
 							stroke(128);
 						}
-						rect(
-							i * this.tileSize * this.scale + iChunk,
-							j * this.tileSize * this.scale,
-							this.tileSize * this.scale,
-							this.tileSize * this.scale
-						);
+						rect(i * scaledTileSize + iChunk, j * scaledTileSize, scaledTileSize, scaledTileSize);
 					}
 				}
 			}
 		});
+
+		if (toggleDebug) {
+			noFill();
+			stroke(0);
+			strokeWeight(1);
+			const mouseTilePosition = this.getTilePosition(
+				mouseX + world.player.position.x - 9 * scaledTileSize,
+				mouseY + 32 - 7 * scaledTileSize
+			);
+			rect(
+				mouseTilePosition.column * scaledTileSize,
+				mouseTilePosition.row * scaledTileSize,
+				scaledTileSize,
+				scaledTileSize
+			);
+			text(JSON.stringify(mouseTilePosition), 0, -100);
+		}
 
 		this.items.forEach((item) => item.draw());
 
 		if (toggleDebug) {
 			ellipse(this.player.position.x, this.player.position.y, 2);
 			text(`${this.player.position.x}-${width / 2 - this.tileSize * world.scale / 2}`, 0, -150);
-			text(JSON.stringify(this.player.debugTilePosition), 0, -100);
 		}
 	}
 

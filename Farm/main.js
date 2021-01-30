@@ -151,6 +151,7 @@ function updateGame(elapsedTime) {
 	const right = 68;
 	const left = azerty ? 81 : 65;
 	const up = azerty ? 90 : 87;
+	const space = 32;
 	//const down = 83;
 	if (keyIsDown(LEFT_ARROW) || keyIsDown(left)) {
 		world.player.vx = -0.5 * world.scale;
@@ -160,7 +161,7 @@ function updateGame(elapsedTime) {
 		world.player.vx = 0.5 * world.scale;
 		state = 'right';
 	}
-	if ((keyIsDown(UP_ARROW) || keyIsDown(up)) && world.player.canJump) {
+	if ((keyIsDown(space) || keyIsDown(UP_ARROW) || keyIsDown(up)) && world.player.canJump) {
 		world.player.vy = -1.1 * world.scale;
 		world.player.canJump = false;
 	}
@@ -219,6 +220,7 @@ function initGame() {
 	world.player.addItemInSlots(world.inventory.getCountedItem('carotte', 'seed'));
 	world.player.addItemInSlots(world.inventory.getCountedItem('tomate', 'seed'));
 	world.player.addItemInSlots(world.inventory.getCountedItem('hoe', 'tool'));
+	world.player.addItemInSlots(world.inventory.getCountedItem('shovel', 'tool'));
 }
 
 function drawLoading() {
