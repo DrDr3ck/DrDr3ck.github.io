@@ -319,7 +319,6 @@ function keyPressed() {
 	}
 
 	if (key === 'i' || key === 'I') {
-		s;
 		world.inventory.popup();
 	}
 
