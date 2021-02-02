@@ -127,6 +127,12 @@ class Plant extends Item {
 	}
 }
 
+const distTile = (tilePosition1, tilePosition2) => {
+	const deltaX = Math.abs(tilePosition1.column - tilePosition2.column);
+	const deltaY = Math.abs(tilePosition1.row - tilePosition2.row);
+	return Math.max(deltaX, deltaY);
+}
+
 const gravity = 0.1;
 
 class Entity extends Sprite {
@@ -222,11 +228,15 @@ class Entity extends Sprite {
 		return { x: this.position.x + 10, y: this.position.y, w: 32 * 2 - 20, h: 48 * 2 };
 	}
 
-	execute() {
+	execute( tilePosition ) {
 		// execute an action on the current tile
 		// ex: if entity has a 'hoe' in hand, he will 'plow' the current tile if possible
 		const box = this.getBox();
-		const tilePosition = world.getTilePosition(box.x + box.w / 2, box.y + box.h / 2);
+		const playerTilePosition = world.getTilePosition(box.x + box.w / 2, box.y + box.h / 2);
+		// check if given tile position is next to player tile position
+		if( distTile(playerTilePosition, tilePosition) > 2) {
+			return;
+		}
 		const chunk = world.getChunk(tilePosition.column, tilePosition.row);
 		const colChunk = world.getColumnPositionInChunk(chunk, tilePosition.column);
 		const rowChunk = tilePosition.row + 1;

@@ -173,6 +173,8 @@ class World {
 
 		this.items = []; // TODO: per chunk ?
 
+		this.mouseTilePosition = null;
+
 		this.inventory = new Inventory();
 		fillInventory(this.inventory);
 	}
@@ -224,21 +226,22 @@ class World {
 			}
 		});
 
+		this.mouseTilePosition = this.getTilePosition(
+			mouseX + world.player.position.x - 9 * scaledTileSize,
+			mouseY + 32 - 7 * scaledTileSize
+		);
+
 		if (toggleDebug) {
 			noFill();
 			stroke(0);
 			strokeWeight(1);
-			const mouseTilePosition = this.getTilePosition(
-				mouseX + world.player.position.x - 9 * scaledTileSize,
-				mouseY + 32 - 7 * scaledTileSize
-			);
 			rect(
-				mouseTilePosition.column * scaledTileSize,
-				mouseTilePosition.row * scaledTileSize,
+				this.mouseTilePosition.column * scaledTileSize,
+				this.mouseTilePosition.row * scaledTileSize,
 				scaledTileSize,
 				scaledTileSize
 			);
-			text(JSON.stringify(mouseTilePosition), 0, -100);
+			text(JSON.stringify(this.mouseTilePosition), 0, -100);
 		}
 
 		this.items.forEach((item) => item.draw());

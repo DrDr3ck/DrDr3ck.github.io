@@ -194,18 +194,20 @@ function drawGame() {
 		stroke(255);
 		line(600, 0, 600, 800);
 	}
-	stroke(150, 50, 50, 150);
-	noFill();
-	strokeWeight(3);
-	rect(400 + 68 * world.player.slotIndex - 1, windowHeight - 100 - 1, 66, 66);
+	if (slotButtons.length > 0 && slotButtons[0].visible ) {
+		stroke(150, 50, 50, 150);
+		noFill();
+		strokeWeight(3);
+		rect(300 - 35 + 68 * world.player.slotIndex - 1, 10 - 1, 66, 66);
+	}
 }
 
 const slotButtons = [];
 
 function initGame() {
 	const menu = [ startButton ];
-	for (let i = 0; i < 7; i++) {
-		const slot = new BSlotButton(400 + 68 * i, windowHeight - 100, spritesheet.getImage('farm_ui', 0), () => {
+	for (let i = 0; i < 10; i++) {
+		const slot = new BSlotButton(300 - 35 + 68 * i, 10, spritesheet.getImage('farm_ui', 0), () => {
 			world.player.updateItemInHand(i);
 		});
 		slotButtons.push(slot);
@@ -276,7 +278,12 @@ function draw() {
 
 function mouseClicked() {
 	toolManager.mouseClicked();
-	uiManager.mouseClicked();
+	if (uiManager.mouseClicked()) {
+		return;
+	}
+
+	// if player has clicked on a tile, execute an action if possible.
+	world.player.execute(world.mouseTilePosition);
 }
 
 function mouseWheel(event) {
@@ -298,7 +305,7 @@ function keyPressed() {
 	//if (key === ' ') {
 	if (key === 'e' || key === 'E') {
 		// interact
-		world.player.execute();
+		//		world.player.execute();
 	}
 
 	if (key === 'a' || key === 'A') {
