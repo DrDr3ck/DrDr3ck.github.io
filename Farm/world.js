@@ -173,6 +173,8 @@ class World {
 
 		this.items = []; // TODO: per chunk ?
 
+		this.money = new Money();
+
 		this.mouseTilePosition = null;
 
 		this.inventory = new Inventory();

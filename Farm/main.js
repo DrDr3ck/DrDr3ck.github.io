@@ -118,6 +118,7 @@ function setup() {
 	spritesheet.addSpriteSheet('farm_ui', './resources/farm_ui.png', 64, 64);
 	spritesheet.addSpriteSheet('farm_robot', './resources/farm_robot.png', 32, 48);
 	spritesheet.addSpriteSheet('farm_tools', './resources/farm_tools.png', 32, 32);
+	spritesheet.addSpriteSheet('farm_money', './resources/farm_money.png', 16,16);
 
 	lastTime = Date.now();
 }
@@ -187,6 +188,10 @@ function drawGame() {
 	
 	*/
 	pop();
+	push();
+	translate(220, 24);
+	world.money.draw();
+	pop();
 	if (world.inventory.visible) {
 		world.inventory.draw();
 	}
@@ -194,7 +199,7 @@ function drawGame() {
 		stroke(255);
 		line(600, 0, 600, 800);
 	}
-	if (slotButtons.length > 0 && slotButtons[0].visible ) {
+	if (slotButtons.length > 0 && slotButtons[0].visible) {
 		stroke(150, 50, 50, 150);
 		noFill();
 		strokeWeight(3);
