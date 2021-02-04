@@ -117,10 +117,10 @@ class Plant extends Item {
 		this.time = Math.max(0, this.time - elapsedTime);
 		// if time to grow, change sprite in chunk
 		if (this.time <= 0) {
-			const plantIndex = chunk.tiles[this.column][this.row];
+			const plantIndex = chunk.tiles[this.column][this.row].foreground.index;
 			const idx = this.indices.find((i) => i === plantIndex);
 			if (idx >= 0) {
-				chunk.tiles[this.column][this.row] = plantIndex + 1;
+				chunk.tiles[this.column][this.row].changeForeground(plantIndex + 1);
 				this.time = 200;
 			}
 		}
@@ -239,7 +239,7 @@ class Entity extends Sprite {
 		}
 		const chunk = world.getChunk(tilePosition.column, tilePosition.row);
 		const colChunk = world.getColumnPositionInChunk(chunk, tilePosition.column);
-		const rowChunk = tilePosition.row + 1;
+		const rowChunk = tilePosition.row + 1; // TODO: check of rowChunk value exists in the tiles
 
 		const item = this.slots[this.slotIndex].item;
 
@@ -257,25 +257,25 @@ class Entity extends Sprite {
 				);
 			}
 		} else if (item && item.category === 'tool' && item.name === 'shovel' && item.count > 0) {
-			if (chunk.tiles[colChunk][rowChunk] === 0 || chunk.tiles[colChunk][rowChunk] === 1) {
-				chunk.tiles[colChunk][rowChunk - 1] = -1;
-				chunk.tiles[colChunk][rowChunk] = -1;
-				chunk.tiles[colChunk][rowChunk + 1] = 1;
+			if (chunk.tiles[colChunk][rowChunk].foreground.index === 0 || chunk.tiles[colChunk][rowChunk].foreground.index === 1) {
+				chunk.tiles[colChunk][rowChunk - 1].changeForeground(null);
+				chunk.tiles[colChunk][rowChunk].changeForeground(null);
+				chunk.tiles[colChunk][rowChunk + 1].changeForeground(1);
 			}
 		} else if (item && item.category === 'tool' && item.name === 'hoe' && item.count > 0) {
-			if (chunk.tiles[colChunk][rowChunk] === 0) {
-				chunk.tiles[colChunk][rowChunk] = 1;
-				chunk.tiles[colChunk][rowChunk - 1] = 8;
-			} else if (chunk.tiles[colChunk][rowChunk] === 1) {
-				chunk.tiles[colChunk][rowChunk] = 2;
-				chunk.tiles[colChunk][rowChunk - 1] = 8;
+			if (chunk.tiles[colChunk][rowChunk].foreground.index === 0) {
+				chunk.tiles[colChunk][rowChunk].changeForeground(1);
+				chunk.tiles[colChunk][rowChunk - 1].changeForeground(8);
+			} else if (chunk.tiles[colChunk][rowChunk].foreground.index === 1) {
+				chunk.tiles[colChunk][rowChunk].changeForeground(2);
+				chunk.tiles[colChunk][rowChunk - 1].changeForeground(8);
 			} else if (
-				chunk.tiles[colChunk][rowChunk] === 2 &&
-				[ 12, 16, 24 ].includes(chunk.tiles[colChunk][rowChunk - 1])
+				chunk.tiles[colChunk][rowChunk].foreground.index === 2 &&
+				[ 12, 16, 24 ].includes(chunk.tiles[colChunk][rowChunk - 1].foreground.index)
 			) {
 				// harvest a plant
-				chunk.tiles[colChunk][rowChunk] = 1;
-				chunk.tiles[colChunk][rowChunk - 1] = 8;
+				chunk.tiles[colChunk][rowChunk].changeForeground(1);
+				chunk.tiles[colChunk][rowChunk - 1].changeForeground(8);
 				const type = chunk.getPlantType(colChunk, rowChunk - 1);
 				chunk.removePlantAt(colChunk, rowChunk - 1);
 				// drop items: seed + plant
@@ -293,7 +293,7 @@ class Entity extends Sprite {
 		} else if (item && item.category === 'seed' && item.count > 0) {
 			// check if player is carrying a seed
 			// check if seed count > 0
-			if (chunk.tiles[colChunk][rowChunk] === 2 && chunk.tiles[colChunk][rowChunk - 1] < 9) {
+			if (chunk.tiles[colChunk][rowChunk].foreground.index === 2 && chunk.tiles[colChunk][rowChunk - 1].foreground.index < 9) {
 				// add a plant to chunk
 				chunk.addPlant(item.name, colChunk, rowChunk - 1);
 				item.count--;
@@ -361,26 +361,5 @@ class Entity extends Sprite {
 		this.vx = 0;
 
 		super.update(elapsedTime);
-	}
-}
-
-class Money {
-	constructor() {
-		this.copper = 0;
-		this.silver = 0;
-		this.gold = 0;
-	}
-
-	draw() {
-		textAlign(RIGHT, CENTER);
-		textSize(24);
-		fill(0);
-		noStroke();
-		text(this.copper, 0, 40);
-		spritesheet.drawSprite('farm_money', 0, 5,32);
-		text(this.silver, 0, 20);
-		spritesheet.drawSprite('farm_money', 1, 5,12);
-		text(this.gold, 0, 0);
-		spritesheet.drawSprite('farm_money', 2, 5,-8);
 	}
 }

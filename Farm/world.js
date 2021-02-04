@@ -206,10 +206,10 @@ class World {
 			const iChunk = chunk.id * chunk.width * this.scale * this.tileSize;
 			for (let i = 0; i < chunk.width; i++) {
 				for (let j = 0; j < chunk.height; j++) {
-					if (chunk.tiles[i][j] !== -1) {
+					if (chunk.tiles[i][j].foreground !== null) {
 						spritesheet.drawScaledSprite(
-							'farm_tile',
-							chunk.tiles[i][j],
+							chunk.tiles[i][j].foreground.name,
+							chunk.tiles[i][j].foreground.index,
 							i * scaledTileSize + iChunk,
 							j * scaledTileSize,
 							this.scale
@@ -283,8 +283,14 @@ class World {
 		// get chunk id according to column
 		const chunk = this.getChunk(column, row);
 		const colChunk = this.getColumnPositionInChunk(chunk, column);
-		const value = chunk.tiles[colChunk][row];
-		return value >= 0 && value <= 3;
+		if (row < 0) {
+			return false;
+		}
+		const value = chunk.tiles[colChunk][row].foreground;
+		if (value === null) {
+			return false;
+		}
+		return value.index >= 0 && value.index <= 3;
 	}
 
 	collide(rect1, rect2) {
@@ -383,6 +389,25 @@ class World {
 
 /****************************************************************************/
 
+class Tile {
+	constructor(foreground, background = null) {
+		this.foreground = foreground;
+		this.background = background;
+	}
+
+	changeForeground(foregroundIndex) {
+		if (foregroundIndex === null) {
+			this.foreground = null;
+		} else {
+			this.foreground.index = foregroundIndex;
+		}
+	}
+
+	changeBackground(background) {
+		this.background = background;
+	}
+}
+
 class Chunk {
 	constructor(xChunk) {
 		this.id = xChunk;
@@ -396,13 +421,28 @@ class Chunk {
 			const column = [];
 			for (let j = 0; j < this.height; j++) {
 				if (j === jTop) {
-					column.push(Math.round(noise(i, j) * 4) + 4);
+					column.push(
+						new Tile({
+							name: 'farm_tile',
+							index: Math.round(noise(i, j) * 4) + 4
+						})
+					);
 				} else if (j === jTop + 1) {
-					column.push(0);
+					column.push(
+						new Tile({
+							name: 'farm_tile',
+							index: 0
+						})
+					);
 				} else if (j >= jTop + 2) {
-					column.push(3);
+					column.push(
+						new Tile({
+							name: 'farm_tile',
+							index: 3
+						})
+					);
 				} else {
-					column.push(-1);
+					column.push(new Tile(null));
 				}
 			}
 			this.tiles.push(column);
@@ -411,7 +451,7 @@ class Chunk {
 
 	addPlant(name, column, row) {
 		const plant = new Plant(name, column, row);
-		this.tiles[column][row] = plant.indices[0]; // planting a seed
+		this.tiles[column][row].changeForeground(plant.indices[0]); // planting a seed
 		this.plants.push(plant);
 	}
 
