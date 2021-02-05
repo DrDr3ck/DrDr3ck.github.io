@@ -336,6 +336,11 @@ function keyPressed() {
 		world.inventory.popup();
 	}
 
+	if (key === 'o' || key === 'O') {
+		// shop
+		world.shop.popup();
+	}
+
 	if (keyCode === ESCAPE) {
 		if (world.inventory.visible) {
 			world.inventory.popup();

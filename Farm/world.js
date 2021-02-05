@@ -179,6 +179,8 @@ class World {
 
 		this.inventory = new Inventory();
 		fillInventory(this.inventory);
+
+		this.shop = new ShopDialog(100,100,700,450);
 	}
 
 	draw() {
