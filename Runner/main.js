@@ -130,8 +130,8 @@ const FPS = 60;
 
 const startButton = new BButton(200, 200, 'START', startClicked);
 const continueButton = new BButton(200, 300, `CONTINUE (-${continueValue}◈)`, continueClicked);
-const musicButton = new BFloatingButton(730, 70, '\uD83C\uDFB6', musicClicked);
-const speakerButton = new BFloatingButton(730 - 10 - 70, 70, '\uD83D\uDD0A', speakerClicked);
+const musicButton = new BFloatingSwitchButton(730, 70, '\uD83C\uDFB6', musicClicked);
+const speakerButton = new BFloatingSwitchButton(730 - 10 - 70, 70, '\uD83D\uDD0A', speakerClicked);
 
 const creditButton = new BFloatingButton(30, 70, 'C', creditClicked);
 

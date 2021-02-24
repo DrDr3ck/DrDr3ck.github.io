@@ -51,8 +51,8 @@ function speakerClicked() {
 }
 
 const startButton = new BButton((windowWidth-400)/2, 200, 'START', startClicked);
-const speakerButton = new BFloatingButton(windowWidth - 70 - 10 - 70, 70, '\uD83D\uDD0A', speakerClicked);
-const musicButton = new BFloatingButton(windowWidth - 70, 70, '\uD83C\uDFB6', musicClicked);
+const speakerButton = new BFloatingSwitchButton(windowWidth - 70 - 10 - 70, 70, '\uD83D\uDD0A', speakerClicked);
+const musicButton = new BFloatingSwitchButton(windowWidth - 70, 70, '\uD83C\uDFB6', musicClicked);
 
 const tileSize = 60;
 const world = new World(15, 10);

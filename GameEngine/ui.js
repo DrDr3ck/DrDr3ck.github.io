@@ -324,6 +324,7 @@ class BFloatingButton extends BButtonTextBase {
 		super(x, y, textSize * 1.2, textSize * 1.2, text, callback);
 		this.textSize = textSize;
 		this.checked = true;
+		this.previewCheck = false;
 	}
 
 	setTextSize(size) {
@@ -357,33 +358,41 @@ class BFloatingButton extends BButtonTextBase {
 		drawText(this.text, this.x + this.w / 2, this.y - this.h / 2);
 		pop();
 
-		if (this.over) {
-			if (this.checked) {
-				line(this.x + 6, this.y - this.h, this.x + this.w - 6, this.y);
-			}
-		} else {
-			if (!this.checked) {
-				line(this.x + 6, this.y - this.h, this.x + this.w - 6, this.y);
+		if (this.previewCheck) {
+			if (this.over) {
+				if (this.checked) {
+					line(this.x + 6, this.y - this.h, this.x + this.w - 6, this.y);
+				}
+			} else {
+				if (!this.checked) {
+					line(this.x + 6, this.y - this.h, this.x + this.w - 6, this.y);
+				}
 			}
 		}
 	}
 }
 
+class BFloatingSwitchButton extends BFloatingButton {
+	constructor(x, y, text, callback) {
+		super(x, y, text, callback);
+		this.previewCheck = true;
+	}
+}
+
 class BImageButton extends BInteractiveButtonBase {
-	constructor(x,y,img, callback) {
-		super(x,y,img.width, img.height, callback);
+	constructor(x, y, img, callback) {
+		super(x, y, img.width, img.height, callback);
 		this.img = img;
 	}
 
 	doDraw() {
 		push();
-		if( this.over ) {
+		if (this.over) {
 			tint(255, 200);
 		}
 		image(this.img, this.x, this.y, this.w, this.h);
 		pop();
 	}
-
 }
 
 class BMenu extends BButtonBase {

@@ -82,7 +82,7 @@ function initUI() {
 
 	nextButton = new BButton(width / 2 - 200, 200, 'NEXT WAVE', nextWaveClicked);
 
-	speakerButton = new BFloatingButton(width - 70, 70, '\uD83D\uDD0A', speakerClicked);
+	speakerButton = new BFloatingSwitchButton(width - 70, 70, '\uD83D\uDD0A', speakerClicked);
 	speakerButton.setTextSize(50);
 
 	uiManager.setUI([ startButton, upgradeTowerButton, helpButton, nextButton, speakerButton ]);
