@@ -221,6 +221,7 @@ function initGame() {
 
 	noiseSeed(5000);
 	world = new World();
+	world.shop = new ShopDialog(100, 100, 700, 450);
 	world.update(0);
 
 	world.player.addItemInSlots(world.inventory.getCountedItem('navet', 'seed'));

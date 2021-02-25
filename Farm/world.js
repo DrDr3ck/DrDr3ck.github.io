@@ -161,6 +161,18 @@ const fillInventory = (inventory) => {
 	inventory.createItem('shovel', categoryName, 1);
 };
 
+const fillCatalog = (catalog) => {
+	let category = new CatalogCategory('seed');
+	catalog.addCategory(category);
+	category.addItem(new CatalogItem('navet', spritesheet.getImage('seed_vegetable', getSpriteIndex('navet', 'seed'))));
+	category.addItem(
+		new CatalogItem('carotte', spritesheet.getImage('seed_vegetable', getSpriteIndex('carotte', 'seed')))
+	);
+	category.addItem(
+		new CatalogItem('tomate', spritesheet.getImage('seed_vegetable', getSpriteIndex('tomate', 'seed')))
+	);
+};
+
 class World {
 	constructor() {
 		this.chunks = [ new Chunk(0) ];
@@ -180,7 +192,10 @@ class World {
 		this.inventory = new Inventory();
 		fillInventory(this.inventory);
 
-		this.shop = new ShopDialog(100,100,700,450);
+		this.catalog = new Catalog();
+		fillCatalog(this.catalog);
+
+		this.shop = null;
 	}
 
 	draw() {
