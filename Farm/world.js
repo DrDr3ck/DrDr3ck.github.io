@@ -164,12 +164,12 @@ const fillInventory = (inventory) => {
 const fillCatalog = (catalog) => {
 	let category = new CatalogCategory('seed');
 	catalog.addCategory(category);
-	category.addItem(new CatalogItem('navet', spritesheet.getImage('seed_vegetable', getSpriteIndex('navet', 'seed'))));
+	category.addItem(new CatalogItem('navet', spritesheet.getImage('seed_vegetable', getSpriteIndex('navet', 'seed')), 1));
 	category.addItem(
-		new CatalogItem('carotte', spritesheet.getImage('seed_vegetable', getSpriteIndex('carotte', 'seed')))
+		new CatalogItem('carotte', spritesheet.getImage('seed_vegetable', getSpriteIndex('carotte', 'seed')), 1.2)
 	);
 	category.addItem(
-		new CatalogItem('tomate', spritesheet.getImage('seed_vegetable', getSpriteIndex('tomate', 'seed')))
+		new CatalogItem('tomate', spritesheet.getImage('seed_vegetable', getSpriteIndex('tomate', 'seed')), 1.5)
 	);
 };
 
