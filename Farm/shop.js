@@ -10,20 +10,20 @@ class Money {
 		// 100 copper = 1 silver
 		this.copper += amountCopper;
 		const amountSilver = floor(this.copper / 100);
-		if( amountSilver > 0 ) {
-			this.copper -= amountSilver*100;
+		if (amountSilver > 0) {
+			this.copper -= amountSilver * 100;
 		}
 		// 100 silver = 1 gold
 		this.silver += amountSilver;
 		const amountGold = floor(this.silver / 100);
-		if( amountGold > 0 ) {
-			this.silver -= amountGold*100;
+		if (amountGold > 0) {
+			this.silver -= amountGold * 100;
 		}
 		// 100 gold = 1 platinum
 		this.gold += amountGold;
 		const amountPlatinum = floor(this.gold / 100);
-		if( amountPlatinum > 0 ) {
-			this.gold -= amountPlatinum*100;
+		if (amountPlatinum > 0) {
+			this.gold -= amountPlatinum * 100;
 		}
 		// you are rich !!
 		this.platinum += amountPlatinum;
@@ -108,16 +108,19 @@ class ShopDialog extends Dialog {
 			const X = 10 + column * 80;
 			const Y = 100 + 10 + row * 100;
 			this.components.push(
-				new BShopButton(X, Y, item.image, item.price, item.occurrence, () => {
-					this.setCurItem(item);					
+				new BShopButton(X, Y, item, () => {
+					this.setCurItem(item);
 				})
 			);
 		});
 
 		this.sellButton = new BSellButton(540, 300, () => {
 			world.money.addCopper(this.sellButton.price);
-			// TODO: change inventory
-			this.setCurItem(null); // reset item
+			this.curItem.occurrence -= this.nbCurItems;
+			// change inventory
+			world.inventory.getCountedItem(this.curItem.name, this.category).count -= this.nbCurItems;
+			// reset item
+			this.setCurItem(null);
 		});
 		this.components.push(this.sellButton);
 		this.sellButton.visible = false;
@@ -157,7 +160,7 @@ class ShopDialog extends Dialog {
 	}
 
 	setCurItem(item) {
-		if (this.curItem === item || !item) {
+		if (this.curItem === item || !item || item.occurrence === 0) {
 			this.curItem = null;
 			this.sellButton.visible = false;
 		} else {
@@ -168,7 +171,7 @@ class ShopDialog extends Dialog {
 	}
 
 	computeBuySellPrice() {
-		if( this.curItem ) {
+		if (this.curItem) {
 			// nb cur item cannot exceed occurrence of cur item
 			this.nbCurItems = min(this.nbCurItems, this.curItem.occurrence);
 			this.sellButton.price = this.curItem.price * this.nbCurItems;

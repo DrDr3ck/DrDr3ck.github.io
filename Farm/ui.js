@@ -41,12 +41,11 @@ class BSellButton extends BInteractiveButtonBase {
 }
 
 class BShopButton extends BImageButton {
-	constructor(x, y, img, price, occurrence, callback) {
-		super(x, y, img, callback);
+	constructor(x, y, item, callback) {
+		super(x, y, item.image, callback);
 		this.w = 75;
 		this.h = 75;
-		this.price = price;
-		this.occurrence = occurrence;
+		this.item = item;
 	}
 
 	doDraw() {
@@ -62,8 +61,8 @@ class BShopButton extends BImageButton {
 		spritesheet.drawSprite('farm_money', 0, this.x + this.w - 20, this.y + this.h - 20);
 		textSize(12);
 		textAlign(RIGHT, TOP);
-		text(this.price, this.x + this.w - 25, this.y + this.h - 16);
+		text(this.item.price, this.x + this.w - 25, this.y + this.h - 16);
 		textAlign(LEFT, TOP);
-		text(this.occurrence, this.x + 5, this.y + 5);
+		text(this.item.occurrence, this.x + 5, this.y + 5);
 	}
 }

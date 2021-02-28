@@ -161,15 +161,32 @@ const fillInventory = (inventory) => {
 	inventory.createItem('shovel', categoryName, 1);
 };
 
-const fillCatalog = (catalog) => {
+const fillCatalog = (catalog, inventory) => {
 	let category = new CatalogCategory('seed');
 	catalog.addCategory(category);
-	category.addItem(new CatalogItem('navet', spritesheet.getImage('seed_vegetable', getSpriteIndex('navet', 'seed')), 1, 10));
 	category.addItem(
-		new CatalogItem('carotte', spritesheet.getImage('seed_vegetable', getSpriteIndex('carotte', 'seed')), 1.2, 5)
+		new CatalogItem(
+			'navet',
+			spritesheet.getImage('seed_vegetable', getSpriteIndex('navet', 'seed')),
+			1,
+			inventory.getCountedItem('navet', 'seed').count
+		)
 	);
 	category.addItem(
-		new CatalogItem('tomate', spritesheet.getImage('seed_vegetable', getSpriteIndex('tomate', 'seed')), 1.5, 1)
+		new CatalogItem(
+			'carotte',
+			spritesheet.getImage('seed_vegetable', getSpriteIndex('carotte', 'seed')),
+			1.2,
+			inventory.getCountedItem('carotte', 'seed').count
+		)
+	);
+	category.addItem(
+		new CatalogItem(
+			'tomate',
+			spritesheet.getImage('seed_vegetable', getSpriteIndex('tomate', 'seed')),
+			1.5,
+			inventory.getCountedItem('tomate', 'seed').count
+		)
 	);
 };
 
@@ -193,7 +210,7 @@ class World {
 		fillInventory(this.inventory);
 
 		this.catalog = new Catalog();
-		fillCatalog(this.catalog);
+		fillCatalog(this.catalog, this.inventory);
 
 		this.shop = null;
 	}
