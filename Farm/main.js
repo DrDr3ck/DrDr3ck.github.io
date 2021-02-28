@@ -86,7 +86,16 @@ function startClicked() {
 			world.inventory.popup();
 		}
 	);
-	uiManager.setUI([ speakerButton, musicButton, helpButton, inventoryButton, ...slotButtons ]);
+
+	const shopButton = new BImageButton(
+		windowWidth - 70 - 10 - 70,
+		windowHeight - 100,
+		spritesheet.getImage('farm_ui', 5),
+		() => {
+			world.shop.popup();
+		}
+	);
+	uiManager.setUI([ speakerButton, musicButton, helpButton, inventoryButton, shopButton, ...slotButtons ]);
 	uiManager.currentUI.push(...world.inventory.tabButtons);
 }
 
