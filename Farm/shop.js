@@ -35,10 +35,11 @@ class Money {
 }
 
 class CatalogItem {
-	constructor(name, image, price) {
+	constructor(name, image, price, occurrence) {
 		this.name = name;
 		this.image = image;
 		this.price = price;
+		this.occurrence = occurrence;
 	}
 }
 
@@ -92,6 +93,21 @@ class ShopDialog extends Dialog {
 
 		this.category = 'seed';
 		this.items = world.catalog.getCategory(this.category).items;
+		this.items.forEach((item,index) => {
+			const row = floor(index / this.maxColumns);
+			const column = index % this.maxColumns;
+			const X = 10 + column * 80;
+			const Y = 100 + 10 + row * 100;
+			this.components.push(
+				new BShopButton(X, Y, item.image, item.price, item.occurrence, () => {
+					if (this.curItem === item) {
+						this.curItem = null;
+					} else {
+						this.curItem = item;
+					}
+				})
+			);
+		});
 
 		this.curPage = 0;
 		this.maxPage = Math.floor(this.items.length / (this.maxColumns * this.maxRows));
@@ -147,28 +163,13 @@ class ShopDialog extends Dialog {
 		textAlign(CENTER, TOP);
 		text(`${this.curPage + 1}/${this.maxPage + 1}`, this.w / 2, this.h - 80);
 
-		textSize(16);
-		for (let row = 0; row < this.maxRows; row++) {
-			for (let column = 0; column < this.maxColumns; column++) {
-				fill(255);
-				stroke(0);
-				// get item index
-				const itemIndex = row * this.maxColumns + column + this.curPage * this.maxColumns * this.maxRows;
-				const X = 10 + column * 80;
-				const Y = 100 + 10 + row * 100;
-				if (itemIndex >= this.items.length) {
-					// no valid item
-					rect(X, Y, 75, 75, 10);
-					continue;
-				}
-				const item = this.items[itemIndex];
-				// draw item
-				rect(X, Y, 75, 75, 5);
-				image(item.image, X + (75 - 48) / 2, Y + 5, 48, 48);
-				fill(0);
-				stroke(255);
-				text(item.price, X + 75 / 2, Y + 75 - 16 - 5);
-			}
+		if( this.curItem ) {
+			const X = 10+40+7*80;
+			const Y = 110;
+			fill(150, 111, 51);
+			stroke(0);
+			rect(X-7, Y, 75, 75, 5);
+			image(this.curItem.image, X+5, Y+3, 48, 48);
 		}
 	}
 }
