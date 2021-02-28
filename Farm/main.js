@@ -340,6 +340,7 @@ function keyPressed() {
 	if (key === 'o' || key === 'O') {
 		// shop
 		world.shop.popup();
+		world.shop.sellButton.visible = false;
 	}
 
 	if (keyCode === ESCAPE) {

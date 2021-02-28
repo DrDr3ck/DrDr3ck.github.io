@@ -9,13 +9,22 @@ class Money {
 	addCopper(amountCopper) {
 		// 100 copper = 1 silver
 		this.copper += amountCopper;
-		const amountSilver = this.copper / 100;
+		const amountSilver = floor(this.copper / 100);
+		if( amountSilver > 0 ) {
+			this.copper -= amountSilver*100;
+		}
 		// 100 silver = 1 gold
 		this.silver += amountSilver;
-		const amountGold = this.silver / 100;
+		const amountGold = floor(this.silver / 100);
+		if( amountGold > 0 ) {
+			this.silver -= amountGold*100;
+		}
 		// 100 gold = 1 platinum
 		this.gold += amountGold;
-		const amountPlatinum = this.gold / 100;
+		const amountPlatinum = floor(this.gold / 100);
+		if( amountPlatinum > 0 ) {
+			this.gold -= amountPlatinum*100;
+		}
 		// you are rich !!
 		this.platinum += amountPlatinum;
 	}
@@ -93,21 +102,25 @@ class ShopDialog extends Dialog {
 
 		this.category = 'seed';
 		this.items = world.catalog.getCategory(this.category).items;
-		this.items.forEach((item,index) => {
+		this.items.forEach((item, index) => {
 			const row = floor(index / this.maxColumns);
 			const column = index % this.maxColumns;
 			const X = 10 + column * 80;
 			const Y = 100 + 10 + row * 100;
 			this.components.push(
 				new BShopButton(X, Y, item.image, item.price, item.occurrence, () => {
-					if (this.curItem === item) {
-						this.curItem = null;
-					} else {
-						this.curItem = item;
-					}
+					this.setCurItem(item);					
 				})
 			);
 		});
+
+		this.sellButton = new BSellButton(540, 300, () => {
+			world.money.addCopper(this.sellButton.price);
+			// TODO: change inventory
+			this.setCurItem(null); // reset item
+		});
+		this.components.push(this.sellButton);
+		this.sellButton.visible = false;
 
 		this.curPage = 0;
 		this.maxPage = Math.floor(this.items.length / (this.maxColumns * this.maxRows));
@@ -119,9 +132,11 @@ class ShopDialog extends Dialog {
 		// +/- buttons
 		const plusButton = new BFloatingButton(w - 60, 250, '+', () => {
 			this.nbCurItems++;
+			this.computeBuySellPrice();
 		});
 		const minusButton = new BFloatingButton(w - 120, 250, '-', () => {
 			this.nbCurItems = Math.max(1, this.nbCurItems - 1);
+			this.computeBuySellPrice();
 		});
 		const plusMinusTextSize = 32;
 		plusButton.setTextSize(plusMinusTextSize);
@@ -139,6 +154,25 @@ class ShopDialog extends Dialog {
 				this.curPage = Math.min(this.maxPage, this.curPage + 1);
 			})
 		);
+	}
+
+	setCurItem(item) {
+		if (this.curItem === item || !item) {
+			this.curItem = null;
+			this.sellButton.visible = false;
+		} else {
+			this.curItem = item;
+			this.sellButton.visible = true;
+			this.computeBuySellPrice();
+		}
+	}
+
+	computeBuySellPrice() {
+		if( this.curItem ) {
+			// nb cur item cannot exceed occurrence of cur item
+			this.nbCurItems = min(this.nbCurItems, this.curItem.occurrence);
+			this.sellButton.price = this.curItem.price * this.nbCurItems;
+		}
 	}
 
 	popup() {
@@ -163,13 +197,13 @@ class ShopDialog extends Dialog {
 		textAlign(CENTER, TOP);
 		text(`${this.curPage + 1}/${this.maxPage + 1}`, this.w / 2, this.h - 80);
 
-		if( this.curItem ) {
-			const X = 10+40+7*80;
+		if (this.curItem) {
+			const X = 10 + 40 + 7 * 80;
 			const Y = 110;
 			fill(150, 111, 51);
 			stroke(0);
-			rect(X-7, Y, 75, 75, 5);
-			image(this.curItem.image, X+5, Y+3, 48, 48);
+			rect(X - 7, Y, 75, 75, 5);
+			image(this.curItem.image, X + 5, Y + 3, 48, 48);
 		}
 	}
 }

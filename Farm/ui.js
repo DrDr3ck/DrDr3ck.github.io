@@ -24,6 +24,22 @@ class BSlotButton extends BImageButton {
 	}
 }
 
+class BSellButton extends BInteractiveButtonBase {
+	constructor(x, y, callback) {
+		super(x,y,150,50,callback);
+		this.price = 0;
+	}
+
+	doDraw() {
+		//super.doDraw();
+		fill(51, 151, 51);
+		stroke(0);
+		rect(this.x, this.y, this.w, this.h, 5);
+		textAlign(CENTER, TOP);
+		text(`+${this.price}`, this.x+this.w/2, this.y+5);
+	}
+}
+
 class BShopButton extends BImageButton {
 	constructor(x, y, img, price, occurrence, callback) {
 		super(x, y, img, callback);
