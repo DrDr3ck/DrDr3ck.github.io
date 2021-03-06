@@ -201,6 +201,7 @@ class World {
 		this.player.scale = this.scale;
 
 		this.items = []; // TODO: per chunk ?
+		this.minions = []; // how to manage them ?
 
 		this.money = new Money();
 
@@ -217,6 +218,8 @@ class World {
 
 	draw() {
 		this.player.draw();
+
+		this.minions.forEach((minion) => minion.draw());
 
 		if (toggleDebug) {
 			rect(this.player.position.x, this.player.position.y, 32 * this.scale, 48 * this.scale);
@@ -415,6 +418,8 @@ class World {
 		this.chunks.forEach((chunk) => chunk.update(elapsedTime));
 
 		this.items.forEach((item) => item.update(elapsedTime));
+
+		this.minions.forEach((minion) => minion.update(elapsedTime));
 
 		// update player
 		this.player.update(elapsedTime);

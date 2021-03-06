@@ -110,7 +110,8 @@ class Plant extends Item {
 		this.column = column;
 		this.row = row;
 		this.indices = getSpriteIndices(name);
-		this.time = 200; // in milliseconds
+		this.originalTimeToGrow = 2000; // in milliseconds
+		this.time = this.originalTimeToGrow; 
 	}
 
 	update(elapsedTime, chunk) {
@@ -121,7 +122,7 @@ class Plant extends Item {
 			const idx = this.indices.find((i) => i === plantIndex);
 			if (idx >= 0) {
 				chunk.tiles[this.column][this.row].changeForeground(plantIndex + 1);
-				this.time = 200;
+				this.time = this.originalTimeToGrow;
 			}
 		}
 	}
