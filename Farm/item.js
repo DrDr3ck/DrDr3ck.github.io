@@ -110,7 +110,7 @@ class Plant extends Item {
 		this.column = column;
 		this.row = row;
 		this.indices = getSpriteIndices(name);
-		this.originalTimeToGrow = 2000; // in milliseconds
+		this.originalTimeToGrow = 5000; // in milliseconds
 		this.time = this.originalTimeToGrow; 
 	}
 

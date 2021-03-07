@@ -55,6 +55,9 @@ class Inventory {
 			}),
 			new BSlotButton(120 + 70 * 2, 120, spritesheet.getImage('farm_ui', 4), () => {
 				this.currentTabIndex = 2;
+			}),
+			new BSlotButton(120 + 70 * 3, 120, spritesheet.getImage('farm_ui', 6), () => {
+				this.currentTabIndex = 3;
 			})
 		];
 		const closeDialogButton = new BFloatingButton(windowWidth - 150, 160, '\u2716', () => {
@@ -213,6 +216,7 @@ class World {
 		this.catalog = new Catalog();
 		fillCatalog(this.catalog, this.inventory);
 
+		this.collection = null;
 		this.shop = null;
 	}
 

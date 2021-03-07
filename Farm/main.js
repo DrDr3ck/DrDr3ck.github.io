@@ -95,7 +95,16 @@ function startClicked() {
 			world.shop.popup();
 		}
 	);
-	uiManager.setUI([ speakerButton, musicButton, helpButton, inventoryButton, shopButton, ...slotButtons ]);
+
+	const collectionButton = new BImageButton(
+		windowWidth - 70 - 10 - 70 - 70,
+		windowHeight - 100,
+		spritesheet.getImage('farm_ui', 7),
+		() => {
+			world.collection.popup();
+		}
+	);
+	uiManager.setUI([ speakerButton, musicButton, helpButton, inventoryButton, shopButton, collectionButton, ...slotButtons ]);
 	uiManager.currentUI.push(...world.inventory.tabButtons);
 }
 
@@ -232,6 +241,7 @@ function initGame() {
 	noiseSeed(5000);
 	world = new World();
 	world.shop = new ShopDialog(100, 100, 700, 450);
+	world.collection = new CollectionDialog(100, 100, 700, 450);
 	world.update(0);
 
 	// test

@@ -43,7 +43,6 @@ class Minion extends Sprite {
 
 	execute() {
 		const tilePosition = world.getTilePosition(this.position.x + this.width / 2, this.position.y + this.height / 2);
-		console.log(tilePosition);
 		const chunk = world.getChunk(tilePosition.column, tilePosition.row);
 		const colChunk = world.getColumnPositionInChunk(chunk, tilePosition.column);
 		const rowChunk = tilePosition.row + 1; // TODO: check of rowChunk value exists in the tiles

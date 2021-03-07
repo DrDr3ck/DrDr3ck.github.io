@@ -192,7 +192,7 @@ class ShopDialog extends Dialog {
 		stroke(0);
 		textSize(32);
 		textAlign(LEFT, TOP);
-		text('Vente', 10, 10);
+		text('Shop - sell', 10, 10);
 
 		textAlign(RIGHT, TOP);
 		text(this.nbCurItems, this.w - 60, 250);
