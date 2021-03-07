@@ -7,7 +7,7 @@ uiManager.loggerContainer.visible = true;
 const toolManager = new ToolManager();
 const jobManager = new JobManager();
 const soundManager = new SoundMgr();
-const spritesheet = new SpriteSheet();
+let spritesheet = null;
 
 const GAME_LOADING_STATE = 0;
 const GAME_START_STATE = 1;
@@ -130,6 +130,7 @@ function setup() {
 
 	frameRate(FPS);
 
+	spritesheet = new SpriteSheet();
 	spritesheet.addSpriteSheet('farm_tile', './resources/farm_tile.png', 32, 32);
 	spritesheet.addSpriteSheet('farm_animal', './resources/farm_animal.png', 32, 32);
 	spritesheet.addSpriteSheet('seed_vegetable', './resources/farm_seed_vegetable.png', 32, 32);
@@ -255,6 +256,7 @@ function initGame() {
 	world.player.addItemInSlots(world.inventory.getCountedItem('tomate', 'seed'));
 	world.player.addItemInSlots(world.inventory.getCountedItem('hoe', 'tool'));
 	world.player.addItemInSlots(world.inventory.getCountedItem('shovel', 'tool'));
+	world.player.addItemInSlots(world.inventory.getCountedItem('basket', 'tool'));
 }
 
 function drawLoading() {
@@ -340,9 +342,11 @@ function keyPressed() {
 		//		world.player.execute();
 	}
 
+	/* use a basket to recolt items on the ground
 	if (key === 'a' || key === 'A') {
 		world.player.pickUpItems();
 	}
+	*/
 
 	if (key === ',') {
 		// previous slot

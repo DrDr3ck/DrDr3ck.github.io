@@ -88,6 +88,8 @@ const getSpriteIndex = (type, category) => {
 			return 1;
 		} else if (type === 'shovel') {
 			return 2;
+		} else if (type === 'basket') {
+			return 3;
 		}
 	}
 	throw `cannot getSpriteIndex for ${type},${category}`;
@@ -291,6 +293,8 @@ class Entity extends Sprite {
 					);
 				}
 			}
+		} else if( item && item.category === 'tool' && item.name === 'basket' ) {
+			world.player.pickUpItems();
 		} else if (item && item.category === 'seed' && item.count > 0) {
 			// check if player is carrying a seed
 			// check if seed count > 0

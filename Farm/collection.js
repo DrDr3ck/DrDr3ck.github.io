@@ -5,28 +5,28 @@ class CollectionGain {
 }
 
 class CollectionCard {
-	constructor(type, count) {
+	constructor(type, count, img = null) {
 		this.type = type;
 		this.count = count;
-        this.img = null;
+		this.img = img;
 	}
 
-    draw(X,Y) {
-        if( !this.img ) {
-            this.img = spritesheet.getImage('seed_vegetable', getSpriteIndex(this.type, 'seed'));
-        }
-        const width = 75;
-        fill(150, 111, 51);
+	draw(X, Y) {
+		if (!this.img) {
+			this.img = spritesheet.getImage('seed_vegetable', getSpriteIndex(this.type, 'seed'));
+		}
+		const width = 75;
+		fill(150, 111, 51);
 		stroke(0);
-        rect(X, Y, width, width, 15);
-        image(this.img, X + (width - 48) / 2, Y + 5, 48, 48);
+		rect(X, Y, width, width, 15);
+		image(this.img, X + (width - 48) / 2, Y + 5, 48, 48);
 
-        fill(0);
+		fill(0);
 		noStroke();
-        textSize(12);
-        textAlign(LEFT, TOP);
+		textSize(12);
+		textAlign(LEFT, TOP);
 		text(this.count, X + 5, Y + 5);
-    }
+	}
 }
 
 class Collection {
@@ -36,8 +36,8 @@ class Collection {
 		this.gain = new CollectionGain(gain);
 	}
 
-	addCard(type, count) {
-		this.cards.push(new CollectionCard(type, count));
+	addCard(type, count, img=null) {
+		this.cards.push(new CollectionCard(type, count, img));
 	}
 }
 
@@ -50,7 +50,9 @@ class CollectionMgr {
 	fill() {
 		// starter
 		let collection = new Collection('starter', 'starter');
-		[ 'hoe', 'shovel', 'pickaxe', 'basket' ].forEach((tool) => collection.addCard(tool, 1));
+		[ 'hoe', 'pickaxe', 'shovel', 'basket' ].forEach((tool,i) => {
+			collection.addCard(tool, 1, spritesheet.getImage('farm_tools', i) );
+		});
 		this.collections.push(collection);
 
 		collection = new Collection('navet', 'navet_farm_bot');
@@ -70,7 +72,7 @@ class CollectionDialog extends Dialog {
 		// close button
 		this.components.push(new BFloatingButton(w - 80, 80, '\u2716', () => this.popup()));
 
-        // prev/next page
+		// prev/next page
 		this.components.push(
 			new BFloatingButton(10, h - 10, '<', () => {
 				this.curPage = Math.max(0, this.curPage - 1);
@@ -81,9 +83,9 @@ class CollectionDialog extends Dialog {
 				this.curPage = Math.min(this.maxPage, this.curPage + 1);
 			})
 		);
-        this.curPage = 0;
-        this.maxRows = 3;
-		this.maxPage = Math.floor((this.manager.collections.length-1) / this.maxRows);
+		this.curPage = 0;
+		this.maxRows = 3;
+		this.maxPage = Math.floor((this.manager.collections.length - 1) / this.maxRows);
 	}
 
 	doDraw() {
@@ -94,11 +96,11 @@ class CollectionDialog extends Dialog {
 		textAlign(LEFT, TOP);
 		text('Collection', 10, 10);
 
-        textAlign(CENTER, TOP);
+		textAlign(CENTER, TOP);
 		text(`${this.curPage + 1}/${this.maxPage + 1}`, this.w / 2, this.h - 80);
-        
+
 		// get first collection to display
-		//this.drawCollection(this.manager.collections[0], 0);
+		this.drawCollection(this.manager.collections[0], 0);
 		this.drawCollection(this.manager.collections[1], 1);
 		this.drawCollection(this.manager.collections[2], 2);
 	}
@@ -107,10 +109,10 @@ class CollectionDialog extends Dialog {
 		collection.cards.forEach((card, column) => {
 			const X = 10 + column * 80;
 			const Y = 110 + row * 80;
-            card.draw(X,Y);
+			card.draw(X, Y);
 		});
 		// gain
-        fill(150, 111, 51);
+		fill(150, 111, 51);
 		stroke(0);
 		rect(10 + 80 * 5, 110 + row * 80, 75, 75, 15);
 	}
@@ -122,12 +124,4 @@ class CollectionDialog extends Dialog {
 			uiManager.setDialog(this);
 		}
 	}
-}
-
-test();
-
-function test() {
-	console.log('Testing Collections');
-	const mgr = new CollectionMgr();
-	console.log(mgr.collections.length);
 }
