@@ -295,6 +295,13 @@ class Entity extends Sprite {
 			}
 		} else if( item && item.category === 'tool' && item.name === 'basket' ) {
 			world.player.pickUpItems();
+			// if a minion is next to the player, pickup items of minion too
+			world.minions.forEach(minion=>{
+				if( distTile(playerTilePosition, minion.getTilePosition()) <= 2) {
+					minion.pickUpItems();
+				}
+			});
+			
 		} else if (item && item.category === 'seed' && item.count > 0) {
 			// check if player is carrying a seed
 			// check if seed count > 0
