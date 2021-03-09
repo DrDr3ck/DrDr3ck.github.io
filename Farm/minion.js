@@ -52,7 +52,7 @@ class Minion extends Sprite {
 		const tilePosition = this.getTilePosition();
 		const chunk = world.getChunk(tilePosition.column, tilePosition.row);
 		const colChunk = world.getColumnPositionInChunk(chunk, tilePosition.column);
-		const rowChunk = tilePosition.row + 1; // TODO: check of rowChunk value exists in the tiles
+		const rowChunk = tilePosition.row + 1; // TODO: check if rowChunk value exists in the tiles
 
 		// check if field is wild (not plowed, non labouré)
 		for (let i = -this.range; i <= this.range; i++) {

@@ -168,30 +168,29 @@ const fillInventory = (inventory) => {
 const fillCatalog = (catalog, inventory) => {
 	let category = new CatalogCategory('seed');
 	catalog.addCategory(category);
-	category.addItem(
-		new CatalogItem(
-			'navet',
-			spritesheet.getImage('seed_vegetable', getSpriteIndex('navet', 'seed')),
-			1,
-			inventory.getCountedItem('navet', 'seed').count
-		)
-	);
-	category.addItem(
-		new CatalogItem(
-			'carotte',
-			spritesheet.getImage('seed_vegetable', getSpriteIndex('carotte', 'seed')),
-			1.2,
-			inventory.getCountedItem('carotte', 'seed').count
-		)
-	);
-	category.addItem(
-		new CatalogItem(
-			'tomate',
-			spritesheet.getImage('seed_vegetable', getSpriteIndex('tomate', 'seed')),
-			1.5,
-			inventory.getCountedItem('tomate', 'seed').count
-		)
-	);
+
+	const imageSpriteSheet = "seed_vegetable";
+
+	const addItem = (itemName, price) => {
+		category.addItem(
+			new CatalogItem(
+				spritesheet.getImage(imageSpriteSheet, getSpriteIndex(itemName, category.name)),
+				price,
+				inventory.getCountedItem(itemName, category.name)
+			)
+		);
+	};
+
+	addItem('navet', 1);
+	addItem('carotte', 1.2);
+	addItem('tomate', 1.5);
+
+	category = new CatalogCategory('vegetable');
+	catalog.addCategory(category);
+
+	addItem('navet', 2);
+	addItem('carotte', 2.4);
+	addItem('tomate', 3);
 };
 
 class World {

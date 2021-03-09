@@ -34,7 +34,7 @@ class Money {
 		textSize(24);
 		fill(0);
 		noStroke();
-		text(this.copper, 0, 40);
+		text(Math.floor(this.copper*10)/10, 0, 40);
 		spritesheet.drawSprite('farm_money', 0, 5, 32);
 		text(this.silver, 0, 20);
 		spritesheet.drawSprite('farm_money', 1, 5, 12);
@@ -44,11 +44,10 @@ class Money {
 }
 
 class CatalogItem {
-	constructor(name, image, price, occurrence) {
-		this.name = name;
+	constructor(image, price, countedItem) {
 		this.image = image;
 		this.price = price;
-		this.occurrence = occurrence;
+		this.item = countedItem;
 	}
 }
 
@@ -59,13 +58,13 @@ class CatalogCategory {
 	}
 
 	addItem(item) {
-		if (!this.getItem(item.name)) {
+		if (!this.getItem(item.item.name)) {
 			this.items.push(item);
 		}
 	}
 
 	getItem(itemName) {
-		const find = this.items.filter((c) => c.name === itemName);
+		const find = this.items.filter((c) => c.item.name === itemName);
 		if (find.length === 1) {
 			return find[0];
 		}
@@ -100,25 +99,14 @@ class ShopDialog extends Dialog {
 		this.maxColumns = 6;
 		this.maxRows = 2;
 
-		this.category = 'seed';
-		this.items = world.catalog.getCategory(this.category).items;
-		this.items.forEach((item, index) => {
-			const row = floor(index / this.maxColumns);
-			const column = index % this.maxColumns;
-			const X = 10 + column * 80;
-			const Y = 100 + 10 + row * 100;
-			this.components.push(
-				new BShopButton(X, Y, item, () => {
-					this.setCurItem(item);
-				})
-			);
-		});
+		this.category = 'vegetable';
+		this.items = [];
 
 		this.sellButton = new BSellButton(540, 300, () => {
 			world.money.addCopper(this.sellButton.price);
-			this.curItem.occurrence -= this.nbCurItems;
+			this.curItem.item.count -= this.nbCurItems;
 			// change inventory
-			world.inventory.getCountedItem(this.curItem.name, this.category).count -= this.nbCurItems;
+			//world.inventory.getCountedItem(this.curItem.name, this.category).count -= this.nbCurItems;
 			// reset item
 			this.setCurItem(null);
 		});
@@ -160,7 +148,7 @@ class ShopDialog extends Dialog {
 	}
 
 	setCurItem(item) {
-		if (this.curItem === item || !item || item.occurrence === 0) {
+		if (this.curItem === item || !item || item.item.count === 0) {
 			this.curItem = null;
 			this.sellButton.visible = false;
 		} else {
@@ -173,7 +161,7 @@ class ShopDialog extends Dialog {
 	computeBuySellPrice() {
 		if (this.curItem) {
 			// nb cur item cannot exceed occurrence of cur item
-			this.nbCurItems = min(this.nbCurItems, this.curItem.occurrence);
+			this.nbCurItems = min(this.nbCurItems, this.curItem.item.count);
 			this.sellButton.price = this.curItem.price * this.nbCurItems;
 		}
 	}
@@ -181,7 +169,22 @@ class ShopDialog extends Dialog {
 	popup() {
 		if (this.visible) {
 			uiManager.setDialog(null);
+			this.items = [];
 		} else {
+			// TODO: reset items !!
+			this.items = world.catalog.getCategory(this.category).items;
+			this.items.forEach((item, index) => {
+				const row = floor(index / this.maxColumns);
+				const column = index % this.maxColumns;
+				const X = 10 + column * 80;
+				const Y = 100 + 10 + row * 100;
+				this.components.push(
+					new BShopButton(X, Y, item, () => {
+						this.setCurItem(item);
+					})
+				);
+			});
+
 			uiManager.setDialog(this);
 		}
 	}

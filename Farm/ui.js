@@ -36,16 +36,16 @@ class BSellButton extends BInteractiveButtonBase {
 		stroke(0);
 		rect(this.x, this.y, this.w, this.h, 5);
 		textAlign(CENTER, TOP);
-		text(`+${this.price}`, this.x+this.w/2, this.y+5);
+		text(`+${Math.floor(this.price*10)/10}`, this.x+this.w/2, this.y+5);
 	}
 }
 
 class BShopButton extends BImageButton {
-	constructor(x, y, item, callback) {
-		super(x, y, item.image, callback);
+	constructor(x, y, catalogItem, callback) {
+		super(x, y, catalogItem.image, callback);
 		this.w = 75;
 		this.h = 75;
-		this.item = item;
+		this.catalogItem = catalogItem;
 	}
 
 	doDraw() {
@@ -61,8 +61,8 @@ class BShopButton extends BImageButton {
 		spritesheet.drawSprite('farm_money', 0, this.x + this.w - 20, this.y + this.h - 20);
 		textSize(12);
 		textAlign(RIGHT, TOP);
-		text(this.item.price, this.x + this.w - 25, this.y + this.h - 16);
+		text(this.catalogItem.price, this.x + this.w - 25, this.y + this.h - 16);
 		textAlign(LEFT, TOP);
-		text(this.item.occurrence, this.x + 5, this.y + 5);
+		text(this.catalogItem.item.count, this.x + 5, this.y + 5);
 	}
 }
