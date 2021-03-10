@@ -40,21 +40,21 @@ class BSellButton extends BInteractiveButtonBase {
 	}
 }
 
-class BShopButton extends BImageButton {
+class BShopButton extends BInteractiveButtonBase {
 	constructor(x, y, catalogItem, callback) {
-		super(x, y, catalogItem.image, callback);
-		this.w = 75;
-		this.h = 75;
+		super(x, y, 75, 75, callback);
 		this.catalogItem = catalogItem;
 	}
 
 	doDraw() {
-		super.doDraw();
 		// draw a rect and image
 		fill(150, 111, 51);
 		stroke(0);
+		if (this.over) {
+			tint(255, 200);
+		}
 		rect(this.x, this.y, this.w, this.h, 5);
-		image(this.img, this.x + (this.w - 48) / 2, this.y + 5, 48, 48);
+		image(this.catalogItem.image, this.x + (this.w - 48) / 2, this.y + 5, 48, 48);
 		// draw occurrence and price
 		fill(0);
 		noStroke();
@@ -64,5 +64,36 @@ class BShopButton extends BImageButton {
 		text(this.catalogItem.price, this.x + this.w - 25, this.y + this.h - 16);
 		textAlign(LEFT, TOP);
 		text(this.catalogItem.item.count, this.x + 5, this.y + 5);
+	}
+}
+
+/**************************************************************************/
+
+class BCollectionCardButton extends BInteractiveButtonBase {
+	constructor(x, y, card, callback) {
+		super(x,y,75,75,callback);
+		this.card = card;
+	}
+
+	doDraw() {
+		if (this.over) {
+			tint(255, 200);
+		}
+		this.card.draw(this.x, this.y);
+		/*
+		fill(150, 111, 51);
+		stroke(0);
+		if (this.over) {
+			tint(255, 200);
+		}
+		rect(this.x, this.y, this.w, this.h, 5);
+		image(this.card.img, this.x + (this.w - 48) / 2, this.y + 5, 48, 48);
+
+		fill(0);
+		noStroke();
+		textAlign(LEFT, TOP);
+		textSize(12);
+		text(this.card.count, this.x + 5, this.y + 5);
+		*/
 	}
 }
