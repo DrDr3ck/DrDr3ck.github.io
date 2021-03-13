@@ -163,6 +163,8 @@ const fillInventory = (inventory) => {
 	inventory.createItem('pickaxe', categoryName, 1);
 	inventory.createItem('shovel', categoryName, 1);
 	inventory.createItem('basket', categoryName, 1);
+	categoryName = 'bot';
+	inventory.createCategory(categoryName);
 };
 
 const fillCatalog = (catalog, inventory) => {

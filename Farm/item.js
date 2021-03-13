@@ -253,7 +253,7 @@ class Entity extends Sprite {
 			world.items.push(
 				new DroppedItem(item.name, 'seed', world.player.position, { x: random(3) - 1, y: -random(3) })
 			);
-			if (random(1) > 0.8) {
+			if (random(1) > 0.5) {
 				// two seeds !!
 				world.items.push(
 					new DroppedItem(item.name, 'seed', world.player.position, { x: random(3) - 1, y: -random(3) })

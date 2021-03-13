@@ -6,14 +6,22 @@ class CollectionCardBase {
 }
 
 class CollectionGain extends CollectionCardBase {
-	constructor(name) {
+	constructor(composedName) {
+		const [ category, name, imgIndex ] = composedName.split(':');
 		super(name);
+		if (imgIndex) {
+			this.img = spritesheet.getImage(category, parseInt(imgIndex));
+		}
 	}
 
 	draw(X, Y) {
 		fill(150, 111, 51);
 		stroke(0);
 		rect(X, Y, 75, 75, 15);
+		if (this.img) {
+			const width = 75;
+			image(this.img, X + (width - 48) / 2, Y + 5, 48, 48);
+		}
 	}
 }
 
@@ -47,7 +55,8 @@ class CollectionCard extends CollectionCardBase {
 }
 
 class Collection {
-	constructor(name, gain) {
+	constructor(category, name, gain) {
+		this.category = category;
 		this.name = name;
 		this.cards = [];
 		this.gain = new CollectionGain(gain);
@@ -66,22 +75,38 @@ class CollectionMgr {
 
 	fill() {
 		// starter
-		let collection = new Collection('starter', 'starter');
+		let collection = new Collection('tool', 'starter', 'starter:starter');
 		[ 'hoe', 'pickaxe', 'shovel', 'basket' ].forEach((tool, i) => {
 			collection.addCard(tool, 1, spritesheet.getImage('farm_tools', i));
 		});
 		this.collections.push(collection);
 
-		collection = new Collection('navet', 'navet_farm_bot');
+		collection = new Collection('seed', 'navet', 'farm_minion:navet_farmer:0');
 		[ 1, 2, 5, 10 ].forEach((i) => collection.addCard('navet', i));
 		this.collections.push(collection);
 
-		collection = new Collection('carotte', 'carotte_farm_bot');
+		collection = new Collection('seed', 'carotte', 'farm_minion:carotte_farmer:2');
 		[ 1, 2, 5, 10 ].forEach((i) => collection.addCard('carotte', i));
 		this.collections.push(collection);
 
-		collection = new Collection('tomate', 'tomate_farm_bot');
+		collection = new Collection('seed', 'tomate', 'farm_minion:tomate_farmer:4');
 		[ 1, 2, 5, 10 ].forEach((i) => collection.addCard('tomate', i));
+		this.collections.push(collection);
+
+		collection = new Collection('seed', 'navet', 'bot:navet_upgrade1');
+		[ 10, 20, 50, 100 ].forEach((i) => collection.addCard('navet', i));
+		this.collections.push(collection);
+
+		collection = new Collection('seed', 'carotte', 'bot:carotte_upgrade1');
+		[ 10, 20, 50, 100 ].forEach((i) => collection.addCard('carotte', i));
+		this.collections.push(collection);
+
+		collection = new Collection('seed', 'tomate', 'bot:tomate_upgrade1');
+		[ 10, 20, 50, 100 ].forEach((i) => collection.addCard('tomate', i));
+		this.collections.push(collection);
+
+		collection = new Collection('seed', 'navet', 'bot:navet_upgrade2');
+		[ 100, 200, 500, 1000 ].forEach((i) => collection.addCard('navet', i));
 		this.collections.push(collection);
 	}
 }
@@ -108,7 +133,7 @@ class CollectionDialog extends Dialog {
 			})
 		);
 		this.curPage = 0;
-		this.maxRows = 3;
+		this.maxRows = 5;
 		this.maxPage = Math.floor((this.manager.collections.length - 1) / this.maxRows);
 	}
 
@@ -121,7 +146,7 @@ class CollectionDialog extends Dialog {
 		text('Collection', 10, 10);
 
 		textAlign(CENTER, TOP);
-		text(`${this.curPage + 1}/${this.maxPage + 1}`, this.w / 2, this.h - 80);
+		text(`${this.curPage + 1}/${this.maxPage + 1}`, this.w / 2, this.h - 60);
 	}
 
 	/**
@@ -144,13 +169,17 @@ class CollectionDialog extends Dialog {
 			const X = 10 + column * 80;
 			const Y = 110 + row * 80;
 			const button = new BCollectionCardButton(X, Y, card, () => {
-				// TODO: own card
-				card.owned = true;
+				if (card.owned) return;
+				const countedItem = world.inventory.getCountedItem(card.name, collection.category);
+				if (countedItem.count >= card.count) {
+					// remove items from inventory
+					countedItem.count -= card.count;
+					// own card
+					card.owned = true;
+				}
 			});
 			button.visible = true;
-			this.components.push(
-				button
-			);
+			this.components.push(button);
 		});
 		// TODO: gain card
 		const card = collection.gain;
@@ -158,9 +187,7 @@ class CollectionDialog extends Dialog {
 			// TODO gain card
 		});
 		button.visible = true;
-		this.components.push(
-			button
-		);
+		this.components.push(button);
 	}
 
 	popup() {

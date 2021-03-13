@@ -242,7 +242,7 @@ function initGame() {
 	noiseSeed(5000);
 	world = new World();
 	world.shop = new ShopDialog(100, 100, 700, 450);
-	world.collection = new CollectionDialog(100, 100, 700, 450);
+	world.collection = new CollectionDialog(100, 100, 600, 600);
 	world.update(0);
 
 	// test
