@@ -1,16 +1,16 @@
 class Minion extends Sprite {
 	constructor(x, y, type) {
 		super(x, y);
-		this.addAnimation('idle', 'farm_minion', [ 0, 1 ], FPS, true);
+		this.addAnimation('idle', 'farm_bot', [ 0, 1 ], FPS, true);
 
 		this.initialElapsedTime = 2000; // did an action every 2000 milliseconds
 		this.currentElapsedTime = this.initialElapsedTime;
 		this.range = 1; // from -1 to 1
 		this.level = 1;
-		this.type = type; // type of minion: planting carrot, tomate, ...
+		this.type = type; // type of bot: planting carrot, tomate, ...
 		this.img = spritesheet.getImage('seed_vegetable', getSpriteIndex(this.type, 'vegetable'));
 		this.count = 0;
-		this.maxCount = 100; // size of basket for this minion
+		this.maxCount = 100; // size of basket for this bot
 	}
 
 	getTilePosition() {

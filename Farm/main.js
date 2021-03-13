@@ -136,7 +136,7 @@ function setup() {
 	spritesheet.addSpriteSheet('seed_vegetable', './resources/farm_seed_vegetable.png', 32, 32);
 	spritesheet.addSpriteSheet('farm_ui', './resources/farm_ui.png', 64, 64);
 	spritesheet.addSpriteSheet('farm_robot', './resources/farm_robot.png', 32, 48);
-	spritesheet.addSpriteSheet('farm_minion', './resources/farm_minion.png', 32, 32);
+	spritesheet.addSpriteSheet('farm_bot', './resources/farm_bot.png', 32, 32);
 	spritesheet.addSpriteSheet('farm_tools', './resources/farm_tools.png', 32, 32);
 	spritesheet.addSpriteSheet('farm_money', './resources/farm_money.png', 16,16);
 
@@ -257,6 +257,8 @@ function initGame() {
 	world.player.addItemInSlots(world.inventory.getCountedItem('hoe', 'tool'));
 	world.player.addItemInSlots(world.inventory.getCountedItem('shovel', 'tool'));
 	world.player.addItemInSlots(world.inventory.getCountedItem('basket', 'tool'));
+
+	world.player.addItemInSlots(world.inventory.getCountedItem('navet_farmer', 'bot'));
 }
 
 function drawLoading() {

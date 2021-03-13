@@ -91,6 +91,10 @@ const getSpriteIndex = (type, category) => {
 		} else if (type === 'basket') {
 			return 3;
 		}
+	} else if (category === 'bot') {
+		if (type === 'navet_farmer') {
+			return 0;
+		}
 	}
 	throw `cannot getSpriteIndex for ${type},${category}`;
 };

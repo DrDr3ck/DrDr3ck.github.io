@@ -81,15 +81,15 @@ class CollectionMgr {
 		});
 		this.collections.push(collection);
 
-		collection = new Collection('seed', 'navet', 'farm_minion:navet_farmer:0');
+		collection = new Collection('seed', 'navet', 'farm_bot:navet_farmer:0');
 		[ 1, 2, 5, 10 ].forEach((i) => collection.addCard('navet', i));
 		this.collections.push(collection);
 
-		collection = new Collection('seed', 'carotte', 'farm_minion:carotte_farmer:2');
+		collection = new Collection('seed', 'carotte', 'farm_bot:carotte_farmer:2');
 		[ 1, 2, 5, 10 ].forEach((i) => collection.addCard('carotte', i));
 		this.collections.push(collection);
 
-		collection = new Collection('seed', 'tomate', 'farm_minion:tomate_farmer:4');
+		collection = new Collection('seed', 'tomate', 'farm_bot:tomate_farmer:4');
 		[ 1, 2, 5, 10 ].forEach((i) => collection.addCard('tomate', i));
 		this.collections.push(collection);
 

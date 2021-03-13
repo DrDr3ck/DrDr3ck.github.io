@@ -119,8 +119,16 @@ class Inventory {
 		if (idx !== -1) {
 			throw `Item ${itemName} already created in category ${categoryName}`;
 		}
+		const getSpriteSheetNameFromCategory = () => {
+			if (categoryName === 'tool') {
+				return 'farm_tools';
+			} else if (categoryName === 'bot') {
+				return 'farm_bot';
+			}
+			return 'seed_vegetable';
+		};
 		const img = spritesheet.getImage(
-			categoryName === 'tool' ? 'farm_tools' : 'seed_vegetable',
+			getSpriteSheetNameFromCategory(),
 			getSpriteIndex(itemName, categoryName)
 		);
 		category.createItem(itemName, img, count);
@@ -165,13 +173,14 @@ const fillInventory = (inventory) => {
 	inventory.createItem('basket', categoryName, 1);
 	categoryName = 'bot';
 	inventory.createCategory(categoryName);
+	inventory.createItem('navet_farmer', categoryName);
 };
 
 const fillCatalog = (catalog, inventory) => {
 	let category = new CatalogCategory('seed');
 	catalog.addCategory(category);
 
-	const imageSpriteSheet = "seed_vegetable";
+	const imageSpriteSheet = 'seed_vegetable';
 
 	const addItem = (itemName, price) => {
 		category.addItem(
