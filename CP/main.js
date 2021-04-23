@@ -10,8 +10,12 @@ let selectedId = 'isabelle';
 
 let card = null;
 
-function setup() {
+function preload() {
 	card = loadJSON('card.json');
+}
+
+function setup() {
+	//console.log(JSON.stringify(card, null, 4));
 }
 
 const letters = [ 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H' ];
@@ -73,6 +77,31 @@ function getResult(letter, num, id) {
 function displayResult() {
 	if (selectedLetter && selectedNumber) {
 		const code = getResult(selectedLetter, selectedNumber, selectedId);
-		resultContainer.innerHTML = `${selectedId}<br>${code}`;
+		resultContainer.innerHTML = `${selectedId}: ${code}`;
 	}
 }
+
+function encode(code, format) {
+	const f = [ ...format ];
+	const codeStr = typeof code === 'string' ? [ ...code ] : [ ...code.toString() ];
+	while (codeStr.length < 4) {
+		codeStr.unshift('0');
+	}
+	const elements = codeStr.map((c, i) => {
+		const n = Number(c);
+		if (f[i] === '+') {
+			return (n + 1) % 10;
+		}
+		if (f[i] === '-') {
+			return (n + 9) % 10;
+		}
+		return n;
+	});
+	return elements.toString().split(',').join('');
+}
+
+console.log(encode(1234, '-+=-'));
+
+console.log(encode(9000, '+-=-'));
+
+console.log(encode('0009', '--=+'));
