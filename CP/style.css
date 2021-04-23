@@ -1,0 +1,57 @@
+html, body {
+    font-family: 'Gill Sans Extrabold', sans-serif;
+    height: 100%;
+}
+
+h1 {
+    text-shadow: 1px 3px 3px #999999;
+}
+
+.inputContainer {
+    padding: 8px;
+    margin-left: 10vw;
+}
+
+.selected {
+    background-color: orange;
+}
+
+.button {
+    width: 50px;
+    height: 50px;
+    margin: 8px;
+    border-radius: 8px;
+    font-size: larger;
+}
+
+.button--id {
+    width: 150px;
+    height: 50px;
+    margin: 8px;
+    border-radius: 8px;
+    font-size: larger;
+}
+
+#number {
+    margin-top: 50px;
+}
+
+#result {
+    margin-top: 50px;
+    font-size: 60px;
+    color:antiquewhite;
+}
+
+#header {
+    width: 100%;
+    display: flex;
+    /* This centers our sketch horizontally. */
+    justify-content: center;
+    user-select: none;
+}
+
+#canvas {
+    display: flex;
+    /* This centers our sketch horizontally. */
+    justify-content: center;
+}
