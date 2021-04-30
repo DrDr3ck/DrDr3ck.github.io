@@ -11,7 +11,7 @@ let selectedId = 'isabelle';
 let card = null;
 
 function preload() {
-	card = loadJSON('card.json');
+	card = loadJSON('./card.json');
 }
 
 function setup() {
