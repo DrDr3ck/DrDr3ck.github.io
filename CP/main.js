@@ -100,8 +100,4 @@ function encode(code, format) {
 	return elements.toString().split(',').join('');
 }
 
-console.log(encode(1234, '-+=-'));
-
-console.log(encode(9000, '+-=-'));
-
-console.log(encode('0009', '--=+'));
+console.log([ 1234, 1234, 1234, 1234, 1234, 1234, 1234, 1234 ].map((c) => encode(c, '-+=-')));
