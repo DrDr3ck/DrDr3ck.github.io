@@ -52,6 +52,13 @@ function displayNumbers() {
 
 function handleId(id) {
 	selectedId = id;
+	if (selectedId === 'isabelle') {
+		isabelleContainer.classList.add('selected');
+		stephaneContainer.classList.remove('selected');
+	} else {
+		isabelleContainer.classList.remove('selected');
+		stephaneContainer.classList.add('selected');
+	}
 	displayResult();
 }
 
@@ -77,7 +84,7 @@ function getResult(letter, num, id) {
 function displayResult() {
 	if (selectedLetter && selectedNumber) {
 		const code = getResult(selectedLetter, selectedNumber, selectedId);
-		resultContainer.innerHTML = `${selectedId}: ${code}`;
+		resultContainer.innerHTML = code;
 	}
 }
 

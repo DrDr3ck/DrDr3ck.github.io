@@ -7,9 +7,23 @@ h1 {
     text-shadow: 1px 3px 3px #999999;
 }
 
+body {
+    background-color: #515151
+}
+
 .inputContainer {
     padding: 8px;
-    margin-left: 10vw;
+    display: flex;
+    flex-direction: column;
+}
+
+#letter {
+    margin: auto;
+}
+
+#number {
+    margin: auto;
+    margin-top: 10vw;
 }
 
 .selected {
@@ -17,11 +31,21 @@ h1 {
 }
 
 .button {
-    width: 50px;
-    height: 50px;
+    width: 100px;
+    height: 100px;
     margin: 8px;
     border-radius: 8px;
     font-size: larger;
+}
+
+@media screen and (max-width: 600px) {
+    .button {
+        width: 80px;
+        height: 80px;
+        margin: 8px;
+        border-radius: 8px;
+        font-size: xx-large;
+    }
 }
 
 .button--id {
@@ -32,14 +56,16 @@ h1 {
     font-size: larger;
 }
 
-#number {
-    margin-top: 50px;
+#resultContainer {
+    margin-top: 25px;
+    font-size: 60px;
+    color:antiquewhite;
+    display: flex;
+    align-items: center;
 }
 
 #result {
-    margin-top: 50px;
-    font-size: 60px;
-    color:antiquewhite;
+    margin: auto;
 }
 
 #header {
