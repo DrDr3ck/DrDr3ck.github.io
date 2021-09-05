@@ -87,22 +87,22 @@ class UIManager {
 		if (this.currentDialog) {
 			this.currentDialog.components.forEach((c) => {
 				if (!c.visible) {
-					return;
+					return true;
 				}
 				const curComponent = c.getOver();
 				if (curComponent) {
 					overComponent = curComponent;
-					return;
+					return true;
 				}
 			});
 		} else {
 			this.currentUI.forEach((c) => {
 				if (!c.visible) {
-					return;
+					return true;
 				}
 				if (c.over) {
 					overComponent = c;
-					return;
+					return true;
 				}
 			});
 		}

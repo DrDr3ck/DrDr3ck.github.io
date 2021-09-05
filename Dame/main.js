@@ -690,6 +690,7 @@ function mouseClicked() {
 		deselectSelectedPawn(getTileXFromMouse(), getTileYFromMouse());
 		movePawn(getTileXFromMouse(), getTileYFromMouse());
 	}
+	return false;
 }
 
 function keyPressed() {

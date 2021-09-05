@@ -251,6 +251,7 @@ function mouseClicked() {
             }
         }
     });
+    return false;
 }
 
 function mouseMoved() {

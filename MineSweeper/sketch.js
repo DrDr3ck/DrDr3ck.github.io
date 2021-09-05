@@ -101,6 +101,7 @@ function mouseClicked() {
     setShownAll();
     game = "lost";
   }
+  return false;
 }
 
 function draw() { 

@@ -315,11 +315,12 @@ function draw() {
 function mouseClicked() {
 	toolManager.mouseClicked();
 	if (uiManager.mouseClicked()) {
-		return;
+		return false;
 	}
 
 	// if player has clicked on a tile, execute an action if possible.
 	world.player.execute(world.mouseTilePosition);
+	return false;
 }
 
 function mouseWheel(event) {

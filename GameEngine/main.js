@@ -113,4 +113,5 @@ function draw() {
 function mouseClicked() {
 	toolManager.mouseClicked();
 	uiManager.mouseClicked();
+	return false;
 }

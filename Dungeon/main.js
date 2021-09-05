@@ -399,12 +399,13 @@ function mouseClicked() {
 	toolManager.mouseClicked();
 	const uiClicked = uiManager.mouseClicked();
 	if (curState === GAME_START_STATE) {
-		return;
+		return false;
 	}
 
 	if (toggleDebug) {
 		console.log('mouse position: ', mouseX, mouseY);
 	}
+	return false;
 }
 
 document.addEventListener('keydown', (event) => {

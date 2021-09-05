@@ -284,6 +284,7 @@ function mouseClicked() {
 		toolManager.mouseClicked();
 	}
 	uiManager.mouseClicked();
+	return false;
 }
 
 function keyPressed() {

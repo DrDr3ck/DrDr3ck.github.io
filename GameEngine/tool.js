@@ -14,8 +14,9 @@ class ToolManager {
 	}
 
 	mouseClicked() {
-		if (!this.currentTool) return;
+		if (!this.currentTool) return true;
 		this.currentTool.action();
+		return false;
 	}
 }
 
