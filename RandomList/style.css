@@ -50,7 +50,9 @@ input {
 
 #content {
   justify-content: center;
-  width: 100%;
+  width: calc(100% - 100px);
   display: flex;
   margin-top: 50px;
+  padding-left: 50px;
+  padding-right: 50px;
 }
