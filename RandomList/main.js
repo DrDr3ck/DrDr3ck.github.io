@@ -2,6 +2,7 @@
 
 let buttonNew = null;
 let buttonDef = null;
+let buttonChoices = [];
 
 let word = 0;
 
@@ -62,7 +63,10 @@ function definition() {
 	buttonDef.hide();
 }
 
-let lines = [
+let curIndex = -1;
+
+const list = [];
+let curLines = [
 	{ word: "Psychomotricité", def: "Intégration des fonctions motrices et psychiques résultant de la maturation du système nerveux."},
 	{ word: "Fonctions psychomotrices :",
 	def: "Fonctions mentales spécifiques au contrôle sur les événements, à la fois moteur et psychologique au niveau du corps."},
@@ -131,10 +135,14 @@ let lines = [
 	{ word: "Définir l’organisation spatiale ?",
 	def: "Associer à l’abstraction et au raisonnement = imagerie mentale, capacité a se décentrer"}];
 
+	list.push({title: "Revision Bilan Psychomoteur Vonsensey", page: curLines});
+
+	/*
 // read file
 window.onload = function(event) {
 	document.getElementById('fileInput').addEventListener('change', handleFileSelect, false);
 };
+*/
 const handleFileSelect = (event) => {
 	lines = [];
 	var fileReader = new FileReader();
@@ -150,23 +158,46 @@ function readFile(text) {
 	lines = lines.filter((line) => line !== '');
 }
 
+let lines = null;
+
+function initPressed(curIndex) {
+	return function() {init(curIndex);}
+}
+
+function init(curIndex) {
+	lines = list[curIndex].page;
+	execute();
+}
+
 function execute() {
 	word = 0;
-	if (!buttonNew) {
-		buttonNew = createButton('New word');
-		buttonNew.hide();
-		buttonNew.style('background-color', '#f39c12');
-		buttonNew.mousePressed(newWord);
-		buttonNew.parent('button');
+	if( lines ) {
+		if (!buttonNew) {
+			buttonNew = createButton('New word');
+			buttonNew.hide();
+			buttonNew.style('background-color', '#f39c12');
+			buttonNew.mousePressed(newWord);
+			buttonNew.parent('button');
+		}
+		if( !buttonDef) {
+			buttonDef = createButton('Definition');
+			buttonDef.show();
+			buttonDef.style('background-color', '#28b463');
+			buttonDef.mousePressed(definition);
+			buttonDef.parent('button');
+		}
+		lines.sort((a, b) => random(-1, 1));
+		displayWord();
+		displayButtons();
+	} else {
+		// choose a list
+		let pageIndex = 0;
+		for( const page of list ) {
+			const button = createButton(page.title);
+			buttonChoices.push( button );
+			button.mousePressed( initPressed(pageIndex) );
+			button.parent('button');
+			pageIndex++;
+		}
 	}
-	if( !buttonDef) {
-		buttonDef = createButton('Definition');
-		buttonDef.show();
-		buttonDef.style('background-color', '#28b463');
-		buttonDef.mousePressed(definition);
-		buttonDef.parent('button');
-	}
-	lines.sort((a, b) => random(-1, 1));
-	displayWord();
-	displayButtons();
 }
