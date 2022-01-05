@@ -7,6 +7,10 @@ h1 {
   margin-left: 20px;
 }
 
+h2 {
+  font-size: medium;
+}
+
 body {
   margin: 0;
   display: flex;
@@ -28,19 +32,25 @@ body {
   justify-content: center;
 }
 
+#list {
+  margin-bottom: 25px;
+  display: flex;
+  flex-direction: row-reverse;
+}
+
 button {
   min-width: 20%;
   height: 50px;
   margin: 5px;
-  font-size: 20px;
+  font-size: small;
 }
 
-@media (max-width: 400px) {
+@media (width <= 800px) {
   button {
     min-width: 40%;
     height: 100px;
     margin: 5px;
-    font-size: 30px;
+    font-size: large;
   }
 }
 
@@ -52,7 +62,7 @@ input {
   justify-content: center;
   width: calc(100% - 100px);
   display: flex;
-  margin-top: 50px;
+  margin-top: 5px;
   padding-left: 50px;
   padding-right: 50px;
 }

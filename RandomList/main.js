@@ -236,7 +236,7 @@ function execute() {
 			const button = createButton(page.title);
 			buttonChoices.push( button );
 			button.mousePressed( initPressed(pageIndex) );
-			button.parent('button');
+			button.parent('list');
 			pageIndex++;
 		}
 	}
