@@ -91,9 +91,16 @@ function nextPlayer() {
 
 function drawBoard() {
 	if (players.length > 0) {
-		drawCards(curPlayer);
+		drawCards(0);
 		drawAllPlayers();
 		drawPlayedCards();
+
+		if( curPlayer == 0 ) {
+			noFill();
+			stroke(200,200,50);
+			strokeWeight(4);
+			rect(0,0,window_width,window_height);
+		}
 	}
 }
 
@@ -118,7 +125,7 @@ function drawCard(card, position) {
 	} else if( card.color == "Green") {
 		fill(50,150,50,150);
 	} else if( card.color == "Yellow") {
-		fill(180,180,40,150);
+		fill(180,180,40,200);
 	} else { // Fusee
 		fill(100,100,100);
 	}
@@ -133,13 +140,26 @@ function drawCard(card, position) {
 	strokeWeight(1);
 	textAlign(CENTER, CENTER);
 	fill(0);
-	text(card.value.toString(), X+cardWidth/2,Y+cardHeight/3);
+	text(card.value.toString(), X+cardWidth/2,Y+cardHeight/3);	
 }
 
 /**
  * Draws 'avatar' of each player around the table
  */
-function drawAllPlayers() {}
+function drawAllPlayers() {
+	fill(150,50,50);
+	strokeWeight(1);
+	const playerWidth = window_width/maxPlayers; 
+	
+	for( var i = 1; i < maxPlayers; i++) {
+		if( curPlayer == i ) {
+			stroke(200,200,50);
+		} else {
+			stroke(0);
+		}
+		ellipse(playerWidth*i, 0, 100,100);
+	}
+}
 
 /**
  * Draws cards played in the middle of the table
@@ -204,12 +224,7 @@ function keyPressed() {
 	if (key === "D") {
 		toggleDebug = !toggleDebug;
 	}
-	if (key === "Q") {
-		initBoard();
-		board[2][3] = -1;
-		//board[5][6] = -2;
-		board[2][1] = 2;
-		curPlayer = 1;
+	if (key === "N") {
 		nextPlayer();
 	}
 }
