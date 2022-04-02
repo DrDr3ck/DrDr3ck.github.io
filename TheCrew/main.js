@@ -12,6 +12,7 @@ uiManager.loggerContainer.visible = true;
 
 const toolManager = new ToolManager();
 const jobManager = new JobManager();
+const spritesheet = new SpriteSheet();
 
 const GAME_START_STATE = 1;
 const GAME_PLAY_STATE = 2;
@@ -47,12 +48,16 @@ let lastTime = 0;
 let board = null;
 
 let players = [];
+let fold = [];
 
 function setup() {
 	canvas = createCanvas(window_width, window_height);
 	canvas.parent("canvas");
 
 	frameRate(60);
+
+	spritesheet.addSpriteSheet('captain', './captain.png', 50, 50);
+	spritesheet.addSpriteSheet('token', './token.png', 50, 50);
 
 	uiManager.addLogger("The Crew");
 	uiManager.addLogger("4 players connected");
@@ -61,7 +66,8 @@ function setup() {
 
 const tileSize = 48;
 
-let maxPlayers = 4; // TODO: need to 'connect' players
+const maxPlayers = 4; // TODO: need to 'connect' players
+const curPlayerId = 0;
 
 function orderCards(cards) {
 	cards.sort((a,b) => a.value > b.value);
@@ -74,9 +80,8 @@ function initBoard() {
 	board.init();
 	for (var i = 0; i < maxPlayers; i++) {
 		let cards = board.distribute(i);
-		// TODO: order cards
 		cards = orderCards(cards);
-		players.push({ playerId: i, cards: cards });
+		players.push({ playerId: i, cards: cards, communication: { card: null, state: "green"}, captain: cards.find(card => card.value == maxPlayers && card.color == "AFusee") });
 	}
 	console.log(players);
 }
@@ -91,11 +96,11 @@ function nextPlayer() {
 
 function drawBoard() {
 	if (players.length > 0) {
-		drawCards(0);
+		drawCards(curPlayerId, curPlayer == curPlayerId);
 		drawAllPlayers();
 		drawPlayedCards();
 
-		if( curPlayer == 0 ) {
+		if( curPlayer == curPlayerId ) {
 			noFill();
 			stroke(200,200,50);
 			strokeWeight(4);
@@ -107,26 +112,40 @@ function drawBoard() {
 /**
  * Draws card for given player
  * @param playerId id of player
+ * @param isPlaying true if player is playing
  */
-function drawCards(playerId) {
+function drawCards(playerId, isPlaying) {
 	for (var i = 0; i < players[playerId].cards.length; i++) {
-		drawCard(players[playerId].cards[i], i);
+		let selectable = false;
+		if( isPlaying ) {
+			// TODO: check if card can be played or not
+			if( fold.length == 0 ) { // no card in the fold, player is starting a new turn
+				selectable = true;
+			} else {
+				// TODO: check the color of the first card and check if player has cards of the same color
+			}
+		}
+		drawCard(players[playerId].cards[i], i, selectable);
 	}
 }
 
-function drawCard(card, position) {
-	stroke(0);
+function drawCard(card, position, selectable) {
+	if( selectable ) {
+		stroke(200,200,50);
+	} else {
+		stroke(0);
+	}
 	textSize(24);
 	strokeWeight(2);
-	if( card.color == "Blue") {
+	if( card.color == CardColor.Blue) {
 		fill(50,50,150,150);
-	} else if( card.color == "Red") {
+	} else if( card.color == CardColor.Red) {
 		fill(150,50,50,150);
-	} else if( card.color == "Green") {
+	} else if( card.color == CardColor.Green) {
 		fill(50,150,50,150);
-	} else if( card.color == "Yellow") {
+	} else if( card.color == CardColor.Yellow) {
 		fill(180,180,40,200);
-	} else { // Fusee
+	} else { // CardColor.Fusee
 		fill(100,100,100);
 	}
 	const cardHeight = 80;
@@ -158,6 +177,32 @@ function drawAllPlayers() {
 			stroke(0);
 		}
 		ellipse(playerWidth*i, 0, 100,100);
+	}
+
+	// draw 'communication' token
+	for( var i = 0; i < maxPlayers; i++) {
+		if( curPlayerId == i ) {
+			// display token at the bottom left
+			spritesheet.drawSprite('token', 0, 100 + 25, window_height-120 - 25);
+		} else {
+			// display token next to the avatar
+			spritesheet.drawSprite('token', 0, playerWidth*i-40 -25, 100 - 25);
+		}
+	}
+
+	// draw 'captain'
+	fill(150,150,50);
+	for( var i = 0; i < maxPlayers; i++) {
+		if( !players[i].captain ) {
+			continue;
+		}
+		if( curPlayerId == i ) {
+			// display captain at the bottom right
+			spritesheet.drawSprite('captain', 0, window_width - 100 - 25, window_height-120 - 25);
+		} else {
+			// display captain next to the avatar
+			spritesheet.drawSprite('captain', 0, playerWidth*i+40 -25, 100 - 25);
+		}
 	}
 }
 
@@ -191,7 +236,7 @@ function draw() {
 		push();
 		textAlign(CENTER, CENTER);
 		textSize(50);
-		text(`${curPlayer === 1 ? "Black" : "White"} wins!`, width / 2, height / 2);
+		text("You win!", width / 2, height / 2);
 		pop();
 	}
 

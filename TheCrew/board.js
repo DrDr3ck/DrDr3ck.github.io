@@ -1,3 +1,11 @@
+const CardColor = {
+    Fusee: "AFusee",
+    Blue: "Blue",
+    Green: "Green",
+    Red: "Red",
+    Yellow: "Yellow"
+}
+
 class Board {
     constructor(maxPlayer) {
         this.cards = [];
@@ -10,20 +18,20 @@ class Board {
     init() {
         this.cards = [];
         for( let i = 0 ; i < 9; i++) {
-            this.addCard("Blue", i+1);
-            this.addCard("Red", i+1);
-            this.addCard("Yellow", i+1);
+            this.addCard(CardColor.Blue, i+1);
+            this.addCard(CardColor.Red, i+1);
+            this.addCard(CardColor.Yellow, i+1);
             // pas de cartes vertes si 3 joueurs uniquement
             if( this.maxPlayer != 3 ) {
-                this.addCard("Green", i+1);
+                this.addCard(CardColor.Green, i+1);
             }
         }
         for( let i = 0 ; i < 3; i++) {
-            this.addCard("AFusee", i+1);
+            this.addCard(CardColor.Fusee, i+1);
         }
         // pas de Fusee 4 si 3 joueurs uniquement
         if( this.maxPlayer != 3 ) {
-            this.addCard("AFusee", 4);
+            this.addCard(CardColor.Fusee, 4);
         }
         this.cards.sort((a, b) => 0.5 - Math.random());
         this.cards.sort((a, b) => 0.5 - Math.random());
