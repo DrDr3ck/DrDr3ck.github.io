@@ -22,12 +22,14 @@ const PLAYER_CHOOSE = 1;
 const PLAYER_SELECTED = 2;
 const PLAYER_MOVE = 3;
 const PLAYER_WIN = 4;
-let curPlayer = -1;
+let curPlayerIdx = -1;
 let gameState = 0;
 let selectedPawn = null;
 let moves = [];
 let selectablePawns = [];
 let force = false;
+
+let missions = [];
 
 let toggleDebug = false;
 
@@ -35,7 +37,6 @@ function startClicked() {
 	curState = GAME_PLAY_STATE;
 	uiManager.setUI([]);
 	initBoard();
-	nextPlayer();
 }
 
 const startButton = new BButton(130, 580, "START (4)", startClicked);
@@ -67,7 +68,7 @@ function setup() {
 const tileSize = 48;
 
 const maxPlayers = 4; // TODO: need to 'connect' players
-const curPlayerId = 0;
+const thisPlayerId = 0; // TODO: need to be changed for each player
 
 function orderCards(cards) {
 	cards.sort((a,b) => a.value > b.value);
@@ -78,29 +79,51 @@ function orderCards(cards) {
 function initBoard() {
 	board = new Board(maxPlayers);
 	board.init();
+	let captainIdx = -1;
 	for (var i = 0; i < maxPlayers; i++) {
 		let cards = board.distribute(i);
 		cards = orderCards(cards);
-		players.push({ playerId: i, cards: cards, communication: { card: null, state: "green"}, captain: cards.find(card => card.value == maxPlayers && card.color == "AFusee") });
+		const isCaptain = cards.find(card => card.value == maxPlayers && card.color == CardColor.Fusee)
+		if( isCaptain ) {
+			captainIdx = i;
+		}
+		players.push({ playerId: i, cards: cards, communication: { card: null, state: "green"}, captain: isCaptain });
+	}
+	// choose first mission
+	// get a random card (not a Fusee)
+	let randomCard = null;
+	while( randomCard === null || randomCard.color === CardColor.Fusee ) {
+		randomCard = board.cards[Math.floor((Math.random()*board.cards.length))];
+	}
+	missions.push({card: randomCard, rule: null, playerId: captainIdx}); // mission en dur...
+
+	// DEBUG
+	// if captain is not player 0, play a random card
+	uiManager.addLogger(`Captain is ${captainIdx}`);
+	curPlayerIdx = captainIdx;
+	while( curPlayerIdx != 0) {
+		playCard(curPlayerIdx, 3);
+		nextPlayer();
 	}
 	console.log(players);
+	// END DEBUG
 }
 
 function nextPlayer() {
-	curPlayer += 1;
-	if (curPlayer == maxPlayers) {
-		curPlayer = 0;
+	curPlayerIdx += 1;
+	if (curPlayerIdx == maxPlayers) {
+		curPlayerIdx = 0;
 	}
-	uiManager.addLogger(`Player #${curPlayer} is playing`);
+	uiManager.addLogger(`Player #${curPlayerIdx} is playing`);
 }
 
 function drawBoard() {
 	if (players.length > 0) {
-		drawCards(curPlayerId, curPlayer == curPlayerId);
+		drawCards(thisPlayerId, curPlayerIdx == thisPlayerId);
 		drawAllPlayers();
 		drawPlayedCards();
 
-		if( curPlayer == curPlayerId ) {
+		if( curPlayerIdx == thisPlayerId ) {
 			noFill();
 			stroke(200,200,50);
 			strokeWeight(4);
@@ -117,43 +140,55 @@ function drawBoard() {
 function drawCards(playerId, isPlaying) {
 	for (var i = 0; i < players[playerId].cards.length; i++) {
 		let selectable = false;
+		const curCard = players[playerId].cards[i];
+		// TODO: if player has no card with same color, all cards are selectable
 		if( isPlaying ) {
 			// TODO: check if card can be played or not
 			if( fold.length == 0 ) { // no card in the fold, player is starting a new turn
 				selectable = true;
 			} else {
 				// TODO: check the color of the first card and check if player has cards of the same color
+				const foldColor = fold[0].card.color;
+				const nbCardsSameColor = players[playerId].cards.filter(c=>c.color === foldColor).length;
+				if( nbCardsSameColor == 0 || curCard.color === foldColor ) {
+					selectable = true;
+				}
 			}
 		}
-		drawCard(players[playerId].cards[i], i, selectable);
+		drawCard(curCard, i, selectable);
 	}
 }
 
-function drawCard(card, position, selectable) {
-	if( selectable ) {
+const setCardColor = (normal, color) => {
+	if( normal ) {
 		stroke(200,200,50);
 	} else {
 		stroke(0);
 	}
 	textSize(24);
 	strokeWeight(2);
-	if( card.color == CardColor.Blue) {
+	if( color == CardColor.Blue) {
 		fill(50,50,150,150);
-	} else if( card.color == CardColor.Red) {
+	} else if( color == CardColor.Red) {
 		fill(150,50,50,150);
-	} else if( card.color == CardColor.Green) {
+	} else if( color == CardColor.Green) {
 		fill(50,150,50,150);
-	} else if( card.color == CardColor.Yellow) {
+	} else if( color == CardColor.Yellow) {
 		fill(180,180,40,200);
 	} else { // CardColor.Fusee
 		fill(100,100,100);
 	}
+}
+
+function drawCard(card, position, selectable) {
+	setCardColor(selectable, card.color);
 	const cardHeight = 80;
 	const cardWidth = window_width / 12;
 	const X = 10+(20+cardWidth)*position;
 	const Y = window_height-cardHeight;
 	rect(X, Y, cardWidth, cardHeight*2);
 	fill(150);
+	stroke(0);
 	ellipse(X+cardWidth/2, Y+cardHeight/3, 70, 40);
 
 	strokeWeight(1);
@@ -171,7 +206,7 @@ function drawAllPlayers() {
 	const playerWidth = window_width/maxPlayers; 
 	
 	for( var i = 1; i < maxPlayers; i++) {
-		if( curPlayer == i ) {
+		if( curPlayerIdx == i ) {
 			stroke(200,200,50);
 		} else {
 			stroke(0);
@@ -181,7 +216,7 @@ function drawAllPlayers() {
 
 	// draw 'communication' token
 	for( var i = 0; i < maxPlayers; i++) {
-		if( curPlayerId == i ) {
+		if( thisPlayerId == i ) {
 			// display token at the bottom left
 			spritesheet.drawSprite('token', 0, 100 + 25, window_height-120 - 25);
 		} else {
@@ -196,7 +231,7 @@ function drawAllPlayers() {
 		if( !players[i].captain ) {
 			continue;
 		}
-		if( curPlayerId == i ) {
+		if( thisPlayerId == i ) {
 			// display captain at the bottom right
 			spritesheet.drawSprite('captain', 0, window_width - 100 - 25, window_height-120 - 25);
 		} else {
@@ -204,16 +239,83 @@ function drawAllPlayers() {
 			spritesheet.drawSprite('captain', 0, playerWidth*i+40 -25, 100 - 25);
 		}
 	}
+
+	// draw 'missions'
+	missions.forEach(mission=>drawMission(mission));
+}
+
+function drawMission(mission) {
+	const cardHeight = 60;
+	const cardWidth = window_width / 18;
+	const Xs = [window_width/2, window_width/4-cardWidth*2, window_width/2-cardWidth*2, window_width/4*3-cardWidth*2];
+	const Ys = [window_height/4*3, 20,20,20];
+	// get position of mission according to playerId
+	const X = Xs[mission.playerId];
+	const Y = Ys[mission.playerId];
+	// TODO: draw rule (no rule, 1, 2, 3, >, >>, >>>, last, ...)
+	// draw card
+	setCardColor(false, mission.card.color);
+	
+	rect(X,Y,cardWidth, cardHeight);
+	fill(150);
+	stroke(0);
+	ellipse(X+cardWidth/2, Y+cardHeight/2, 60, 30);
+
+	strokeWeight(1);
+	textSize(18);
+	textAlign(CENTER, CENTER);
+	fill(0);
+	text(mission.card.value.toString(), X+cardWidth/2,Y+cardHeight/2);	
+}
+
+/**
+ * Plays given card in the fold array
+ * @param playerId id of the player
+ * @param cardIdx index of the card to play
+ */
+ function playCard(playerId, cardIdx) {
+	const curPlayer = players[playerId];
+	if( curPlayer.cards.length >= cardIdx+1 ) {
+		fold.push({playerId, card: curPlayer.cards[cardIdx]});
+		console.log(fold);
+		curPlayer.cards.splice(cardIdx, 1);
+		console.log(fold);
+	}
 }
 
 /**
  * Draws cards played in the middle of the table
  */
 function drawPlayedCards() {
-	// Set colors
-	fill(204, 101, 192, 127);
-	stroke(127, 63, 120);
-	ellipse(640, 340, 80, 80);
+	fold.forEach((f, i) =>
+		drawPlayedCard(f.card, f.playerId, i===0)
+	);
+}
+
+/**
+ * Draws card at the middle of the board
+ * @param card card to draw
+ * @param playerId id of the player (enable to determine position of the card)
+ * @param firstCard true if first card of the fold
+ */
+function drawPlayedCard(card, playerId, firstCard) {
+	const Xs = [window_width/2, window_width/4, window_width/2, window_width/4*3];
+	const Ys = [window_height/3*2, window_height/5, window_height/5, window_height/5];
+	setCardColor(firstCard, card.color);
+
+	const cardHeight = 80;
+	const cardWidth = window_width / 12;
+	const X = Xs[playerId];
+	const Y = Ys[playerId];
+	rect(X, Y, cardWidth, cardHeight*2);
+	fill(150);
+	stroke(0);
+	ellipse(X+cardWidth/2, Y+cardHeight/3, 70, 40);
+
+	strokeWeight(1);
+	textAlign(CENTER, CENTER);
+	fill(0);
+	text(card.value.toString(), X+cardWidth/2,Y+cardHeight/3);	
 }
 
 function draw() {
