@@ -1,5 +1,5 @@
-const window_width = 1280;
-const window_height = 800;
+const window_width = window.screen.width > 1280 ? 1280 : window.screen.width;
+const window_height = window.screen.height > 800 ? 800 : window.screen.height;
 
 const uiManager = new UIManager();
 uiManager.loggerContainer = new LoggerContainer(
@@ -62,6 +62,7 @@ function setup() {
 
 	uiManager.addLogger("The Crew");
 	uiManager.addLogger("4 players connected");
+	uiManager.addLogger(`Screen size: ${window.screen.width.toString()}x${window.screen.height.toString()}`);
 	lastTime = Date.now();
 }
 
