@@ -4,7 +4,7 @@ const window_height = window.screen.height > 800 ? 800 : window.screen.height;
 const uiManager = new UIManager();
 uiManager.loggerContainer = new LoggerContainer(
 	window_width - 240,
-	window_height - 200,
+	window_height - 300,
 	240,
 	100
 );
@@ -39,7 +39,7 @@ function startClicked() {
 	initBoard();
 }
 
-const startButton = new BButton(130, 580, "START (4)", startClicked);
+const startButton = new BButton(130, 280, "START (4)", startClicked);
 startButton.setTextSize(45);
 const menu = [startButton];
 uiManager.setUI(menu);
@@ -100,7 +100,6 @@ function initBoard() {
 
 	// DEBUG
 	// if captain is not player 0, play a random card
-	uiManager.addLogger(`Captain is ${captainIdx}`);
 	curPlayerIdx = captainIdx;
 	while( curPlayerIdx != 0) {
 		playCard(curPlayerIdx, 3);
@@ -234,7 +233,7 @@ function drawAllPlayers() {
 		}
 		if( thisPlayerId == i ) {
 			// display captain at the bottom right
-			spritesheet.drawSprite('captain', 0, window_width - 100 - 25, window_height-120 - 25);
+			spritesheet.drawSprite('captain', 0, 180 + 25, window_height-120 - 25);
 		} else {
 			// display captain next to the avatar
 			spritesheet.drawSprite('captain', 0, playerWidth*i+40 -25, 100 - 25);
