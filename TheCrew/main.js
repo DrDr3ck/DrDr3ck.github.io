@@ -75,19 +75,12 @@ const tileSize = 48;
 const maxPlayers = 4; // TODO: need to 'connect' players
 const thisPlayerId = 0; // TODO: need to be changed for each player
 
-function orderCards(cards) {
-	cards.sort((a,b) => a.value > b.value);
-	cards.sort((a,b) => a.color > b.color);
-	return cards;
-}
-
 function initBoard() {
 	board = new Board(maxPlayers);
 	board.init();
 	let captainIdx = -1;
 	for (var i = 0; i < maxPlayers; i++) {
-		let cards = board.distribute(i);
-		cards = orderCards(cards);
+		const cards = board.distribute(i);
 		const isCaptain = cards.find(card => card.value == maxPlayers && card.color == CardColor.Fusee)
 		if( isCaptain ) {
 			captainIdx = i;

@@ -6,6 +6,17 @@ const CardColor = {
     Yellow: "Yellow"
 }
 
+/**
+ * Orders cards
+ * @param cards cards to order
+ * @returns ordered cards
+ */
+ function orderCards(cards) {
+	cards.sort((a,b) => a.value > b.value);
+	cards.sort((a,b) => a.color > b.color);
+	return cards;
+}
+
 class Board {
     constructor(maxPlayer) {
         this.cards = [];
@@ -45,7 +56,9 @@ class Board {
      */
     distribute(playerId) {
         const maxCards = this.cards.length / this.maxPlayer;
-        return this.cards.slice(maxCards*playerId, maxCards*playerId+maxCards);
+        let cards = this.cards.slice(maxCards*playerId, maxCards*playerId+maxCards);
+        cards = orderCards(cards);
+        return cards;
     }
 
     /**
