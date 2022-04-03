@@ -22,6 +22,7 @@ const PLAYER_PLAY = 1;
 const PLAYER_COMMUNICATE = 2;
 const PLAYER_SELECT_CARD = 3;
 const PLAYER_WAIT = 4;
+const PLAYERS_WIN = 5;
 let curPlayerIdx = -1;
 let playerState = PLAYER_WAIT;
 let selectedPawn = null;
@@ -340,7 +341,7 @@ function draw() {
 
 	uiManager.draw();
 
-	if (playerState === PLAYER_WIN) {
+	if (playerState === PLAYERS_WIN) {
 		push();
 		textAlign(CENTER, CENTER);
 		textSize(50);
