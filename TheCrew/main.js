@@ -17,13 +17,13 @@ const spritesheet = new SpriteSheet();
 const GAME_START_STATE = 1;
 const GAME_PLAY_STATE = 2;
 const GAME_WIN_STATE = 3;
-let curState = GAME_START_STATE;
-const PLAYER_CHOOSE = 1;
-const PLAYER_SELECTED = 2;
-const PLAYER_MOVE = 3;
-const PLAYER_WIN = 4;
+let gameState = GAME_START_STATE;
+const PLAYER_PLAY = 1;
+const PLAYER_COMMUNICATE = 2;
+const PLAYER_SELECT_CARD = 3;
+const PLAYER_WAIT = 4;
 let curPlayerIdx = -1;
-let gameState = 0;
+let playerState = PLAYER_WAIT;
 let selectedPawn = null;
 let moves = [];
 let selectablePawns = [];
@@ -34,7 +34,7 @@ let missions = [];
 let toggleDebug = false;
 
 function startClicked() {
-	curState = GAME_PLAY_STATE;
+	gameState = GAME_PLAY_STATE;
 	uiManager.setUI([]);
 	initBoard();
 }
@@ -50,6 +50,9 @@ let board = null;
 
 let players = [];
 let fold = [];
+
+function preload() {
+}
 
 function setup() {
 	canvas = createCanvas(window_width, window_height);
@@ -104,6 +107,9 @@ function initBoard() {
 	while( curPlayerIdx != 0) {
 		playCard(curPlayerIdx, 3);
 		nextPlayer();
+	}
+	if( curPlayerIdx === thisPlayerId ) {
+		playerState = PLAYER_PLAY;
 	}
 	console.log(players);
 	// END DEBUG
@@ -328,13 +334,13 @@ function draw() {
 
 	drawBoard();
 
-	if (curState === GAME_START_STATE || curState === GAME_WIN_STATE) {
+	if (gameState === GAME_START_STATE || gameState === GAME_WIN_STATE) {
 		background(51, 51, 51, 200);
 	}
 
 	uiManager.draw();
 
-	if (gameState === PLAYER_WIN) {
+	if (playerState === PLAYER_WIN) {
 		push();
 		textAlign(CENTER, CENTER);
 		textSize(50);
@@ -342,7 +348,7 @@ function draw() {
 		pop();
 	}
 
-	if (curState === GAME_PLAY_STATE) {
+	if (gameState === GAME_PLAY_STATE) {
 		if (toolManager.currentTool) {
 			toolManager.currentTool.draw();
 		}
