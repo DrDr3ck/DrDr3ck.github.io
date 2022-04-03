@@ -43,19 +43,20 @@ class Server {
      * false if max players is already reached
      */
     connectPlayer(gameId, playerId) {
-        if( !checkGameId(gameId) ) {
+        if( !this.checkGameId(gameId) ) {
             // wrong gameId, cannot connect
-            return false;
+            return "this game id does not exist";
         }
         if( this.players.length >= this.maxPlayers ) {
             // cannot have an extra player, returns false
-            return false;
+            return "too many players connected";
         }
         // check if player is not already connected
-        if( !this.players.find(p=>p.playerId === playerId) ) {
-            // Add new player
-            this.players.push({playerId, cards: [], missions: [], communication: { card: null, state: "green"}, captain: false});
+        if( this.players.find(p=>p.playerId === playerId) ) {
+            return "player already connected";
         }
+        // Add new player
+        this.players.push({playerId, cards: [], missions: [], communication: { card: null, state: "green"}, captain: false});
         return true;
     }
 
@@ -82,7 +83,7 @@ class Server {
      * @returns number of players connected
      */
     playersConnected(gameId) {
-        if( !checkGameId(gameId) ) {
+        if( !this.checkGameId(gameId) ) {
             return 0;
         }
         return this.players.length;
@@ -94,7 +95,7 @@ class Server {
      * @returns true if game can start
      */
     startGame(gameId, missionId) {
-        if( !checkGameId(gameId) ) {
+        if( !this.checkGameId(gameId) ) {
             return false;
         }
         if( this.players.length < 4 ) { // should be 3 but for now, game only work with 4 players
@@ -102,9 +103,10 @@ class Server {
         }
         // create board
         this.board = new Board(this.players.length);
+        this.board.init();
         // distribute cards and define captain
         for (var i = 0; i < this.players.length; i++) {
-            const cards = board.distribute(i);
+            const cards = this.board.distribute(i);
             this.players[i].cards = cards;
             const isCaptain = cards.find(card => card.value == maxPlayers && card.color == CardColor.Fusee);
             this.players[i].captain = isCaptain;
@@ -115,8 +117,8 @@ class Server {
         
         // choose first mission
         // get a random card (not a Fusee)
-        let randomCard = null;
-        while( randomCard === null || randomCard.color === CardColor.Fusee ) {
+        var randomCard = {color: CardColor.Fusee};
+        while( randomCard.color === CardColor.Fusee ) {
             randomCard = this.board.cards[Math.floor((Math.random()*this.board.cards.length))];
         }
         this.state === ServerPhase.CHOOSE_MISSIONS;
@@ -129,6 +131,7 @@ class Server {
         this.currentBoardStep = 0;
         if( this.missions.length === 0 ) {
             this.state === ServerPhase.STARTED;
+            this.currentPlayerId = this.captainId;
         }
         return true;
     }
@@ -139,10 +142,10 @@ class Server {
      * @param playerId id of the player
      */
     getBoard(gameId, playerId, boardStep) {
-        if( !checkGameId(gameId) ) {
+        if( !this.checkGameId(gameId) ) {
             return null;
         }
-        const playerIndex = getPlayerIndex(playerId);
+        const playerIndex = this.getPlayerIndex(playerId);
         if( playerIndex < 0 ) {
             return null;
         }
@@ -150,13 +153,25 @@ class Server {
             // board has not changed, no need to get it
             return null;
         }
+        const otherPlayers = [];
+        for( var i = playerIndex+1; i < playerIndex+this.players.length; i++) {
+            const curPlayerIndex = i % this.players.length;
+            otherPlayers.push(
+                {
+                    playerId: this.players[curPlayerIndex].playerId,
+                    missions: this.players[curPlayerIndex].missions,
+                    communication: this.players[curPlayerIndex].communication,
+                    captain: this.players[curPlayerIndex].captain
+                }
+            );
+        }
         return {
             ...this.players[playerIndex],
-            missions: this.missions,
+            allMissions: this.missions,
             fold: this.fold,
             boardStep: this.currentBoardStep,
             currentPlayerId: this.currentPlayerId,
-            otherPlayers: [] // need to see missions and communications
+            otherPlayers
         };
     }
 
@@ -183,7 +198,7 @@ class Server {
     }
 
     addMissionCardToPlayer(mission, playerId) {
-        const player = getPlayer(playerId);
+        const player = this.getPlayer(playerId);
         player.missions.push(mission);
     }
 

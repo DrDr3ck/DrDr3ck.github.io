@@ -23,37 +23,57 @@ const PLAYER_COMMUNICATE = 2;
 const PLAYER_SELECT_CARD = 3;
 const PLAYER_WAIT = 4;
 const PLAYERS_WIN = 5;
-let curPlayerIdx = -1;
 let playerState = PLAYER_WAIT;
 let selectedPawn = null;
 let moves = [];
 let selectablePawns = [];
 let force = false;
 
-let missions = [];
+const server = new Server();
 
 let toggleDebug = false;
 
 function startClicked() {
-	gameState = GAME_PLAY_STATE;
-	uiManager.setUI([]);
-	initBoard();
+	if( server.startGame(gameId)) {
+		gameState = GAME_PLAY_STATE;
+		uiManager.setUI([]);
+	} else {
+		uiManager.addLogger(`Cannot start the game`);
+	}
 }
 
-const startButton = new BButton(130, 280, "START (4)", startClicked);
+let gameId = -1;
+
+function createGameClicked() {
+	gameId = server.createGame();
+	uiManager.addLogger(`Game created: ${gameId}`);
+}
+
+function connectToGameClicked() {
+	const errorMsg = server.connectPlayer(gameId, thisPlayerId);
+	server.connectPlayer(gameId, thisPlayerId+1);
+	server.connectPlayer(gameId, thisPlayerId+2);
+	server.connectPlayer(gameId, thisPlayerId+3);
+	if( typeof errorMsg === "boolean" ) {
+		uiManager.addLogger("Player connected");
+	} else {
+		uiManager.addLogger(`Error: ${errorMsg}`);
+	}
+}
+
+const createGameButton = new BButton(130, 280, "CREATE", createGameClicked);
+createGameButton.setTextSize(45);
+const connectToGameButton = new BButton(130, 380, "CONNECT", connectToGameClicked);
+connectToGameButton.setTextSize(45);
+const startButton = new BButton(130, 480, "START (4)", startClicked);
 startButton.setTextSize(45);
-const menu = [startButton];
+startButton.visible = false;
+const menu = [createGameButton, connectToGameButton, startButton];
 uiManager.setUI(menu);
 
 let lastTime = 0;
 
 let board = null;
-
-let players = [];
-let fold = [];
-
-function preload() {
-}
 
 function setup() {
 	canvas = createCanvas(window_width, window_height);
@@ -70,92 +90,49 @@ function setup() {
 	lastTime = Date.now();
 }
 
-const tileSize = 48;
-
 const maxPlayers = 4; // TODO: need to 'connect' players
 const thisPlayerId = 0; // TODO: need to be changed for each player
 
-function initBoard() {
-	board = new Board(maxPlayers);
-	board.init();
-	let captainIdx = -1;
-	for (var i = 0; i < maxPlayers; i++) {
-		const cards = board.distribute(i);
-		const isCaptain = cards.find(card => card.value == maxPlayers && card.color == CardColor.Fusee)
-		if( isCaptain ) {
-			captainIdx = i;
-		}
-		players.push({ playerId: i, cards: cards, communication: { card: null, state: "green"}, captain: isCaptain });
-	}
-	// choose first mission
-	// get a random card (not a Fusee)
-	let randomCard = null;
-	while( randomCard === null || randomCard.color === CardColor.Fusee ) {
-		randomCard = board.cards[Math.floor((Math.random()*board.cards.length))];
-	}
-	missions.push({card: randomCard, rule: null, playerId: captainIdx}); // mission en dur...
-
-	// DEBUG
-	// if captain is not player 0, play a random card
-	curPlayerIdx = captainIdx;
-	while( curPlayerIdx != 0) {
-		playCard(curPlayerIdx, 3);
-		nextPlayer();
-	}
-	if( curPlayerIdx === thisPlayerId ) {
-		playerState = PLAYER_PLAY;
-	}
-	console.log(players);
-	// END DEBUG
-}
-
-function nextPlayer() {
-	curPlayerIdx += 1;
-	if (curPlayerIdx == maxPlayers) {
-		curPlayerIdx = 0;
-	}
-	uiManager.addLogger(`Player #${curPlayerIdx} is playing`);
-}
-
 function drawBoard() {
-	if (players.length > 0) {
-		drawCards(thisPlayerId, curPlayerIdx == thisPlayerId);
+	if (gameState === GAME_PLAY_STATE) {
+		drawCards(thisPlayerId);
 		drawAllPlayers();
 		drawPlayedCards();
-
-		if( curPlayerIdx == thisPlayerId ) {
-			noFill();
-			stroke(200,200,50);
-			strokeWeight(4);
-			rect(0,0,window_width,window_height);
-		}
 	}
 }
 
 /**
  * Draws card for given player
  * @param playerId id of player
- * @param isPlaying true if player is playing
  */
-function drawCards(playerId, isPlaying) {
-	for (var i = 0; i < players[playerId].cards.length; i++) {
+function drawCards(playerId) {
+	board = server.getBoard(gameId, playerId, -1);
+	const isPlaying = board.currentPlayerId === playerId;
+	for (var i = 0; i < board.cards.length; i++) {
 		let selectable = false;
-		const curCard = players[playerId].cards[i];
-		// TODO: if player has no card with same color, all cards are selectable
+		const curCard = board.cards[i];
 		if( isPlaying ) {
-			// TODO: check if card can be played or not
-			if( fold.length == 0 ) { // no card in the fold, player is starting a new turn
+			// check if card can be played or not
+			if( board.fold.length == 0 ) { // no card in the fold, player is starting a new turn
 				selectable = true;
 			} else {
-				// TODO: check the color of the first card and check if player has cards of the same color
-				const foldColor = fold[0].card.color;
-				const nbCardsSameColor = players[playerId].cards.filter(c=>c.color === foldColor).length;
+				// check the color of the first card and check if player has cards of the same color
+				const foldColor = board.fold[0].card.color;
+				const nbCardsSameColor = board.cards.filter(c=>c.color === foldColor).length;
+				// if player has no card with same color, all cards are selectable
 				if( nbCardsSameColor == 0 || curCard.color === foldColor ) {
 					selectable = true;
 				}
 			}
 		}
 		drawCard(curCard, i, selectable);
+	}
+
+	if( isPlaying ) {
+		noFill();
+		stroke(200,200,50);
+		strokeWeight(4);
+		rect(0,0,window_width,window_height);
 	}
 }
 
@@ -206,7 +183,7 @@ function drawAllPlayers() {
 	const playerWidth = window_width/maxPlayers; 
 	
 	for( var i = 1; i < maxPlayers; i++) {
-		if( curPlayerIdx == i ) {
+		if( board.currentPlayerId == i ) {
 			stroke(200,200,50);
 		} else {
 			stroke(0);
@@ -227,21 +204,25 @@ function drawAllPlayers() {
 
 	// draw 'captain'
 	fill(150,150,50);
-	for( var i = 0; i < maxPlayers; i++) {
-		if( !players[i].captain ) {
-			continue;
-		}
-		if( thisPlayerId == i ) {
-			// display captain at the bottom right
-			spritesheet.drawSprite('captain', 0, 180 + 25, window_height-120 - 25);
-		} else {
+	if( board.captain ) {
+		// display captain at the bottom right
+		spritesheet.drawSprite('captain', 0, 180 + 25, window_height-120 - 25);
+	}
+	for( var i = 0; i < board.otherPlayers.length ; i++) {
+		if( board.otherPlayers[i].captain ) {
 			// display captain next to the avatar
-			spritesheet.drawSprite('captain', 0, playerWidth*i+40 -25, 100 - 25);
+			spritesheet.drawSprite('captain', 0, playerWidth*(1+i)+40 -25, 100 - 25);
 		}
 	}
 
-	// draw 'missions'
-	missions.forEach(mission=>drawMission(mission));
+	// draw 'missions' to choose
+	board.allMissions.forEach(mission=>drawMission(mission));
+
+	// draw chosen 'missions'
+	board.missions.forEach(mission=>drawMission(mission));
+	for( var i = 0; i < board.otherPlayers.length ; i++) {
+		board.otherPlayers[i].missions.forEach(mission=>drawMission(mission));
+	}
 }
 
 function drawMission(mission) {
@@ -269,25 +250,10 @@ function drawMission(mission) {
 }
 
 /**
- * Plays given card in the fold array
- * @param playerId id of the player
- * @param cardIdx index of the card to play
- */
- function playCard(playerId, cardIdx) {
-	const curPlayer = players[playerId];
-	if( curPlayer.cards.length >= cardIdx+1 ) {
-		fold.push({playerId, card: curPlayer.cards[cardIdx]});
-		console.log(fold);
-		curPlayer.cards.splice(cardIdx, 1);
-		console.log(fold);
-	}
-}
-
-/**
  * Draws cards played in the middle of the table
  */
 function drawPlayedCards() {
-	fold.forEach((f, i) =>
+	board.fold.forEach((f, i) =>
 		drawPlayedCard(f.card, f.playerId, i===0)
 	);
 }
@@ -367,11 +333,36 @@ function mouseClicked() {
 	return false;
 }
 
+function nextPlayer() {
+	curPlayerIdx += 1;
+	if (curPlayerIdx == maxPlayers) {
+		curPlayerIdx = 0;
+	}
+	uiManager.addLogger(`Player #${curPlayerIdx} is playing`);
+}
+
 function keyPressed() {
 	if (key === "D") {
 		toggleDebug = !toggleDebug;
 	}
 	if (key === "N") {
 		nextPlayer();
+	}
+}
+
+// obsolete
+
+/**
+ * Plays given card in the fold array
+ * @param playerId id of the player
+ * @param cardIdx index of the card to play
+ */
+ function playCard(playerId, cardIdx) {
+	const curPlayer = players[playerId];
+	if( curPlayer.cards.length >= cardIdx+1 ) {
+		fold.push({playerId, card: curPlayer.cards[cardIdx]});
+		console.log(fold);
+		curPlayer.cards.splice(cardIdx, 1);
+		console.log(fold);
 	}
 }
