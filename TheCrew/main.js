@@ -37,6 +37,10 @@ function startClicked() {
 	if( server.startGame(gameId)) {
 		gameState = GAME_PLAY_STATE;
 		uiManager.setUI([]);
+		while( server.currentPlayerId !== 0 ) {
+			const player = server.getPlayer(server.currentPlayerId);
+			server.playCard({type: "card", card: player.cards[5]}, server.currentPlayerId);
+		}
 	} else {
 		uiManager.addLogger(`Cannot start the game`);
 	}
@@ -95,9 +99,15 @@ const thisPlayerId = 0; // TODO: need to be changed for each player
 
 function drawBoard() {
 	if (gameState === GAME_PLAY_STATE) {
-		drawCards(thisPlayerId);
+		const isPlaying = drawCards(thisPlayerId);
 		drawAllPlayers();
 		drawPlayedCards();
+		if( isPlaying ) {
+			noFill();
+			stroke(200,200,50);
+			strokeWeight(4);
+			rect(0,0,window_width,window_height);
+		}
 	}
 }
 
@@ -128,12 +138,7 @@ function drawCards(playerId) {
 		drawCard(curCard, i, selectable);
 	}
 
-	if( isPlaying ) {
-		noFill();
-		stroke(200,200,50);
-		strokeWeight(4);
-		rect(0,0,window_width,window_height);
-	}
+	return isPlaying;
 }
 
 const setCardColor = (normal, color) => {
@@ -345,24 +350,5 @@ function keyPressed() {
 	if (key === "D") {
 		toggleDebug = !toggleDebug;
 	}
-	if (key === "N") {
-		nextPlayer();
-	}
 }
 
-// obsolete
-
-/**
- * Plays given card in the fold array
- * @param playerId id of the player
- * @param cardIdx index of the card to play
- */
- function playCard(playerId, cardIdx) {
-	const curPlayer = players[playerId];
-	if( curPlayer.cards.length >= cardIdx+1 ) {
-		fold.push({playerId, card: curPlayer.cards[cardIdx]});
-		console.log(fold);
-		curPlayer.cards.splice(cardIdx, 1);
-		console.log(fold);
-	}
-}

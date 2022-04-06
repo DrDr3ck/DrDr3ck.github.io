@@ -175,6 +175,15 @@ class Server {
         };
     }
 
+    removeCard(card, playerId) {
+        const player = this.getPlayer(playerId);
+        player.cards = player.cards.filter(c => c.color !== card.color || c.value !== card.value);
+    }
+
+    addCardInFold(card, playerId) {
+        this.fold.push({card, playerId});
+    }
+
     /**
      * Plays an action for given player
      * @param action action to play
@@ -195,6 +204,8 @@ class Server {
             }
         }
         this.currentBoardStep = this.currentBoardStep + 1;
+        // next player
+        this.currentPlayerId = (this.currentPlayerId+1) % this.maxPlayers;
     }
 
     addMissionCardToPlayer(mission, playerId) {
