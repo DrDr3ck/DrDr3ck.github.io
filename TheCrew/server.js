@@ -204,7 +204,7 @@ class Server {
             }
         }
         this.currentBoardStep = this.currentBoardStep + 1;
-        // next player
+        // next player OR get the fold
         this.currentPlayerId = (this.currentPlayerId+1) % this.maxPlayers;
     }
 

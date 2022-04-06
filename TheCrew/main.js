@@ -29,6 +29,8 @@ let moves = [];
 let selectablePawns = [];
 let force = false;
 
+let clickedCard = null;
+
 const server = new Server();
 
 let toggleDebug = false;
@@ -37,7 +39,7 @@ function startClicked() {
 	if( server.startGame(gameId)) {
 		gameState = GAME_PLAY_STATE;
 		uiManager.setUI([]);
-		while( server.currentPlayerId !== 0 ) {
+		while( server.currentPlayerId !== thisPlayerId ) {
 			const player = server.getPlayer(server.currentPlayerId);
 			server.playCard({type: "card", card: player.cards[5]}, server.currentPlayerId);
 		}
@@ -102,6 +104,15 @@ function drawBoard() {
 		const isPlaying = drawCards(thisPlayerId);
 		drawAllPlayers();
 		drawPlayedCards();
+
+		noFill();
+		stroke(0);
+		const cardHeight = 80;
+		const cardWidth = window_width / 12;
+		const X = window_width/2;
+		const Y = window_height/2;
+		rect(X, Y, cardWidth, cardHeight*2);
+
 		if( isPlaying ) {
 			noFill();
 			stroke(200,200,50);
@@ -118,6 +129,8 @@ function drawBoard() {
 function drawCards(playerId) {
 	board = server.getBoard(gameId, playerId, -1);
 	const isPlaying = board.currentPlayerId === playerId;
+	const cardHeight = 80;
+	const cardWidth = window_width / 12;
 	for (var i = 0; i < board.cards.length; i++) {
 		let selectable = false;
 		const curCard = board.cards[i];
@@ -135,7 +148,15 @@ function drawCards(playerId) {
 				}
 			}
 		}
-		drawCard(curCard, i, selectable);
+		const X = 10+(20+cardWidth)*i;
+		const Y = window_height-cardHeight;
+		if( !clickedCard || clickedCard.color !== curCard.color || clickedCard.value !== curCard.value ) {
+			drawCard(curCard, {X, Y, cardWidth, cardHeight}, selectable);
+		}
+	}
+
+	if( clickedCard !== null ) {
+		drawCard(clickedCard, {X:mouseX-cardWidth/2, Y: mouseY-20, cardWidth, cardHeight}, true);
 	}
 
 	return isPlaying;
@@ -164,10 +185,10 @@ const setCardColor = (normal, color) => {
 
 function drawCard(card, position, selectable) {
 	setCardColor(selectable, card.color);
-	const cardHeight = 80;
-	const cardWidth = window_width / 12;
-	const X = 10+(20+cardWidth)*position;
-	const Y = window_height-cardHeight;
+	const cardHeight = position.cardHeight;
+	const cardWidth = position.cardWidth;
+	const X = position.X;
+	const Y = position.Y;
 	rect(X, Y, cardWidth, cardHeight*2);
 	fill(150);
 	stroke(0);
@@ -271,7 +292,7 @@ function drawPlayedCards() {
  */
 function drawPlayedCard(card, playerId, firstCard) {
 	const Xs = [window_width/2, window_width/4, window_width/2, window_width/4*3];
-	const Ys = [window_height/3*2, window_height/5, window_height/5, window_height/5];
+	const Ys = [window_height/2, window_height/5, window_height/5, window_height/5];
 	setCardColor(firstCard, card.color);
 
 	const cardHeight = 80;
@@ -326,7 +347,6 @@ function draw() {
 function mouseClicked() {
 	toolManager.mouseClicked();
 	uiManager.mouseClicked();
-
 	/*
 	if (gameState === PLAYER_CHOOSE) {
 		selectPawn(getTileXFromMouse(), getTileYFromMouse());
@@ -336,6 +356,39 @@ function mouseClicked() {
 	}
 	*/
 	return false;
+}
+
+function mousePressed() {
+	// for now, do not interact if user is not the one that is playing
+	if( server.currentPlayerId !== thisPlayerId ) {
+		return;
+	}
+	// if player already clicks a card, do nothing
+	if( clickedCard !== null ) {
+		return;
+	}
+	// check which card is clicked (if any)
+	const player = server.getPlayer(thisPlayerId);
+	clickedCard = player.cards[3];
+}
+
+function mouseDragged() {
+	if( clickedCard === null ) {
+		return;
+	}
+	console.log(mouseX, mouseY);
+}
+
+function between(min, value, max) {
+	return value >= min && value <= max;
+}
+
+function mouseReleased() {
+	if( clickedCard && between(640, mouseX, 745) && between(400, mouseY, 560) ) {
+		// play card
+		server.playCard({type: "card", card: clickedCard}, thisPlayerId);
+	}
+	clickedCard = null;
 }
 
 function nextPlayer() {
