@@ -56,7 +56,7 @@ class Server {
             return "player already connected";
         }
         // Add new player
-        this.players.push({playerId, cards: [], missions: [], communication: { card: null, state: "green"}, captain: false});
+        this.players.push({playerId, cards: [], missions: [], communication: { card: null, state: "green"}, captain: false, folds: []});
         return true;
     }
 
@@ -161,6 +161,7 @@ class Server {
                     playerId: this.players[curPlayerIndex].playerId,
                     missions: this.players[curPlayerIndex].missions,
                     communication: this.players[curPlayerIndex].communication,
+                    folds: this.players[curPlayerIndex].folds,
                     captain: this.players[curPlayerIndex].captain
                 }
             );
@@ -185,11 +186,33 @@ class Server {
     }
 
     /**
+     * Returns true if otherCard is better than mainCard
+     * @param otherCard 
+     * @param mainCard 
+     */
+    isBetterCard(otherCard, mainCard) {
+        if( otherCard.color !== mainCard.color ) {
+            if( otherCard.color === CardColor.Fusee ) {
+                return true;
+            }
+            // mainCard has a different color than otherCard, so mainCard wins
+            return false;
+        }
+        // same color
+        return otherCard.value > mainCard.value;
+    }
+
+    /**
      * Plays an action for given player
      * @param action action to play
      * @param playerId id of player
+     * @return the player that wins the turn or -1 if turn is not finished
      */
     playCard(action, playerId) {
+        if( this.fold.length === this.maxPlayers ) {
+            // cannot play an extra card
+            return -1;
+        }
         if( action.type === "card" ) {
             // play a card
             this.removeCard(action.card, playerId);
@@ -206,6 +229,25 @@ class Server {
         this.currentBoardStep = this.currentBoardStep + 1;
         // next player OR get the fold
         this.currentPlayerId = (this.currentPlayerId+1) % this.maxPlayers;
+
+        // end of turn
+        if( this.fold.length === this.maxPlayers ) {
+            // who win the current fold ?
+            let mainCard = this.fold[0].card;
+            let winnerId = this.fold[0].playerId;
+            for( let foldIndex = 1; foldIndex < this.fold.length; foldIndex++ ) {
+                if( this.isBetterCard(this.fold[foldIndex].card, mainCard) ) {
+                    mainCard = this.fold[foldIndex].card;
+                    winnerId = this.fold[foldIndex].playerId;
+                }
+            }
+            // remove all cards from the fold
+            setTimeout(()=>{this.fold = [];}, 3000);
+
+            this.currentPlayerId = winnerId;
+            return winnerId;
+        }
+        return -1;
     }
 
     addMissionCardToPlayer(mission, playerId) {

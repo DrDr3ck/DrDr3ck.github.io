@@ -23,6 +23,7 @@ const PLAYER_COMMUNICATE = 2;
 const PLAYER_SELECT_CARD = 3;
 const PLAYER_WAIT = 4;
 const PLAYERS_WIN = 5;
+const PLAYERS_LOOSE = 6;
 let playerState = PLAYER_WAIT;
 let selectedPawn = null;
 let moves = [];
@@ -39,10 +40,12 @@ function startClicked() {
 	if( server.startGame(gameId)) {
 		gameState = GAME_PLAY_STATE;
 		uiManager.setUI([]);
+		// DEBUG
 		while( server.currentPlayerId !== thisPlayerId ) {
 			const player = server.getPlayer(server.currentPlayerId);
 			server.playCard({type: "card", card: player.cards[5]}, server.currentPlayerId);
 		}
+		// END DEBUG
 	} else {
 		uiManager.addLogger(`Cannot start the game`);
 	}
@@ -123,6 +126,30 @@ function drawBoard() {
 }
 
 /**
+ * Checks if curCard is selectable for the current fold
+ * @param fold current fold
+ * @param playerCards cards of current Player
+ * @param curCard current Card
+ * @returns true if curCard is selectable for the current fold
+ */
+function isCardSelectable(fold, playerCards, curCard) {
+	let selectable = false;
+	// check if card can be played or not
+	if( board.fold.length == 0 ) { // no card in the fold, player is starting a new turn
+		selectable = true;
+	} else {
+		// check the color of the first card and check if player has cards of the same color
+		const foldColor = board.fold[0].card.color;
+		const nbCardsSameColor = board.cards.filter(c=>c.color === foldColor).length;
+		// if player has no card with same color, all cards are selectable
+		if( nbCardsSameColor == 0 || curCard.color === foldColor ) {
+			selectable = true;
+		}
+	}
+	return selectable;
+}
+
+/**
  * Draws card for given player
  * @param playerId id of player
  */
@@ -135,18 +162,7 @@ function drawCards(playerId) {
 		let selectable = false;
 		const curCard = board.cards[i];
 		if( isPlaying ) {
-			// check if card can be played or not
-			if( board.fold.length == 0 ) { // no card in the fold, player is starting a new turn
-				selectable = true;
-			} else {
-				// check the color of the first card and check if player has cards of the same color
-				const foldColor = board.fold[0].card.color;
-				const nbCardsSameColor = board.cards.filter(c=>c.color === foldColor).length;
-				// if player has no card with same color, all cards are selectable
-				if( nbCardsSameColor == 0 || curCard.color === foldColor ) {
-					selectable = true;
-				}
-			}
+			selectable = isCardSelectable(board.fold, board.cards, curCard);
 		}
 		const X = 10+(20+cardWidth)*i;
 		const Y = window_height-cardHeight;
@@ -332,6 +348,12 @@ function draw() {
 		textSize(50);
 		text("You win!", width / 2, height / 2);
 		pop();
+	} else if( playerState === PLAYERS_LOOSE ) { // TODO: no cards for anyone!!
+		push();
+		textAlign(CENTER, CENTER);
+		textSize(50);
+		text("You loose!", width / 2, height / 2);
+		pop();
 	}
 
 	if (gameState === GAME_PLAY_STATE) {
@@ -347,14 +369,6 @@ function draw() {
 function mouseClicked() {
 	toolManager.mouseClicked();
 	uiManager.mouseClicked();
-	/*
-	if (gameState === PLAYER_CHOOSE) {
-		selectPawn(getTileXFromMouse(), getTileYFromMouse());
-	} else if (gameState === PLAYER_SELECTED) {
-		deselectSelectedPawn(getTileXFromMouse(), getTileYFromMouse());
-		movePawn(getTileXFromMouse(), getTileYFromMouse());
-	}
-	*/
 	return false;
 }
 
@@ -368,8 +382,19 @@ function mousePressed() {
 		return;
 	}
 	// check which card is clicked (if any)
+	const cardHeight = 80;
+	const cardWidth = window_width / 12;
 	const player = server.getPlayer(thisPlayerId);
-	clickedCard = player.cards[3];
+	const Y = window_height-cardHeight;
+	for( const cardIndex in player.cards ) {
+		const X = 10+(20+cardWidth)*cardIndex;
+		if( between(X, mouseX, X+cardWidth) && mouseY >= Y ) {
+			if( isCardSelectable(board.fold, board.cards, player.cards[cardIndex]) ) {
+				clickedCard = player.cards[cardIndex];
+			}
+			return;
+		}
+	}
 }
 
 function mouseDragged() {
@@ -386,7 +411,10 @@ function between(min, value, max) {
 function mouseReleased() {
 	if( clickedCard && between(640, mouseX, 745) && between(400, mouseY, 560) ) {
 		// play card
-		server.playCard({type: "card", card: clickedCard}, thisPlayerId);
+		const winnerId = server.playCard({type: "card", card: clickedCard}, thisPlayerId);
+		if( winnerId !== -1) {
+			uiManager.addLogger(`${winnerId} wins this turn`);
+		}
 	}
 	clickedCard = null;
 }
@@ -402,6 +430,16 @@ function nextPlayer() {
 function keyPressed() {
 	if (key === "D") {
 		toggleDebug = !toggleDebug;
+	}
+	if( key === "N") {
+		if( server.currentPlayerId !== thisPlayerId ) {
+			const player = server.getPlayer(server.currentPlayerId);
+			const randomIndex = Math.floor(Math.random() * player.cards.length);
+			const winnerId = server.playCard({type: "card", card: player.cards[randomIndex]}, server.currentPlayerId);
+			if( winnerId !== -1) {
+				uiManager.addLogger(`${winnerId} wins this turn`);
+			}
+		}
 	}
 }
 
