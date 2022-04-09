@@ -401,7 +401,6 @@ function mouseDragged() {
 	if( clickedCard === null ) {
 		return;
 	}
-	console.log(mouseX, mouseY);
 }
 
 function between(min, value, max) {
