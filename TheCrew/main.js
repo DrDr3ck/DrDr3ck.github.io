@@ -426,9 +426,19 @@ function nextPlayer() {
 	uiManager.addLogger(`Player #${curPlayerIdx} is playing`);
 }
 
+async function fetchAsync (url) {
+	let response = await fetch(url);
+	let data = await response.json();
+	return data;
+  }
+
 function keyPressed() {
 	if (key === "D") {
 		toggleDebug = !toggleDebug;
+	}
+	if( key === "Q") {
+		fetchAsync("http://localhost:5000/a.html?url=plop&id=a").then(data => 
+		console.log(data)).catch(e=>console.error("error", e));
 	}
 	if( key === "N") {
 		if( server.currentPlayerId !== thisPlayerId ) {
