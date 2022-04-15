@@ -382,7 +382,7 @@ function drawAllPlayers() {
 	const playerWidth = window_width/maxPlayers; 
 	
 	for( var i = 1; i < maxPlayers; i++) {
-		const relativeI = (getRelativePlayerId(i)-thisPlayerId+board.maxPlayers)%board.maxPlayers;
+		const relativeI = getRelativePlayerId(i);
 		if( board.currentPlayerId == relativeI ) {
 			stroke(200,200,50);
 		} else {
@@ -398,7 +398,7 @@ function drawAllPlayers() {
 			spritesheet.drawSprite('token', 0, 100 + 25, window_height-120 - 25);
 		} else {
 			// display token next to the avatar
-			const relativeI = (getRelativePlayerId(i)-thisPlayerId+board.maxPlayers)%board.maxPlayers;
+			const relativeI = (i-thisPlayerId+board.maxPlayers)%board.maxPlayers;
 			spritesheet.drawSprite('token', 0, playerWidth*relativeI-40 -25, 100 - 25);
 		}
 	}
@@ -477,10 +477,16 @@ function drawPlayedCard(card, playerId, firstCard) {
 	const Ys = [window_height/2, window_height/5, window_height/5, window_height/5];
 	setCardColor(firstCard, card.color);
 
+	// get position of foldcard according to playerId
+	let relativePlayerId = 0;
+	if( thisPlayerId !== playerId ) {
+		relativePlayerId = (playerId - thisPlayerId + board.maxPlayers)%board.maxPlayers;
+	}
+
 	const cardHeight = 80;
 	const cardWidth = window_width / 12;
-	const X = Xs[playerId];
-	const Y = Ys[playerId];
+	const X = Xs[relativePlayerId];
+	const Y = Ys[relativePlayerId];
 	rect(X, Y, cardWidth, cardHeight*2);
 	fill(150);
 	stroke(0);

@@ -131,10 +131,6 @@ class Server {
             // wrong gameId, cannot connect
             return "this game id does not exist";
         }
-        if( this.players.length >= this.maxPlayers ) {
-            // cannot have an extra player, returns false
-            return "too many players connected";
-        }
         if( playerId === -1 ) {
             playerId = this.players.length;
             console.log("new player", playerId);
@@ -142,6 +138,10 @@ class Server {
         // check if player is not already connected
         if( this.players.find(p=>p.playerId === playerId) ) {
             return "player already connected";
+        }
+        if( this.players.length >= this.maxPlayers ) {
+            // cannot have an extra player, returns false
+            return "too many players connected";
         }
         // Add new player
         this.players.push({playerId, cards: [], missions: [], communication: { card: null, state: "green"}, captain: false, folds: []});
@@ -340,9 +340,8 @@ class Server {
                 }
             }
             // remove all cards from the fold
-            setTimeout(()=>{this.fold = [];}, 3000);
+            setTimeout(()=>{this.fold = [];this.currentBoardStep = this.currentBoardStep + 1;}, 3000);
 
-            this.currentBoardStep = this.currentBoardStep + 1;
             this.currentPlayerId = winnerId;
             return winnerId;
         }
