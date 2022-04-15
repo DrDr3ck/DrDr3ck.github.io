@@ -1,3 +1,84 @@
+// launch it by calling: node server.js
+
+const { fstat } = require('fs');
+const http = require('http');
+
+const hostname = "localhost";
+const port = 5000;
+
+const CardColor = {
+    Fusee: "AFusee",
+    Blue: "Blue",
+    Green: "Green",
+    Red: "Red",
+    Yellow: "Yellow"
+}
+
+/**
+ * Orders cards
+ * @param cards cards to order
+ * @returns ordered cards
+ */
+ function orderCards(cards) {
+	cards.sort((a,b) => a.value > b.value);
+	cards.sort((a,b) => a.color > b.color);
+	return cards;
+}
+
+class Board {
+    constructor(maxPlayer) {
+        this.cards = [];
+        this.maxPlayer = maxPlayer;
+    }
+
+    /**
+     * Initializes the list of cards (+shuffle)
+     */
+    init() {
+        this.cards = [];
+        for( let i = 0 ; i < 9; i++) {
+            this.addCard(CardColor.Blue, i+1);
+            this.addCard(CardColor.Red, i+1);
+            this.addCard(CardColor.Yellow, i+1);
+            // pas de cartes vertes si 3 joueurs uniquement
+            if( this.maxPlayer != 3 ) {
+                this.addCard(CardColor.Green, i+1);
+            }
+        }
+        for( let i = 0 ; i < 3; i++) {
+            this.addCard(CardColor.Fusee, i+1);
+        }
+        // pas de Fusee 4 si 3 joueurs uniquement
+        if( this.maxPlayer != 3 ) {
+            this.addCard(CardColor.Fusee, 4);
+        }
+        this.cards.sort((a, b) => 0.5 - Math.random());
+        this.cards.sort((a, b) => 0.5 - Math.random());
+        this.cards.sort((a, b) => 0.5 - Math.random());
+    }
+
+    /**
+     * Distributes cards to the given number of players
+     * @param playerId id of player
+     * @return array with cards for each player
+     */
+    distribute(playerId) {
+        const maxCards = this.cards.length / this.maxPlayer;
+        let cards = this.cards.slice(maxCards*playerId, maxCards*playerId+maxCards);
+        cards = orderCards(cards);
+        return cards;
+    }
+
+    /**
+     * Adds given card to list of cards
+     * @param color color of the card
+     * @param value value of the card
+     */
+    addCard(color, value) {
+        this.cards.push({color: color, value: value});
+    }
+}
+
 const ServerPhase = {
     BEFORE_CREATION: "CREATION",
     ACCEPT_CONNEXION: "CONNEXION",
@@ -29,7 +110,7 @@ class Server {
      createGame() {
         // check if a game has already started
         if( this.state === ServerPhase.BEFORE_CREATION ) {
-            this.id = Math.floor(Math.random() * 100000);
+            this.id = 100; // TODO: Math.floor(Math.random() * 899) + 100;  // entre 100 et 999
             this.state = ServerPhase.ACCEPT_CONNEXION;
         }       
         return this.id;
@@ -43,6 +124,9 @@ class Server {
      * false if max players is already reached
      */
     connectPlayer(gameId, playerId) {
+        if( gameId <= 0 ) {
+            return "no game created";
+        }
         if( !this.checkGameId(gameId) ) {
             // wrong gameId, cannot connect
             return "this game id does not exist";
@@ -51,13 +135,17 @@ class Server {
             // cannot have an extra player, returns false
             return "too many players connected";
         }
+        if( playerId === -1 ) {
+            playerId = this.players.length;
+            console.log("new player", playerId);
+        }
         // check if player is not already connected
         if( this.players.find(p=>p.playerId === playerId) ) {
             return "player already connected";
         }
         // Add new player
         this.players.push({playerId, cards: [], missions: [], communication: { card: null, state: "green"}, captain: false, folds: []});
-        return true;
+        return {playerId};
     }
 
     getPlayerIndex(playerId) {
@@ -95,6 +183,10 @@ class Server {
      * @returns true if game can start
      */
     startGame(gameId, missionId) {
+        if( this.board !== null ) {
+            // already started: return true
+            return true;
+        }
         if( !this.checkGameId(gameId) ) {
             return false;
         }
@@ -108,12 +200,17 @@ class Server {
         for (var i = 0; i < this.players.length; i++) {
             const cards = this.board.distribute(i);
             this.players[i].cards = cards;
-            const isCaptain = cards.find(card => card.value == maxPlayers && card.color == CardColor.Fusee);
+            const isCaptain = cards.find(card => card.value == this.maxPlayers && card.color == CardColor.Fusee);
             this.players[i].captain = isCaptain;
             if( isCaptain ) {
                 this.captainId = this.players[i].playerId;
             }
         }
+        // DEBUG force player 0 to be the captain
+        this.players[this.captainId].captain = false;
+        this.players[0].captain = true;
+        this.captainId = 0;
+        // END DEBUG
         
         // choose first mission
         // get a random card (not a Fusee)
@@ -170,6 +267,7 @@ class Server {
             ...this.players[playerIndex],
             allMissions: this.missions,
             fold: this.fold,
+            maxPlayers: this.maxPlayers,
             boardStep: this.currentBoardStep,
             currentPlayerId: this.currentPlayerId,
             otherPlayers
@@ -244,6 +342,7 @@ class Server {
             // remove all cards from the fold
             setTimeout(()=>{this.fold = [];}, 3000);
 
+            this.currentBoardStep = this.currentBoardStep + 1;
             this.currentPlayerId = winnerId;
             return winnerId;
         }
@@ -260,3 +359,83 @@ class Server {
         this.missions.splice(missionIndex,1);
     }
 }
+
+const getValueOf = (name, url) => {
+    // find name index in url
+    const nameIdx = url.indexOf(name);
+    if( nameIdx < 0 ) {
+        return "";
+    }
+    const str = url.substring(nameIdx+name.length+1);
+    const separatorIdx = str.indexOf("&");
+    if( separatorIdx < 0 ) {
+        return str;
+    }
+    return str.substring(0,separatorIdx);
+}
+
+const myServer = new Server();
+
+const server = http.createServer((req, res) => {
+    res.statusCode = 200;
+    console.log("method", req.method);
+    console.log("url", req.url);
+
+    res.setHeader("Content-Type", "application/json");
+    res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
+    res.setHeader("Access-Control-Allow-Headers", "Authorization, Cache-Control, Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers");
+
+    if( req.url === "/create") {
+        const id = myServer.createGame();
+        res.end(JSON.stringify({gameId: id}));
+        return;
+    } else if( req.url.startsWith("/connect")) {
+        const gameId = parseInt(getValueOf("gameId", req.url));
+        const playerId = parseInt(getValueOf("playerId", req.url));
+        const message = myServer.connectPlayer(gameId, playerId);
+        if( typeof message === "string")  {
+            console.log(message);
+            res.end(JSON.stringify({status: false, msg: message}));
+            return;
+        }
+        res.end(JSON.stringify({status: true, msg: "", playerId: message.playerId}));
+        return;
+    } else if( req.url.startsWith("/play")) {
+        // type=${type}&cardColor=${card.color}&cardValue=${card.value}&playerId=${playerId}
+        const playerId = parseInt(getValueOf("playerId", req.url));
+        const cardValue = parseInt(getValueOf("cardValue", req.url));
+        const type = getValueOf("type", req.url);
+        const cardColor = getValueOf("cardColor", req.url);
+        const result = myServer.playCard({type, card: {color: cardColor, value: cardValue}}, playerId);
+        res.end(JSON.stringify({status: true}));
+    } else if( req.url.startsWith("/start")) {        
+        const gameId = parseInt(getValueOf("gameId", req.url));
+        const result = myServer.startGame(gameId);
+        res.end(JSON.stringify({status: result}));
+    } else if( req.url.startsWith("/board")) {
+        const gameId = parseInt(getValueOf("gameId", req.url));
+        const playerId = parseInt(getValueOf("playerId", req.url));
+        const boardStep = parseInt(getValueOf("boardStep", req.url));
+        const result = myServer.getBoard(gameId, playerId, boardStep);
+        res.end(JSON.stringify(result));
+    }
+    /*
+    if( req.method === "GET" ) {
+        if( req.data) {
+            let body = "";
+            req.on("data", chunk => {body+=chunk.toString();});
+            console.log(body);
+            const json = JSON.parse(body);
+            console.log(json);
+        }
+        res.end(JSON.stringify({cards: [{color: "green", value: 1}]}));
+    } else if( req.method === "POST" ) {
+        console.log("POST", req.data);
+    }
+    */
+    res.statusCode = 400;
+})
+
+server.listen(port, hostname, () => {
+    console.log(`Server running ${hostname}:${port}`);
+});
