@@ -206,11 +206,6 @@ class Server {
                 this.captainId = this.players[i].playerId;
             }
         }
-        // DEBUG force player 0 to be the captain
-        this.players[this.captainId].captain = false;
-        this.players[0].captain = true;
-        this.captainId = 0;
-        // END DEBUG
         
         // choose first mission
         // get a random card (not a Fusee)
@@ -377,8 +372,6 @@ const myServer = new Server();
 
 const server = http.createServer((req, res) => {
     res.statusCode = 200;
-    console.log("method", req.method);
-    console.log("url", req.url);
 
     res.setHeader("Content-Type", "application/json");
     res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
