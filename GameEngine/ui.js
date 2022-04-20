@@ -325,6 +325,7 @@ class BFloatingButton extends BButtonTextBase {
 		this.textSize = textSize;
 		this.checked = true;
 		this.previewCheck = false;
+		this.color= {r: 9, g: 47, b: 18};
 	}
 
 	setTextSize(size) {
@@ -343,7 +344,7 @@ class BFloatingButton extends BButtonTextBase {
 			stroke(29, 105, 62);
 			strokeWeight(Math.ceil(this.textSize / 30));
 		}
-		fill(9, 47, 18);
+		fill(this.color.r, this.color.g, this.color.b);
 		ellipse(this.x + this.w / 2, this.y - this.h / 2, this.w + extend, this.h + extend);
 
 		push();
