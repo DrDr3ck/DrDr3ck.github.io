@@ -84,23 +84,70 @@ class Board {
             this.cards.push(card);
         }
 
-        // last card is the 'turn' card
-
         // Shuffle
         for( var i = 0; i < 10 ; i++ ) {
             this.cards.sort((a, b) => 0.5 - Math.random());
         }
+
+        // last card is the 'turn' card
+        card = new Card(17, "Tour");
+        card.addSide(null,null,null,[],0,1); // rank 1 => tour 1
+        this.cards.push(card);
     }
 
     getCards() {
         return this.cards;
     }
 
-    canPay(cout) {
+    canPay(cout, verbose=false) {
         if( cout.length === 0 ) {
             return true;
         }
-        return false;
+        const pay = {wood: 0, fish: 0, stone: 0};
+        // count number of wood/fish/stone acquired
+        this.ressources.forEach(r=>{
+            if( verbose ) { console.log("r",r); };
+            if( pay[r] != null ) {
+                pay[r] = pay[r]+1;
+            }
+        });
+        if( verbose ) {
+            console.log("ressources", pay);
+        }
+
+        // count number of wood/fish/stone needed
+        cout.forEach(c=>{
+            if( pay[c] != null ) {
+                pay[c] = pay[c]-1;
+            }
+        });
+        if( verbose ) {
+            console.log("pay", pay);
+        }
+
+        if( pay.wood < 0 || pay.fish < 0 || pay.stone > 0 ) {
+            return false;
+        }
+        return true;
+    }
+
+    dropCard(index) {
+        // drop card at the end
+        this.cards.push(this.cards.splice(index, 1)[0]);
+    }
+
+    stockCard(index) {
+        // utiliser les ressources
+        // TODO: interaction avec le joueur si cout.length > 0
+
+        // gagner les ressources
+        // TODO: cannot have more than 4 cards !!!
+        const ressources = this.cards[index].getRessources();
+        console.log("stock card", this.cards[index].id, "with", ressources);
+        this.ressources.push(...ressources);
+        // stocker la card
+        this.cards[index].state = CardState.Stock;
+        this.dropCard(index);
     }
 }
 

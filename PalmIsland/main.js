@@ -34,9 +34,79 @@ let clickedCard = null;
 
 let toggleDebug = false;
 
+function drop1Clicked() {
+	uiManager.addLogger("drop first card");
+	board.dropCard(0);
+}
+
+function stock1Clicked() {
+	// TODO
+	uiManager.addLogger("stock first card");
+	board.stockCard(0);
+}
+
+function pivot1Clicked() {
+	// TODO
+	uiManager.addLogger("pivot first card");
+	board.pivotCard(0);
+}
+
+function return1Clicked() {
+	// TODO
+	uiManager.addLogger("return first card");
+	board.returnCard(0);
+}
+
+function drop2Clicked() {
+	uiManager.addLogger("drop second card");
+	board.dropCard(1);
+}
+
+function stock2Clicked() {
+	// TODO
+	uiManager.addLogger("stock second card");
+	board.stockCard(1);
+}
+
+function pivot2Clicked() {
+	// TODO
+	uiManager.addLogger("pivot second card");
+	board.pivotCard(1);
+}
+
+function return2Clicked() {
+	// TODO
+	uiManager.addLogger("return second card");
+	board.returnCard(1);
+}
+
+const drop1Button = new BFloatingButton(680, 720, "D", drop1Clicked);
+drop1Button.setTextSize(45);
+const stock1Button = new BFloatingButton(740, 720, "S", stock1Clicked);
+stock1Button.setTextSize(45);
+stock1Button.color= {r: 50, g: 180, b: 50};
+const pivot1Button = new BFloatingButton(800, 720, "P", pivot1Clicked);
+pivot1Button.setTextSize(45);
+pivot1Button.color= {r: 180, g: 180, b: 50};
+const return1Button = new BFloatingButton(860, 720, "R", return1Clicked);
+return1Button.setTextSize(45);
+return1Button.color= {r: 50, g: 50, b: 180};
+
+const drop2Button = new BFloatingButton(680-250, 720, "D", drop2Clicked);
+drop2Button.setTextSize(45);
+const stock2Button = new BFloatingButton(740-250, 720, "S", stock2Clicked);
+stock2Button.setTextSize(45);
+stock2Button.color= {r: 50, g: 180, b: 50};
+const pivot2Button = new BFloatingButton(800-250, 720, "P", pivot2Clicked);
+pivot2Button.setTextSize(45);
+pivot2Button.color= {r: 180, g: 180, b: 50};
+const return2Button = new BFloatingButton(860-250, 720, "R", return2Clicked);
+return2Button.setTextSize(45);
+return2Button.color= {r: 50, g: 50, b: 180};
+
 function startClicked() {
     gameState = GAME_PLAY_STATE;
-	uiManager.setUI([]);
+	uiManager.setUI([drop1Button, stock1Button, pivot1Button, return1Button, drop2Button, stock2Button, pivot2Button, return2Button]);
 	board = new Board();
 	board.init();
 }
@@ -221,11 +291,8 @@ function keyPressed() {
 	if (key === "D") {
 		toggleDebug = !toggleDebug;
 	}
-	if (key === "N") {
-		debugCurCard = (debugCurCard+1) % board.cards.length;
-	}
-	if (key === "P") {
-		debugCurCard = (debugCurCard+board.cards.length-1) % board.cards.length;
+	if (key === "R") {
+		console.log(board.ressources);
 	}
 	if (key === "S") {
 		const card = board.cards[debugCurCard];
@@ -234,6 +301,13 @@ function keyPressed() {
 		} else {
 			card.side = 0;
 		}
+	}
+
+	if( key === "T") {
+		const actions = board.cards[0].getActions();
+		actions.forEach((action,i) => {
+		  board.canPay(action.cout, true);
+		});
 	}
 }
 
