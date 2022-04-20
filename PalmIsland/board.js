@@ -45,11 +45,51 @@ class Board {
             this.cards.push(card);
         }
 
-        // DEBUG
-        //card.side = 1;
-        // END DEBUG
+        let card = new Card(10, "Marché");
+        card.addSide(["wood","OR","fish"],["wood", "wood"],["fish","fish"],["stone"],0,0);
+        card.addSide(["wood"],null,["wood","stone"],["fish", "stone"],0,1);
+        card.addSide(["fish"],["fish","stone"], null,["wood", "stone"],0,1);
+        card.addSide(["fish", "OR", "wood", "OR","stone"],null, null,["wood", "fish", "stone"],0,2);
+        this.cards.push(card);
 
-        
+        card = new Card(11, "Maison du Commerce");
+        card.addSide(["wood","wood","OR","fish","fish"],["fish"],["wood"],["wood","fish"],0,0);
+        card.addSide(["stone","stone","OR","fish","fish"],null,["wood", "fish"],["wood","wood","wood"],0,1);
+        card.addSide(["stone","stone","OR","wood","wood"],["wood", "fish"],null,["fish","fish","fish"],0,1);
+        card.addSide(["fish","fish","OR","wood","wood"],["stone"],["stone"],["stone","stone","stone"],0,2);
+        this.cards.push(card);
+
+        card = new Card(12, "Fabricant d'outils");
+        card.addSide(null,["wood", "fish"],["wood","fish","stone","stone"],[],0,0);
+        card.addSide(null,null,null,[],4,3);
+        card.addSide([],["wood", "fish", "stone"],null,["wood","fish"],0,1);
+        card.addSide([],null,["wood","wood", "fish","fish", "stone", "stone"],["wood", "fish", "stone"],0,2);
+        this.cards.push(card);
+
+        for( var i = 13; i <= 14; i++ ) {
+            const card = new Card(i, "Logement");
+            card.addSide(null,["wood", "fish"],null,[],0,0);
+            card.addSide(null,null,["wood", "fish", "stone"],[],1,1);
+            card.addSide(null,null,null,[],6,3);
+            card.addSide(null,["wood","wood", "fish","fish", "stone", "stone"],null,[],3,2);
+            this.cards.push(card);
+        }
+
+        for( var i = 15; i <= 16; i++ ) {
+            const card = new Card(i, "Temple");
+            card.addSide(null,["wood", "fish", "stone", "stone"],null,[],0,0);
+            card.addSide(null,null,["wood","wood", "fish","fish", "stone", "stone", "stone"],[],3,1);
+            card.addSide(null,null,null,[],10,3);
+            card.addSide(null,["wood","wood","wood", "fish","fish","fish", "stone", "stone", "stone", "stone"],null,[],6,2);
+            this.cards.push(card);
+        }
+
+        // last card is the 'turn' card
+
+        // Shuffle
+        for( var i = 0; i < 10 ; i++ ) {
+            this.cards.sort((a, b) => 0.5 - Math.random());
+        }
     }
 
     getCards() {

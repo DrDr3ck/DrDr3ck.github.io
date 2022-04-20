@@ -70,79 +70,93 @@ let debugCurCard = 0;
 function drawBoard() {
 	if (gameState === GAME_PLAY_STATE) {
 		const cards = board.getCards();
-		drawCard(cards[debugCurCard], window_width/3, 300);
+		drawCard(cards[debugCurCard], window_width/3+250, 300);
+		drawCard(cards[debugCurCard+1], window_width/3, 300);
+		drawEmptyCard(window_width/3-250-4, 100-4);
+		drawEmptyCard(window_width/3-250-2, 100-2);
+		drawCard(cards[debugCurCard+2], window_width/3-250, 100);
 	}
 }
 
-function drawCard(card, X, Y) {
-	const cardHeight = 340;
-	const cardWidth = 240;
-	fill(50,50,150,150);
+function drawRessourceSprite(X,Y,type, scale) {
+	if( type === "fish" ) {
+		spritesheet.drawScaledSprite('icons', CardType.Fish, X, Y, scale);
+	} else if( type === "wood" ) {
+		spritesheet.drawScaledSprite('icons', CardType.Wood, X, Y, scale);
+	} else if( type === "stone" ) {
+		spritesheet.drawScaledSprite('icons', CardType.Stone, X, Y, scale);
+	}
+}
+
+const cardHeight = 340;
+const cardWidth = 240;
+
+function drawEmptyCard(X, Y) {
+	strokeWeight(1);
+	fill(50,50,150);
 	rect(X, Y, cardWidth, cardHeight, 20);
 	fill(150);
 	stroke(0);
 	ellipse(X+cardWidth/2, Y+cardHeight/4, 160, 40);
+}
+
+function drawCard(card, X, Y) {
+	drawEmptyCard(X,Y);
 
 	stroke(1);
 	textAlign(CENTER, CENTER);
 	textSize(15);
 	fill(255);
 	text(card.name, X+cardWidth/2,Y+cardHeight/4);	
+	fill(155);
 	text(card.id.toString(), X + 15, Y+15);
 
 	const ressources = card.getRessources();
 	if( ressources.length > 0 ) {
 		// draw ressource
-		const Xrl = [520, 490, 460];
+		const delta = 420;
+		const Xrl = [520-delta, 490-delta, 460-delta];
 		const Xr = Xrl[ressources.length-1];
 		ressources.forEach((ressource,i) => {
-			if( ressource === "fish" ) {
-				spritesheet.drawScaledSprite('icons', CardType.Fish, Xr+i*60, Y + 10, 1/4);
-			} else if( ressource === "wood" ) {
-				spritesheet.drawScaledSprite('icons', CardType.Wood, Xr+i*60, Y + 10, 1/4);
-			} else if( ressource === "stone" ) {
-				spritesheet.drawScaledSprite('icons', CardType.Stone, Xr+i*60, Y + 10, 1/4);
-			}
+			drawRessourceSprite(X+Xr+i*60, Y + 10, ressource, 1/4);
 		});
 	}
 	const point = card.getPoint();
 	if( point > 0 ) {
+		fill(205,205,15);
 		text(point.toString(), X + 15, Y+15+30);
 	}
 	const rank = card.getRank();
 	if( rank > 0 ) {
+		fill(255);
 		text(rank.toString(), X + cardWidth - 15, Y+15+30);
 	}
 	const actions = card.getActions();
 	actions.forEach((action,i) => {
 		if( board.canPay(action.cout) ) {
-			stroke(200,200,50);
+			stroke(250);
+			strokeWeight(2);
  		} else {
 			stroke(0);
+			strokeWeight(1);
 		}
 		if( action.type === Action.Stocker ) {
 			fill(50,180,50);
-			ellipse(X+cardWidth/4, Y+cardHeight/3 + 20 + i*30, 20, 20);
+			ellipse(X+20, Y+cardHeight/3 + 20 + i*30, 20, 20);
 		} else if( action.type === Action.Pivoter ) {
 			fill(180,180,50);
-			ellipse(X+cardWidth/4, Y+cardHeight/3 + 20 + i*30, 20, 20);
+			ellipse(X+20, Y+cardHeight/3 + 20 + i*30, 20, 20);
 		} else if( action.type === Action.Retourner ) {
 			fill(50,50,180);
-			ellipse(X+cardWidth/4, Y+cardHeight/3 + 20 + i*30, 20, 20);
+			ellipse(X+20, Y+cardHeight/3 + 20 + i*30, 20, 20);
 		}
 		if( action.cout.length === 0 ) {
 			stroke(0);
 			fill(255);
-			text("Gratuit", X+cardWidth/4 + 40, Y+cardHeight/3 + 20 + i*30);	
+			text("Gratuit", X+20 + 40, Y+cardHeight/3 + 20 + i*30);	
 		} else {
 			action.cout.forEach((cout,j)=> {
-				if( cout === "fish" ) {
-					spritesheet.drawScaledSprite('icons', CardType.Fish, X+cardWidth/4 + 20 +j*40, Y+cardHeight/3 + i*30, 1/6);
-				} else if( cout === "wood" ) {
-					spritesheet.drawScaledSprite('icons', CardType.Wood, X+cardWidth/4 + 20 +j*40, Y+cardHeight/3 + i*30, 1/6);
-				} else if( cout === "stone" ) {
-					spritesheet.drawScaledSprite('icons', CardType.Stone, X+cardWidth/4 + 20 +j*40, Y+cardHeight/3 + i*30, 1/6);
-				}
+				drawRessourceSprite(X+20 + 20 +j*40, Y+cardHeight/3 + i*30, cout, 1/6);
 			});
 		}
 	});
@@ -209,6 +223,9 @@ function keyPressed() {
 	}
 	if (key === "N") {
 		debugCurCard = (debugCurCard+1) % board.cards.length;
+	}
+	if (key === "P") {
+		debugCurCard = (debugCurCard+board.cards.length-1) % board.cards.length;
 	}
 	if (key === "S") {
 		const card = board.cards[debugCurCard];
