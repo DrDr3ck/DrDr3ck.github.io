@@ -15,6 +15,8 @@ class Board {
         this.cards = [];
         // current ressources
         this.ressources = [];
+        this.score = 0;
+        this.selectedCards = [];
     }
 
     init() {
@@ -95,8 +97,21 @@ class Board {
         this.cards.push(card);
     }
 
+    setScore(score) {
+        this.score = score;
+    }
+
     getCards() {
         return this.cards;
+    }
+
+    resetRessources() {
+        this.ressources = [];
+        this.cards.filter(card=>card.state === CardState.Stock).forEach(card=> {
+            const ressources = card.getRessources();
+            this.ressources.push(...ressources);
+        });
+        console.log("Ressources:", this.ressources);
     }
 
     canPay(cout, verbose=false) {
@@ -125,13 +140,28 @@ class Board {
             console.log("pay", pay);
         }
 
-        if( pay.wood < 0 || pay.fish < 0 || pay.stone > 0 ) {
+        if( pay.wood < 0 || pay.fish < 0 || pay.stone < 0 ) {
             return false;
         }
         return true;
     }
 
     dropCard(index) {
+        const card = this.cards[index];
+        if( card.id === 17 && index !== 0 ) {
+            // cannot drop 'tour' card if index is not 0
+            return;
+        }
+        if( index === 1 ) {
+            if( this.cards[0].id === 17 ) {
+                // cannot drop this card, first drop the 'Tour' one !!
+                return;
+            }
+        }
+        // if drop card is the 'Tour' card, increase its rank        
+        if( card.id === 17 ) {
+            card.ranks[card.side] = card.ranks[card.side] + 1;
+        }
         // drop card at the end
         this.cards.push(this.cards.splice(index, 1)[0]);
     }
@@ -142,11 +172,40 @@ class Board {
 
         // gagner les ressources
         // TODO: cannot have more than 4 cards !!!
-        const ressources = this.cards[index].getRessources();
-        console.log("stock card", this.cards[index].id, "with", ressources);
-        this.ressources.push(...ressources);
+        const card = this.cards[index];
         // stocker la card
-        this.cards[index].state = CardState.Stock;
+        card.state = CardState.Stock;
+        card.selected = true; // DEBUG
+        this.dropCard(index);
+    }
+
+    pivotCard(index) {
+        // TODO: consommer ressource
+        const card = this.cards[index];
+        if( card.side === 0 ) {
+            card.side = 1;
+        } else if( card.side === 1 ) {
+            card.side = 0;
+        } else if( card.side === 2 ) {
+            card.side = 3;
+        } else if( card.side === 3 ) {
+            card.side = 2;
+        }
+        this.dropCard(index);
+    }
+
+    returnCard(index) {
+        // TODO: consommer ressource
+        const card = this.cards[index];
+        if( card.side === 0 ) {
+            card.side = 2;
+        } else if( card.side === 2 ) {
+            card.side = 0;
+        } else if( card.side === 1 ) {
+            card.side = 3;
+        } else if( card.side === 3 ) {
+            card.side = 1;
+        }
         this.dropCard(index);
     }
 }
@@ -166,6 +225,7 @@ class Card {
         this.points = [];
         this.ranks = [];
         this.state = CardState.Normal;
+        this.selected = false;
     }
 
     addSide(stocker, pivoter, retourner, ressource, point, rank) {
