@@ -62,12 +62,6 @@ function return1Clicked() {
 	resetButtons();
 }
 
-function drop2Clicked() {
-	uiManager.addLogger("drop second card");
-	board.dropCard(1);
-	resetButtons();
-}
-
 function stock2Clicked() {
 	// TODO
 	uiManager.addLogger("stock second card");
@@ -101,8 +95,6 @@ const return1Button = new BFloatingButton(860, 720, "R", return1Clicked);
 return1Button.setTextSize(45);
 return1Button.color= {r: 50, g: 50, b: 180};
 
-const drop2Button = new BFloatingButton(680-250, 720, "D", drop2Clicked);
-drop2Button.setTextSize(45);
 const stock2Button = new BFloatingButton(740-250, 720, "S", stock2Clicked);
 stock2Button.setTextSize(45);
 stock2Button.color= {r: 50, g: 180, b: 50};
@@ -115,7 +107,7 @@ return2Button.color= {r: 50, g: 50, b: 180};
 
 function startClicked() {
     gameState = GAME_PLAY_STATE;
-	uiManager.setUI([drop1Button, stock1Button, pivot1Button, return1Button, drop2Button, stock2Button, pivot2Button, return2Button]);
+	uiManager.setUI([drop1Button, stock1Button, pivot1Button, return1Button, stock2Button, pivot2Button, return2Button]);
 	board = new Board();
 	board.init();
 	resetButtons();
@@ -130,7 +122,6 @@ function resetButtons() {
 		stock1Button.visible = false;
 		pivot1Button.visible = false;
 		return1Button.visible = false;
-		drop2Button.visible = false;
 		stock2Button.visible = false;
 		pivot2Button.visible = false;
 		return2Button.visible = false;
@@ -158,17 +149,16 @@ function resetButtons() {
 	return1Button.visible = false;
 	card1.getActions().forEach(action=>{
 		if( action.type === Action.Stocker ) {
-			stock1Button.visible = board.canPay(action.cout);
+			stock1Button.visible = board.mayPay(action.cout);
 		}
 		if( action.type === Action.Pivoter ) {
-			pivot1Button.visible = board.canPay(action.cout);
+			pivot1Button.visible = board.mayPay(action.cout);
 		}
 		if( action.type === Action.Retourner ) {
-			return1Button.visible = board.canPay(action.cout);
+			return1Button.visible = board.mayPay(action.cout);
 		}
 	});
 	const card2 = board.getCards()[1];
-	drop2Button.visible = false;
 	stock2Button.visible = false;
 	pivot2Button.visible = false;
 	return2Button.visible = false;
@@ -177,16 +167,15 @@ function resetButtons() {
 		// 2. if card is the 'Turn' one, need to play the card1 first
 		return;
 	}
-	drop2Button.visible = true;
 	card2.getActions().forEach(action=>{
 		if( action.type === Action.Stocker ) {
-			stock2Button.visible = board.canPay(action.cout);
+			stock2Button.visible = board.mayPay(action.cout);
 		}
 		if( action.type === Action.Pivoter ) {
-			pivot2Button.visible = board.canPay(action.cout);
+			pivot2Button.visible = board.mayPay(action.cout);
 		}
 		if( action.type === Action.Retourner ) {
-			return2Button.visible = board.canPay(action.cout);
+			return2Button.visible = board.mayPay(action.cout);
 		}
 	});
 }
@@ -238,20 +227,13 @@ function drawBoard() {
 }
 
 function drawRessources() {
-	const X = 180;
-	const Y = 100;
 	const cards = board.getCards();
+	const stockedCards = cards.filter(card=>card.state === CardState.Stock);
 	const Yrl = [170, 155, 120];
-	const stockedCards = [];
-	cards.forEach(card=>{
-		if( card.state === CardState.Stock ) {
-			stockedCards.push(card);
-		}
-	});
-	let indexRessource = stockedCards.length-1;
-	const cardGap = 80;
-	stockedCards.reverse().forEach(card=>{
+	stockedCards.reverse().forEach((card,i)=>{
+		const indexRessource = stockedCards.length-1-i;
 		const ressources = card.getRessources();
+		const cardPosition = board.getRessourceCardPosition(indexRessource);
 		const Yr = Yrl[ressources.length-1];
 		// draw ressource
 		strokeWeight(1);
@@ -262,18 +244,16 @@ function drawRessources() {
 		} else {
 			stroke(0);
 		}
-		rect(X+indexRessource*cardGap, Y - delta, cardHeight, cardWidth, 20);
+		rect(cardPosition.X, cardPosition.Y - delta, cardHeight, cardWidth, 20);
 		ressources.forEach((ressource,i)=>{
-			drawRessourceSprite(X+cardHeight-60+indexRessource*cardGap,Yr+60*i - delta,ressource,1/4);
+			drawRessourceSprite(cardPosition.X+cardHeight-60,Yr+60*i - delta,ressource,1/4);
 		});
 		// draw card id
 		stroke(1);
 		textAlign(CENTER, CENTER);
 		textSize(15);
 		fill(155);
-		text(card.id.toString(), X+indexRessource*cardGap + cardHeight - 20, Y+10 - delta);
-
-		indexRessource--;
+		text(card.id.toString(), cardPosition.X + cardHeight - 20, cardPosition.Y+10 - delta);
 	});
 }
 
@@ -287,8 +267,8 @@ function drawRessourceSprite(X,Y,type, scale) {
 	}
 }
 
-const cardHeight = 340;
-const cardWidth = 240;
+const cardHeight = Card.height;
+const cardWidth = Card.width;
 
 function drawEmptyCard(X, Y, isStockedCard=false) {
 	if( isStockedCard ) {
@@ -339,7 +319,7 @@ function drawCard(card, X, Y) {
 	}
 	const actions = card.getActions();
 	actions.forEach((action,i) => {
-		if( board.canPay(action.cout) ) {
+		if( board.mayPay(action.cout) ) {
 			stroke(200);
 			strokeWeight(2);
  		} else {
@@ -413,6 +393,10 @@ function draw() {
 function mouseClicked() {
 	toolManager.mouseClicked();
 	uiManager.mouseClicked();
+	const card = board.overredCard(mouseX, mouseY);
+	if( card ) {
+		board.select(card);
+	}
 	return false;
 }
 
@@ -442,7 +426,7 @@ function keyPressed() {
 	if( key === "T") {
 		const actions = board.cards[0].getActions();
 		actions.forEach((action,i) => {
-		  board.canPay(action.cout, true);
+		  board.mayPay(action.cout, true);
 		});
 	}
 }

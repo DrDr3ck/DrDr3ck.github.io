@@ -16,7 +16,7 @@ class Board {
         // current ressources
         this.ressources = [];
         this.score = 0;
-        this.selectedCards = [];
+        this.selection = [];
     }
 
     init() {
@@ -114,7 +114,45 @@ class Board {
         console.log("Ressources:", this.ressources);
     }
 
+    resetSelection() {
+        this.selection = [];
+        this.cards.filter(card=>card.selected).forEach(card=> {
+            const ressources = card.getRessources();
+            this.selection.push(...ressources);
+        });
+        console.log("Selection:", this.selection);
+    }
+
+    pay() {
+        console.log("pay for cards", this.cards);
+        this.cards.forEach(card=>{
+            if( card.selected ) {
+                card.unselect();
+            }
+        });
+        this.resetSelection();
+    }
+
     canPay(cout, verbose=false) {
+        if( cout.length === 0 ) {
+            return true;
+        }
+        const pay = {wood: 0, fish: 0, stone: 0};
+        // count number of wood/fish/stone acquired
+        this.selection.forEach(r=>{
+            if( verbose ) { console.log("r",r); };
+            if( pay[r] != null ) {
+                pay[r] = pay[r]+1;
+            }
+        });
+        if( verbose ) {
+            console.log("selection", pay);
+        }
+
+        return this.checkPay(pay, cout, verbose);
+    }
+
+    mayPay(cout, verbose=false) {
         if( cout.length === 0 ) {
             return true;
         }
@@ -130,14 +168,72 @@ class Board {
             console.log("ressources", pay);
         }
 
-        // count number of wood/fish/stone needed
-        cout.forEach(c=>{
-            if( pay[c] != null ) {
-                pay[c] = pay[c]-1;
+        return this.checkPay(pay, cout, verbose);
+    }
+
+    checkPay(pay, cout, verbose=false) {
+        // special case if cout has a 'OR' item
+        const payCount = cout.filter(c=>c==="OR").length;
+        if( payCount === 0 ) {
+            // count number of wood/fish/stone needed
+            cout.forEach(c=>{
+                if( pay[c] != null ) {
+                    pay[c] = pay[c]-1;
+                }
+            });
+            if( verbose ) {
+                console.log("pay", pay);
             }
-        });
-        if( verbose ) {
-            console.log("pay", pay);
+        } else if( payCount === 1 ) {
+            const clonedPay = {...pay};
+            const splitIndex = cout.indexOf("OR");
+            // check with clonedPay
+            for( let i = splitIndex+1; i < cout.length; i++ ) {
+                const c = cout[i];
+                if( clonedPay[c] != null ) {
+                    clonedPay[c] = clonedPay[c]-1;
+                }
+            }
+            if( clonedPay.wood >= 0 && clonedPay.fish >= 0 && clonedPay.stone >= 0 ) {
+                return true;
+            }
+            for( let i = 0; i < splitIndex; i++ ) {
+                const c = cout[i];
+                if( pay[c] != null ) {
+                    pay[c] = pay[c]-1;
+                }
+            }
+        } else if( payCount === 2 ) {
+            let clonedPay = {...pay};
+            const splitIndex = cout.indexOf("OR");
+            // check with clonedPay
+            for( let i = 0; i < splitIndex; i++ ) {
+                const c = cout[i];
+                if( clonedPay[c] != null ) {
+                    clonedPay[c] = clonedPay[c]-1;
+                }
+            }
+            if( clonedPay.wood >= 0 && clonedPay.fish >= 0 && clonedPay.stone >= 0 ) {
+                return true;
+            }
+            const splitIndex2 = cout.indexOf("OR",splitIndex+1);
+            clonedPay = {...pay};
+            // check with clonedPay (again)
+            for( let i = splitIndex+1; i < splitIndex2; i++ ) {
+                const c = cout[i];
+                if( clonedPay[c] != null ) {
+                    clonedPay[c] = clonedPay[c]-1;
+                }
+            }
+            if( clonedPay.wood >= 0 && clonedPay.fish >= 0 && clonedPay.stone >= 0 ) {
+                return true;
+            }
+            for( let i = splitIndex2+1; i < cout.length; i++ ) {
+                const c = cout[i];
+                if( pay[c] != null ) {
+                    pay[c] = pay[c]-1;
+                }
+            }
         }
 
         if( pay.wood < 0 || pay.fish < 0 || pay.stone < 0 ) {
@@ -166,22 +262,65 @@ class Board {
         this.cards.push(this.cards.splice(index, 1)[0]);
     }
 
+    overredCard(X,Y) {
+        // check if cursor is over a 'ressource' card
+        const stockedCards = this.cards.filter(card=>card.state === CardState.Stock);
+        for( let indexRessource = 0 ; indexRessource < stockedCards.length; indexRessource++ ) {
+            const card = stockedCards[indexRessource];
+		    const cardPosition = board.getRessourceCardPosition(indexRessource);
+            if( mouseX > cardPosition.X+Card.height-70 && mouseX < cardPosition.X+Card.height &&
+                mouseY > cardPosition.Y && mouseY < cardPosition.Y+Card.width
+            ) {
+                console.log("hit");
+                return card;
+            }
+        }
+        return null;
+    }
+
+    getRessourceCardPosition(index) {
+        const cardGap = 80;
+        const X = 180;
+	    const Y = 100;
+        return {X: X+index*cardGap, Y: Y};
+    }
+
+    /**
+     * Selects/Unselects this card to pay ressources
+     * @param card selected card
+     */
+    select(card) {
+        card.selected = !card.selected;
+        this.resetSelection();
+    }
+
     stockCard(index) {
         // utiliser les ressources
-        // TODO: interaction avec le joueur si cout.length > 0
-
-        // gagner les ressources
-        // TODO: cannot have more than 4 cards !!!
         const card = this.cards[index];
+        const action = card.getAction(Action.Stocker);
+        console.log("action", action);
+        if( !action ) return; // Error
+        if( !this.canPay(action.cout, true) ) {
+            // cannot pay: do nothing
+            console.log("cannot pay");
+            return;
+        }
+        this.pay();
+        // TODO: cannot have more than 4 cards !!!
         // stocker la card
         card.state = CardState.Stock;
-        card.selected = true; // DEBUG
         this.dropCard(index);
     }
 
     pivotCard(index) {
-        // TODO: consommer ressource
         const card = this.cards[index];
+        const action = card.getAction(Action.Pivoter);
+        if( !action ) return;// Error
+        if( !this.canPay(action.cout, true) ) {
+            // cannot pay: do nothing
+            return;
+        }
+        this.pay();
         if( card.side === 0 ) {
             card.side = 1;
         } else if( card.side === 1 ) {
@@ -195,8 +334,14 @@ class Board {
     }
 
     returnCard(index) {
-        // TODO: consommer ressource
         const card = this.cards[index];
+        const action = card.getAction(Action.Retourner);
+        if( !action ) return;// Error
+        if( !this.canPay(action.cout, true) ) {
+            // cannot pay: do nothing
+            return;
+        }
+        this.pay();
         if( card.side === 0 ) {
             card.side = 2;
         } else if( card.side === 2 ) {
@@ -228,11 +373,29 @@ class Card {
         this.selected = false;
     }
 
+    static height = 340;
+    static width = 240;
+
+    unselect() {
+        console.log("unselect card", this.id);
+        this.selected = false;
+        this.state = CardState.Normal;
+    }
+
     addSide(stocker, pivoter, retourner, ressource, point, rank) {
         this.addActions(stocker, pivoter, retourner);
         this.addRessource(ressource);
         this.points.push(point);
         this.ranks.push(rank);
+    }
+
+    getAction(actionType) {
+        const actions = this.getActions();
+        const filteredActions = actions.filter(action=>action.type === actionType);
+        if( filteredActions.length !== 1 ) {
+            return null; // error
+        }
+        return filteredActions[0];
     }
 
     addActions(stocker, pivoter, retourner) {
