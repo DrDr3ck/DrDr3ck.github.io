@@ -37,29 +37,111 @@ let clickedCard = null;
 
 let toggleDebug = false;
 
-function startClicked() {
-    gameState = GAME_PLAY_STATE;
-	uiManager.setUI([]);
-	//board = new Board();
-	//board.init();
+let curSeasonCards = [];
+
+/* Randomize array in-place using Durstenfeld shuffle algorithm */
+function shuffleArray(array) {
+    for (var i = array.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var temp = array[i];
+        array[i] = array[j];
+        array[j] = temp;
+    }
 }
 
-const startButton = new BButton(130, window_height - 80, "START", startClicked);
-startButton.setTextSize(45);
-startButton.visible = false;
+function startClicked() {
+    gameState = GAME_PLAY_STATE;
+	uiManager.setUI([nextButton]);
+	//board = new Board();
+	//board.init();
+	cards = [0,1,2,3,4,5,6,7,8,9,10,11,11];
+	embuscades.push(...[12,13,14,15]);
+	shuffleArray(embuscades);
+	const curEmbuscade = embuscades.shift();
+	cards.push(curEmbuscade);
+	shuffleArray(cards);
+	nextClicked();
+}
+
+function seasonMaxSum() {
+	switch(season) {
+		case PRINTEMPS:
+		case ETE:
+			return 8;
+		case AUTOMNE:
+			return 7;
+		case HIVER:
+		default:
+			return 6;
+	}
+}
+
+// add a card or switch to next season or end the party
+function nextClicked() {
+	if( curSum >= seasonMaxSum() ) {
+		uiManager.setUI([nextButton]);
+		// change season
+		switch(season) {
+			case PRINTEMPS:
+				season = ETE;
+				break;
+			case ETE:
+				season = AUTOMNE;
+				break;
+			case AUTOMNE:
+				season = HIVER;
+				break;
+			case HIVER:
+			default:
+				season = END;
+				break;
+		}
+		// reset cards
+		cards = [0,1,2,3,4,5,6,7,8,9,10,11,11];
+		const curEmbuscade = embuscades.shift();
+		cards.push(curEmbuscade);
+		shuffleArray(cards);
+		curSum = 0;
+		curSeasonCards = [];
+	}
+	const curCard = cards.shift();
+	curSeasonCards.push(curCard);
+	curSum += times[curCard];
+	if( curSum >= seasonMaxSum() ) {
+		if( season === HIVER ) {
+			uiManager.setUI([]);
+		} else {
+			uiManager.setUI([newSeason]);
+		}
+	}
+}
+
+const startButton = new BButton(80, window_height - 100, "START", startClicked);
+const nextButton = new BButton(window_width - 80 - 400*scale, window_height - 100, "NEXT", nextClicked);
+const newSeason = new BButton(window_width/2-200*scale, window_height/2+40*scale, "SEASON", nextClicked);
+startButton.setTextSize(45*scale);
+startButton.w = 400*scale;
+nextButton.setTextSize(45*scale);
+nextButton.w = 400*scale;
+newSeason.setTextSize(45*scale);
+newSeason.w = 400*scale;
 const menu = [startButton];
 uiManager.setUI(menu);
 
-let lastTime = 0;
+
+let curSum = 0;
 
 const PRINTEMPS = 0;
 const ETE = 1;
 const AUTOMNE = 2;
 const HIVER = 3;
+const END = -1;
 
 let season = PRINTEMPS;
 
-let board = null;
+let cards = []; // cards for the current season
+const times = [1,1,1,1,2,2,2,2,2,0,2,0,0,0,0,0];
+const embuscades = [];
 
 const cardHeight = 276;//Card.height;
 const cardWidth = 200;//Card.width;
@@ -67,6 +149,11 @@ const cardWidth = 200;//Card.width;
 function preload() {
 	spritesheet.addSpriteSheet('decret', './decret.png', cardWidth, cardHeight);
 	spritesheet.addSpriteSheet('season', './season.png', cardWidth, cardHeight);
+	spritesheet.addSpriteSheet('exploration', './exploration.png', cardWidth, cardHeight);
+	spritesheet.addSpriteSheet('forest', './decret-forest.png', cardWidth, cardHeight);
+	spritesheet.addSpriteSheet('zone', './decret-zone.png', cardWidth, cardHeight);
+	spritesheet.addSpriteSheet('ville', './decret-ville.png', cardWidth, cardHeight);
+	spritesheet.addSpriteSheet('champs', './decret-champs.png', cardWidth, cardHeight);
 }
 
 function setup() {
@@ -75,27 +162,23 @@ function setup() {
 
 	frameRate(60);
 
-	spritesheet.addSpriteSheet('forest', './decret-forest.png', cardWidth, cardHeight);
-	spritesheet.addSpriteSheet('zone', './decret-zone.png', cardWidth, cardHeight);
-	spritesheet.addSpriteSheet('ville', './decret-ville.png', cardWidth, cardHeight);
-	spritesheet.addSpriteSheet('champs', './decret-champs.png', cardWidth, cardHeight);
-	//spritesheet.addSpriteSheet('icons', './icons.png', 200, 200);
-
 	uiManager.addLogger("Cartographer");
 	uiManager.addLogger(`Screen size: ${window.screen.width.toString()}x${window.screen.height.toString()}`);
 	lastTime = Date.now();
 }
 
-let debugCurCard = 0;
+const types = ["forest", "zone", "ville", "champs"];
+shuffleArray(types);
+const occurrences = [Math.floor(Math.random() * 4), Math.floor(Math.random() * 4), Math.floor(Math.random() * 4), Math.floor(Math.random() * 4)];
 
 function drawBoard() {
 	let topY = 50*scale;
-	drawDecretCard(100, topY,"A", season === PRINTEMPS || season === HIVER);
-	drawDecretCard(100+cardWidth*scale+20,topY,"B", season === PRINTEMPS || season === ETE);
-	drawDecretCard(100+(cardWidth*scale+20)*2,topY,"C", season === ETE || season === AUTOMNE);
-	drawDecretCard(100+(cardWidth*scale+20)*3,topY,"D", season === AUTOMNE || season === HIVER);
+	drawDecretCard(100, topY,"A", 0, season === PRINTEMPS || season === HIVER);
+	drawDecretCard(100+cardWidth*scale+20,topY,"B", 1, season === PRINTEMPS || season === ETE);
+	drawDecretCard(100+(cardWidth*scale+20)*2,topY,"C", 2, season === ETE || season === AUTOMNE);
+	drawDecretCard(100+(cardWidth*scale+20)*3,topY,"D", 3, season === AUTOMNE || season === HIVER);
 
-	topY = 25;
+	topY = 20;
 	const seasonX = 100 + (cardWidth*scale+20)*4.5;
 	if( season <= HIVER ) {
 		drawSeasonCard(seasonX, topY, "hiver");
@@ -111,14 +194,14 @@ function drawBoard() {
 	}
 	
 	if (gameState === GAME_PLAY_STATE) {
-		drawDecretCard(100, topY+50*scale,"forest", season === PRINTEMPS || season === HIVER);
-		drawDecretCard(100+cardWidth*scale+20,topY+50*scale,"zone", season === PRINTEMPS || season === ETE);
-		drawDecretCard(100+(cardWidth*scale+20)*2,topY+50*scale,"ville", season === ETE || season === AUTOMNE);
-		drawDecretCard(100+(cardWidth*scale+20)*3,topY+50*scale,"champs", season === AUTOMNE || season === HIVER);
-		//debug
-		drawExplorationCard(200,window_height-cardHeight*scale-20, 2);
-		drawExplorationCard(200+50,window_height-cardHeight*scale-20, 1);
-		//end debug
+		drawDecretCard(100, topY+50*scale,types[0],occurrences[0], season === PRINTEMPS || season === HIVER);
+		drawDecretCard(100+cardWidth*scale+20,topY+50*scale,types[1],occurrences[1], season === PRINTEMPS || season === ETE);
+		drawDecretCard(100+(cardWidth*scale+20)*2,topY+50*scale,types[2],occurrences[2], season === ETE || season === AUTOMNE);
+		drawDecretCard(100+(cardWidth*scale+20)*3,topY+50*scale,types[3],occurrences[3], season === AUTOMNE || season === HIVER);
+
+		curSeasonCards.forEach((card,i)=>{
+			drawExplorationCard(50+50*scale*i,window_height-cardHeight*scale-20, card);	
+		});
 	}
 }
 
@@ -128,14 +211,15 @@ function drawEmptyCard(X,Y) {
 	strokeWeight(1);
 }
 
-function drawExplorationCard(X,Y, time) {
+function drawExplorationCard(X,Y, index) {
 	fill(250,150,10);
 	stroke(0);
 	drawEmptyCard(X,Y);
 	textAlign(CENTER, CENTER);
 	textSize(25);
 	fill(25);
-	text(time.toString(), X+20,Y+20);	
+	text(index.toString(), X+20,Y+20);	
+	spritesheet.drawScaledSprite('exploration', index, X, Y, scale);
 }
 
 function drawSeasonCard(X,Y,title) {
@@ -149,13 +233,12 @@ function drawSeasonCard(X,Y,title) {
 	rect(X, Y, cardWidth*scale, cardHeight*scale, 10);
 }
 
-function drawDecretCard(X,Y,title,selection) {
+function drawDecretCard(X,Y,title,index,selection) {
 	const decrets = ["A","B","C","D"];
-	const index = decrets.indexOf(title);
-	if( index >= 0 ) {
+	if( decrets.includes(title) ) {
 		spritesheet.drawScaledSprite('decret', index, X, Y, scale);
 	} else {
-		spritesheet.drawScaledSprite(title, 0, X, Y, scale);
+		spritesheet.drawScaledSprite(title, index, X, Y, scale);
 	}
 	if( selection ) {
 		stroke(255,228,180);
