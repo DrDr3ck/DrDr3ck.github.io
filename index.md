@@ -1,4 +1,3 @@
-
 <html>
   <head>
     <meta charset="utf-8"/>
@@ -14,6 +13,10 @@
     <a href="./Tetris">Tetris</a>
     <br>
     <a href="./MatchingCard">Matching Cards</a>
+    <h2>Jeux de société</h2>
+    <a href="./Cartographer">Cartographer</a>
+    <br>
+    <a href="./PalmIsland">PalmIsland</a>
     <h2>Jeux en cours de codage</h2>
     <a href="./Dungeon">Dungeon</a>
     <br>
@@ -50,4 +53,3 @@
     <a href="./BarnsleyFern/">BarnsleyFern</a>
   </body>
 </html>
-
