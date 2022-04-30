@@ -78,6 +78,7 @@ function seasonMaxSum() {
 
 // add a card or switch to next season or end the party
 function nextClicked() {
+	delta = 0;
 	if( curSum >= seasonMaxSum() ) {
 		uiManager.setUI([nextButton]);
 		// change season
@@ -199,11 +200,14 @@ function drawBoard() {
 		drawDecretCard(100+(cardWidth*scale+20)*2,topY+50*scale,types[2],occurrences[2], season === ETE || season === AUTOMNE);
 		drawDecretCard(100+(cardWidth*scale+20)*3,topY+50*scale,types[3],occurrences[3], season === AUTOMNE || season === HIVER);
 
-		curSeasonCards.forEach((card,i)=>{
+		for( let i = 0; i < curSeasonCards.length+delta; i++ ) {
+			const card = curSeasonCards[i];
 			drawExplorationCard(50+50*scale*i,window_height-cardHeight*scale-20, card);	
-		});
+		}
 	}
 }
+
+let delta = 0;
 
 function drawEmptyCard(X,Y) {
 	strokeWeight(4);
@@ -292,6 +296,18 @@ function mouseReleased() {
 function keyPressed() {
 	if (key === "D") {
 		toggleDebug = !toggleDebug;
+	}
+
+	if (key === "P") {
+		delta = Math.max(delta-1, -curSeasonCards.length);
+		nextButton.enabled = (delta === 0);
+		newSeason.enabled = (delta === 0);
+	}
+
+	if (key === "N") {
+		delta = Math.min(delta+1, 0);
+		nextButton.enabled = (delta === 0);
+		newSeason.enabled = (delta === 0);
 	}
 }
 
