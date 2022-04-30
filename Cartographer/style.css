@@ -15,6 +15,13 @@ body {
 	/* This centers our sketch horizontally. */
 	justify-content: center;
 	user-select: none;
+	margin-bottom: 8px;
+}
+
+@media (width <= 800px) {
+	#header {
+		display: none;
+	}
 }
 
 #canvas {
