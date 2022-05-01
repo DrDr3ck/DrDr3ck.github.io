@@ -192,10 +192,10 @@ function setup() {
         curSelectedType = 4;
     });
 
-    const turnIcon =new BImageButton(830, 640, spritesheet.getImage('icons', 1), ()=>{
+    const turnIcon =new BImageButton(780, 420, spritesheet.getImage('icons', 1), ()=>{
         turnShape();
     });
-    const flipIcon =new BImageButton(830, 720, spritesheet.getImage('icons', 0), ()=>{
+    const flipIcon =new BImageButton(780, 535, spritesheet.getImage('icons', 0), ()=>{
         flipShape();
     });
 
@@ -253,8 +253,8 @@ function drawBoard() {
     textSize(25);
     fill(125);
     textAlign(LEFT, CENTER);
-    text("Shape", 770, 495);
-    drawShape(14,6, false);
+    text("Shape", 770, 510);
+    drawShape(13,6, false);
 
     const overCase = mouseOverCase();
     if( overCase !== null ) {
