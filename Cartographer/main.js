@@ -1,7 +1,7 @@
-const window_width = window.screen.width > 1460 ? 1460 : window.screen.width;
-const window_height = window.screen.height > 800 ? 800 : window.screen.height;
+const window_width = window.screen.availWidth > 1460 ? 1460 : window.screen.availWidth;
+const window_height = window.screen.availHeight > 800 ? 800 : window.screen.availHeight;
 
-const scale = window_width < 800 ? .5 : 1;
+let scale = window_width < 800 ? .5 : 1;
 
 const uiManager = new UIManager();
 uiManager.loggerContainer = new LoggerContainer(
@@ -98,9 +98,9 @@ function nextClicked() {
 				break;
 		}
 		// reset cards
-		cards = [0,1,2,3,4,5,6,7,8,9,10,11,11];
-		const curEmbuscade = embuscades.shift();
-		cards.push(curEmbuscade);
+		cards = cards.filter(c=>c>11); // keep embuscade if any
+		cards.push(...[0,1,2,3,4,5,6,7,8,9,10,11,11]);
+		cards.push(embuscades.shift()); // get a new embuscade
 		shuffleArray(cards);
 		curSum = 0;
 		curSeasonCards = [];
@@ -119,7 +119,7 @@ function nextClicked() {
 
 const startButton = new BButton(80, window_height - 100, "START", startClicked);
 const nextButton = new BButton(window_width - 80 - 400*scale, window_height - 100, "NEXT", nextClicked);
-const newSeason = new BButton(window_width/2-200*scale, window_height/2+40*scale, "SEASON", nextClicked);
+const newSeason = new BButton(window_width - 80 - 400*scale, window_height/2+40*scale, "SEASON", nextClicked);
 startButton.setTextSize(45*scale);
 startButton.w = 400*scale;
 nextButton.setTextSize(45*scale);
@@ -195,16 +195,79 @@ function drawBoard() {
 	}
 	
 	if (gameState === GAME_PLAY_STATE) {
-		drawDecretCard(100, topY+50*scale,types[0],occurrences[0], season === PRINTEMPS || season === HIVER);
-		drawDecretCard(100+cardWidth*scale+20,topY+50*scale,types[1],occurrences[1], season === PRINTEMPS || season === ETE);
-		drawDecretCard(100+(cardWidth*scale+20)*2,topY+50*scale,types[2],occurrences[2], season === ETE || season === AUTOMNE);
-		drawDecretCard(100+(cardWidth*scale+20)*3,topY+50*scale,types[3],occurrences[3], season === AUTOMNE || season === HIVER);
+		const overDecret = isMouseOverDecret();
+		if( overDecret !== 0 ) {
+			drawDecretCard(100, topY+50*scale,types[0],occurrences[0], season === PRINTEMPS || season === HIVER);
+		}
+		if( overDecret !== 1 ) {
+			drawDecretCard(100+cardWidth*scale+20,topY+50*scale,types[1],occurrences[1], season === PRINTEMPS || season === ETE);
+		}
+		if( overDecret !== 2 ) {
+			drawDecretCard(100+(cardWidth*scale+20)*2,topY+50*scale,types[2],occurrences[2], season === ETE || season === AUTOMNE);
+		}
+		if( overDecret !== 3 ) {
+			drawDecretCard(100+(cardWidth*scale+20)*3,topY+50*scale,types[3],occurrences[3], season === AUTOMNE || season === HIVER);
+		}
 
-		for( let i = 0; i < curSeasonCards.length+delta; i++ ) {
+		let i = 0
+		for( i = 0; i < curSeasonCards.length+delta; i++ ) {
 			const card = curSeasonCards[i];
 			drawExplorationCard(50+50*scale*i,window_height-cardHeight*scale-20, card);	
 		}
+		if( toggleDebug ) {
+			for( let j = 0; j < cards.length ; j++,i++ ) {
+				const card = cards[j];
+				drawExplorationCard(50+50*scale*i,window_height-cardHeight*scale-20, card);	
+			}
+		}
+
+		if( overDecret >= 0 ) {
+			scale*=2;
+			drawDecretCard(window_width/2-cardWidth/2*scale, topY+50*scale,types[overDecret],occurrences[overDecret], false);
+			scale/=2;
+		}
+
+		if( isMouseOverExploration() ) {
+			scale*=2;
+			const card = curSeasonCards[curSeasonCards.length+delta-1];
+			drawExplorationCard(50*scale,topY+50*scale, card);	
+			scale/=2;
+		}
 	}
+}
+
+function isMouseOverExploration() {
+	const X = 50;
+	const Y = window_height-cardHeight*scale-20;
+	if(
+		mouseX > X && mouseX < X+cardWidth+50*scale*(curSeasonCards.length+delta-1) &&
+		mouseY > Y && mouseY < Y+cardHeight*scale
+	) {
+		return true;
+	}
+	return false;
+}
+
+function isMouseOverDecret() {
+	let X = 100;
+	const topY = 20;
+	const Y = topY+50*scale;
+	if( mouseX > X && mouseX < X+cardWidth*scale && mouseY > Y && mouseY < Y+cardHeight*scale) {
+		return 0;
+	}
+	X += cardWidth*scale+20
+	if( mouseX > X && mouseX < X+cardWidth*scale && mouseY > Y && mouseY < Y+cardHeight*scale) {
+		return 1;
+	}
+	X += cardWidth*scale+20
+	if( mouseX > X && mouseX < X+cardWidth*scale && mouseY > Y && mouseY < Y+cardHeight*scale) {
+		return 2;
+	}
+	X += cardWidth*scale+20
+	if( mouseX > X && mouseX < X+cardWidth*scale && mouseY > Y && mouseY < Y+cardHeight*scale) {
+		return 3;
+	}
+	return -1;
 }
 
 let delta = 0;
@@ -224,6 +287,9 @@ function drawExplorationCard(X,Y, index) {
 	fill(25);
 	text(index.toString(), X+20,Y+20);	
 	spritesheet.drawScaledSprite('exploration', index, X, Y, scale);
+	strokeWeight(4*scale);
+	noFill();
+	rect(X, Y, cardWidth*scale, cardHeight*scale, 10);
 }
 
 function drawSeasonCard(X,Y,title) {
@@ -249,7 +315,7 @@ function drawDecretCard(X,Y,title,index,selection) {
 	} else {
 		stroke(10);
 	}
-	strokeWeight(4);
+	strokeWeight(4*scale);
 	noFill();
 	rect(X, Y, cardWidth*scale, cardHeight*scale, 10);
 }

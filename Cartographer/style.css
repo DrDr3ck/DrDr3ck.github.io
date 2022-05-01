@@ -15,7 +15,6 @@ body {
 	/* This centers our sketch horizontally. */
 	justify-content: center;
 	user-select: none;
-	margin-bottom: 8px;
 }
 
 @media (width <= 800px) {
@@ -26,6 +25,9 @@ body {
 
 #canvas {
 	display: flex;
+	height: 100%;
 	/* This centers our sketch horizontally. */
 	justify-content: center;
+	/* This centers our sketch vertically. */
+	align-items: center;
 }
