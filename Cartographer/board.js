@@ -6,7 +6,7 @@ let scale = window_width < 800 ? .5 : 1;
 const uiManager = new UIManager();
 uiManager.loggerContainer = new LoggerContainer(
 	window_width - 240,
-	window_height - 500*scale,
+	window_height - 400*scale,
 	240,
 	100
 );
@@ -22,6 +22,9 @@ let gameState = GAME_PLAY_STATE;
 
 let toggleDebug = false;
 
+let pieces = 0;
+const piecesMax = 14;
+
 /* Randomize array in-place using Durstenfeld shuffle algorithm */
 function shuffleArray(array) {
     for (var i = array.length - 1; i > 0; i--) {
@@ -34,7 +37,7 @@ function shuffleArray(array) {
 
 const EMPTYCASE = ' ';
 
-const SIMPLE_SQUARE = ["#"];
+const SIMPLE_SQUARE = [["#"]];
 const GOLDEN_L = [["G","G"],[" ","G"]];
 const BIG_L = [["#","#"],["#","#"],["# "," "]];
 const GOLDEN_I = [["G","G"]];
@@ -94,6 +97,13 @@ function createBoard(type) {
 const board = createBoard("A");
 
 function nextClicked() {
+    // TODO: check if a mountain is closed
+
+    // check if a golden shape has been used
+    if( curSelectedShape[0].some(s=>s==="G") ) {
+        pieces++;
+    }
+
     turn++;
     nextButton.enabled = false;
     undoButton.enabled = false;
@@ -165,6 +175,7 @@ function preload() {
     spritesheet.addSpriteSheet('cases', './cases.png', 58, 58);
     spritesheet.addSpriteSheet('icons', './icons.png', 60,60);
     spritesheet.addSpriteSheet('shapes', './shapes.png', 70,40);
+    spritesheet.addSpriteSheet('piece', './piece.png', 33,33);
 }
 
 function setup() {
@@ -256,8 +267,10 @@ function drawBoard() {
     text("Shape", 770, 510);
     drawShape(13,6, false);
 
+    // draw cursor on board
     const overCase = mouseOverCase();
     if( overCase !== null ) {
+        push();
         textAlign(CENTER, CENTER);
         textSize(25);
         fill(25);
@@ -271,13 +284,32 @@ function drawBoard() {
 
         // TODO: check if shape is OUT of the board
         drawShape(overCase.X, overCase.Y);
+        pop();
     }
 
+    drawPieces();
+
+    // selected type button
     stroke(255,228,180);
     noFill();
     strokeWeight(2);
     rect(830, 60+(sizeBoard+5)*curSelectedType, sizeBoard, sizeBoard);
     strokeWeight(1);
+}
+
+function drawPieces() {
+    const X = 920;
+    const Y = 340;
+    const sizePiece = 20;
+    for( let i = 0; i < piecesMax; i++ ) {
+        if( i < pieces ) {
+            spritesheet.drawScaledSprite('piece', 0, X+i*sizePiece*2-sizePiece+3, Y-sizePiece+4, scale);
+        } else {
+            stroke(0);
+            fill(151);
+            ellipse(X+i*sizePiece*2,Y,sizePiece);
+        }
+    }
 }
 
 let canDraw = true;
@@ -345,6 +377,18 @@ function isCurrentCase(position) {
     return curCase.value === curSelectedType;
 }
 
+function shapeAlreadyAdded() {
+    // check if a case with current turn has already been added in board
+    for( let j = 0; j< 11; j++) {
+        for( let i = 0; i< 11; i++) {
+            if( board[i][j].turn === turn ) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 function addCurrentCase() {
     const overCase = mouseOverCase();
     if( overCase === null ) {
@@ -353,6 +397,13 @@ function addCurrentCase() {
     }
     if( !canDraw ) {
         uiManager.addLogger("Cannot draw this shape here");
+        return;
+    }
+    if( shapeAlreadyAdded() ) {
+        uiManager.addLogger("Shape already added for this turn");
+        setTimeout(function() {
+            uiManager.addLogger("Please click Next or Undo");
+        }, 1500);
         return;
     }
     if( addShape() ) {
