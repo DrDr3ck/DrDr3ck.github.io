@@ -32,26 +32,108 @@ function shuffleArray(array) {
     }
 }
 
+const EMPTYCASE = ' ';
+
+const SIMPLE_SQUARE = ["#"];
+const GOLDEN_L = [["G"," "],["G","G"]];
+const BIG_L = [["#","#","#"],["#","#"," "]];
+const GOLDEN_I = [["G"],["G"]];
+const SIMPLE_PLUS = [[" ","#"," "],["#","#","#"],[" ","#"," "]];
+const GOLDEN_DIAG = [["G"," "],[" ","G"]];
+const SIMPLE_S = [["# "," "],["#","#"],[" ","#"]];
+
 let xBoard = 87;
 let yBoard = 65;
 let sizeBoard = 58.8; 
 
-const board = [];
-for( let i = 0; i< 11; i++) {
-    board.push("...........".split(''));
+/**
+ * Creates a board of type A or B
+ * @param type 
+ * @returns created board array
+ */
+function createBoard(type) {
+    const b = [];
+    for( let j = 0; j< 11; j++) {
+        const row = [];
+        for( let i = 0; i< 11; i++) {
+            row.push({turn: -1, value: EMPTYCASE});
+        }    
+        b.push(row);
+    }
+    if( type === "A") {
+        b[3][1].value = "M"; // montagne
+        b[8][2].value = "M"; // montagne
+        b[5][5].value = "M"; // montagne
+        b[2][8].value = "M"; // montagne
+        b[7][9].value = "M"; // montagne
+    }
+    return b;
 }
-board[3][8] = 0;
+
+const board = createBoard("A");
 console.log(board);
 
 function nextClicked() {
-	
+    turn++;
+    nextButton.enabled = false;
+    undoButton.enabled = false;
 }
 
-let curCaseCursor = 0;
+function undoClicked() {
+    // remove shape of current turn
+    for( let j = 0; j< 11; j++) {
+        for( let i = 0; i< 11; i++) {
+            if( board[i][j].turn === turn ) {
+                board[i][j].turn = -1;
+                board[i][j].value = EMPTYCASE;
+            }
+        }
+    }
+    nextButton.enabled = false;
+    undoButton.enabled = false;
+}
+
+let curSelectedShape = SIMPLE_SQUARE;
+
+function turnShape() {
+    const newShape = [];
+    const newWidth = curSelectedShape[0].length;
+    const newHeight = curSelectedShape.length;
+    for(let i=0; i < newWidth; i++ ) {
+        const row = [];
+        for(let j=0; j < newHeight; j++ ) {
+            row.push(curSelectedShape[j][i]);
+        }
+        newShape.push(row);
+    }
+    curSelectedShape = newShape;
+    flipShape();
+}
+
+function flipShape() {
+    const shape = curSelectedShape;
+    for(let i=0; i < shape.length;i++) {
+        const row = shape[i];
+        for(let j=0; j < row.length/2;j++) {
+            console.log(`row[${i}]: switch ${j} with ${row.length-j-1}`);
+            const tmp = row[j];
+            row[j] = row[row.length-j-1];
+            row[row.length-j-1] = tmp;
+        }
+    }
+    curSelectedShape = shape;
+}
+
+let turn = 0;
+
+let curSelectedType = 0;
 
 const nextButton = new BButton(window_width - 80 - 400*scale, window_height - 100, "NEXT", nextClicked);
 nextButton.setTextSize(45*scale);
 nextButton.w = 400*scale;
+const undoButton = new BButton(window_width - 80 - 400*scale, window_height - 30, "UNDO", undoClicked);
+undoButton.setTextSize(45*scale);
+undoButton.w = 400*scale;
 
 function preload() {
 	spritesheet.addSpriteSheet('board', './board.png', 700, 697);
@@ -65,25 +147,26 @@ function setup() {
 	frameRate(60);
 
 	uiManager.addLogger("Cartographer board");
-	uiManager.addLogger(`Screen size: ${window.screen.width.toString()}x${window.screen.height.toString()}`);
 	lastTime = Date.now();
 
     const forestButton =new BImageButton(830, 60, spritesheet.getImage('cases', 0), ()=>{
-        curCaseCursor = 0;
+        curSelectedType = 0;
     });
     const cityButton =new BImageButton(830, 60+sizeBoard+5, spritesheet.getImage('cases', 1), ()=>{
-        curCaseCursor = 1;
+        curSelectedType = 1;
     });
     const fieldButton =new BImageButton(830, 60+(sizeBoard+5)*2, spritesheet.getImage('cases', 2), ()=>{
-        curCaseCursor = 2;
+        curSelectedType = 2;
     });
     const waterButton =new BImageButton(830, 60+(sizeBoard+5)*3, spritesheet.getImage('cases', 3), ()=>{
-        curCaseCursor = 3;
+        curSelectedType = 3;
     });
     const monsterButton =new BImageButton(830, 60+(sizeBoard+5)*4, spritesheet.getImage('cases', 4), ()=>{
-        curCaseCursor = 4;
+        curSelectedType = 4;
     });
-    uiManager.setUI([forestButton, cityButton, fieldButton, waterButton, monsterButton, nextButton]);
+    uiManager.setUI([forestButton, cityButton, fieldButton, waterButton, monsterButton, nextButton, undoButton]);
+    nextButton.enabled = false;
+    undoButton.enabled = false;
 }
 
 function mouseOverCase() {
@@ -106,10 +189,13 @@ function drawBoard() {
     for( let j = 0; j<11; j++ ) {
         for( let i = 0; i < 11; i++) {
             if( !isEmptyCase({X:i, Y:j}) ) {
-                spritesheet.drawScaledSprite('cases', board[i][j], xBoard+sizeBoard*i, yBoard+sizeBoard*j, scale);
+                spritesheet.drawScaledSprite('cases', board[i][j].value, xBoard+sizeBoard*i, yBoard+sizeBoard*j, scale);
             }
             stroke(0);
             noFill();
+            if( toggleDebug && board[i][j].value === "M" ) {
+                fill(0);
+            }
             rect(xBoard+sizeBoard*i, yBoard+sizeBoard*j, sizeBoard, sizeBoard);
         }
     }
@@ -119,38 +205,101 @@ function drawBoard() {
         textAlign(CENTER, CENTER);
         textSize(25);
         fill(25);
-        text(overCase.X+1, 330,770);	
-        text(letters[overCase.Y], 300,770);	
+        if( toggleDebug ) {
+            text(overCase.X, 300,770);	
+            text(overCase.Y, 330,770);	
+        } else {
+            text(overCase.X+1, 330,770);	
+            text(letters[overCase.Y], 300,770);	
+        }
 
-        spritesheet.drawScaledSprite('cases', curCaseCursor, xBoard+sizeBoard*overCase.X, yBoard+sizeBoard*overCase.Y, scale);
-        if( !isEmptyCase(overCase)) {
-            stroke(250,50,50);
-            strokeWeight(4);
-            noFill();
-            rect(xBoard+sizeBoard*overCase.X, yBoard+sizeBoard*overCase.Y, sizeBoard, sizeBoard);
-            strokeWeight(1);
+        // TODO: check if shape is OUT of the board
+        drawShape(overCase.X, overCase.Y);
+    }
+
+    stroke(255,228,180);
+    noFill();
+    strokeWeight(2);
+    rect(830, 60+(sizeBoard+5)*curSelectedType, sizeBoard, sizeBoard);
+    strokeWeight(1);
+}
+
+let canDraw = true;
+
+function drawShape(X,Y) {
+    canDraw = true;
+    const shape = curSelectedShape;
+    for(let i=0; i < shape.length;i++) {
+        const row = shape[i];
+        for(let j=0; j < row.length;j++) {
+            if( row[j] === " ") {
+                continue;
+            }
+            const curX = X+i;
+            const curY = Y+j;
+            spritesheet.drawScaledSprite('cases', curSelectedType, xBoard+sizeBoard*curX, yBoard+sizeBoard*curY, scale);
+            if( !isEmptyCase({X:curX, Y:curY})) {
+                stroke(250,50,50);
+                strokeWeight(4);
+                noFill();
+                rect(xBoard+sizeBoard*curX, yBoard+sizeBoard*curY, sizeBoard, sizeBoard);
+                strokeWeight(1);
+                canDraw = false;
+            }
         }
     }
 }
 
+function addShape() {
+    const overCase = mouseOverCase();
+    if( overCase === null ) {
+        return false;
+    }
+    const shape = curSelectedShape;
+    for(let i=0; i < shape.length;i++) {
+        const row = shape[i];
+        for(let j=0; j < row.length;j++) {
+            if( row[j] === " ") {
+                continue;
+            }
+            const curX = overCase.X+i;
+            const curY = overCase.Y+j;
+            board[curX][curY].value = curSelectedType;
+            board[curX][curY].turn = turn;    
+        }
+    }
+    return true;
+}
+
 function isEmptyCase(position) {
-    const curCase = board[position.X][position.Y]
-    return curCase === '.';
+    if( position.X >= board.length ) {
+        return 0;
+    }
+    const curCase = board[position.X][position.Y];
+    if( !curCase ) {
+        return false;
+    }
+    return curCase.value === EMPTYCASE;
 }
 
 function isCurrentCase(position) {
     const curCase = board[position.X][position.Y]
-    return curCase === curCaseCursor;
+    return curCase.value === curSelectedType;
 }
 
 function addCurrentCase() {
     const overCase = mouseOverCase();
-    if( overCase ) {
-        if( isEmptyCase(overCase) ) {
-            board[overCase.X][overCase.Y] = curCaseCursor;
-        } else if( isCurrentCase(overCase) ) {
-            board[overCase.X][overCase.Y] = '.';
-        }
+    if( overCase === null ) {
+        // out of board
+        return;
+    }
+    if( !canDraw ) {
+        uiManager.addLogger("Cannot draw this shape here");
+        return;
+    }
+    if( addShape() ) {
+        nextButton.enabled = true;
+        undoButton.enabled = true;
     }
 }
 
@@ -199,6 +348,30 @@ function mouseReleased() {
 function keyPressed() {
 	if (key === "D") {
 		toggleDebug = !toggleDebug;
+        if( toggleDebug ) {
+            uiManager.addLogger(`Screen size: ${window.screen.width.toString()}x${window.screen.height.toString()}`);
+        }
 	}
+
+    if (key === "B") {
+        console.log(board);
+    }
+
+    if (key === "N") {
+        curSelectedShape = SIMPLE_S;
+    }
+
+    if( key === "t" ) {
+        // tourner la forme de 90 degres
+        turnShape();
+    }
+    if( key === "r" || key === "f" ) {
+        // retourner la forme (miroir)
+        flipShape();
+        if( curSelectedShape.length < curSelectedShape[0].length ) {
+            turnShape();
+            turnShape();
+        }
+    }
 }
 
