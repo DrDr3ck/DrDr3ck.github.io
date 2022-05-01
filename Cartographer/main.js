@@ -76,6 +76,10 @@ function seasonMaxSum() {
 	}
 }
 
+function boardClicked() {
+	window.open("./board.html");
+}
+
 // add a card or switch to next season or end the party
 function nextClicked() {
 	delta = 0;
@@ -118,15 +122,18 @@ function nextClicked() {
 }
 
 const startButton = new BButton(80, window_height - 100, "START", startClicked);
+const boardButton = new BButton(window_width - 80 - 400*scale, window_height - 100, "E-MAP", boardClicked);
 const nextButton = new BButton(window_width - 80 - 400*scale, window_height - 100, "NEXT", nextClicked);
 const newSeason = new BButton(window_width - 80 - 400*scale, window_height/2+40*scale, "SEASON", nextClicked);
 startButton.setTextSize(45*scale);
 startButton.w = 400*scale;
+boardButton.setTextSize(45*scale);
+boardButton.w = 400*scale;
 nextButton.setTextSize(45*scale);
 nextButton.w = 400*scale;
 newSeason.setTextSize(45*scale);
 newSeason.w = 400*scale;
-const menu = [startButton];
+const menu = [startButton, boardButton];
 uiManager.setUI(menu);
 
 
