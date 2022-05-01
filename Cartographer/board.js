@@ -35,10 +35,6 @@ function shuffleArray(array) {
     }
 }
 
-const EMPTYCASE = ' ';
-const FORESTCASE = 0;
-const MONSTERCASE = 4;
-
 const SIMPLE_SQUARE = [["#"]];
 const GOLDEN_L = [["G","G"],[" ","G"]];
 const BIG_L = [["#","#"],["#","#"],["# "," "]];
@@ -111,15 +107,6 @@ function createBoard(type) {
 
 const board = createBoard("A");
 
-function neighborhood(i,j) {
-    let count = 0;
-    if( board[i-1][j].value !== EMPTYCASE ) count++;
-    if( board[i+1][j].value !== EMPTYCASE ) count++;
-    if( board[i][j-1].value !== EMPTYCASE ) count++;
-    if( board[i][j+1].value !== EMPTYCASE ) count++;
-    return count;
-}
-
 /**
  * Returns true if a monster os next to the given case position
  */
@@ -140,6 +127,11 @@ function hasMonster(i,j) {
 
 let monsters = 0;
 
+function hasDecret(decretName) {
+    // TODO
+    return false;
+}
+
 function nextClicked() {
     // check if a mountain is closed:
     for( let j = 0; j< 11; j++) {
@@ -147,7 +139,7 @@ function nextClicked() {
             // find a mountain
             if( board[i][j].value === "M" ) {
                 // check neighborhood
-                if( neighborhood(i,j) === 4 ) {
+                if( neighborhood(board,i,j) === 4 ) {
                     board[i][j].value = "-M";
                     pieces++;
                 }
@@ -171,6 +163,11 @@ function nextClicked() {
                 }
             }
         }
+    }
+
+    // count decrets !!
+    if( hasDecret("Frontieres") ) {
+        // const result = countFrontieres(board);
     }
 
     turn++;
