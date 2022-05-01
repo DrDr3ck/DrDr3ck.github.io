@@ -36,6 +36,8 @@ function shuffleArray(array) {
 }
 
 const EMPTYCASE = ' ';
+const FORESTCASE = 0;
+const MONSTERCASE = 4;
 
 const SIMPLE_SQUARE = [["#"]];
 const GOLDEN_L = [["G","G"],[" ","G"]];
@@ -64,11 +66,15 @@ const allShapes = [
 
 function chooseShape(index) {
     curSelectedShape = allShapes[index];
+    buttons.forEach(b=>b.enabled=true);
 }
 
 let xBoard = 87;
 let yBoard = 65;
 let sizeBoard = 58.8; 
+
+let useTemple = false;
+let templesPosition = [];
 
 /**
  * Creates a board of type A or B
@@ -90,23 +96,90 @@ function createBoard(type) {
         b[5][5].value = "M"; // montagne
         b[2][8].value = "M"; // montagne
         b[7][9].value = "M"; // montagne
+
+        templesPosition = [
+            {X:1,Y:2},
+            {X:5,Y:1},
+            {X:9,Y:2},
+            {X:1,Y:8},
+            {X:5,Y:9},
+            {X:9,Y:8},
+        ];
     }
     return b;
 }
 
 const board = createBoard("A");
 
+function neighborhood(i,j) {
+    let count = 0;
+    if( board[i-1][j].value !== EMPTYCASE ) count++;
+    if( board[i+1][j].value !== EMPTYCASE ) count++;
+    if( board[i][j-1].value !== EMPTYCASE ) count++;
+    if( board[i][j+1].value !== EMPTYCASE ) count++;
+    return count;
+}
+
+/**
+ * Returns true if a monster os next to the given case position
+ */
+function hasMonster(i,j) {
+    if( i > 0 ) {
+        if( board[i-1][j].value === MONSTERCASE ) return true;
+    }
+    if( i < board.length-1 ) {
+        if( board[i+1][j].value === MONSTERCASE ) return true;
+    }
+    if( j > 0 ) {
+        if( board[i][j-1].value === MONSTERCASE ) return true;
+    }
+    if( j < board[i].length-1 ) {
+        if( board[i][j+1].value === MONSTERCASE ) return true;
+    }
+}
+
+let monsters = 0;
+
 function nextClicked() {
-    // TODO: check if a mountain is closed
+    // check if a mountain is closed:
+    for( let j = 0; j< 11; j++) {
+        for( let i = 0; i< 11; i++) {
+            // find a mountain
+            if( board[i][j].value === "M" ) {
+                // check neighborhood
+                if( neighborhood(i,j) === 4 ) {
+                    board[i][j].value = "-M";
+                    pieces++;
+                }
+            }
+        }
+    }
 
     // check if a golden shape has been used
     if( curSelectedShape[0].some(s=>s==="G") ) {
         pieces++;
     }
 
+    // count monsters
+    monsters = 0;
+    for( let j = 0; j< 11; j++) {
+        for( let i = 0; i< 11; i++) {
+            // find a monster
+            if( board[i][j].value === EMPTYCASE ) {
+                if( hasMonster(i,j) ) {
+                    monsters++;
+                }
+            }
+        }
+    }
+
     turn++;
     nextButton.enabled = false;
     undoButton.enabled = false;
+    curSelectedShape = null;
+    buttons.forEach(b=>b.enabled=false);
+
+    useTemple = false;
 }
 
 function undoClicked() {
@@ -123,9 +196,12 @@ function undoClicked() {
     undoButton.enabled = false;
 }
 
-let curSelectedShape = SIMPLE_SQUARE;
+let curSelectedShape = null;
 
 function turnShape() {
+    if( !curSelectedShape ) {
+        return;
+    }
     const newShape = [];
     const newWidth = curSelectedShape[0].length;
     const newHeight = curSelectedShape.length;
@@ -141,6 +217,9 @@ function turnShape() {
 }
 
 function flipShape(mayTurn=true) {
+    if( !curSelectedShape ) {
+        return;
+    }
     const shape = curSelectedShape;
     for(let i=0; i < shape.length;i++) {
         const row = shape[i];
@@ -173,10 +252,13 @@ undoButton.w = 400*scale;
 function preload() {
 	spritesheet.addSpriteSheet('board', './board.png', 700, 697);
     spritesheet.addSpriteSheet('cases', './cases.png', 58, 58);
+    spritesheet.addSpriteSheet('temple', './temple.png', 58, 58);
     spritesheet.addSpriteSheet('icons', './icons.png', 60,60);
     spritesheet.addSpriteSheet('shapes', './shapes.png', 70,40);
     spritesheet.addSpriteSheet('piece', './piece.png', 33,33);
 }
+
+const buttons = [];
 
 function setup() {
 	canvas = createCanvas(window_width, window_height);
@@ -187,20 +269,23 @@ function setup() {
 	uiManager.addLogger("Cartographer board");
 	lastTime = Date.now();
 
-    const forestButton =new BImageButton(830, 60, spritesheet.getImage('cases', 0), ()=>{
+    const templeButton = new BImageButton(830, 65-sizeBoard-5, spritesheet.getImage('temple', 0), ()=>{
+        useTemple = !useTemple;
+    });
+    const forestButton =new BImageButton(830, 65, spritesheet.getImage('cases', 0), ()=>{
         curSelectedType = 0;
     });
-    const cityButton =new BImageButton(830, 60+sizeBoard+5, spritesheet.getImage('cases', 1), ()=>{
+    const cityButton =new BImageButton(830, 65+sizeBoard+5, spritesheet.getImage('cases', 1), ()=>{
         curSelectedType = 1;
     });
-    const fieldButton =new BImageButton(830, 60+(sizeBoard+5)*2, spritesheet.getImage('cases', 2), ()=>{
+    const fieldButton =new BImageButton(830, 65+(sizeBoard+5)*2, spritesheet.getImage('cases', 2), ()=>{
         curSelectedType = 2;
     });
-    const waterButton =new BImageButton(830, 60+(sizeBoard+5)*3, spritesheet.getImage('cases', 3), ()=>{
+    const waterButton =new BImageButton(830, 65+(sizeBoard+5)*3, spritesheet.getImage('cases', 3), ()=>{
         curSelectedType = 3;
     });
-    const monsterButton =new BImageButton(830, 60+(sizeBoard+5)*4, spritesheet.getImage('cases', 4), ()=>{
-        curSelectedType = 4;
+    const monsterButton =new BImageButton(830, 65+(sizeBoard+5)*4, spritesheet.getImage('cases', 4), ()=>{
+        curSelectedType = MONSTERCASE;
     });
 
     const turnIcon =new BImageButton(780, 420, spritesheet.getImage('icons', 1), ()=>{
@@ -209,6 +294,8 @@ function setup() {
     const flipIcon =new BImageButton(780, 535, spritesheet.getImage('icons', 0), ()=>{
         flipShape();
     });
+
+    buttons.push(...[forestButton, cityButton, fieldButton, waterButton, monsterButton, turnIcon, flipIcon]);
 
     const shapeButtons = [];
     let X = 920;
@@ -225,9 +312,10 @@ function setup() {
         shapeButtons.push(shapeIcon);
     }
 
-    uiManager.setUI([forestButton, cityButton, fieldButton, waterButton, monsterButton, nextButton, undoButton, turnIcon, flipIcon, ...shapeButtons]);
+    uiManager.setUI([...buttons, templeButton, nextButton, undoButton, ...shapeButtons]);
     nextButton.enabled = false;
     undoButton.enabled = false;
+    buttons.forEach(b=>b.enabled = false);
 }
 
 function mouseOverCase() {
@@ -251,11 +339,18 @@ function drawBoard() {
         for( let i = 0; i < 11; i++) {
             if( !isEmptyCase({X:i, Y:j}) ) {
                 spritesheet.drawScaledSprite('cases', board[i][j].value, xBoard+sizeBoard*i, yBoard+sizeBoard*j, scale);
+                if( board[i][j].value === "-M") {
+                    stroke(0);
+                    fill(51);
+                    ellipse(xBoard+sizeBoard*i+sizeBoard/2,yBoard+sizeBoard*j+sizeBoard/2+12,22);
+                }
             }
             stroke(0);
             noFill();
             if( toggleDebug && board[i][j].value === "M" ) {
                 fill(0);
+            } else if( toggleDebug && templesPosition.findIndex(pos=>pos.X===i && pos.Y===j) >= 0 ) {
+                fill(250,150,0);
             }
             rect(xBoard+sizeBoard*i, yBoard+sizeBoard*j, sizeBoard, sizeBoard);
         }
@@ -264,8 +359,14 @@ function drawBoard() {
     textSize(25);
     fill(125);
     textAlign(LEFT, CENTER);
-    text("Shape", 770, 510);
-    drawShape(13,6, false);
+    if( curSelectedShape ) {
+        text("Shape", 770, 510);
+        drawShape(13,6, false);
+    } else {
+        text("Choose a Shape", 770, 510);
+    }
+
+    text(`${monsters.toString()} x`,770,340);
 
     // draw cursor on board
     const overCase = mouseOverCase();
@@ -293,8 +394,22 @@ function drawBoard() {
     stroke(255,228,180);
     noFill();
     strokeWeight(2);
-    rect(830, 60+(sizeBoard+5)*curSelectedType, sizeBoard, sizeBoard);
+    rect(830, 65+(sizeBoard+5)*curSelectedType, sizeBoard, sizeBoard);
+
+    // temple ?
+    if( useTemple ) {
+        rect(830, 65-(sizeBoard+5), sizeBoard, sizeBoard);
+        highlightTemples();
+    }
     strokeWeight(1);
+}
+
+function highlightTemples() {
+    templesPosition.forEach(pos=>{
+        if( board[pos.X][pos.Y].value === EMPTYCASE ) {
+            rect(xBoard+sizeBoard*pos.X, yBoard+sizeBoard*pos.Y, sizeBoard, sizeBoard);
+        }
+    });
 }
 
 function drawPieces() {
@@ -313,10 +428,15 @@ function drawPieces() {
 }
 
 let canDraw = true;
+let onTemple = false;
 
 function drawShape(X,Y,checkDraw=true) {
+    if( !curSelectedShape ) {
+        return;
+    }
     if( checkDraw ) {
         canDraw = true;
+        onTemple = false;
     }
     const shape = curSelectedShape;
     for(let i=0; i < shape.length;i++) {
@@ -336,13 +456,27 @@ function drawShape(X,Y,checkDraw=true) {
                 strokeWeight(1);
                 canDraw = false;
             }
+            if( checkDraw && useTemple ) {
+                if( templesPosition.findIndex(pos=>pos.X===curX && pos.Y===curY) >= 0 ) {
+                    onTemple = true;
+                }
+            }
         }
     }
 }
 
 function addShape() {
+    if( !curSelectedShape ) {
+        return false;
+    }
     const overCase = mouseOverCase();
     if( overCase === null ) {
+        return false;
+    }
+    console.log("usetemple", useTemple);
+    console.log("onTemple", onTemple);
+    if( useTemple && !onTemple ) {
+        uiManager.addLogger("Shape should be on a temple");
         return false;
     }
     const shape = curSelectedShape;
@@ -390,6 +524,9 @@ function shapeAlreadyAdded() {
 }
 
 function addCurrentCase() {
+    if( !curSelectedShape ) {
+        return;
+    }
     const overCase = mouseOverCase();
     if( overCase === null ) {
         // out of board
@@ -458,7 +595,7 @@ function keyPressed() {
 	if (key === "D") {
 		toggleDebug = !toggleDebug;
         if( toggleDebug ) {
-            uiManager.addLogger(`Screen size: ${window.screen.width.toString()}x${window.screen.height.toString()}`);
+            uiManager.addLogger(`Screen size: ${window.screen.availWidth.toString()}x${window.screen.availHeight.toString()}`);
         }
 	}
 
