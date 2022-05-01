@@ -35,12 +35,33 @@ function shuffleArray(array) {
 const EMPTYCASE = ' ';
 
 const SIMPLE_SQUARE = ["#"];
-const GOLDEN_L = [["G"," "],["G","G"]];
-const BIG_L = [["#","#","#"],["#","#"," "]];
-const GOLDEN_I = [["G"],["G"]];
+const GOLDEN_L = [["G","G"],[" ","G"]];
+const BIG_L = [["#","#"],["#","#"],["# "," "]];
+const GOLDEN_I = [["G","G"]];
+const GOLDEN_BIGI = [["G","G","G"]];
 const SIMPLE_PLUS = [[" ","#"," "],["#","#","#"],[" ","#"," "]];
 const GOLDEN_DIAG = [["G"," "],[" ","G"]];
-const SIMPLE_S = [["# "," "],["#","#"],[" ","#"]];
+const SIMPLE_S = [["#","#"," "],[" ","#","#"]];
+const LONG_DIAG = [["#"," "," "],[" ","#"," "],[" "," ","#"]];
+const BIG_T = [["#","#","#"],[" ","#"," "],[" ","#"," "]];
+const LONG_S = [[" ","#"],[" ","#"],["#","#"],["#"," "]];
+const SIMPLE_LINE = [["#"],["#"],["#"],["#"]];
+const SIMPLE_T = [["#","#","#"],[" ","#"," "]];
+const SIMPLE_L = [["# "," "],["#"," "],["#","#"]];
+const LONG_L = [["#","#","#"],["#"," "," "],["#"," "," "]];
+const STAIRS = [[" "," ","#"],[" ","#","#"],["#","#"," "]];
+const SIMPLE_U = [["#","#","#"],["#"," ","#"]];
+const DOUBLE_I = [["#","#"],[" "," "],["#","#"]];
+
+const allShapes = [
+    GOLDEN_L, GOLDEN_I, GOLDEN_DIAG, GOLDEN_BIGI, BIG_T, SIMPLE_LINE,
+    LONG_S, SIMPLE_T, SIMPLE_L, SIMPLE_SQUARE, LONG_L, BIG_L,
+    SIMPLE_PLUS, SIMPLE_S, STAIRS, LONG_DIAG, SIMPLE_U, DOUBLE_I
+];
+
+function chooseShape(index) {
+    curSelectedShape = allShapes[index];
+}
 
 let xBoard = 87;
 let yBoard = 65;
@@ -71,7 +92,6 @@ function createBoard(type) {
 }
 
 const board = createBoard("A");
-console.log(board);
 
 function nextClicked() {
     turn++;
@@ -107,21 +127,26 @@ function turnShape() {
         newShape.push(row);
     }
     curSelectedShape = newShape;
-    flipShape();
+    flipShape(false);
 }
 
-function flipShape() {
+function flipShape(mayTurn=true) {
     const shape = curSelectedShape;
     for(let i=0; i < shape.length;i++) {
         const row = shape[i];
         for(let j=0; j < row.length/2;j++) {
-            console.log(`row[${i}]: switch ${j} with ${row.length-j-1}`);
             const tmp = row[j];
             row[j] = row[row.length-j-1];
             row[row.length-j-1] = tmp;
         }
     }
     curSelectedShape = shape;
+    if( mayTurn ) {
+        if( curSelectedShape.length < curSelectedShape[0].length ) {
+            turnShape();
+            turnShape();
+        }
+    }
 }
 
 let turn = 0;
@@ -138,6 +163,8 @@ undoButton.w = 400*scale;
 function preload() {
 	spritesheet.addSpriteSheet('board', './board.png', 700, 697);
     spritesheet.addSpriteSheet('cases', './cases.png', 58, 58);
+    spritesheet.addSpriteSheet('icons', './icons.png', 60,60);
+    spritesheet.addSpriteSheet('shapes', './shapes.png', 70,40);
 }
 
 function setup() {
@@ -164,7 +191,30 @@ function setup() {
     const monsterButton =new BImageButton(830, 60+(sizeBoard+5)*4, spritesheet.getImage('cases', 4), ()=>{
         curSelectedType = 4;
     });
-    uiManager.setUI([forestButton, cityButton, fieldButton, waterButton, monsterButton, nextButton, undoButton]);
+
+    const turnIcon =new BImageButton(830, 640, spritesheet.getImage('icons', 1), ()=>{
+        turnShape();
+    });
+    const flipIcon =new BImageButton(830, 720, spritesheet.getImage('icons', 0), ()=>{
+        flipShape();
+    });
+
+    const shapeButtons = [];
+    let X = 920;
+    let Y = 60;
+    for( let i=0; i < 18; i++ ) {
+        shapeIcon = new BImageButton(X, Y, spritesheet.getImage('shapes', i), ()=>{
+            chooseShape(i);
+        });
+        X += 80;
+        if( X >= 1350 ) {
+            X=920;
+            Y+=50;
+        }
+        shapeButtons.push(shapeIcon);
+    }
+
+    uiManager.setUI([forestButton, cityButton, fieldButton, waterButton, monsterButton, nextButton, undoButton, turnIcon, flipIcon, ...shapeButtons]);
     nextButton.enabled = false;
     undoButton.enabled = false;
 }
@@ -200,6 +250,12 @@ function drawBoard() {
         }
     }
 
+    textSize(25);
+    fill(125);
+    textAlign(LEFT, CENTER);
+    text("Shape", 770, 495);
+    drawShape(14,6, false);
+
     const overCase = mouseOverCase();
     if( overCase !== null ) {
         textAlign(CENTER, CENTER);
@@ -226,8 +282,10 @@ function drawBoard() {
 
 let canDraw = true;
 
-function drawShape(X,Y) {
-    canDraw = true;
+function drawShape(X,Y,checkDraw=true) {
+    if( checkDraw ) {
+        canDraw = true;
+    }
     const shape = curSelectedShape;
     for(let i=0; i < shape.length;i++) {
         const row = shape[i];
@@ -238,7 +296,7 @@ function drawShape(X,Y) {
             const curX = X+i;
             const curY = Y+j;
             spritesheet.drawScaledSprite('cases', curSelectedType, xBoard+sizeBoard*curX, yBoard+sizeBoard*curY, scale);
-            if( !isEmptyCase({X:curX, Y:curY})) {
+            if( checkDraw && !isEmptyCase({X:curX, Y:curY})) {
                 stroke(250,50,50);
                 strokeWeight(4);
                 noFill();
@@ -368,10 +426,6 @@ function keyPressed() {
     if( key === "r" || key === "f" ) {
         // retourner la forme (miroir)
         flipShape();
-        if( curSelectedShape.length < curSelectedShape[0].length ) {
-            turnShape();
-            turnShape();
-        }
     }
 }
 
