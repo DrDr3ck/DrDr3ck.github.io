@@ -82,6 +82,65 @@ function countChaudrons(board) {
 }
 
 /**
+ * 3 points pour chaque diagonale de cases remplies du bord gauche au bord du bas
+ */
+function countRouteBrisee(board) {
+    let count = 0;
+    for( let i = 0; i< board.length; i++) {
+        let all = true;
+        for( let j=0; j < board.length-i; j++) {
+            if( board[i+j][j].value === EMPTYCASE ) {
+                all = false;
+                break;
+            }
+        }
+        if( all ) {
+            count+=3;
+        }
+    }
+    return count;
+}
+
+function getBiggerSquare(board, i, j) {
+    let size = 0;
+    if( board[i][j].value === EMPTYCASE ) {
+        return size;
+    }
+    size++;
+    while( i+size < board.length && j+size < board.length ) {
+        if( board[i+size][j+size].value === EMPTYCASE ) {
+            return size;
+        }
+        for( let ij=0; ij<=size; ij++) {
+            if( board[i+size][j+ij].value === EMPTYCASE ) {
+                return size;
+            }
+            if( board[i+ij][j+size].value === EMPTYCASE ) {
+                return size;
+            }
+        }
+        size++;
+    }
+    return size;
+}
+
+/**
+ * 3 points pour chaque case constituant l un des bords du plus grand carre rempli de cases
+ */
+function BaronniePerdue(board) {
+    let biggerSquare = 0;
+    for( let i = 0; i< board.length; i++) {
+        for( let j=0; j < board.length; j++) {
+            const curSquare = getBiggerSquare(board,i,j);
+            if( curSquare > biggerSquare ) {
+                biggerSquare = curSquare;
+            }
+        }
+    }
+    return biggerSquare*3;
+}
+
+/**
  * 1 point par case foret completement entourée (board compris)
  */
 function countArbreVigie(board) {
@@ -109,6 +168,13 @@ function countBoisSentinelle(board) {
         }
     }
     return count;
+}
+
+/**
+ * 3 par montagne connectées par des forets
+ */
+function ForetHautsPlateaux(board) {
+    return 0;
 }
 
 /**
@@ -185,6 +251,43 @@ function countGrenierDore(board, templePositions) {
     return count;
 }
 
+/**
+ * 3 par lacs non connectés à des champs et non aux bords
+ * 3 par champs non connectés à des lacs et non aux bords
+ */
+function countMonteeDesEaux(board) {
+    return 0;
+}
+
+/// VILLES
+/**
+ * 1 par case de la plus grande cité non connecté à une montagne
+ */
+function countGrandeCite(board) {
+    return 0;
+}
+
+/**
+ * 3 pour chaque cité connectés à au moins 3 types de terrains differents
+ */
+function countPlainesOrVert(board) {
+    return 0;
+}
+
+/**
+ * 8 par cité de 6 cases ou plus
+ */
+function countPlacesFortes(board) {
+    return 0;
+}
+
+/**
+ * 2 par case de la 2e plus grande cité
+ */
+function countRemparts(board) {
+    return 0;
+}
+
 //*************************************************/
 
 function expectToBe(curResult,expectedResult) {
@@ -200,6 +303,24 @@ function test() {
             [{value:" "}, {value: " "}, {value: "1"}],
             [{value:"M"}, {value: "0"}, {value: "1"}]
         ]), 2
+    );
+
+    expectToBe(countRouteBrisee(
+        [
+            [{value:"-M"}, {value: " "}, {value: " "}, {value: " "}],
+            [{value:" "}, {value: "4"}, {value: " "}, {value: " "}],
+            [{value:"1"}, {value: "2"}, {value: "2"}, {value: " "}],
+            [{value:"M"}, {value: "2"}, {value: " "}, {value: "1"}]
+        ]), 9
+    );
+
+    expectToBe(BaronniePerdue(
+        [
+            [{value:"M"}, {value: "5"}, {value: "4"}, {value: "R"}],
+            [{value:" "}, {value: "4"}, {value: "2"}, {value: "A"}],
+            [{value:"1"}, {value: "2"}, {value: "2"}, {value: "F"}],
+            [{value:"M"}, {value: "2"}, {value: " "}, {value: "1"}]
+        ]), 9
     );
 
     expectToBe(countChaudrons(
