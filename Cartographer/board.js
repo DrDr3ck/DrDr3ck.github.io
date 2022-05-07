@@ -1,5 +1,5 @@
-const window_width = window.screen.availWidth > 1460 ? 1460 : window.screen.availWidth;
-const window_height = window.screen.availHeight > 800 ? 800 : window.screen.availHeight;
+const window_width = 1460; //window.screen.availWidth > 1280 ? 1280 : window.screen.availWidth;
+const window_height = 800; //window.screen.availHeight > 800 ? 800 : window.screen.availHeight;
 
 let scale = window_width < 800 ? .5 : 1;
 
