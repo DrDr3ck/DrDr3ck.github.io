@@ -26,6 +26,7 @@ let pieces = 0;
 const piecesMax = 14;
 
 let season = "Printemps";
+let seasontime = 8;
 
 /* Randomize array in-place using Durstenfeld shuffle algorithm */
 function shuffleArray(array) {
@@ -70,25 +71,25 @@ const water = "water";
 const monster = "monster";
 
 const explorations = [
-    {title: "Hameau", type: [city]},
-    {title: "Terres Agricoles", type: [field]},
-    {title: "Foret Oubliee", type: [forest]},
-    {title: "Grande Riviere", type: [water]},
-    {title: "Marecage", type: [forest, water]},
-    {title: "Village de Pecheurs", type: [city, water]},
-    {title: "Village Perche", type: [city, forest]},
-    {title: "Exploitation Agricole", type: [city, field, monster]},
-    {title: "Verger", type: [forest, field]},
-    {title: "Terres Fracturees", type: [forest, city, field, water, monster]},
-    {title: "Ruisseau Preserve", type: [field, water]},
-    {title: "Hameau", type: [city]},
-    {title: "Terres Agricoles", type: [field]},
-    {title: "Foret Oubliee", type: [forest]},
-    {title: "Grande Riviere", type: [water]},
+    {title: "Hameau", type: [city], time: 1},
+    {title: "Terres Agricoles", type: [field], time: 1},
+    {title: "Foret Oubliee", type: [forest], time: 1},
+    {title: "Grande Riviere", type: [water], time: 1},
+    {title: "Marecage", type: [forest, water], time: 2},
+    {title: "Village de Pecheurs", type: [city, water], time: 2},
+    {title: "Village Perche", type: [city, forest], time: 2},
+    {title: "Exploitation Agricole", type: [city, field, monster], time: 2},
+    {title: "Verger", type: [forest, field], time: 2},
+    {title: "Terres Fracturees", type: [forest, city, field, water, monster], time: 0},
+    {title: "Ruisseau Preserve", type: [field, water], time: 2},
+    {title: "Hameau", type: [city], time: 1},
+    {title: "Terres Agricoles", type: [field], time: 1},
+    {title: "Foret Oubliee", type: [forest], time: 1},
+    {title: "Grande Riviere", type: [water], time: 1},
     // {title: "Offensive de Kobolds", type: [monster]},
-    {title: "Attaque de Gobelins", type: [monster]},
-    {title: "Raid de Gnolls", type: [monster]},
-    {title: "Assaut de Gobelours", type: [monster]}
+    {title: "Attaque de Gobelins", type: [monster], time: 0},
+    {title: "Raid de Gnolls", type: [monster], time: 0},
+    {title: "Assaut de Gobelours", type: [monster], time: 0}
 ];
 
 function enableTypeButtons(index) {
@@ -107,6 +108,7 @@ function enableTypeButtons(index) {
 
 function chooseShape(index) {
     curSelectedShape = allShapes[index];
+    curSelectedShapeIndex = index;
     buttons.forEach(b=>b.enabled=true);
 
     uiManager.addLogger(explorations[index].title);
@@ -221,10 +223,21 @@ function nextClicked() {
         // const result = countFrontieres(board);
     }
 
+    if( curSelectedType !== MONSTERCASE ) {
+        seasontime = Math.max(0, seasontime - explorations[curSelectedShapeIndex].time);
+    }
+
     turn++;
     nextButton.enabled = false;
     undoButton.enabled = false;
+    pointButton.visible = (seasontime <= 0);
     shapeButtons.forEach(s=>s.visible = true);
+    if( pointButton.visible ) {
+        shapeButtons.forEach(
+            s=>s.visible = false
+        );
+        pointsClicked();
+    }
     curSelectedShape = null;
     buttons.forEach(b=>b.enabled=false);
     curSelectedType = -1;
@@ -245,10 +258,12 @@ function undoClicked() {
     }
     nextButton.enabled = false;
     undoButton.enabled = false;
+    curSelectedShape = null;
     shapeButtons.forEach(s=>s.visible = true);
 }
 
 let curSelectedShape = null;
+let curSelectedShapeIndex = -1;
 
 function turnShape() {
     if( !curSelectedShape ) {
@@ -292,6 +307,7 @@ function flipShape(mayTurn=true) {
 
 function closeCurrentDialog() {
 	uiManager.setDialog(null);
+    shapeButtons.forEach(b=>b.visible = (season !== "The End"));
 }
 
 class PointsDialog extends Dialog {
@@ -310,15 +326,22 @@ class PointsDialog extends Dialog {
             if( season === "Printemps" ) {
                 points[0] = total;
                 season = "Ete";
+                seasontime = 8;
+                pointButton.visible = false;
             } else if( season === "Ete" ) {
                 points[1] = total;
                 season = "Automne";
+                seasontime = 7;
+                pointButton.visible = false;
             } else if( season === "Automne" ) {
                 points[2] = total;
                 season = "Hiver";
+                seasontime = 6;
+                pointButton.visible = false;
             } else {
                 points[3] = total;
                 season = "The End";
+                seasontime = 0;
                 pointButton.visible = false;
             }
             closeCurrentDialog();
@@ -503,6 +526,7 @@ function setup() {
     uiManager.setUI([...buttons, templeButton, nextButton, undoButton, pointButton, ...shapeButtons]);
     nextButton.enabled = false;
     undoButton.enabled = false;
+    pointButton.visible = false;
     buttons.forEach(b=>b.enabled = false);
 
     typeButtons.forEach(b=>b.visible=false);
@@ -552,11 +576,13 @@ function drawBoard() {
     if( curSelectedShape ) {
         text("Shape", 770, 510);
         drawShape(13,6, false);
+    } else if( pointButton.visible ) {
+        text("End of Season", 770, 510);
     } else {
         text("Choose a Shape", 770, 510);
     }
 
-    text(`-${monsters.toString()}`,770,340);
+    text(-monsters,770,340);
 
     // draw cursor on board
     if( !uiManager.currentDialog ) {
@@ -606,7 +632,8 @@ function drawPoints() {
     stroke(0);
     textSize(32);
     textAlign(LEFT, TOP);
-    text(total, 400, 760);
+    text(total, 400, 10);
+    text(`${season} ${seasontime}`, 50, 10);
 }
 
 function highlightTemples() {
