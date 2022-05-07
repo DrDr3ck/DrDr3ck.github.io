@@ -60,9 +60,54 @@ const allShapes = [
     SIMPLE_PLUS, SIMPLE_S, STAIRS, LONG_DIAG, SIMPLE_U, DOUBLE_I
 ];
 
+// forestButton, cityButton, fieldButton, waterButton, monsterButton
+const forest = "forest";
+const city = "city";
+const field = "field";
+const water = "water";
+const monster = "monster";
+
+const explorations = [
+    {title: "Hameau", type: [city]},
+    {title: "Terres Agricoles", type: [field]},
+    {title: "Foret Oubliee", type: [forest]},
+    {title: "Grande Riviere", type: [water]},
+    {title: "Marecage", type: [forest, water]},
+    {title: "Village de Pecheurs", type: [city, water]},
+    {title: "Village Perche", type: [city, forest]},
+    {title: "Exploitation Agricole", type: [city, field, monster]},
+    {title: "Verger", type: [forest, field]},
+    {title: "Terres Fracturees", type: [forest, city, field, water, monster]},
+    {title: "Ruisseau Preserve", type: [field, water]},
+    {title: "Hameau", type: [city]},
+    {title: "Terres Agricoles", type: [field]},
+    {title: "Foret Oubliee", type: [forest]},
+    {title: "Grande Riviere", type: [water]},
+    // {title: "Offensive de Kobolds", type: [monster]},
+    {title: "Attaque de Gobelins", type: [monster]},
+    {title: "Raid de Gnolls", type: [monster]},
+    {title: "Assaut de Gobelours", type: [monster]}
+];
+
+function enableTypeButtons(index) {
+    const types = explorations[index].type;
+    curSelectedType = -1;
+    [forest,city,field,water,monster].forEach(
+        (type, i) => {
+            const isEnable = types.includes(type);
+            typeButtons[i].visible = isEnable;
+            if( isEnable && curSelectedType === -1) {
+                curSelectedType = i;
+            }
+        }
+    );
+}
+
 function chooseShape(index) {
     curSelectedShape = allShapes[index];
     buttons.forEach(b=>b.enabled=true);
+
+    enableTypeButtons(index);
 }
 
 let xBoard = 87;
@@ -255,6 +300,7 @@ function preload() {
     spritesheet.addSpriteSheet('piece', './piece.png', 33,33);
 }
 
+const typeButtons = [];
 const buttons = [];
 
 function setup() {
@@ -264,6 +310,7 @@ function setup() {
 	frameRate(60);
 
 	uiManager.addLogger("Cartographer board");
+    uiManager.addLogger("Please, select a shape");
 	lastTime = Date.now();
 
     const templeButton = new BImageButton(830, 65-sizeBoard-5, spritesheet.getImage('temple', 0), ()=>{
@@ -292,6 +339,7 @@ function setup() {
         flipShape();
     });
 
+    typeButtons.push(...[forestButton, cityButton, fieldButton, waterButton, monsterButton]);
     buttons.push(...[forestButton, cityButton, fieldButton, waterButton, monsterButton, turnIcon, flipIcon]);
 
     const shapeButtons = [];
