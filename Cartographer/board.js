@@ -25,6 +25,8 @@ let toggleDebug = false;
 let pieces = 0;
 const piecesMax = 14;
 
+let season = "Printemps";
+
 /* Randomize array in-place using Durstenfeld shuffle algorithm */
 function shuffleArray(array) {
     for (var i = array.length - 1; i > 0; i--) {
@@ -107,12 +109,16 @@ function chooseShape(index) {
     curSelectedShape = allShapes[index];
     buttons.forEach(b=>b.enabled=true);
 
+    uiManager.addLogger(explorations[index].title);
+
     enableTypeButtons(index);
 }
 
 let xBoard = 87;
 let yBoard = 65;
 let sizeBoard = 58.8; 
+
+let points = [0,0,0,0]; // 400, 760
 
 let useTemple = false;
 let templesPosition = [];
@@ -218,8 +224,11 @@ function nextClicked() {
     turn++;
     nextButton.enabled = false;
     undoButton.enabled = false;
+    shapeButtons.forEach(s=>s.visible = true);
     curSelectedShape = null;
     buttons.forEach(b=>b.enabled=false);
+    curSelectedType = -1;
+    typeButtons.forEach(b=>b.visible=false);
 
     useTemple = false;
 }
@@ -236,6 +245,7 @@ function undoClicked() {
     }
     nextButton.enabled = false;
     undoButton.enabled = false;
+    shapeButtons.forEach(s=>s.visible = true);
 }
 
 let curSelectedShape = null;
@@ -280,9 +290,140 @@ function flipShape(mayTurn=true) {
     }
 }
 
+function closeCurrentDialog() {
+	uiManager.setDialog(null);
+}
+
+class PointsDialog extends Dialog {
+	constructor(x, y, w, h) {
+		super(x, y, w, h);
+
+        this.components.forEach((c) => (c.visible = true));
+        const closeDialogButton = new BFloatingButton(512, 50, '\u2716', () => {
+            closeCurrentDialog();
+            delete this;
+        });
+        closeDialogButton.setTextSize(32);
+        this.confirmButton = new BButton(100,390,"Confirm",() => {
+            const total = this.decret1+this.decret2+pieces-monsters;
+            // ajouter les points et changer de saisons
+            if( season === "Printemps" ) {
+                points[0] = total;
+                season = "Ete";
+            } else if( season === "Ete" ) {
+                points[1] = total;
+                season = "Automne";
+            } else if( season === "Automne" ) {
+                points[2] = total;
+                season = "Hiver";
+            } else {
+                points[3] = total;
+                season = "The End";
+                pointButton.visible = false;
+            }
+            closeCurrentDialog();
+            delete this;
+        });
+        const plusDialogButton = new BFloatingButton(12, 50, '+', ()=>{
+            this.confirmButton.visible = true;
+        });
+        plusDialogButton.setTextSize(32);
+        this.components.push(closeDialogButton);
+        this.components.push(plusDialogButton);
+
+        const decret1Inc1Button = new BFloatingButton(12, 150, '+1', () => {
+            this.decret1++;
+            this.confirmButton.visible = false;
+        });
+        decret1Inc1Button.setTextSize(32);
+        this.components.push(decret1Inc1Button);
+        const decret1Inc5Button = new BFloatingButton(52, 150, '+5', () => {
+            this.decret1+=5;
+            this.confirmButton.visible = false;
+        });
+        decret1Inc5Button.setTextSize(32);
+        this.components.push(decret1Inc5Button);
+        const decret1Dec1Button = new BFloatingButton(12, 200, '-1', () => {
+            this.decret1--;
+            this.confirmButton.visible = false;
+        });
+        decret1Dec1Button.setTextSize(32);
+        this.components.push(decret1Dec1Button);
+        const decret1Dec5Button = new BFloatingButton(52, 200, '-5', () => {
+            this.decret1-=5;
+            this.confirmButton.visible = false;
+        });
+        decret1Dec5Button.setTextSize(32);
+        this.components.push(decret1Dec5Button);
+
+        const decret2Inc1Button = new BFloatingButton(312, 150, '+1', () => {
+            this.decret2++;
+            this.confirmButton.visible = false;
+        });
+        decret2Inc1Button.setTextSize(32);
+        this.components.push(decret2Inc1Button);
+        const decret2Inc5Button = new BFloatingButton(352, 150, '+5', () => {
+            this.decret2+=5;
+            this.confirmButton.visible = false;
+        });
+        decret2Inc5Button.setTextSize(32);
+        this.components.push(decret2Inc5Button);
+        const decret2Dec1Button = new BFloatingButton(312, 200, '-1', () => {
+            this.decret2--;
+            this.confirmButton.visible = false;
+        });
+        decret2Dec1Button.setTextSize(32);
+        this.components.push(decret2Dec1Button);
+        const decret2Dec5Button = new BFloatingButton(352, 200, '-5', () => {
+            this.decret2-=5;
+            this.confirmButton.visible = false;
+        });
+        decret2Dec5Button.setTextSize(32);
+        this.components.push(decret2Dec5Button);
+
+        this.decret1 = 0;
+        this.decret2 = 0;
+
+        const monsterButton = new BButton(200,300,`${-monsters}`,()=>{});
+        monsterButton.w = 100;
+        const pieceButton = new BButton(100,300,pieces.toString(),()=>{});
+        pieceButton.w = 100;
+        this.components.push(monsterButton);
+        this.components.push(pieceButton);
+        this.components.push(this.confirmButton);
+        pieceButton.enabled = false;
+        monsterButton.enabled = false;
+    }
+
+    doDraw() {
+        super.doDraw();
+        if (this.popupAnimation !== 0) {
+            return;
+        }
+        fill(255);
+		stroke(0);
+		textSize(32);
+		textAlign(LEFT, TOP);
+		text(season, 100, 15);
+
+        textAlign(CENTER, CENTER);
+        textSize(60);
+        text(this.decret1.toString(), 150,150);
+        text(this.decret2.toString(), 250,150);
+
+        text(this.decret1+this.decret2+pieces-monsters, 400,270);
+    }
+}
+
+function pointsClicked() {
+    const dialog = new PointsDialog(800, 50, 560, 400);
+    uiManager.setDialog(dialog);
+    dialog.confirmButton.visible = false;
+}
+
 let turn = 0;
 
-let curSelectedType = 0;
+let curSelectedType = -1;
 
 const nextButton = new BButton(window_width - 80 - 400*scale, window_height - 100, "NEXT", nextClicked);
 nextButton.setTextSize(45*scale);
@@ -290,6 +431,8 @@ nextButton.w = 400*scale;
 const undoButton = new BButton(window_width - 80 - 400*scale, window_height - 30, "UNDO", undoClicked);
 undoButton.setTextSize(45*scale);
 undoButton.w = 400*scale;
+
+const pointButton = new BFloatingButton(window_width - 200 - 80 - 400*scale, window_height - 100, "+", pointsClicked);
 
 function preload() {
 	spritesheet.addSpriteSheet('board', './board.png', 700, 697);
@@ -302,6 +445,7 @@ function preload() {
 
 const typeButtons = [];
 const buttons = [];
+const shapeButtons = [];
 
 function setup() {
 	canvas = createCanvas(window_width, window_height);
@@ -342,7 +486,6 @@ function setup() {
     typeButtons.push(...[forestButton, cityButton, fieldButton, waterButton, monsterButton]);
     buttons.push(...[forestButton, cityButton, fieldButton, waterButton, monsterButton, turnIcon, flipIcon]);
 
-    const shapeButtons = [];
     let X = 920;
     let Y = 60;
     for( let i=0; i < 18; i++ ) {
@@ -357,10 +500,12 @@ function setup() {
         shapeButtons.push(shapeIcon);
     }
 
-    uiManager.setUI([...buttons, templeButton, nextButton, undoButton, ...shapeButtons]);
+    uiManager.setUI([...buttons, templeButton, nextButton, undoButton, pointButton, ...shapeButtons]);
     nextButton.enabled = false;
     undoButton.enabled = false;
     buttons.forEach(b=>b.enabled = false);
+
+    typeButtons.forEach(b=>b.visible=false);
 }
 
 function mouseOverCase() {
@@ -411,26 +556,28 @@ function drawBoard() {
         text("Choose a Shape", 770, 510);
     }
 
-    text(`${monsters.toString()} x`,770,340);
+    text(`-${monsters.toString()}`,770,340);
 
     // draw cursor on board
-    const overCase = mouseOverCase();
-    if( overCase !== null ) {
-        push();
-        textAlign(CENTER, CENTER);
-        textSize(25);
-        fill(25);
-        if( toggleDebug ) {
-            text(overCase.X, 300,770);	
-            text(overCase.Y, 330,770);	
-        } else {
-            text(overCase.X+1, 330,770);	
-            text(letters[overCase.Y], 300,770);	
-        }
+    if( !uiManager.currentDialog ) {
+        const overCase = mouseOverCase();
+        if( overCase !== null ) {
+            push();
+            textAlign(CENTER, CENTER);
+            textSize(25);
+            fill(25);
+            if( toggleDebug ) {
+                text(overCase.X, 300,770);	
+                text(overCase.Y, 330,770);	
+            } else {
+                text(overCase.X+1, 330,770);	
+                text(letters[overCase.Y], 300,770);	
+            }
 
-        // TODO: check if shape is OUT of the board
-        drawShape(overCase.X, overCase.Y);
-        pop();
+            // TODO: check if shape is OUT of the board
+            drawShape(overCase.X, overCase.Y);
+            pop();
+        }
     }
 
     drawPieces();
@@ -439,7 +586,9 @@ function drawBoard() {
     stroke(255,228,180);
     noFill();
     strokeWeight(2);
-    rect(830, 65+(sizeBoard+5)*curSelectedType, sizeBoard, sizeBoard);
+    if( curSelectedType >= 0 ) {
+        rect(830, 65+(sizeBoard+5)*curSelectedType, sizeBoard, sizeBoard);
+    }
 
     // temple ?
     if( useTemple ) {
@@ -447,11 +596,26 @@ function drawBoard() {
         highlightTemples();
     }
     strokeWeight(1);
+
+    drawPoints();
+}
+
+function drawPoints() {
+    const total = `${points.join(" + ")} = ${points.reduce((acc,val)=>acc+val)}`;
+    fill(255);
+    stroke(0);
+    textSize(32);
+    textAlign(LEFT, TOP);
+    text(total, 400, 760);
 }
 
 function highlightTemples() {
     templesPosition.forEach(pos=>{
         if( board[pos.X][pos.Y].value === EMPTYCASE ) {
+            stroke(255,228,180);
+            rect(xBoard+sizeBoard*pos.X, yBoard+sizeBoard*pos.Y, sizeBoard, sizeBoard);
+        } else {
+            stroke(155,128,180);
             rect(xBoard+sizeBoard*pos.X, yBoard+sizeBoard*pos.Y, sizeBoard, sizeBoard);
         }
     });
@@ -591,6 +755,9 @@ function addCurrentCase() {
     if( addShape() ) {
         nextButton.enabled = true;
         undoButton.enabled = true;
+        shapeButtons.forEach(
+            s=>s.visible = false
+        );
     }
 }
 
@@ -621,10 +788,12 @@ function draw() {
 }
 
 function mouseClicked() {
+    if( !uiManager.currentDialog ) {
+        addCurrentCase();
+    }
+
 	toolManager.mouseClicked();
 	uiManager.mouseClicked();
-
-    addCurrentCase();
 
 	return false;
 }
