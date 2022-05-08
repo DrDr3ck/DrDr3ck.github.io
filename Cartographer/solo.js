@@ -515,10 +515,10 @@ function setup() {
         curSelectedType = MONSTERCASE;
     });
 
-    const turnButton =new BImageButton(280, 460, spritesheet.getImage('icons', 1), ()=>{
+    const turnButton =new BImageButton(280, 460+140, spritesheet.getImage('icons', 1), ()=>{
         turnShape();
     });
-    const flipButton =new BImageButton(280, 70+460, spritesheet.getImage('icons', 0), ()=>{
+    const flipButton =new BImageButton(280, 70+460+140, spritesheet.getImage('icons', 0), ()=>{
         flipShape();
     });
 
@@ -754,7 +754,7 @@ function drawBoard() {
     fill(125);
     textAlign(LEFT, CENTER);
     if( curSelectedShape ) {
-        drawShape(-5,9, false);
+        drawShape(-5,8, false);
     } else if( pointButton.visible ) {
         text("End of Season", 770, 510);
     }
@@ -859,9 +859,11 @@ function drawShape(X,Y,checkDraw=true) {
     if( !curSelectedShape ) {
         return;
     }
+    let deltaX = -35;
     if( checkDraw ) {
         canDraw = true;
         onTemple = false;
+        deltaX = 0;
     }
     const shape = curSelectedShape;
     for(let i=0; i < shape.length;i++) {
@@ -872,12 +874,12 @@ function drawShape(X,Y,checkDraw=true) {
             }
             const curX = X+i;
             const curY = Y+j;
-            spritesheet.drawScaledSprite('cases', curSelectedType, xBoard+sizeBoard*curX, yBoard+sizeBoard*curY, scale);
+            spritesheet.drawScaledSprite('cases', curSelectedType, xBoard+sizeBoard*curX+deltaX, yBoard+sizeBoard*curY, scale);
             if( checkDraw && !isEmptyCase({X:curX, Y:curY})) {
                 stroke(250,50,50);
                 strokeWeight(4);
                 noFill();
-                rect(xBoard+sizeBoard*curX, yBoard+sizeBoard*curY, sizeBoard, sizeBoard);
+                rect(xBoard+sizeBoard*curX+deltaX, yBoard+sizeBoard*curY, sizeBoard, sizeBoard);
                 strokeWeight(1);
                 canDraw = false;
             }
