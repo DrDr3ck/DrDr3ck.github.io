@@ -661,6 +661,7 @@ class Dialog extends UIContainer {
 		this.popupAnimation = this.totalPopupAnimationTime;
 		this.startX = x;
 		this.startY = y;
+		this.transparency = 160;
 	}
 
 	doDraw() {
@@ -668,7 +669,7 @@ class Dialog extends UIContainer {
 		strokeWeight(2);
 		fill(9, 47, 18);
 		const percent = 1 - Math.max(this.popupAnimation, 0) / this.totalPopupAnimationTime;
-		background(10, 10, 10, percent * 160);
+		background(10, 10, 10, percent * this.transparency);
 		if (this.popupAnimation === 0) {
 			translate(this.x, this.y);
 			rect(0, 0, this.w, this.h, 5);
