@@ -229,7 +229,7 @@ function nextClicked() {
     }
 
     if( curSelectedType !== MONSTERCASE ) {
-        curTime = Math.min(seasonTime, curTime+explorations[curSelectedCardIndex].time)
+        curTime = Math.min(seasonTime, curTime+explorations[curSeasonCards[curSeasonCards.length-1]].time)
     }
 
     turn++;
@@ -278,7 +278,6 @@ function undoClicked() {
 }
 
 let curSelectedShape = null;
-let curSelectedCardIndex = -1;
 
 function turnShape() {
     if( !curSelectedShape ) {
@@ -591,10 +590,26 @@ function drawSingleShape(shape, i, unique=true) {
     }
 }
 
+/**
+ * \return true if at least one temple is available
+ */
+function canUseTemple() {
+    // check if a temple is still available
+    return templesPosition.filter(pos=>
+        board[pos.X][pos.Y].value === EMPTYCASE
+    ).length > 0;
+}
+
 function setupCard(cardIndex) {
+    // can we use a temple ?
+    if( useTemple && !canUseTemple() ) {
+        // set 'terres fracturees' as selected card
+        cardIndex = 9;
+        uiManager.addLogger("no available ruins");
+        useTemple = false;
+    }
     curSelectedShape = null;
     curSelectedType = -1;
-    curSelectedCardIndex = cardIndex;
     typeButtons.forEach(b=>b.visible=false);
     shapeButtons.forEach(b=>b.visible=false);
 
@@ -808,7 +823,11 @@ function drawPoints() {
     stroke(0);
     textSize(32);
     textAlign(LEFT, TOP);
-    text(`${season} ${curTime}/${seasonTime}`, 380, 10);
+    if( season !== "The End") {
+        text(`${season} ${curTime}/${seasonTime}`, 380, 10);
+    } else {
+        text(season, 380, 10);
+    }
     textAlign(RIGHT, TOP);
     text(total, 1080, 10);
     textAlign(LEFT, TOP);
@@ -891,8 +910,6 @@ function addShape() {
     if( overCase === null ) {
         return false;
     }
-    console.log("usetemple", useTemple);
-    console.log("onTemple", onTemple);
     if( useTemple && !onTemple ) {
         uiManager.addLogger("Shape should be on a ruin");
         return false;
