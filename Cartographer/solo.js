@@ -478,7 +478,7 @@ const undoButton = new BButton(window_width - 80 - 200*scale, window_height - 30
 undoButton.setTextSize(45*scale);
 undoButton.w = 200*scale;
 
-const pointButton = new BFloatingButton(window_width - 200 - 80 - 400*scale, window_height - 100, "+", pointsClicked);
+const pointButton = new BFloatingButton(window_width - 200 - 60 - 100*scale, window_height - 100, "+", pointsClicked);
 
 function preload() {
 	spritesheet.addSpriteSheet('board', './board.png', 700, 697);
@@ -489,12 +489,11 @@ function preload() {
     spritesheet.addSpriteSheet('piece', './piece.png', 33,33);
     spritesheet.addSpriteSheet('season', './season.png', cardWidth, cardHeight);
     spritesheet.addSpriteSheet('shapes', './shapes.png', 70,40);
-    spritesheet.addSpriteSheet('temple', './temple.png', 58, 58);
 
-    spritesheet.addSpriteSheet('forest', './decret-forest.png', cardWidth, cardHeight);
-	spritesheet.addSpriteSheet('zone', './decret-zone.png', cardWidth, cardHeight);
-	spritesheet.addSpriteSheet('ville', './decret-ville.png', cardWidth, cardHeight);
-	spritesheet.addSpriteSheet('champs', './decret-champs.png', cardWidth, cardHeight);
+    spritesheet.addSpriteSheet('forest', './decret-forest-100.png', 400, 570);
+	spritesheet.addSpriteSheet('zone', './decret-zone-100.png', 400, 570);
+	spritesheet.addSpriteSheet('ville', './decret-ville-100.png', 400, 570);
+	spritesheet.addSpriteSheet('champs', './decret-champs-100.png', 400, 570);
 }
 
 const cardMgr = new CardMgr();
@@ -518,11 +517,6 @@ function setup() {
 	uiManager.addLogger("Cartographer solo");
 	lastTime = Date.now();
 
-    /*
-    const templeButton = new BImageButton(830, 65-sizeBoard-5, spritesheet.getImage('temple', 0), ()=>{
-        useTemple = !useTemple;
-    });
-    */
     const forestButton =new BImageButton(830, 65, spritesheet.getImage('cases', 0), ()=>{
         curSelectedType = 0;
     });
@@ -557,7 +551,7 @@ function setup() {
         }));
     }
 
-    uiManager.setUI([...buttons, nextButton, undoButton, pointButton, ...shapeButtons]); // no templeButton anymore
+    uiManager.setUI([...buttons, nextButton, undoButton, pointButton, ...shapeButtons]);
     nextButton.enabled = false;
     undoButton.enabled = false;
     pointButton.visible = false;
@@ -580,7 +574,7 @@ function drawType(typeName, i, unique=true) {
     typeButton.enabled = !unique;
     typeButton.x = 20;
     typeButton.y = 460+70*i;
-    if( unique ) {
+    if( unique || i === 0 ) {
         curSelectedType = typeIndex;
     }
 }
@@ -592,7 +586,7 @@ function drawSingleShape(shape, i, unique=true) {
     shapeButton.enabled = !unique;
     shapeButton.x = 100+80*i;
     shapeButton.y = 460;
-    if( unique ) {
+    if( unique || i === 0 ) {
         chooseShape(shapeIndex);
     }
 }
@@ -624,12 +618,16 @@ function mouseOverCase() {
 }
 
 function drawDecretCard(X,Y,title,index,selection) {
-	const decrets = ["A","B","C","D"];
+    const cardDecretWidth = 400;
+    const cardDecretHeight = 570;
+    const decrets = ["A","B","C","D"];
+    scale/=2;
 	if( decrets.includes(title) ) {
 		spritesheet.drawScaledSprite('decret', index, X, Y, scale*.75);
 	} else {
 		spritesheet.drawScaledSprite(title, index, X, Y, scale*.75);
 	}
+    scale*=2;
 	if( selection ) {
 		stroke(255,228,180);
 	} else {
@@ -637,7 +635,8 @@ function drawDecretCard(X,Y,title,index,selection) {
 	}
 	strokeWeight(4*scale);
 	noFill();
-	rect(X, Y, cardWidth*scale*.75, cardHeight*scale*.75, 10);
+	rect(X, Y, cardDecretWidth/2*scale*.75, cardDecretHeight/2*scale*.75, 10);
+    
 }
 
 function isMouseOverDecret() {
@@ -667,14 +666,13 @@ function drawEmptyCard(X,Y) {
 	strokeWeight(1);
 }
 
-function drawExplorationCard(X,Y, index) {
+function drawExplorationCard(X,Y, index, drawRuin=false) {
+    if( index === 11 && drawRuin ) {
+        X+=50;
+    }
 	fill(250,150,10);
 	stroke(0);
 	drawEmptyCard(X,Y);
-	textAlign(CENTER, CENTER);
-	textSize(25);
-	fill(25);
-	text(index.toString(), X+20,Y+20);	
 	spritesheet.drawScaledSprite('exploration', index, X, Y, scale*.75);
 	strokeWeight(4*scale);
 	noFill();
@@ -710,7 +708,7 @@ function drawBoard() {
     const delta = 0; // TODO
     for( i = 0; i < curSeasonCards.length+delta; i++ ) {
         const card = curSeasonCards[i];
-        drawExplorationCard(1100,20+40*i, card);	
+        drawExplorationCard(1100,20+40*i, card, i === curSeasonCards.length+delta-2);	
     }
 
     strokeWeight(1);
@@ -830,6 +828,7 @@ function highlightTemples() {
 }
 
 function drawPieces() {
+    strokeWeight(1);
     const X = 430;
     const Y = 775;
     const sizePiece = 20;
@@ -895,7 +894,7 @@ function addShape() {
     console.log("usetemple", useTemple);
     console.log("onTemple", onTemple);
     if( useTemple && !onTemple ) {
-        uiManager.addLogger("Shape should be on a temple");
+        uiManager.addLogger("Shape should be on a ruin");
         return false;
     }
     const shape = curSelectedShape;
@@ -951,15 +950,15 @@ function addCurrentCase() {
         // out of board
         return;
     }
-    if( !canDraw ) {
-        uiManager.addLogger("Cannot draw this shape here");
-        return;
-    }
     if( shapeAlreadyAdded() ) {
-        uiManager.addLogger("Shape already added for this turn");
+        uiManager.addLogger("Shape already added");
         setTimeout(function() {
             uiManager.addLogger("Please click Next or Undo");
         }, 1500);
+        return;
+    }
+    if( !canDraw ) {
+        uiManager.addLogger("Cannot be drawn here");
         return;
     }
     if( addShape() ) {
