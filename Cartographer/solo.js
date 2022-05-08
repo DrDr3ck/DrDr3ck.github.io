@@ -27,7 +27,7 @@ let pieces = 0;
 const piecesMax = 14;
 
 let season = Season.Printemps;
-let seasonTime = 8;
+let seasonTime = SeasonTime[season];
 let curTime = 0;
 
 const queryString = window.location.search;
@@ -259,34 +259,34 @@ function undoClicked() {
     }
     nextButton.enabled = false;
     undoButton.enabled = false;
-    curSelectedShape = null;
 }
 
 let curSelectedShape = null;
 
-function turnShape() {
-    if( !curSelectedShape ) {
+function turnShape(curShape) {
+    if( !curShape ) {
         return;
     }
     const newShape = [];
-    const newWidth = curSelectedShape[0].length;
-    const newHeight = curSelectedShape.length;
+    const newWidth = curShape[0].length;
+    const newHeight = curShape.length;
     for(let i=0; i < newWidth; i++ ) {
         const row = [];
         for(let j=0; j < newHeight; j++ ) {
-            row.push(curSelectedShape[j][i]);
+            row.push(curShape[j][i]);
         }
         newShape.push(row);
     }
-    curSelectedShape = newShape;
-    flipShape(false);
+    curShape = newShape;
+    curShape = flipShape(curShape, false);
+    return curShape;
 }
 
-function flipShape(mayTurn=true) {
-    if( !curSelectedShape ) {
+function flipShape(curShape, mayTurn=true) {
+    if( !curShape ) {
         return;
     }
-    const shape = curSelectedShape;
+    const shape = curShape;
     for(let i=0; i < shape.length;i++) {
         const row = shape[i];
         for(let j=0; j < row.length/2;j++) {
@@ -295,13 +295,14 @@ function flipShape(mayTurn=true) {
             row[row.length-j-1] = tmp;
         }
     }
-    curSelectedShape = shape;
+    curShape = shape;
     if( mayTurn ) {
-        if( curSelectedShape.length < curSelectedShape[0].length ) {
-            turnShape();
-            turnShape();
+        if( curShape.length < curShape[0].length ) {
+            curShape = turnShape(curShape);
+            curShape = turnShape(curShape);
         }
     }
+    return curShape;
 }
 
 function closeCurrentDialog() {
@@ -319,31 +320,22 @@ class PointsDialog extends Dialog {
             if( season === Season.Printemps ) {
                 points[0] = total;
                 season = Season.Ete;
-                seasonTime = 8;
-                curTime = 0;
-                pointButton.visible = false;
             } else if( season === Season.Ete ) {
                 points[1] = total;
                 season = Season.Automne;
-                seasonTime = 7;
-                curTime = 0;
-                pointButton.visible = false;
             } else if( season === Season.Automne ) {
                 points[2] = total;
                 season = Season.Hiver;
-                seasonTime = 6;
-                curTime = 0;
-                pointButton.visible = false;
             } else {
                 points[3] = total;
-                season = "The End";
-                seasonTime = 0;
-                curTime = 0;
-                pointButton.visible = false;
+                season = Season.End;
                 uiManager.addLogger("The End");
             }
+            seasonTime = SeasonTime[season];
+            curTime = 0;
+            pointButton.visible = false;
             curSeasonCards = [];
-            if( season !== "The End" ) {
+            if( season !== Season.End ) {
                 cards = cardMgr.getSeason(season);
                 nextCard();
             }
@@ -476,7 +468,13 @@ const typeButtons = [];
 const buttons = [];
 const shapeButtons = [];
 
-const types = ["forest", "zone", "ville", "champs"];
+const decretTypes = ["forest", "zone", "ville", "champs"];
+const decretPoints = {
+    forest: [17,25,18,22],
+    zone: [24,24,24,20],
+    ville: [16,21,16,20],
+    champs: [22,24,20,27]
+};
 const occurrences = [];
 
 function setup() {
@@ -521,10 +519,10 @@ function setupMyUI() {
     });
 
     const turnButton =new BImageButton(280, 460+140, spritesheet.getImage('icons', 1), ()=>{
-        turnShape();
+        curSelectedShape = turnShape(curSelectedShape);
     });
     const flipButton =new BImageButton(280, 70+460+140, spritesheet.getImage('icons', 0), ()=>{
-        flipShape();
+        curSelectedShape = flipShape(curSelectedShape);
     });
 
     typeButtons.push(...[forestButton, cityButton, fieldButton, waterButton, monsterButton]);
@@ -548,7 +546,7 @@ function setupMyUI() {
 
     cardMgr = new CardMgr(seed);
 
-    cardMgr.shuffleArray(types);
+    cardMgr.shuffleArray(decretTypes);
     occurrences.push(...[Math.floor(cardMgr.randomInt(4)), Math.floor(cardMgr.randomInt(4)), Math.floor(cardMgr.randomInt(4)), Math.floor(cardMgr.randomInt(4))]);
 
     cardMgr.init();
@@ -581,8 +579,8 @@ function drawLoading() {
 let cardButton = [];
 
 function drawType(typeName, i, unique=true) {
-    const types = ["forest", "city", "field", "water", "monster"];
-    const typeIndex = types.indexOf(typeName);
+    const cardTypes = ["forest", "city", "field", "water", "monster"];
+    const typeIndex = cardTypes.indexOf(typeName);
     const typeButton = typeButtons[typeIndex];
     typeButton.visible = true;
     typeButton.enabled = !unique;
@@ -615,14 +613,103 @@ function canUseTemple() {
     ).length > 0;
 }
 
+function isATemple(x,y) {
+    return templesPosition.findIndex(pos=>pos.X===x && pos.Y===y) >= 0;
+}
+
+function canPlaceShape(shape, X, Y, needToBeOnTemple=false) {
+    let isOnTemple = false;
+    for(let i=0; i < shape.length;i++) {
+        const row = shape[i];
+        for(let j=0; j < row.length;j++) {
+            if( row[j] === " ") {
+                continue;
+            }
+
+            const curX = X+i;
+            const curY = Y+j;
+            if( isATemple(curX, curY) ) {
+                isOnTemple = true;
+            }
+            
+            if( !isEmptyCase({X:curX, Y:curY})) {
+                return false;
+            }
+        }
+    }
+    if( needToBeOnTemple ) {
+        return isOnTemple;
+    }
+    return true;
+}
+
+function canPlaceOnBoard(shape) {
+    for( let j = 0; j<11; j++ ) {
+        for( let i = 0; i < 11; i++) {
+            if( canPlaceShape(shape, i, j, useTemple) ) {
+                return true;
+            }
+        }
+    }
+}
+
+function getAllShapes(shape) {
+    const shapes = [];
+    shapes.push(shape);
+    shape = turnShape(shape);
+    shapes.push(shape);
+    shape = turnShape(shape);
+    shapes.push(shape);
+    shape = turnShape(shape);
+    shapes.push(shape);
+    shape = flipShape(shape);
+    shapes.push(shape);
+    shape = turnShape(shape);
+    shapes.push(shape);
+    shape = turnShape(shape);
+    shapes.push(shape);
+    shape = turnShape(shape);
+    shapes.push(shape);
+    return shapes;
+}
+
+function checkShapeOnBoard(shape) {
+    const shapes = getAllShapes(shape);
+    if( shapes.some(s=>canPlaceOnBoard(s)) ) {
+        return true;
+    }
+    return false;
+}
+
+function canBePlaced(cardIndex) {
+    const curCard = explorations[cardIndex];
+    const cardShapes = curCard.shape;
+    if( checkShapeOnBoard(cardShapes[0]) ) {
+        return true;
+    }
+    if( cardShapes.length > 1 ) {
+        if( checkShapeOnBoard(cardShapes[1]) ) {
+            return true;
+        }
+    }
+    return false;
+}
+
 function setupCard(cardIndex) {
     // can we use a temple ?
     if( useTemple && !canUseTemple() ) {
         // set 'terres fracturees' as selected card
         cardIndex = 9;
-        uiManager.addLogger("no available ruins");
+        uiManager.addLogger("No available ruins");
         useTemple = false;
     }
+    
+    if( !canBePlaced(cardIndex) ) {
+        // set 'terres fracturees' as selected card
+        cardIndex = 9;
+        uiManager.addLogger("Cannot place this shape");
+    }
+    
     curSelectedShape = null;
     curSelectedType = -1;
     typeButtons.forEach(b=>b.visible=false);
@@ -723,16 +810,16 @@ function drawBoard() {
 
     const overDecret = isMouseOverDecret();
     if( overDecret !== 0 ) {
-        drawDecretCard(20, 20, types[0], occurrences[0], season === Season.Printemps || season === Season.Hiver);
+        drawDecretCard(20, 20, decretTypes[0], occurrences[0], season === Season.Printemps || season === Season.Hiver);
     }
     if( overDecret !== 1 ) {
-        drawDecretCard(190, 20, types[1], occurrences[1], season === Season.Ete || season === Season.Printemps);
+        drawDecretCard(190, 20, decretTypes[1], occurrences[1], season === Season.Ete || season === Season.Printemps);
     }
     if( overDecret !== 2 ) {
-        drawDecretCard(20, 240, types[2], occurrences[2], season === Season.Automne || season === Season.Ete);
+        drawDecretCard(20, 240, decretTypes[2], occurrences[2], season === Season.Automne || season === Season.Ete);
     }
     if( overDecret !== 3 ) {
-        drawDecretCard(190, 240, types[3], occurrences[3], season === Season.Hiver || season === Season.Automne);
+        drawDecretCard(190, 240, decretTypes[3], occurrences[3], season === Season.Hiver || season === Season.Automne);
     }
 
     const delta = 0; // TODO
@@ -765,15 +852,15 @@ function drawBoard() {
     }
 
     // temple ?
-    if( useTemple ) {
-        strokeWeight(2);
+    if( useTemple || pointButton.visible) {
+        strokeWeight(4);
         highlightTemples();
     }
     strokeWeight(1);
 
     if( overDecret >= 0 ) {
         scale*=3;
-        drawDecretCard(window_width/2-cardWidth/2*scale, 100, types[overDecret],occurrences[overDecret], false);
+        drawDecretCard(window_width/2-cardWidth/2*scale, 100, decretTypes[overDecret],occurrences[overDecret], false);
         scale/=3;
     }
 
@@ -833,19 +920,28 @@ function drawBoard() {
 }
 
 function drawPoints() {
-    const total = `${points.join(" + ")} = ${points.reduce((acc,val)=>acc+val)}`;
+    const total = points.reduce((acc,val)=>acc+val);
+    const totalStr = `${points.join(" + ")} = ${total}`;
     fill(250);
     stroke(0);
     textSize(32);
     textAlign(LEFT, TOP);
-    if( season !== "The End") {
+    if( season !== Season.End) {
         text(`${season} ${curTime}/${seasonTime}`, 380, 10);
     } else {
         text(season, 380, 10);
     }
     textAlign(RIGHT, TOP);
-    text(total, 1080, 10);
+    text(totalStr, 1080, 10);
     textAlign(LEFT, TOP);
+    if( season === Season.End) {
+        const totalSolo = [0,0,1,2,3].reduce((acc,val)=>{
+            return acc+decretPoints[decretTypes[val]][occurrences[val]];}
+        );
+        fill(247, 255, 60);
+        text(` - ${totalSolo} = ${total-totalSolo}`, 1080, 10);
+    }
+    fill(250);
 }
 
 function highlightTemples() {
@@ -880,7 +976,7 @@ function drawPieces() {
 }
 
 let canDraw = true;
-let onTemple = false;
+let isDrawnOnTemple = false;
 
 function drawShape(X,Y,checkDraw=true) {
     if( !curSelectedShape ) {
@@ -889,7 +985,7 @@ function drawShape(X,Y,checkDraw=true) {
     let deltaX = -35;
     if( checkDraw ) {
         canDraw = true;
-        onTemple = false;
+        isDrawnOnTemple = false;
         deltaX = 0;
     }
     const shape = curSelectedShape;
@@ -912,7 +1008,7 @@ function drawShape(X,Y,checkDraw=true) {
             }
             if( checkDraw && useTemple ) {
                 if( templesPosition.findIndex(pos=>pos.X===curX && pos.Y===curY) >= 0 ) {
-                    onTemple = true;
+                    isDrawnOnTemple = true;
                 }
             }
         }
@@ -927,7 +1023,7 @@ function addShape() {
     if( overCase === null ) {
         return false;
     }
-    if( useTemple && !onTemple ) {
+    if( useTemple && !isDrawnOnTemple ) {
         uiManager.addLogger("Shape should be on a ruin");
         return false;
     }
@@ -1070,11 +1166,11 @@ function keyPressed() {
 
     if( key === "t" ) {
         // tourner la forme de 90 degres
-        turnShape();
+        curSelectedShape = turnShape(curSelectedShape);
     }
     if( key === "r" || key === "f" ) {
         // retourner la forme (miroir)
-        flipShape();
+        curSelectedShape = flipShape(curSelectedShape);
     }
 
     if( key === "P") {

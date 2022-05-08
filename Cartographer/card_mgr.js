@@ -2,8 +2,17 @@ var Season = {
     Printemps: "Printemps",
     Ete: "Ete",
     Automne: "Automne",
-    Hiver: "Hiver"
+    Hiver: "Hiver",
+    End: "End"
 }
+
+var SeasonTime = {
+    Printemps: 8,
+    Ete: 8,
+    Automne: 7,
+    Hiver: 6,
+    End: 0
+};
 
 class CardMgr {
     constructor(seed) {
