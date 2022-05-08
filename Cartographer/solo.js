@@ -329,11 +329,6 @@ class PointsDialog extends Dialog {
 		super(x, y, w, h);
 
         this.components.forEach((c) => (c.visible = true));
-        const closeDialogButton = new BFloatingButton(512, 50, '\u2716', () => {
-            closeCurrentDialog();
-            delete this;
-        });
-        closeDialogButton.setTextSize(32);
         this.confirmButton = new BButton(100,390,"Confirm",() => {
             const total = this.decret1+this.decret2+pieces-monsters;
             // ajouter les points et changer de saisons
@@ -371,11 +366,10 @@ class PointsDialog extends Dialog {
             closeCurrentDialog();
             delete this;
         });
-        const plusDialogButton = new BFloatingButton(12, 50, '+', ()=>{
+        const plusDialogButton = new BFloatingButton(330, 380, '+', ()=>{
             this.confirmButton.visible = true;
         });
         plusDialogButton.setTextSize(32);
-        this.components.push(closeDialogButton);
         this.components.push(plusDialogButton);
 
         const decret1Inc1Button = new BFloatingButton(12, 150, '+1', () => {
@@ -403,25 +397,25 @@ class PointsDialog extends Dialog {
         decret1Dec5Button.setTextSize(32);
         this.components.push(decret1Dec5Button);
 
-        const decret2Inc1Button = new BFloatingButton(312, 150, '+1', () => {
+        const decret2Inc1Button = new BFloatingButton(312-20, 150, '+1', () => {
             this.decret2++;
             this.confirmButton.visible = false;
         });
         decret2Inc1Button.setTextSize(32);
         this.components.push(decret2Inc1Button);
-        const decret2Inc5Button = new BFloatingButton(352, 150, '+5', () => {
+        const decret2Inc5Button = new BFloatingButton(332, 150, '+5', () => {
             this.decret2+=5;
             this.confirmButton.visible = false;
         });
         decret2Inc5Button.setTextSize(32);
         this.components.push(decret2Inc5Button);
-        const decret2Dec1Button = new BFloatingButton(312, 200, '-1', () => {
+        const decret2Dec1Button = new BFloatingButton(312-20, 200, '-1', () => {
             this.decret2--;
             this.confirmButton.visible = false;
         });
         decret2Dec1Button.setTextSize(32);
         this.components.push(decret2Dec1Button);
-        const decret2Dec5Button = new BFloatingButton(352, 200, '-5', () => {
+        const decret2Dec5Button = new BFloatingButton(332, 200, '-5', () => {
             this.decret2-=5;
             this.confirmButton.visible = false;
         });
@@ -440,6 +434,8 @@ class PointsDialog extends Dialog {
         this.components.push(this.confirmButton);
         pieceButton.enabled = false;
         monsterButton.enabled = false;
+
+        this.transparency = 60;
     }
 
     doDraw() {
@@ -463,7 +459,7 @@ class PointsDialog extends Dialog {
 }
 
 function pointsClicked() {
-    const dialog = new PointsDialog(800, 50, 560, 400);
+    const dialog = new PointsDialog(1080, 50, 380, 400);
     uiManager.setDialog(dialog);
     dialog.confirmButton.visible = false;
 }
@@ -562,7 +558,6 @@ function setup() {
     nextButton.enabled = false;
     undoButton.enabled = false;
     pointButton.visible = false;
-    //buttons.forEach(b=>b.enabled = false);
 
     typeButtons.forEach(b=>b.visible=false);
     shapeButtons.forEach(b=>b.visible=false);
@@ -738,6 +733,13 @@ function drawBoard() {
         }
     }
 
+    // temple ?
+    if( useTemple ) {
+        strokeWeight(2);
+        highlightTemples();
+    }
+    strokeWeight(1);
+
     if( overDecret >= 0 ) {
         scale*=3;
         drawDecretCard(window_width/2-cardWidth/2*scale, 100, types[overDecret],occurrences[overDecret], false);
@@ -787,12 +789,6 @@ function drawBoard() {
         rect(830, 65+(sizeBoard+5)*curSelectedType, sizeBoard, sizeBoard);
     }
     */
-
-    // temple ?
-    if( useTemple ) {
-        highlightTemples();
-    }
-    strokeWeight(1);
 
     if( toggleDebug ) {
         // logger
@@ -1039,6 +1035,10 @@ function keyPressed() {
     if( key === "r" || key === "f" ) {
         // retourner la forme (miroir)
         flipShape();
+    }
+
+    if( key === "P") {
+        pointsClicked();
     }
 }
 
