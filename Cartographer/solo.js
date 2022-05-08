@@ -329,7 +329,7 @@ class PointsDialog extends Dialog {
 		super(x, y, w, h);
 
         this.components.forEach((c) => (c.visible = true));
-        this.confirmButton = new BButton(100,390,"Confirm",() => {
+        this.confirmButton = new BButton(10,390,"Confirm",() => {
             const total = this.decret1+this.decret2+pieces-monsters;
             // ajouter les points et changer de saisons
             if( season === Season.Printemps ) {
@@ -429,6 +429,8 @@ class PointsDialog extends Dialog {
         monsterButton.w = 100;
         const pieceButton = new BButton(100,300,pieces.toString(),()=>{});
         pieceButton.w = 100;
+        this.confirmButton.setTextSize(30);
+        this.confirmButton.w = 150;
         this.components.push(monsterButton);
         this.components.push(pieceButton);
         this.components.push(this.confirmButton);
@@ -454,7 +456,8 @@ class PointsDialog extends Dialog {
         text(this.decret1.toString(), 150,150);
         text(this.decret2.toString(), 250,150);
 
-        text(this.decret1+this.decret2+pieces-monsters, 400,270);
+        textAlign(RIGHT, CENTER);
+        text(this.decret1+this.decret2+pieces-monsters, 370,270);
     }
 }
 
