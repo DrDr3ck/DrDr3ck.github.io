@@ -173,7 +173,7 @@ function setup() {
 }
 
 const types = ["forest", "zone", "ville", "champs"];
-shuffleArray(types);
+cardMgr.shuffleArray(types);
 const occurrences = [Math.floor(Math.random() * 4), Math.floor(Math.random() * 4), Math.floor(Math.random() * 4), Math.floor(Math.random() * 4)];
 
 function drawBoard() {

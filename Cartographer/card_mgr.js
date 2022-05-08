@@ -1,13 +1,3 @@
-/* Randomize array in-place using Durstenfeld shuffle algorithm */
-function shuffleArray(array) {
-    for (var i = array.length - 1; i > 0; i--) {
-        var j = Math.floor(Math.random() * (i + 1));
-        var temp = array[i];
-        array[i] = array[j];
-        array[j] = temp;
-    }
-}
-
 var Season = {
     Printemps: "Printemps",
     Ete: "Ete",
@@ -16,12 +6,33 @@ var Season = {
 }
 
 class CardMgr {
-    constructor() {
+    constructor(seed) {
+        if( seed ) {
+            this.generator = new Math.seedrandom(seed);
+            console.log("Seed is", seed);
+        } else {
+            this.generator = Math.random;
+            console.log("No seed");
+        }
         this.cards = [];
         this.embuscades = [12,13,14,15];
-        shuffleArray(this.embuscades);
+        this.shuffleArray(this.embuscades);
 
         this.seasons = {};
+    }
+
+    /* Randomize array in-place using Durstenfeld shuffle algorithm */
+    shuffleArray(array) {
+        for (var i = array.length - 1; i > 0; i--) {
+            var j = this.randomInt(i + 1);
+            var temp = array[i];
+            array[i] = array[j];
+            array[j] = temp;
+        }
+    }
+
+    randomInt(i) {
+        return Math.floor(this.generator() * i);
     }
 
     init() {
@@ -37,7 +48,7 @@ class CardMgr {
         this.cards = this.cards.filter(c=>c>11); // keep embuscade if any
 		this.cards.push(...[0,1,2,3,4,5,6,7,8,9,10,11,11]); // 11: 2 times (for temple)
 		this.cards.push(this.embuscades.shift()); // get a new embuscade
-        shuffleArray(this.cards);
+        this.shuffleArray(this.cards);
         const seasonCards = [];
         while( maxTime > 0 ) {
             const curCard = this.cards.shift();

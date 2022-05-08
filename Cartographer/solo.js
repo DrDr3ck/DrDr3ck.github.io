@@ -31,23 +31,7 @@ let curTime = 0;
 
 const queryString = window.location.search;
 const urlParams = new URLSearchParams(queryString);
-const seed = urlParams.get('seed')
-console.log(seed);
-
-const generator = new Math.seedrandom(seed);
-function randomInt(i) {
-    return Math.floor(generator() * i);
-}
-
-/* Randomize array in-place using Durstenfeld shuffle algorithm */
-function shuffleArray(array) {
-    for (var i = array.length - 1; i > 0; i--) {
-        var j = randomInt(i+1);
-        var temp = array[i];
-        array[i] = array[j];
-        array[j] = temp;
-    }
-}
+const seed = urlParams.get('seed');
 
 const SIMPLE_SQUARE = [["#"]];
 const GOLDEN_L = [["G","G"],[" ","G"]];
@@ -495,7 +479,7 @@ function preload() {
 	spritesheet.addSpriteSheet('champs', './decret-champs-100.png', 400, 570);
 }
 
-const cardMgr = new CardMgr();
+let cardMgr = null;
 let cards = []; // cards for the current season
 let curSeasonCards = [];
 
@@ -504,8 +488,7 @@ const buttons = [];
 const shapeButtons = [];
 
 const types = ["forest", "zone", "ville", "champs"];
-shuffleArray(types);
-const occurrences = [Math.floor(randomInt(4)), Math.floor(randomInt(4)), Math.floor(randomInt(4)), Math.floor(randomInt(4))];
+const occurrences = [];
 
 function setup() {
 	canvas = createCanvas(window_width, window_height);
@@ -557,6 +540,11 @@ function setup() {
 
     typeButtons.forEach(b=>b.visible=false);
     shapeButtons.forEach(b=>b.visible=false);
+
+    cardMgr = new CardMgr(seed);
+
+    cardMgr.shuffleArray(types);
+    occurrences.push(...[Math.floor(cardMgr.randomInt(4)), Math.floor(cardMgr.randomInt(4)), Math.floor(cardMgr.randomInt(4)), Math.floor(cardMgr.randomInt(4))]);
 
     cardMgr.init();
     cards = cardMgr.getSeason(season);
