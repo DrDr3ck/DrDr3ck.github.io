@@ -39,27 +39,13 @@ let toggleDebug = false;
 
 let curSeasonCards = [];
 
-/* Randomize array in-place using Durstenfeld shuffle algorithm */
-function shuffleArray(array) {
-    for (var i = array.length - 1; i > 0; i--) {
-        var j = Math.floor(Math.random() * (i + 1));
-        var temp = array[i];
-        array[i] = array[j];
-        array[j] = temp;
-    }
-}
-
 function startClicked() {
     gameState = GAME_PLAY_STATE;
 	uiManager.setUI([nextButton]);
 	//board = new Board();
 	//board.init();
-	cards = [0,1,2,3,4,5,6,7,8,9,10,11,11];
-	embuscades.push(...[12,13,14,15]);
-	shuffleArray(embuscades);
-	const curEmbuscade = embuscades.shift();
-	cards.push(curEmbuscade);
-	shuffleArray(cards);
+	cardMgr.init();
+	cards = cardMgr.getSeason(Season.Printemps);
 	nextClicked();
 }
 
@@ -73,6 +59,20 @@ function seasonMaxSum() {
 		case HIVER:
 		default:
 			return 6;
+	}
+}
+
+function seasonName() {
+	switch(season) {
+		case PRINTEMPS:
+			return Season.Printemps;
+		case ETE:
+			return Season.Ete;
+		case AUTOMNE:
+			return Season.Automne;
+		case HIVER:
+		default:
+			return Season.Hiver;
 	}
 }
 
@@ -102,10 +102,7 @@ function nextClicked() {
 				break;
 		}
 		// reset cards
-		cards = cards.filter(c=>c>11); // keep embuscade if any
-		cards.push(...[0,1,2,3,4,5,6,7,8,9,10,11,11]);
-		cards.push(embuscades.shift()); // get a new embuscade
-		shuffleArray(cards);
+		cards = cardMgr.getSeason(seasonName(season));
 		curSum = 0;
 		curSeasonCards = [];
 	}
@@ -147,9 +144,9 @@ const END = -1;
 
 let season = PRINTEMPS;
 
+const cardMgr = new CardMgr();
 let cards = []; // cards for the current season
 const times = [1,1,1,1,2,2,2,2,2,0,2,0,0,0,0,0];
-const embuscades = [];
 
 const cardHeight = 276;//Card.height;
 const cardWidth = 200;//Card.width;
