@@ -16,9 +16,10 @@ const toolManager = new ToolManager();
 const jobManager = new JobManager();
 const spritesheet = new SpriteSheet();
 
+const GAME_LOADING_STATE = 0;
 const GAME_START_STATE = 1;
 const GAME_PLAY_STATE = 2;
-let gameState = GAME_PLAY_STATE;
+let gameState = GAME_LOADING_STATE ;
 
 let toggleDebug = false;
 
@@ -428,7 +429,7 @@ class PointsDialog extends Dialog {
         if (this.popupAnimation !== 0) {
             return;
         }
-        fill(255);
+        fill(250);
 		stroke(0);
 		textSize(32);
 		textAlign(LEFT, TOP);
@@ -464,19 +465,7 @@ undoButton.w = 200*scale;
 const pointButton = new BFloatingButton(window_width - 200 - 60 - 100*scale, window_height - 100, "+", pointsClicked);
 
 function preload() {
-	spritesheet.addSpriteSheet('board', './board.png', 700, 697);
-    spritesheet.addSpriteSheet('cases', './cases.png', 58, 58);
-    spritesheet.addSpriteSheet('decret', './decret.png', cardWidth, cardHeight);
-    spritesheet.addSpriteSheet('exploration', './exploration.png', cardWidth, cardHeight);
-    spritesheet.addSpriteSheet('icons', './icons.png', 60,60);
-    spritesheet.addSpriteSheet('piece', './piece.png', 33,33);
-    spritesheet.addSpriteSheet('season', './season.png', cardWidth, cardHeight);
-    spritesheet.addSpriteSheet('shapes', './shapes.png', 70,40);
-
-    spritesheet.addSpriteSheet('forest', './decret-forest-100.png', 400, 570);
-	spritesheet.addSpriteSheet('zone', './decret-zone-100.png', 400, 570);
-	spritesheet.addSpriteSheet('ville', './decret-ville-100.png', 400, 570);
-	spritesheet.addSpriteSheet('champs', './decret-champs-100.png', 400, 570);
+	
 }
 
 let cardMgr = null;
@@ -496,9 +485,25 @@ function setup() {
 
 	frameRate(60);
 
-	uiManager.addLogger("Cartographer solo");
-	lastTime = Date.now();
+    spritesheet.addSpriteSheet('board', './board.png', 700, 697);
+    spritesheet.addSpriteSheet('cases', './cases.png', 58, 58);
+    spritesheet.addSpriteSheet('decret', './decret.png', cardWidth, cardHeight);
+    spritesheet.addSpriteSheet('exploration', './exploration.png', cardWidth, cardHeight);
+    spritesheet.addSpriteSheet('icons', './icons.png', 60,60);
+    spritesheet.addSpriteSheet('piece', './piece.png', 33,33);
+    spritesheet.addSpriteSheet('season', './season.png', cardWidth, cardHeight);
+    spritesheet.addSpriteSheet('shapes', './shapes.png', 70,40);
 
+    spritesheet.addSpriteSheet('forest', './decret-forest-100.png', 400, 570);
+	spritesheet.addSpriteSheet('zone', './decret-zone-100.png', 400, 570);
+	spritesheet.addSpriteSheet('ville', './decret-ville-100.png', 400, 570);
+	spritesheet.addSpriteSheet('champs', './decret-champs-100.png', 400, 570);
+
+	uiManager.addLogger("Cartographer solo");
+	lastTime = Date.now();    
+}
+
+function setupMyUI() {
     const forestButton =new BImageButton(830, 65, spritesheet.getImage('cases', 0), ()=>{
         curSelectedType = 0;
     });
@@ -549,6 +554,28 @@ function setup() {
     cardMgr.init();
     cards = cardMgr.getSeason(season);
     nextCard();
+}
+
+function drawLoading() {
+    fill(250);
+	noStroke();
+	textSize(50);
+	textAlign(CENTER, CENTER);
+    text('CARTOGRAPHER SOLO', width / 2, height / 3);
+	text('Loading...', width / 2, height / 2);
+	fill(9, 47, 18);
+    const total = spritesheet.totalImagesToLoad;
+	const current = spritesheet.totalLoadedImages;
+    rect(width / 4, height / 4 * 3, current / total * width / 2, height / 10);
+	stroke(0);
+	noFill();
+	rect(width / 4, height / 4 * 3, width / 2, height / 10);
+	if (
+		spritesheet.totalLoadedImages === spritesheet.totalImagesToLoad
+	) {
+		gameState = GAME_PLAY_STATE;
+        setupMyUI();
+	}
 }
 
 let cardButton = [];
@@ -807,7 +834,7 @@ function drawBoard() {
 
 function drawPoints() {
     const total = `${points.join(" + ")} = ${points.reduce((acc,val)=>acc+val)}`;
-    fill(255);
+    fill(250);
     stroke(0);
     textSize(32);
     textAlign(LEFT, TOP);
@@ -978,6 +1005,10 @@ function draw() {
 	const currentTime = Date.now();
 	const elapsedTime = currentTime - lastTime;
 	background(51);
+    if (gameState === GAME_LOADING_STATE) {
+		drawLoading();
+		return;
+	}
 
 	uiManager.processInput();
 	uiManager.update(elapsedTime);
