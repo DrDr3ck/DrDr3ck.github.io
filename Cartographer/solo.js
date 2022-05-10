@@ -101,6 +101,7 @@ function enableTypeButtons(index) {
 
 function chooseShape(index) {
     curSelectedShape = allShapes[index];
+    isGoldShape = index < 4;
 }
 
 let xBoard = window_width/2-350+87-50;
@@ -262,6 +263,7 @@ function undoClicked() {
 }
 
 let curSelectedShape = null;
+let isGoldShape = false;
 
 function turnShape(curShape) {
     if( !curShape ) {
@@ -833,6 +835,13 @@ function drawBoard() {
         drawExplorationCard(1100,20+40*i, card, i === curSeasonCards.length+delta-2);	
     }
 
+    /*
+    for( i = 0; i < cards.length+delta; i++ ) {
+        const card = cards[i];
+        drawExplorationCard(1100,20+40*i, card, i === cards.length+delta-2);	
+    }
+    */
+
     strokeWeight(1);
 
     for( let j = 0; j<11; j++ ) {
@@ -896,6 +905,9 @@ function drawBoard() {
 
             // TODO: check if shape is OUT of the board
             drawShape(overCase.X, overCase.Y);
+            if( isGoldShape ) {
+                spritesheet.drawScaledSprite('piece', 0, mouseX, mouseY, scale);
+            }
             pop();
         }
     }
@@ -1163,6 +1175,13 @@ function keyPressed() {
             uiManager.addLogger(`Screen size: ${window.screen.availWidth.toString()}x${window.screen.availHeight.toString()}`);
         }
 	}
+
+    // next seed
+    if (key === "NS") {
+        const newSeed = parseInt(cardMgr.seed)+1;
+        console.log(newSeed);
+        document.location.replace(`http://localhost:8000/Cartographer/solo.html?seed=${newSeed.toString()}`)
+    }
 
     if( turn === 0 ) {
         if (key === "a") {
