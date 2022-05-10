@@ -58,6 +58,21 @@ class CardMgr {
 		this.cards.push(...[0,1,2,3,4,5,6,7,8,9,10,11,11]); // 11: 2 times (for temple)
 		this.cards.push(this.embuscades.shift()); // get a new embuscade
         this.shuffleArray(this.cards);
+
+        // if ruin is before monster, move monster
+        let swap = true;
+        while( swap ) {
+            swap = false;
+            for( let i=1; i < this.cards.length; i++ ) {
+                if( this.cards[i] >= 12 && this.cards[i-1] === 11 ) {
+                    const tmp = this.cards[i];
+                    this.cards[i] = this.cards[i-1];
+                    this.cards[i-1] = tmp;
+                    swap = true;
+                }
+            }
+        }
+
         const seasonCards = [];
         while( maxTime > 0 ) {
             const curCard = this.cards.shift();
