@@ -16,13 +16,13 @@ var SeasonTime = {
 
 class CardMgr {
     constructor(seed) {
-        if( seed ) {
-            this.generator = new Math.seedrandom(seed);
-            console.log("Seed is", seed);
-        } else {
-            this.generator = Math.random;
-            console.log("No seed");
+        this.seed = seed;
+        if( !seed ) {
+            const currentDateTime = new Date();
+            this.seed = currentDateTime.getTime();
         }
+        this.generator = new Math.seedrandom(this.seed);
+        console.log("Seed is", this.seed);
         this.cards = [];
         this.embuscades = [12,13,14,15];
         this.shuffleArray(this.embuscades);
