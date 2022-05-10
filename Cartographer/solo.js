@@ -21,6 +21,8 @@ const GAME_START_STATE = 1;
 const GAME_PLAY_STATE = 2;
 let gameState = GAME_LOADING_STATE ;
 
+let titre =  null;
+
 let toggleDebug = false;
 
 let pieces = 0;
@@ -33,6 +35,11 @@ let curTime = 0;
 const queryString = window.location.search;
 const urlParams = new URLSearchParams(queryString);
 const seed = urlParams.get('seed');
+if( !seed ) {
+    const currentDateTime = new Date();
+    const newSeed = currentDateTime.getTime();
+    document.location.assign(`${document.location.toString()}?seed=${newSeed}`);
+}
 
 const SIMPLE_SQUARE = [["#"]];
 const GOLDEN_L = [["G","G"],[" ","G"]];
@@ -551,11 +558,9 @@ function setupMyUI() {
     typeButtons.forEach(b=>b.visible=false);
     shapeButtons.forEach(b=>b.visible=false);
 
-    cardMgr = new CardMgr(seed);
-    uiManager.addLogger(`seed: ${cardMgr.seed}`);
-    if( !seed ) {
-        console.log(document.location.toString());
-        document.location.assign(`${document.location.toString()}?seed=${cardMgr.seed}`);
+    cardMgr = new CardMgr(seed);    
+    if( seed ) {
+        uiManager.addLogger(`seed: ${seed}`);
     }
 
     cardMgr.shuffleArray(decretTypes);
@@ -789,6 +794,15 @@ function isMouseOverDecret() {
 	return -1;
 }
 
+function isMouseOverExploration() {
+    let X = 1100;
+	let Y = 20+40*(curSeasonCards.length-1);
+	if( mouseX > X && mouseX < X+cardWidth*scale*.75 && mouseY > Y && mouseY < Y+cardHeight*scale*.75) {
+		return true;
+	}
+    return false;
+}
+
 function drawEmptyCard(X,Y) {
 	strokeWeight(4);
 	rect(X, Y, cardWidth*scale*.75, cardHeight*scale*.75, 20);
@@ -883,6 +897,13 @@ function drawBoard() {
         scale/=3;
     }
 
+    if( isMouseOverExploration() ) {
+        scale*=3;
+        const card = curSeasonCards[curSeasonCards.length-1];
+        drawExplorationCard(window_width/2-cardWidth/2*scale, 100, card, false);
+        scale/=3;
+    }
+
     textSize(25);
     fill(125);
     textAlign(LEFT, CENTER);
@@ -901,17 +922,17 @@ function drawBoard() {
             textSize(25);
             fill(25);
             if( toggleDebug ) {
-                text(overCase.X, 300,770);	
-                text(overCase.Y, 330,770);	
+                text(overCase.X, 305,770);	
+                text(overCase.Y, 335,770);	
             } else {
-                text(overCase.X+1, 330,770);	
-                text(letters[overCase.Y], 300,770);	
+                text(overCase.X+1, 335,770);	
+                text(letters[overCase.Y], 305,770);	
             }
 
             // TODO: check if shape is OUT of the board
             drawShape(overCase.X, overCase.Y);
             if( isGoldShape ) {
-                spritesheet.drawScaledSprite('piece', 0, mouseX, mouseY, scale);
+                spritesheet.drawScaledSprite('piece', 0, mouseX-33/2, mouseY-33/2, scale);
             }
             pop();
         }
@@ -942,6 +963,13 @@ function drawBoard() {
 
     drawTime();
     drawPoints();
+
+    // affiche le titre si le joueur en a gagné un
+    if( season === Season.End && titre ) {
+        textAlign(CENTER, CENTER);
+        text(titre, 1275, 610);
+        textAlign(LEFT, TOP);
+    }
 }
 
 function drawTime() {
@@ -975,6 +1003,30 @@ function drawPoints() {
         textSize(22);
         fill(247, 255, 60);
         text(`- ${totalSolo} = ${total-totalSolo}`,300,680);
+        if( season === Season.End ) {
+            if( total-totalSolo < -30 ) {
+                uiManager.addLogger("Fin du jeu");
+            } else if( total-totalSolo < -20 ) {
+                titre = "Buveur d'encre patenté";
+            } else if( total-totalSolo < -10 ) {
+                titre = "Gribouilleur attardé";
+            } else if( total-totalSolo < -5 ) {
+                titre = "Assistant incompétent";
+            } else if( total-totalSolo < 0 ) {
+                titre = "Assesseur amateur";
+            } else if( total-totalSolo < 10 ) {
+                titre = "Apprenti géomètre";
+            } else if( total-totalSolo < 20 ) {
+                titre = "Topographe itinérant";
+            } else if( total-totalSolo < 30 ) {
+                titre = "Maitre cartographe";
+            } else {
+                titre = "Cartographe légendaire";
+            }
+            if( titre ) {
+                uiManager.addLogger(titre);
+            }
+        }
     }
 
     fill(250);
