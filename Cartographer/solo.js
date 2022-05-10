@@ -5,8 +5,8 @@ let scale = window_width < 800 ? .5 : 1;
 
 const uiManager = new UIManager();
 uiManager.loggerContainer = new LoggerContainer(
-	window_width - 200,
-	window_height - 400*scale,
+	20,
+	480,
 	200,
 	100
 );
@@ -518,10 +518,10 @@ function setupMyUI() {
         curSelectedType = MONSTERCASE;
     });
 
-    const turnButton =new BImageButton(280, 460+140, spritesheet.getImage('icons', 1), ()=>{
+    const turnButton =new BImageButton(1280, 520, spritesheet.getImage('icons', 1), ()=>{
         curSelectedShape = turnShape(curSelectedShape);
     });
-    const flipButton =new BImageButton(280, 70+460+140, spritesheet.getImage('icons', 0), ()=>{
+    const flipButton =new BImageButton(1280+70, 520, spritesheet.getImage('icons', 0), ()=>{
         curSelectedShape = flipShape(curSelectedShape);
     });
 
@@ -545,6 +545,11 @@ function setupMyUI() {
     shapeButtons.forEach(b=>b.visible=false);
 
     cardMgr = new CardMgr(seed);
+    uiManager.addLogger(`seed: ${cardMgr.seed}`);
+    if( !seed ) {
+        console.log(document.location.toString());
+        document.location.assign(`${document.location.toString()}?seed=${cardMgr.seed}`);
+    }
 
     cardMgr.shuffleArray(decretTypes);
     occurrences.push(...[Math.floor(cardMgr.randomInt(4)), Math.floor(cardMgr.randomInt(4)), Math.floor(cardMgr.randomInt(4)), Math.floor(cardMgr.randomInt(4))]);
@@ -584,8 +589,8 @@ function drawType(typeName, i, unique=true) {
     const typeButton = typeButtons[typeIndex];
     typeButton.visible = true;
     typeButton.enabled = !unique;
-    typeButton.x = 20;
-    typeButton.y = 460+70*i;
+    typeButton.x = 1380;
+    typeButton.y = 20+70*i;
     if( unique || i === 0 ) {
         curSelectedType = typeIndex;
     }
@@ -596,8 +601,8 @@ function drawSingleShape(shape, i, unique=true) {
     const shapeButton = shapeButtons[shapeIndex];
     shapeButton.visible = true;
     shapeButton.enabled = !unique;
-    shapeButton.x = 100+80*i;
-    shapeButton.y = 460;
+    shapeButton.x = 1280;
+    shapeButton.y = 20+50*i;
     if( unique || i === 0 ) {
         chooseShape(shapeIndex);
     }
@@ -785,7 +790,7 @@ function drawEmptyCard(X,Y) {
 
 function drawExplorationCard(X,Y, index, drawRuin=false) {
     if( index === 11 && drawRuin ) {
-        X+=50;
+        X-=20;
     }
 	fill(250,150,10);
 	stroke(0);
@@ -868,7 +873,7 @@ function drawBoard() {
     fill(125);
     textAlign(LEFT, CENTER);
     if( curSelectedShape ) {
-        drawShape(-5,8, false);
+        drawShape(25,8, false);
     } else if( pointButton.visible ) {
         text("End of Season", 770, 510);
     }
@@ -910,10 +915,12 @@ function drawBoard() {
 
     if( toggleDebug ) {
         // logger
-        rect(window_width - 200,
-            window_height - 400*scale,
-            200,
-            100);
+        rect(
+            uiManager.loggerContainer.x,
+            uiManager.loggerContainer.y,
+            uiManager.loggerContainer.w,
+            uiManager.loggerContainer.h
+        );
     }
 
     drawPoints();
@@ -982,11 +989,12 @@ function drawShape(X,Y,checkDraw=true) {
     if( !curSelectedShape ) {
         return;
     }
-    let deltaX = -35;
+    const deltaX = 0;
+    let scale = 0.6;
     if( checkDraw ) {
         canDraw = true;
         isDrawnOnTemple = false;
-        deltaX = 0;
+        scale = 1;
     }
     const shape = curSelectedShape;
     for(let i=0; i < shape.length;i++) {
@@ -997,7 +1005,7 @@ function drawShape(X,Y,checkDraw=true) {
             }
             const curX = X+i;
             const curY = Y+j;
-            spritesheet.drawScaledSprite('cases', curSelectedType, xBoard+sizeBoard*curX+deltaX, yBoard+sizeBoard*curY, scale);
+            spritesheet.drawScaledSprite('cases', curSelectedType, xBoard+sizeBoard*curX*scale+deltaX, yBoard+sizeBoard*curY*scale, scale);
             if( checkDraw && !isEmptyCase({X:curX, Y:curY})) {
                 stroke(250,50,50);
                 strokeWeight(4);
@@ -1156,12 +1164,19 @@ function keyPressed() {
         }
 	}
 
-    if (key === "B") {
-        console.log(board);
-    }
-
-    if (key === "N") {
-        curSelectedShape = SIMPLE_S;
+    if( turn === 0 ) {
+        if (key === "a") {
+            occurrences[0] = (occurrences[0]+1)%4;
+        }
+        if (key === "b") {
+            occurrences[1] = (occurrences[1]+1)%4;
+        }
+        if (key === "c") {
+            occurrences[2] = (occurrences[2]+1)%4;
+        }
+        if (key === "d") {
+            occurrences[3] = (occurrences[3]+1)%4;
+        }
     }
 
     if( key === "t" ) {
@@ -1171,10 +1186,6 @@ function keyPressed() {
     if( key === "r" || key === "f" ) {
         // retourner la forme (miroir)
         curSelectedShape = flipShape(curSelectedShape);
-    }
-
-    if( key === "P") {
-        pointsClicked();
     }
 }
 
