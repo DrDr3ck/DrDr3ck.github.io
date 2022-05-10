@@ -6,7 +6,7 @@ let scale = window_width < 800 ? .5 : 1;
 const uiManager = new UIManager();
 uiManager.loggerContainer = new LoggerContainer(
 	20,
-	480,
+	470,
 	200,
 	100
 );
@@ -111,7 +111,12 @@ let sizeBoard = 58.8;
 const cardHeight = 276;//Card.height;
 const cardWidth = 200;//Card.width;
 
-let points = [0,0,0,0]; // 400, 760
+let points = [
+    {decret1: 0, decret2: 0, pieces: 0, monsters: 0, total: 0},
+    {decret1: 0, decret2: 0, pieces: 0, monsters: 0, total: 0},
+    {decret1: 0, decret2: 0, pieces: 0, monsters: 0, total: 0},
+    {decret1: 0, decret2: 0, pieces: 0, monsters: 0, total: 0}
+];
 
 let useTemple = false;
 let templesPosition = [];
@@ -320,16 +325,16 @@ class PointsDialog extends Dialog {
             const total = this.decret1+this.decret2+pieces-monsters;
             // ajouter les points et changer de saisons
             if( season === Season.Printemps ) {
-                points[0] = total;
+                points[0] = {decret1: this.decret1, decret2: this.decret2, pieces, monsters, total};
                 season = Season.Ete;
             } else if( season === Season.Ete ) {
-                points[1] = total;
+                points[1] = {decret1: this.decret1, decret2: this.decret2, pieces, monsters, total};
                 season = Season.Automne;
             } else if( season === Season.Automne ) {
-                points[2] = total;
+                points[2] = {decret1: this.decret1, decret2: this.decret2, pieces, monsters, total};
                 season = Season.Hiver;
             } else {
-                points[3] = total;
+                points[3] = {decret1: this.decret1, decret2: this.decret2, pieces, monsters, total};
                 season = Season.End;
                 uiManager.addLogger("The End");
             }
@@ -935,12 +940,11 @@ function drawBoard() {
         );
     }
 
+    drawTime();
     drawPoints();
 }
 
-function drawPoints() {
-    const total = points.reduce((acc,val)=>acc+val);
-    const totalStr = `${points.join(" + ")} = ${total}`;
+function drawTime() {
     fill(250);
     stroke(0);
     textSize(32);
@@ -950,17 +954,54 @@ function drawPoints() {
     } else {
         text(season, 380, 10);
     }
-    textAlign(RIGHT, TOP);
-    text(totalStr, 1080, 10);
-    textAlign(LEFT, TOP);
-    if( season === Season.End) {
-        const totalSolo = [0,0,1,2,3].reduce((acc,val)=>{
-            return acc+decretPoints[decretTypes[val]][occurrences[val]];}
-        );
-        fill(247, 255, 60);
-        text(` - ${totalSolo} = ${total-totalSolo}`, 1080, 10);
-    }
+}
+
+function drawPoints() {
+    drawSeasonPoint(20,600,0);
+    drawSeasonPoint(190,600,1);
+    drawSeasonPoint(20,700,2);
+    drawSeasonPoint(190,700,3);
+    const total = points.reduce((acc,val)=>acc+val.total, 0);
     fill(250);
+    stroke(0);
+    textSize(32);
+    textAlign(CENTER, CENTER);
+    text(total,160,680);
+
+    if( season === Season.End || toggleDebug ) {
+        const totalSolo = [0,1,2,3].reduce((acc,val)=>
+            acc+decretPoints[decretTypes[val]][occurrences[val]], 0
+        );
+        textSize(22);
+        fill(247, 255, 60);
+        text(`- ${totalSolo} = ${total-totalSolo}`,300,680);
+    }
+
+    fill(250);
+    textAlign(LEFT, TOP);
+}
+
+function drawSeasonPoint(x,y,seasonIndex) {
+    const decret1Value = points[seasonIndex].decret1;
+    const decret2Value = points[seasonIndex].decret2;
+    const piecesValue = points[seasonIndex].pieces;
+    const monstersValue = points[seasonIndex].monsters;
+    fill(250);
+    stroke(0);
+    textSize(18);
+    const delta = 35;
+    textAlign(LEFT, TOP);
+    text(decret1Value, x, y);
+    text(decret2Value, x+delta, y);
+    text(piecesValue, x, y+delta);
+    text(-monstersValue, x+delta, y+delta);
+    const total = decret1Value+decret2Value+piecesValue-monstersValue;
+    text(total,x+delta*2,y+delta/2);
+    noFill();
+    rect(x-5,y-5,110,delta*2,10);
+    line(x+delta-5,y-5,x+delta-5,y+delta*2-5);
+    line(x+delta*2-5,y-5,x+delta*2-5,y+delta*2-5);
+    line(x-5,y+delta-7,x+delta*2-5,y+delta-7);
 }
 
 function highlightTemples() {
