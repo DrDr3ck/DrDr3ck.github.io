@@ -348,8 +348,73 @@ function countPlainesOrVert(board) {
 /**
  * 8 par cité de 6 cases ou plus
  */
-function countPlacesFortes(board) {
-    return NDV;
+function countPlacesFortes(board, limit=11) {
+    const villes = [];
+    const visited = "PF";
+    for( let j = 0; j< board.length; j++) {
+        for( let i = 0; i< board.length; i++) {
+            if( board[i][j].visited === visited ) {
+                continue;
+            }
+            if( board[i][j].value === CITYCASE ) {
+                board[i][j].visited = visited;
+                const neighborhood = propagate(board, i, j, CITYCASE, visited, limit);
+                neighborhood.forEach(n=>board[n.X][n.Y].visited=visited);
+                villes.push(neighborhood.length);
+            }
+        }
+    }
+    return villes.filter(v=>v>=6).length * 8;
+}
+
+function getNeighbors(board, neighbor, limit=11) {
+    const neighbors = [];
+    if( neighbor.X > 0 ) {
+        const newX = neighbor.X-1;
+        const newY = neighbor.Y;
+        const cell = board[newX][newY];
+        neighbors.push({X:newX, Y:newY, visited: cell.visited, value: cell.value})
+    }
+    if( neighbor.X < limit-1 ) {
+        const newX = neighbor.X+1;
+        const newY = neighbor.Y;
+        const cell = board[newX][newY];
+        neighbors.push({X:newX, Y:newY, visited: cell.visited, value: cell.value})
+    }
+    if( neighbor.Y < limit-1 ) {
+        const newX = neighbor.X;
+        const newY = neighbor.Y+1;
+        const cell = board[newX][newY];
+        neighbors.push({X:newX, Y:newY, visited: cell.visited, value: cell.value})
+    }
+    if( neighbor.Y > 0 ) {
+        const newX = neighbor.X;
+        const newY = neighbor.Y-1;
+        const cell = board[newX][newY];
+        neighbors.push({X:newX, Y:newY, visited: cell.visited, value: cell.value})
+    }
+    return neighbors;
+}
+
+function propagate(board, i, j, value, visited, limit=11) {
+    const neighbors = [{X:i, Y:j}];
+    const allCells = [{X:i, Y:j}];
+    while( neighbors.length > 0 ) {
+        const curNeighbor = neighbors.shift();
+        const curNeighbors = getNeighbors(board, curNeighbor, limit);
+        curNeighbors.forEach(n=>{
+            if( n.visited === visited ) {
+                return;
+            }
+            board[n.X][n.Y].visited = visited;
+            if( n.value !== value ) {
+                return;
+            }
+            neighbors.push({X:n.X, Y:n.Y});
+            allCells.push({X:n.X, Y:n.Y});
+        });
+    }
+    return allCells;
 }
 
 /**
@@ -385,7 +450,7 @@ function test() {
         ]), 9
     );
 
-    expectToBe(BaronniePerdue(
+    expectToBe(countBaronniePerdue(
         [
             [{value:"M"}, {value: "5"}, {value: "4"}, {value: "R"}],
             [{value:" "}, {value: "4"}, {value: "2"}, {value: "A"}],
@@ -456,6 +521,14 @@ function test() {
             [{value:WATERCASE}, {value: FIELDCASE}, {value: FIELDCASE}],
             [{value:"0"}, {value: "0"}, {value: FIELDCASE}]
         ], [{X:1,Y:1}]), 5
+    );
+
+    expectToBe(countPlacesFortes(
+        [
+            [{value:CITYCASE, visited: ""}, {value: "2", visited: ""}, {value: "M", visited: ""}],
+            [{value:CITYCASE, visited: ""}, {value: CITYCASE, visited: ""}, {value: CITYCASE, visited: ""}],
+            [{value:"M", visited: ""}, {value: CITYCASE, visited: ""}, {value: CITYCASE, visited: ""}]
+        ], 3), 8
     );
 }
 

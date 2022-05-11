@@ -137,7 +137,7 @@ function createBoard(type) {
     for( let j = 0; j< 11; j++) {
         const row = [];
         for( let i = 0; i< 11; i++) {
-            row.push({turn: -1, value: EMPTYCASE});
+            row.push({turn: -1, value: EMPTYCASE, visited: ""});
         }    
         b.push(row);
     }
