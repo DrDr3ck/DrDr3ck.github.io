@@ -7,7 +7,7 @@ const uiManager = new UIManager();
 uiManager.loggerContainer = new LoggerContainer(
 	20,
 	470,
-	200,
+	300,
 	100
 );
 uiManager.loggerContainer.visible = true;
@@ -203,7 +203,7 @@ function nextClicked() {
     }
 
     // check if a golden shape has been used
-    if( curSelectedShape[0].some(s=>s==="G") ) {
+    if( curSelectedShape && curSelectedShape[0].some(s=>s==="G") ) {
         pieces++;
     }
 
@@ -578,14 +578,15 @@ function setupMyUI() {
 
 function drawLoading() {
     spritesheet.drawSprite('cartographer', 0, window_width/2 - 553/2, 20);
+    fill(51);
+    stroke(0);
+    rect(width / 4, height / 4 * 3, width / 2, height / 10);
 	fill(9, 47, 18);
     const total = spritesheet.totalImagesToLoad;
 	const current = spritesheet.totalLoadedImages;
     rect(width / 4, height / 4 * 3, current / total * width / 2, height / 10);
-	stroke(0);
-	noFill();
-	rect(width / 4, height / 4 * 3, width / 2, height / 10);
-    fill(250);
+
+	fill(250);
 	noStroke();
 	textSize(50);
 	textAlign(CENTER, CENTER);
@@ -756,8 +757,78 @@ function setupCard(cardIndex) {
     const types = curCard.type;
     const shapes = curCard.shape;
     
-    types.forEach((t,i)=>drawType(t, i, types.length === 1))
-    shapes.forEach((s,i)=>drawSingleShape(s, i, shapes.length === 1))
+    types.forEach((t,i)=>drawType(t, i, types.length === 1));
+    shapes.forEach((s,i)=>drawSingleShape(s, i, shapes.length === 1));
+
+    if( isMonsterCard(cardIndex) ) {
+        // place card
+        if( placeMonster(cardIndex) ) {
+            uiManager.addLogger("Monster added to board");
+        } else {
+            uiManager.addLogger("Cannot place monster");
+        }
+        // undo disabled
+        undoButton.enabled = false;
+        // only next is enabled   
+        nextButton.enabled = true;
+        curSelectedShape = null;
+        curSelectedType = -1;
+    }
+}
+
+function placeMonster(cardIndex) {
+    const top = cardIndex >= 14;
+    const left = cardIndex === 14 || cardIndex === 12;
+    const monsterWidth = curSelectedShape.length;
+    const monsterHeight = curSelectedShape[0].length;
+    let X = left ? 0 : 11 - monsterWidth;
+    let Y = top ? 0 : 11 - monsterHeight;
+    let ring = 0;
+    const deltas = [];
+    if( cardIndex === 14 ) { // big U
+        deltas.push(...[{X:0, Y:1}, {X:1, Y:0}, {X:0, Y:-1}, {X:-1, Y:0}]);
+    } else if( cardIndex === 15 ) { // double I
+        deltas.push(...[{X:0, Y:1}, {X:-1, Y:0}, {X:0, Y:-1}, {X:1, Y:0}]);
+    } else if( cardIndex === 13 ) { // big diagonal
+        deltas.push(...[{X:0, Y:-1}, {X:-1, Y:0}, {X:0, Y:1}, {X:1, Y:0}]);
+    } else if( cardIndex === 12 ) { // small T
+        deltas.push(...[{X:0, Y:-1}, {X:1, Y:0}, {X:0, Y:1}, {X:-1, Y:0}]);
+    }
+    let deltaSide = 0;
+    let startX = X;
+    let startY = Y;
+    while( !canPlaceShape(curSelectedShape, X, Y, false) ) {
+        // move it
+        X += deltas[deltaSide].X;
+        Y += deltas[deltaSide].Y;
+        console.log(Y, monsterHeight, Y+monsterHeight-1);
+        if( Y < ring || Y+ring+monsterHeight-1 >= 11 || X < ring || X+ring+monsterWidth-1 >= 11) {
+            // need to turn: go back first
+            X -= deltas[deltaSide].X;
+            Y -= deltas[deltaSide].Y;
+            // change delta
+            deltaSide = (deltaSide+1)%4;
+            // turn
+            X += deltas[deltaSide].X;
+            Y += deltas[deltaSide].Y;
+        }
+        if( startX === X && startY === Y ) {
+            ring++;
+            if( ring === 5 ) {
+                return false;
+            }
+            X = left ? ring : 11 - ring - monsterWidth;
+            Y = top ? ring : 11 - ring - monsterHeight;
+            startX = X;
+            startY = Y;
+        }
+    }
+    addShapeAtPosition(X,Y);
+    return true;
+}
+
+function isMonsterCard(cardIndex) {
+    return cardIndex > 11;
 }
 
 function mouseOverCase() {
@@ -829,8 +900,11 @@ function drawEmptyCard(X,Y) {
 }
 
 function drawExplorationCard(X,Y, index, drawRuin=false) {
-    if( index === 11 && drawRuin ) {
+    if( index === 11 && (drawRuin || toggleDebug) ) {
         X-=20;
+    }
+    if( toggleDebug && index > 11 ) {
+        X+=20;
     }
 	fill(250,150,10);
 	stroke(0);
@@ -871,7 +945,7 @@ function drawBoard() {
     for( i = 0; i < curSeasonCards.length+delta; i++ ) {
         const card = curSeasonCards[i];
         drawExplorationCard(1100,20+40*i, card, i === curSeasonCards.length+delta-2);	
-    }
+    } 
 
     /*
     for( i = 0; i < cards.length+delta; i++ ) {
@@ -1159,6 +1233,11 @@ function addShape() {
         uiManager.addLogger("Shape should be on a ruin");
         return false;
     }
+    addShapeAtPosition(overCase.X, overCase.Y);
+    return true;
+}
+
+function addShapeAtPosition(X, Y) {
     const shape = curSelectedShape;
     for(let i=0; i < shape.length;i++) {
         const row = shape[i];
@@ -1166,13 +1245,12 @@ function addShape() {
             if( row[j] === " ") {
                 continue;
             }
-            const curX = overCase.X+i;
-            const curY = overCase.Y+j;
+            const curX = X+i;
+            const curY = Y+j;
             board[curX][curY].value = curSelectedType;
             board[curX][curY].turn = turn;    
         }
     }
-    return true;
 }
 
 function isEmptyCase(position) {
