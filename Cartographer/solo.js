@@ -920,6 +920,9 @@ function isMouseOverDecret() {
 }
 
 function isMouseOverExploration() {
+    if( season === Season.End ) {
+        return false;
+    }
     let X = 1100;
 	let Y = 20+40*(curSeasonCards.length-1);
 	if( mouseX > X && mouseX < X+cardWidth*scale*.75 && mouseY > Y && mouseY < Y+cardHeight*scale*.75) {
@@ -1150,9 +1153,6 @@ function drawPoints() {
                 titre = "Maitre cartographe";
             } else {
                 titre = "Cartographe légendaire";
-            }
-            if( titre ) {
-                uiManager.addLogger(titre);
             }
         }
     }
