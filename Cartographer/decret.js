@@ -420,8 +420,27 @@ function propagate(board, i, j, value, visited, limit=11) {
 /**
  * 2 par case de la 2e plus grande cité
  */
-function countRemparts(board) {
-    return NDV;
+function countRemparts(board, limit=11) {
+    const villes = [];
+    const visited = "R";
+    for( let j = 0; j< board.length; j++) {
+        for( let i = 0; i< board.length; i++) {
+            if( board[i][j].visited === visited ) {
+                continue;
+            }
+            if( board[i][j].value === CITYCASE ) {
+                board[i][j].visited = visited;
+                const neighborhood = propagate(board, i, j, CITYCASE, visited, limit);
+                neighborhood.forEach(n=>board[n.X][n.Y].visited=visited);
+                villes.push(neighborhood.length);
+            }
+        }
+    }
+    if( villes.length <= 1 ) {
+        return 0;
+    }
+    villes.sort((a,b) => b-a);
+    return villes[1]*2;
 }
 
 //*************************************************/
@@ -529,6 +548,25 @@ function test() {
             [{value:CITYCASE, visited: ""}, {value: CITYCASE, visited: ""}, {value: CITYCASE, visited: ""}],
             [{value:"M", visited: ""}, {value: CITYCASE, visited: ""}, {value: CITYCASE, visited: ""}]
         ], 3), 8
+    );
+
+    expectToBe(countRemparts(
+        [
+            [{value:CITYCASE, visited: ""}, {value: "2", visited: ""}, {value: "M", visited: ""}],
+            [{value:CITYCASE, visited: ""}, {value: CITYCASE, visited: ""}, {value: "w", visited: ""}],
+            [{value:"M", visited: ""}, {value: "w", visited: ""}, {value: CITYCASE, visited: ""}]
+        ], 3), 2
+    );
+
+    expectToBe(countRemparts(
+        [
+            [{value:CITYCASE, visited: ""}, {value: "FFFFFF", visited: ""}, {value: "MMMMMF", visited: ""},{value:CITYCASE, visited: ""}, {value: "2", visited: ""}, {value: "M", visited: ""}],
+            [{value:CITYCASE, visited: ""}, {value: CITYCASE, visited: ""}, {value: "FFFFFF", visited: ""},{value:CITYCASE, visited: ""}, {value: "2", visited: ""}, {value: "M", visited: ""}],
+            [{value:"MMMMMM", visited: ""}, {value: "FFFFFF", visited: ""}, {value: CITYCASE, visited: ""},{value:CITYCASE, visited: ""}, {value: "2", visited: ""}, {value: "M", visited: ""}],
+            [{value:CITYCASE, visited: ""}, {value: CITYCASE, visited: ""}, {value: "MMMMMM", visited: ""},{value:CITYCASE, visited: ""}, {value: "2", visited: ""}, {value: "M", visited: ""}],
+            [{value:CITYCASE, visited: ""}, {value: CITYCASE, visited: ""}, {value: "FFFFFF", visited: ""},{value:CITYCASE, visited: ""}, {value: "2", visited: ""}, {value: "M", visited: ""}],
+            [{value:"MMMMMM", visited: ""}, {value: "MMMMMM", visited: ""}, {value: CITYCASE, visited: ""},{value:CITYCASE, visited: ""}, {value: "2", visited: ""}, {value: "M", visited: ""}]
+        ], 6), 6
     );
 }
 

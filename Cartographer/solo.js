@@ -433,6 +433,14 @@ class PointsDialog extends Dialog {
         this.transparency = 60;
     }
 
+    resetVisit(board) {
+        for( let j = 0; j<11; j++ ) {
+            for( let i = 0; i < 11; i++) {
+                board[i][j].visited = " ";
+            }
+        }
+    }
+
     setDecret1(board, type, occurrence) {
         const val = countPointsForDecret(board, type, occurrence);
         if( val === -9999 ) {
@@ -486,6 +494,7 @@ function pointsClicked() {
     }
     const decret2Index = (decret1Index+1)%4;
     uiManager.setDialog(dialog);
+    dialog.resetVisit(board);
     dialog.setDecret1(board, decretTypes[decret1Index], occurrences[decret1Index]);
     dialog.setDecret2(board, decretTypes[decret2Index], occurrences[decret2Index]);
     dialog.confirmButton.visible = false;
