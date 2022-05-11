@@ -34,11 +34,10 @@ let curTime = 0;
 
 const queryString = window.location.search;
 const urlParams = new URLSearchParams(queryString);
-const seed = urlParams.get('seed');
+let seed = urlParams.get('seed');
 if( !seed ) {
     const currentDateTime = new Date();
-    const newSeed = currentDateTime.getTime();
-    document.location.assign(`${document.location.toString()}?seed=${newSeed}`);
+    seed = currentDateTime.getTime();
 }
 
 const SIMPLE_SQUARE = [["#"]];
@@ -461,6 +460,14 @@ let turn = 0;
 
 let curSelectedType = -1;
 
+const startButton = new BButton(40, window_height - 100, "START", startClicked);
+const copySeedButton = new BButton(window_width - 450, window_height - 40, "Copy", copySeed);
+const resetSeedButton = new BButton(window_width - 230, window_height - 40, "Reset", resetSeed);
+copySeedButton.setTextSize(35);
+copySeedButton.w = 200;
+resetSeedButton.setTextSize(35);
+resetSeedButton.w = 200;
+
 const nextButton = new BButton(window_width - 80 - 200*scale, window_height - 100, "NEXT", nextClicked);
 nextButton.setTextSize(45*scale);
 nextButton.w = 200*scale;
@@ -469,10 +476,6 @@ undoButton.setTextSize(45*scale);
 undoButton.w = 200*scale;
 
 const pointButton = new BFloatingButton(window_width - 200 - 60 - 100*scale, window_height - 100, "+", pointsClicked);
-
-function preload() {
-	
-}
 
 let cardMgr = null;
 let cards = []; // cards for the current season
@@ -511,7 +514,6 @@ function setup() {
 	spritesheet.addSpriteSheet('ville', './decret-ville-100.png', 400, 570);
 	spritesheet.addSpriteSheet('champs', './decret-champs-100.png', 400, 570);
 
-	uiManager.addLogger("Cartographer solo");
 	lastTime = Date.now();    
 }
 
@@ -550,7 +552,10 @@ function setupMyUI() {
         }));
     }
 
-    uiManager.setUI([...buttons, nextButton, undoButton, pointButton, ...shapeButtons]);
+    copySeedButton.x = window_width/2-100;
+    copySeedButton.y = 43;
+
+    uiManager.setUI([...buttons, nextButton, undoButton, pointButton, ...shapeButtons, copySeedButton]);
     nextButton.enabled = false;
     undoButton.enabled = false;
     pointButton.visible = false;
@@ -572,12 +577,7 @@ function setupMyUI() {
 }
 
 function drawLoading() {
-    fill(250);
-	noStroke();
-	textSize(50);
-	textAlign(CENTER, CENTER);
-    text('CARTOGRAPHER SOLO', width / 2, height / 3);
-	text('Loading...', width / 2, height / 2);
+    spritesheet.drawSprite('cartographer', 0, window_width/2 - 553/2, 20);
 	fill(9, 47, 18);
     const total = spritesheet.totalImagesToLoad;
 	const current = spritesheet.totalLoadedImages;
@@ -585,12 +585,31 @@ function drawLoading() {
 	stroke(0);
 	noFill();
 	rect(width / 4, height / 4 * 3, width / 2, height / 10);
+    fill(250);
+	noStroke();
+	textSize(50);
+	textAlign(CENTER, CENTER);
+	text('Loading...', width / 2, 640);
 	if (
 		spritesheet.totalLoadedImages === spritesheet.totalImagesToLoad
 	) {
-		gameState = GAME_PLAY_STATE;
-        setupMyUI();
+		gameState = GAME_START_STATE;
+        uiManager.setUI([startButton, copySeedButton, resetSeedButton]);
+        if( document.location.toString().includes("seed=") ) {
+            startClicked();
+        }
 	}
+}
+
+function preload() {
+	spritesheet.addSpriteSheet('cartographer', './cartographer.png', 553, 759);
+}
+
+
+function startClicked() {
+    gameState = GAME_PLAY_STATE;
+    uiManager.addLogger("Cartographer solo");
+    setupMyUI();
 }
 
 let cardButton = [];
@@ -897,7 +916,7 @@ function drawBoard() {
         scale/=3;
     }
 
-    if( isMouseOverExploration() ) {
+    if( !pointButton.visible && isMouseOverExploration() ) {
         scale*=3;
         const card = curSeasonCards[curSeasonCards.length-1];
         drawExplorationCard(window_width/2-cardWidth/2*scale, 100, card, false);
@@ -1210,6 +1229,29 @@ function addCurrentCase() {
     }
 }
 
+function copySeed() {
+    if( !navigator.clipboard ) {
+        uiManager.addLogger("cannot copy");
+        return;
+    }
+    if( document.location.toString().includes("seed=") ) {
+        navigator.clipboard.writeText(`${document.location.toString()}`);
+    } else {
+        navigator.clipboard.writeText(`${document.location.toString()}?seed=${seed}`);
+    }
+    uiManager.addLogger("seed copied");
+}
+
+function resetSeed() {
+    if( document.location.toString().includes("seed=") ) {
+        const url = document.location.toString().split("?")[0];
+        document.location.assign(url);
+    } else {
+        const currentDateTime = new Date();
+        seed = currentDateTime.getTime();
+    }
+}
+
 function draw() {
 	const currentTime = Date.now();
 	const elapsedTime = currentTime - lastTime;
@@ -1222,12 +1264,19 @@ function draw() {
 	uiManager.processInput();
 	uiManager.update(elapsedTime);
 
-	drawBoard();
+    if (gameState === GAME_PLAY_STATE) {
+	    drawBoard();
+    }
 
 	if (gameState === GAME_START_STATE) {
-		background(51, 51, 51, 200);
+		background(51);
+        spritesheet.drawSprite('cartographer', 0, window_width/2 - 553/2, 20);
+        textSize(22);
+        textAlign(CENTER, CENTER);
+        text(`seed: ${seed}`, window_width  - 300, window_height - 100);
 	}
 
+    textAlign(LEFT, TOP);
 	uiManager.draw();
 
 	if (gameState === GAME_PLAY_STATE) {
