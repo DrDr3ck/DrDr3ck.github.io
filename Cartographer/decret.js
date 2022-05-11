@@ -334,8 +334,49 @@ function countMonteeDesEaux(board) {
 /**
  * 1 par case de la plus grande cité non connecté à une montagne
  */
-function countGrandeCite(board) {
-    return NDV;
+function countGrandeCite(board, limit=11) {
+    // montagne is "M" or "-M"
+    const villes = [];
+    const visited = "R";
+    for( let j = 0; j< board.length; j++) {
+        for( let i = 0; i< board.length; i++) {
+            if( board[i][j].visited === visited ) {
+                continue;
+            }
+            if( board[i][j].value === CITYCASE ) {
+                board[i][j].visited = visited;
+                const neighborhood = propagate(board, i, j, CITYCASE, visited, limit);
+                neighborhood.forEach(n=>board[n.X][n.Y].visited=visited);
+                // check if neighborhood is next to a montagne (M or -M)
+                if( !nextToMontagne(board, neighborhood, limit )) {
+                    villes.push(neighborhood.length);
+                }
+            }
+        }
+    }
+    if( villes.length === 0 ) {
+        return 0;
+    }
+    villes.sort((a,b) => b-a);
+    return villes[0];
+}
+
+function nextToMontagne(board, ville, limit=11) {
+    const isMontagne = (v,deltaX,deltaY) => {
+        if( deltaX<0 && v.X === 0 ) return false; // on an edge
+        if( deltaX>0 && v.X === limit-1 ) return false; // on an edge
+        if( deltaY<0 && v.Y === 0 ) return false; // on an edge
+        if( deltaY>0 && v.Y === limit-1 ) return false; // on an edge
+        const val = board[v.X+deltaX][v.Y+deltaY].value;
+        return ["M", "-M"].includes(val);
+    }
+    for( const v of ville ) {
+        if( isMontagne(v,-1,0) ) return true;
+        if( isMontagne(v,1,0) ) return true;
+        if( isMontagne(v,0,-1) ) return true;
+        if( isMontagne(v,0,1) ) return true;
+    }
+    return false;
 }
 
 /**
@@ -566,7 +607,18 @@ function test() {
             [{value:CITYCASE, visited: ""}, {value: CITYCASE, visited: ""}, {value: "MMMMMM", visited: ""},{value:CITYCASE, visited: ""}, {value: "2", visited: ""}, {value: "M", visited: ""}],
             [{value:CITYCASE, visited: ""}, {value: CITYCASE, visited: ""}, {value: "FFFFFF", visited: ""},{value:CITYCASE, visited: ""}, {value: "2", visited: ""}, {value: "M", visited: ""}],
             [{value:"MMMMMM", visited: ""}, {value: "MMMMMM", visited: ""}, {value: CITYCASE, visited: ""},{value:CITYCASE, visited: ""}, {value: "2", visited: ""}, {value: "M", visited: ""}]
-        ], 6), 6
+        ], 6), 8
+    );
+
+    expectToBe(countGrandeCite(
+        [
+            [{value:CITYCASE, visited: ""}, {value: "FFFFFF", visited: ""}, {value: "MMMMMF", visited: ""},{value:CITYCASE, visited: ""}, {value: "M", visited: ""}, {value: "M", visited: ""}],
+            [{value:CITYCASE, visited: ""}, {value: CITYCASE, visited: ""}, {value: "FFFFFF", visited: ""},{value:CITYCASE, visited: ""}, {value: "2", visited: ""}, {value: "M", visited: ""}],
+            [{value:"MMMMMM", visited: ""}, {value: "FFFFFF", visited: ""}, {value: CITYCASE, visited: ""},{value:CITYCASE, visited: ""}, {value: "2", visited: ""}, {value: "M", visited: ""}],
+            [{value:CITYCASE, visited: ""}, {value: CITYCASE, visited: ""}, {value: "MMMMMM", visited: ""},{value:CITYCASE, visited: ""}, {value: "2", visited: ""}, {value: "M", visited: ""}],
+            [{value:CITYCASE, visited: ""}, {value: CITYCASE, visited: ""}, {value: "FFFFFF", visited: ""},{value:CITYCASE, visited: ""}, {value: "2", visited: ""}, {value: "M", visited: ""}],
+            [{value:"MMMMMM", visited: ""}, {value: "MMMMMM", visited: ""}, {value: CITYCASE, visited: ""},{value:CITYCASE, visited: ""}, {value: "2", visited: ""}, {value: "M", visited: ""}]
+        ], 6), 4
     );
 }
 
