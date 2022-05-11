@@ -6,6 +6,77 @@ const WATERCASE = 3;
 const MONSTERCASE = 4;
 const MONTAGNE = "M"; // ou -M
 
+const NDV = -9999;
+
+/**
+ * 
+ * @param type type of decret ("forest", "zone", "ville", "champs")
+ * @param occurrence occurrence in the list of decret of a given type
+ */
+function countPointsForDecret(board, type, occurrence) {
+    if( type === "champs") {
+        if( occurrence === 0 ) {
+            // vallee des mages
+            return countValleeMages(board);
+        } else if( occurrence === 1 ) {
+            // canaux d irrigation
+            return countCanauxIrrigation(board);
+        } else if( occurrence === 2 ) {
+            // grenier doré
+            return countGrenierDore(board);
+        } else if( occurrence === 3 ) {
+            // montee des eaux
+            return countMonteeDesEaux(board);
+        }
+    }
+    if( type === "forest") {
+        if( occurrence === 0 ) {
+            // arbres vigies
+            return countArbreVigie(board);
+        } else if( occurrence === 1 ) {
+            // bois de la sentinelle
+            return countBoisSentinelle(board);
+        } else if( occurrence === 2 ) {
+            // foret des hauts plateaux
+            return countForetHautsPlateaux(board);
+        } else if( occurrence === 3 ) {
+            // chemin verdoyant
+            return countCheminVerdoyant(board);
+        }
+    }
+    if( type === "zone") {
+        if( occurrence === 0 ) {
+            // frontieres
+            return countFrontieres(board);
+        } else if( occurrence === 1 ) {
+            // baronnie perdue
+            return countBaronniePerdue(board);
+        } else if( occurrence === 2 ) {
+            // route brisee
+            return countRouteBrisee(board);
+        } else if( occurrence === 3 ) {
+            // chaudrons
+            return countChaudrons(board);
+        }
+    }
+    if( type === "ville") {
+        if( occurrence === 0 ) {
+            // grande cite
+            return countGrandeCite(board);
+        } else if( occurrence === 1 ) {
+            // plaines de l or vert
+            return countPlainesOrVert(board);
+        } else if( occurrence === 2 ) {
+            // places fortes
+            return countPlacesFortes(board);
+        } else if( occurrence === 3 ) {
+            // remparts
+            return countRemparts(board);
+        }
+    }
+    return NDV;
+}
+
 function neighborhood(board,i,j) {
     let count = 0;
     if( i === 0 || board[i-1][j].value !== EMPTYCASE ) count++;
@@ -63,7 +134,7 @@ function countFrontieres(board) {
             count++;
         }
     }
-    return count;
+    return count*6;
 }
 
 /**
@@ -86,10 +157,10 @@ function countChaudrons(board) {
  */
 function countRouteBrisee(board) {
     let count = 0;
-    for( let i = 0; i< board.length; i++) {
+    for( let i = 0; i <= board.length-1; i++) {
         let all = true;
-        for( let j=0; j < board.length-i; j++) {
-            if( board[i+j][j].value === EMPTYCASE ) {
+        for( let j=0; j < i+1; j++) {
+            if( board[i-j][board.length-j-1].value === EMPTYCASE ) {
                 all = false;
                 break;
             }
@@ -127,7 +198,7 @@ function getBiggerSquare(board, i, j) {
 /**
  * 3 points pour chaque case constituant l un des bords du plus grand carre rempli de cases
  */
-function BaronniePerdue(board) {
+function countBaronniePerdue(board) {
     let biggerSquare = 0;
     for( let i = 0; i< board.length; i++) {
         for( let j=0; j < board.length; j++) {
@@ -173,8 +244,8 @@ function countBoisSentinelle(board) {
 /**
  * 3 par montagne connectées par des forets
  */
-function ForetHautsPlateaux(board) {
-    return 0;
+function countForetHautsPlateaux(board) {
+    return NDV;
 }
 
 /**
@@ -256,7 +327,7 @@ function countGrenierDore(board, templePositions) {
  * 3 par champs non connectés à des lacs et non aux bords
  */
 function countMonteeDesEaux(board) {
-    return 0;
+    return NDV;
 }
 
 /// VILLES
@@ -264,28 +335,28 @@ function countMonteeDesEaux(board) {
  * 1 par case de la plus grande cité non connecté à une montagne
  */
 function countGrandeCite(board) {
-    return 0;
+    return NDV;
 }
 
 /**
  * 3 pour chaque cité connectés à au moins 3 types de terrains differents
  */
 function countPlainesOrVert(board) {
-    return 0;
+    return NDV;
 }
 
 /**
  * 8 par cité de 6 cases ou plus
  */
 function countPlacesFortes(board) {
-    return 0;
+    return NDV;
 }
 
 /**
  * 2 par case de la 2e plus grande cité
  */
 function countRemparts(board) {
-    return 0;
+    return NDV;
 }
 
 //*************************************************/
@@ -302,15 +373,15 @@ function test() {
             [{value:" "}, {value: " "}, {value: "M"}],
             [{value:" "}, {value: " "}, {value: "1"}],
             [{value:"M"}, {value: "0"}, {value: "1"}]
-        ]), 2
+        ]), 12
     );
 
     expectToBe(countRouteBrisee(
         [
-            [{value:"-M"}, {value: " "}, {value: " "}, {value: " "}],
-            [{value:" "}, {value: "4"}, {value: " "}, {value: " "}],
-            [{value:"1"}, {value: "2"}, {value: "2"}, {value: " "}],
-            [{value:"M"}, {value: "2"}, {value: " "}, {value: "1"}]
+            [{value:"-M"}, {value: " "}, {value: "1"}, {value: "M"}],
+            [{value:" "}, {value: "4"}, {value: "2"}, {value: "2"}],
+            [{value:" "}, {value: " "}, {value: "2"}, {value: " "}],
+            [{value:" "}, {value: " "}, {value: " "}, {value: "1"}]
         ]), 9
     );
 

@@ -386,6 +386,8 @@ class PointsDialog extends Dialog {
         decret1Dec5Button.setTextSize(32);
         this.components.push(decret1Dec5Button);
 
+        this.decret1Buttons = [decret1Inc1Button,decret1Inc5Button,decret1Dec1Button,decret1Dec5Button];
+
         const decret2Inc1Button = new BFloatingButton(312-20, 150, '+1', () => {
             this.decret2++;
             this.confirmButton.visible = false;
@@ -411,6 +413,8 @@ class PointsDialog extends Dialog {
         decret2Dec5Button.setTextSize(32);
         this.components.push(decret2Dec5Button);
 
+        this.decret2Buttons = [decret2Inc1Button,decret2Inc5Button,decret2Dec1Button,decret2Dec5Button];
+
         this.decret1 = 0;
         this.decret2 = 0;
 
@@ -427,6 +431,26 @@ class PointsDialog extends Dialog {
         monsterButton.enabled = false;
 
         this.transparency = 60;
+    }
+
+    setDecret1(board, type, occurrence) {
+        const val = countPointsForDecret(board, type, occurrence);
+        if( val === -9999 ) {
+            return;
+        }
+        this.decret1 = val;
+        // deactivate inc/dec buttons
+        this.decret1Buttons.forEach(b=>b.visible = false);
+    }
+
+    setDecret2(board, type, occurrence) {
+        const val = countPointsForDecret(board, type, occurrence);
+        if( val === -9999 ) {
+            return;
+        }
+        this.decret2 = val;
+        // deactivate inc/dec buttons
+        this.decret2Buttons.forEach(b=>b.visible = false);
     }
 
     doDraw() {
@@ -452,7 +476,18 @@ class PointsDialog extends Dialog {
 
 function pointsClicked() {
     const dialog = new PointsDialog(1080, 50, 380, 400);
+    let decret1Index = 0;
+    if( season === Season.Ete ) {
+        decret1Index = 1;
+    } else if( season === Season.Automne ) {
+        decret1Index = 2;
+    } else if( season === Season.Hiver ) {
+        decret1Index = 3;
+    }
+    const decret2Index = (decret1Index+1)%4;
     uiManager.setDialog(dialog);
+    dialog.setDecret1(board, decretTypes[decret1Index], occurrences[decret1Index]);
+    dialog.setDecret2(board, decretTypes[decret2Index], occurrences[decret2Index]);
     dialog.confirmButton.visible = false;
 }
 
@@ -1401,6 +1436,13 @@ function keyPressed() {
         const newSeed = parseInt(cardMgr.seed)+1;
         console.log(newSeed);
         document.location.replace(`http://localhost:8000/Cartographer/solo.html?seed=${newSeed.toString()}`)
+    }
+
+    if( key === "B" ) {
+        for(let i = 0; i < board.length; i++ ) {
+            const row = board[i].map(b=>b.value).join(",");
+            console.log(row);
+        }
     }
 
     if( turn === 0 ) {
