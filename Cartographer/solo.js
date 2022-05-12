@@ -327,36 +327,14 @@ class PointsDialog extends Dialog {
 		super(x, y, w, h);
 
         this.components.forEach((c) => (c.visible = true));
-        this.confirmButton = new BButton(10,390,"Confirm",() => {
-            const total = this.decret1+this.decret2+pieces-monsters;
-            // ajouter les points et changer de saisons
-            if( season === Season.Printemps ) {
-                points[0] = {decret1: this.decret1, decret2: this.decret2, pieces, monsters, total};
-                season = Season.Ete;
-            } else if( season === Season.Ete ) {
-                points[1] = {decret1: this.decret1, decret2: this.decret2, pieces, monsters, total};
-                season = Season.Automne;
-            } else if( season === Season.Automne ) {
-                points[2] = {decret1: this.decret1, decret2: this.decret2, pieces, monsters, total};
-                season = Season.Hiver;
-            } else {
-                points[3] = {decret1: this.decret1, decret2: this.decret2, pieces, monsters, total};
-                season = Season.End;
-                uiManager.addLogger("The End");
-            }
-            seasonTime = SeasonTime[season];
-            curTime = 0;
-            pointButton.visible = false;
-            curSeasonCards = [];
-            if( season !== Season.End ) {
-                cards = cardMgr.getSeason(season);
-                nextCard();
-            }
-            closeCurrentDialog();
-            delete this;
-        });
+        this.confirmButton = new BButton(10,390,"Confirm",()=>{this.confirmed()});
         const plusDialogButton = new BFloatingButton(330, 380, '+', ()=>{
-            this.confirmButton.visible = true;
+            if( this.decret1Buttons[0].visible || this.decret2Buttons[0].visible ) {
+                this.confirmButton.visible = true;
+            } else {
+                console.log("confirmed in plus");
+                this.confirmed();
+            }
         });
         plusDialogButton.setTextSize(32);
         this.components.push(plusDialogButton);
@@ -431,6 +409,36 @@ class PointsDialog extends Dialog {
         monsterButton.enabled = false;
 
         this.transparency = 60;
+    }
+
+    confirmed() {
+        console.log("confirmed");
+        const total = this.decret1+this.decret2+pieces-monsters;
+        // ajouter les points et changer de saisons
+        if( season === Season.Printemps ) {
+            points[0] = {decret1: this.decret1, decret2: this.decret2, pieces, monsters, total};
+            season = Season.Ete;
+        } else if( season === Season.Ete ) {
+            points[1] = {decret1: this.decret1, decret2: this.decret2, pieces, monsters, total};
+            season = Season.Automne;
+        } else if( season === Season.Automne ) {
+            points[2] = {decret1: this.decret1, decret2: this.decret2, pieces, monsters, total};
+            season = Season.Hiver;
+        } else {
+            points[3] = {decret1: this.decret1, decret2: this.decret2, pieces, monsters, total};
+            season = Season.End;
+            uiManager.addLogger("The End");
+        }
+        seasonTime = SeasonTime[season];
+        curTime = 0;
+        pointButton.visible = false;
+        curSeasonCards = [];
+        if( season !== Season.End ) {
+            cards = cardMgr.getSeason(season);
+            nextCard();
+        }
+        closeCurrentDialog();
+        delete this;
     }
 
     resetVisit(board) {
