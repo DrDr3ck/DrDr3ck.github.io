@@ -1407,9 +1407,9 @@ function draw() {
 	if (gameState === GAME_START_STATE) {
 		background(51);
         spritesheet.drawSprite('cartographer', 0, window_width/2 - 553/2, 20);
-        textSize(22);
+        textSize(16);
         textAlign(LEFT, CENTER);
-        text(`seed: ${seed.replaceAll('_', ' ')}`, window_width  - 450, window_height - 100);
+        text(`${seed.replaceAll('_', ' ')}`, window_width  - 450, window_height - 100);
 	}
 
     textAlign(LEFT, TOP);
