@@ -513,8 +513,8 @@ let turn = 0;
 
 let curSelectedType = -1;
 
-const startButton = new BButton(40, window_height - 150, "START", startClicked);
-const startVersoButton = new BButton(40, window_height - 50, "START", startClicked);
+const startButton = new BButton(40, window_height - 125, "START", startClicked);
+const startVersoButton = new BButton(40, window_height - 25, "START", startClicked);
 const copySeedButton = new BButton(window_width - 450, window_height - 40, "Copy", copySeed);
 const resetSeedButton = new BButton(window_width - 230, window_height - 40, "Reset", resetSeed);
 copySeedButton.setTextSize(35);
@@ -1409,7 +1409,7 @@ function draw() {
         spritesheet.drawSprite('cartographer', 0, window_width/2 - 553/2, 20);
         textSize(22);
         textAlign(LEFT, CENTER);
-        text(`seed: ${seed}`, window_width  - 450, window_height - 100);
+        text(`seed: ${seed.replaceAll('_', ' ')}`, window_width  - 450, window_height - 100);
 	}
 
     textAlign(LEFT, TOP);
