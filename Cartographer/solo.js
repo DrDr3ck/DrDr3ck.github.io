@@ -751,6 +751,9 @@ function getAllShapes(shape) {
     shapes.push(shape);
     shape = turnShape(shape);
     shapes.push(shape);
+    // add an extra turn just to clone the shape
+    // as flip does not clone it
+    shape = turnShape(shape);
     shape = flipShape(shape);
     shapes.push(shape);
     shape = turnShape(shape);
