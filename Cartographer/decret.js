@@ -326,8 +326,38 @@ function countGrenierDore(board, templePositions) {
  * 3 par lacs non connectés à des champs et non aux bords
  * 3 par champs non connectés à des lacs et non aux bords
  */
-function countMonteeDesEaux(board) {
-    return NDV;
+function countMonteeDesEaux(board, limit=11) {
+    const lacs = [];
+    const fermes = []; 
+    const visited = "MdE";
+    for( let j = 0; j< board.length; j++) {
+        for( let i = 0; i< board.length; i++) {
+            if( board[i][j].visited === visited ) {
+                continue;
+            }
+            if( board[i][j].value === FIELDCASE ) {
+                board[i][j].visited = visited;
+                const ferme = propagate(board, i, j, FIELDCASE, visited, limit);
+                ferme.forEach(n=>board[n.X][n.Y].visited=visited);
+                // check neighborhood of the ferme
+                const neighborhood = getBorderNeighborhood(board, ferme, limit);
+                if( !neighborhood.includes("B") && !neighborhood.includes(WATERCASE) ) {
+                    fermes.push(ferme);
+                }
+            }
+            if( board[i][j].value === WATERCASE ) {
+                board[i][j].visited = visited;
+                const lac = propagate(board, i, j, WATERCASE, visited, limit);
+                lac.forEach(n=>board[n.X][n.Y].visited=visited);
+                // check neighborhood of the lac
+                const neighborhood = getBorderNeighborhood(board, lac, limit);
+                if( !neighborhood.includes("B") && !neighborhood.includes(FIELDCASE) ) {
+                    lacs.push(lac);
+                }
+            }
+        }
+    }
+    return (fermes.length + lacs.length)*3;
 }
 
 /// VILLES
@@ -382,8 +412,51 @@ function nextToMontagne(board, ville, limit=11) {
 /**
  * 3 pour chaque cité connectés à au moins 3 types de terrains differents
  */
-function countPlainesOrVert(board) {
-    return NDV;
+function countPlainesOrVert(board, limit=11) {
+    const villes = [];
+    const visited = "POV";
+    for( let j = 0; j< board.length; j++) {
+        for( let i = 0; i< board.length; i++) {
+            if( board[i][j].visited === visited ) {
+                continue;
+            }
+            if( board[i][j].value === CITYCASE ) {
+                board[i][j].visited = visited;
+                const ville = propagate(board, i, j, CITYCASE, visited, limit);
+                ville.forEach(n=>board[n.X][n.Y].visited=visited);
+                // check neighborhood of the ville
+                const neighborhood = getBorderNeighborhood(board, ville, limit);
+                if( neighborhood.filter(n=>n!="B").length >= 3 ) {
+                    villes.push(ville);
+                }
+            }
+        }
+    }
+    return villes.length * 3;
+}
+
+function getBorderNeighborhood(board, ville, limit=11) {
+    const border = [];
+    ville.forEach(
+        v=> {
+            const neighbors = getNeighbors(board, v, limit);
+            neighbors.forEach(n=>{
+                let val = n.value;
+                if( val === "-M") {val = "M"};
+                if( val === CITYCASE || val === " ") {
+                    return;
+                }
+                if( border.includes(val) ) {
+                    return;
+                }
+                border.push(val);
+            });
+            if( !border.includes("B") && neighbors.length < 4 ) {
+                border.push("B");
+            }
+        }
+    );
+    return border;
 }
 
 /**
@@ -447,10 +520,10 @@ function propagate(board, i, j, value, visited, limit=11) {
             if( n.visited === visited ) {
                 return;
             }
-            board[n.X][n.Y].visited = visited;
             if( n.value !== value ) {
                 return;
             }
+            board[n.X][n.Y].visited = visited;
             neighbors.push({X:n.X, Y:n.Y});
             allCells.push({X:n.X, Y:n.Y});
         });
@@ -620,6 +693,29 @@ function test() {
             [{value:"MMMMMM", visited: ""}, {value: "MMMMMM", visited: ""}, {value: CITYCASE, visited: ""},{value:CITYCASE, visited: ""}, {value: "2", visited: ""}, {value: "M", visited: ""}]
         ], 6), 4
     );
+
+    expectToBe(countPlainesOrVert(
+        [
+            [{value:CITYCASE, visited: ""}, {value:      "M", visited: ""}, {value: WATERCASE, visited: ""},{value:CITYCASE, visited: ""}, {value: "2", visited: ""}, {value: "M", visited: ""}],
+            [{value:CITYCASE, visited: ""}, {value: CITYCASE, visited: ""}, {value: FIELDCASE, visited: ""},{value:CITYCASE, visited: ""}, {value: "2", visited: ""}, {value: "M", visited: ""}],
+            [{value:FIELDCASE, visited: ""}, {value:    "-M", visited: ""}, {value: CITYCASE, visited: ""},{value:CITYCASE, visited: ""}, {value: "2", visited: ""}, {value: "M", visited: ""}],
+            [{value:CITYCASE, visited: ""}, {value: CITYCASE, visited: ""}, {value: " ", visited: ""},{value:CITYCASE, visited: ""}, {value: "2", visited: ""}, {value: "M", visited: ""}],
+            [{value:CITYCASE, visited: ""}, {value: CITYCASE, visited: ""}, {value: " ", visited: ""},{value:CITYCASE, visited: ""}, {value: "2", visited: ""}, {value: "M", visited: ""}],
+            [{value:FIELDCASE, visited: ""}, {value: WATERCASE, visited: ""}, {value: CITYCASE, visited: ""},{value:CITYCASE, visited: ""}, {value: "2", visited: ""}, {value: "M", visited: ""}]
+        ], 6), 6
+    );
+
+    expectToBe(countMonteeDesEaux(
+        [
+            [{value:WATERCASE, visited: ""}, {value:      "M", visited: ""}, {value: CITYCASE, visited: ""},{value:CITYCASE, visited: ""}, {value: "2", visited: ""}, {value: WATERCASE, visited: ""}],
+            [{value:WATERCASE, visited: ""}, {value: CITYCASE, visited: ""}, {value: FIELDCASE, visited: ""},{value:FIELDCASE, visited: ""}, {value: "2", visited: ""}, {value: "M", visited: ""}],
+            [{value:FIELDCASE, visited: ""}, {value:    "-M", visited: ""}, {value: CITYCASE, visited: ""},{value:FIELDCASE, visited: ""}, {value: "2", visited: ""}, {value: "M", visited: ""}],
+            [{value:CITYCASE, visited: ""}, {value: WATERCASE, visited: ""}, {value: " ", visited: ""},{value:CITYCASE, visited: ""}, {value: WATERCASE, visited: ""}, {value: "M", visited: ""}],
+            [{value:CITYCASE, visited: ""}, {value: WATERCASE, visited: ""}, {value: " ", visited: ""},{value:CITYCASE, visited: ""}, {value: FIELDCASE, visited: ""}, {value: "M", visited: ""}],
+            [{value:FIELDCASE, visited: ""}, {value: CITYCASE, visited: ""}, {value: CITYCASE, visited: ""},{value:CITYCASE, visited: ""}, {value: "2", visited: ""}, {value: "M", visited: ""}]
+        ], 6), 6
+    );
+    
 }
 
 test();
