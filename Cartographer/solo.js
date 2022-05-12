@@ -36,8 +36,9 @@ const queryString = window.location.search;
 const urlParams = new URLSearchParams(queryString);
 let seed = urlParams.get('seed');
 if( !seed ) {
-    const currentDateTime = new Date();
-    seed = currentDateTime.getTime();
+    //const currentDateTime = new Date();
+    //seed = currentDateTime.getTime();
+    seed = getRandomName().replaceAll(' ', '_');
 }
 
 const SIMPLE_SQUARE = [["#"]];
@@ -512,7 +513,8 @@ let turn = 0;
 
 let curSelectedType = -1;
 
-const startButton = new BButton(40, window_height - 100, "START", startClicked);
+const startButton = new BButton(40, window_height - 150, "START", startClicked);
+const startVersoButton = new BButton(40, window_height - 50, "START", startClicked);
 const copySeedButton = new BButton(window_width - 450, window_height - 40, "Copy", copySeed);
 const resetSeedButton = new BButton(window_width - 230, window_height - 40, "Reset", resetSeed);
 copySeedButton.setTextSize(35);
@@ -647,7 +649,8 @@ function drawLoading() {
 		spritesheet.totalLoadedImages === spritesheet.totalImagesToLoad
 	) {
 		gameState = GAME_START_STATE;
-        uiManager.setUI([startButton, copySeedButton, resetSeedButton]);
+        uiManager.setUI([startButton, startVersoButton, copySeedButton, resetSeedButton]);
+        startVersoButton.enabled = false;
         if( document.location.toString().includes("seed=") ) {
             startClicked();
         }
@@ -1405,8 +1408,8 @@ function draw() {
 		background(51);
         spritesheet.drawSprite('cartographer', 0, window_width/2 - 553/2, 20);
         textSize(22);
-        textAlign(CENTER, CENTER);
-        text(`seed: ${seed}`, window_width  - 300, window_height - 100);
+        textAlign(LEFT, CENTER);
+        text(`seed: ${seed}`, window_width  - 450, window_height - 100);
 	}
 
     textAlign(LEFT, TOP);
