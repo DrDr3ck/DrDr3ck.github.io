@@ -23,7 +23,7 @@ function countPointsForDecret(board, type, occurrence) {
             return countCanauxIrrigation(board);
         } else if( occurrence === 2 ) {
             // grenier doré
-            return countGrenierDore(board);
+            return countGrenierDore(board, templePositions);
         } else if( occurrence === 3 ) {
             // montee des eaux
             return countMonteeDesEaux(board);
@@ -344,6 +344,15 @@ function countCanauxIrrigation(board) {
     }
     return count;
 }
+
+const templePositions = [
+    {X:1,Y:2},
+    {X:5,Y:1},
+    {X:9,Y:2},
+    {X:1,Y:8},
+    {X:5,Y:9},
+    {X:9,Y:8},
+];
 
 /**
  * 1 point par lac a cote d une ruine, 3 points par ferme sur une ruine
