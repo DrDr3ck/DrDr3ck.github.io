@@ -244,8 +244,46 @@ function countBoisSentinelle(board) {
 /**
  * 3 par montagne connectées par des forets
  */
-function countForetHautsPlateaux(board) {
-    return NDV;
+function countForetHautsPlateaux(board, limit=11) {
+    const montagnes = [];
+    const visited = "FHP";
+    for( let j = 0; j< board.length; j++) {
+        for( let i = 0; i< board.length; i++) {
+            if( board[i][j].visited === visited ) {
+                continue;
+            }
+            if( board[i][j].value === FORESTCASE ) {
+                board[i][j].visited = visited;
+                const forest = propagate(board, i, j, FORESTCASE, visited, limit);
+                forest.forEach(n=>board[n.X][n.Y].visited=visited);
+                const monts = getBorderMontagnePositions(board, forest, limit);
+                if( monts.length >= 2 ) {
+                    monts.forEach(curM=>{
+                        if( !montagnes.some(m=>m.X === curM.X && m.Y === curM.Y) ) {
+                            montagnes.push(curM);
+                        }
+                    });
+                }
+            }
+        }
+    }
+    return montagnes.length * 3;
+}
+
+function getBorderMontagnePositions(board, forest, limit=11) {
+    const monts = [];
+    forest.forEach(f=>{
+        const neighbors = getNeighbors(board, f, limit);
+        neighbors.forEach(n=>{
+            if( n.value === "M" || n.value === "-M" ) {
+                const curM = {X:n.X, Y:n.Y};
+                if( !monts.some(m=>m.X === curM.X && m.Y === curM.Y) ) {
+                    monts.push(curM);
+                }
+            }
+        });
+    });
+    return monts;
 }
 
 /**
@@ -713,6 +751,17 @@ function test() {
             [{value:CITYCASE, visited: ""}, {value: WATERCASE, visited: ""}, {value: " ", visited: ""},{value:CITYCASE, visited: ""}, {value: WATERCASE, visited: ""}, {value: "M", visited: ""}],
             [{value:CITYCASE, visited: ""}, {value: WATERCASE, visited: ""}, {value: " ", visited: ""},{value:CITYCASE, visited: ""}, {value: FIELDCASE, visited: ""}, {value: "M", visited: ""}],
             [{value:FIELDCASE, visited: ""}, {value: CITYCASE, visited: ""}, {value: CITYCASE, visited: ""},{value:CITYCASE, visited: ""}, {value: "2", visited: ""}, {value: "M", visited: ""}]
+        ], 6), 6
+    );
+
+    expectToBe(countForetHautsPlateaux(
+        [
+            [{value:FORESTCASE, visited: ""}, {value:      "M", visited: ""}, {value: CITYCASE, visited: ""},{value:CITYCASE, visited: ""}, {value: "2", visited: ""}, {value: WATERCASE, visited: ""}],
+            [{value:FORESTCASE, visited: ""}, {value: CITYCASE, visited: ""}, {value: FIELDCASE, visited: ""},{value:FIELDCASE, visited: ""}, {value: "2", visited: ""}, {value: "3", visited: ""}],
+            [{value:FORESTCASE, visited: ""}, {value:    "-M", visited: ""}, {value: CITYCASE, visited: ""},{value:FORESTCASE, visited: ""}, {value: "2", visited: ""}, {value: "3", visited: ""}],
+            [{value:FORESTCASE, visited: ""}, {value: FORESTCASE, visited: ""}, {value: " ", visited: ""},{value:FORESTCASE, visited: ""}, {value: WATERCASE, visited: ""}, {value: "3", visited: ""}],
+            [{value:CITYCASE, visited: ""}, {value: WATERCASE, visited: ""}, {value: " ", visited: ""},{value:FORESTCASE, visited: ""}, {value: FORESTCASE, visited: ""}, {value: "3", visited: ""}],
+            [{value:FIELDCASE, visited: ""}, {value: CITYCASE, visited: ""}, {value: CITYCASE, visited: ""},{value:CITYCASE, visited: ""}, {value: "M", visited: ""}, {value: "3", visited: ""}]
         ], 6), 6
     );
     
