@@ -36,8 +36,6 @@ const queryString = window.location.search;
 const urlParams = new URLSearchParams(queryString);
 let seed = urlParams.get('seed');
 if( !seed ) {
-    //const currentDateTime = new Date();
-    //seed = currentDateTime.getTime();
     seed = getRandomName().replaceAll(' ', '_');
 }
 
@@ -1375,6 +1373,9 @@ function copySeed() {
     } else {
         navigator.clipboard.writeText(`${document.location.toString()}?seed=${seed}`);
     }
+    if( titre ) {
+        window.open(`mailto:someone@example.com?subject=${titre}&body=copie ta carte ici`, "_parent");
+    }
     uiManager.addLogger("seed copied");
 }
 
@@ -1383,8 +1384,7 @@ function resetSeed() {
         const url = document.location.toString().split("?")[0];
         document.location.assign(url);
     } else {
-        const currentDateTime = new Date();
-        seed = currentDateTime.getTime();
+        seed = getRandomName().replaceAll(' ', '_');
     }
 }
 
@@ -1453,13 +1453,6 @@ function keyPressed() {
             uiManager.addLogger(`Screen size: ${window.screen.availWidth.toString()}x${window.screen.availHeight.toString()}`);
         }
 	}
-
-    // next seed
-    if (key === "NS") {
-        const newSeed = parseInt(cardMgr.seed)+1;
-        console.log(newSeed);
-        document.location.replace(`http://localhost:8000/Cartographer/solo.html?seed=${newSeed.toString()}`)
-    }
 
     if( key === "B" ) {
         for(let i = 0; i < board.length; i++ ) {
