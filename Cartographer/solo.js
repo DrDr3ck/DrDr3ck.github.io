@@ -39,6 +39,8 @@ if( !seed ) {
     seed = getRandomName().replaceAll(' ', '_');
 }
 
+let boardIndex = urlParams.get('board') === "verso" ? 1 : 0;
+
 const SIMPLE_SQUARE = [["#"]];
 const GOLDEN_L = [["G","G"],[" ","G"]];
 const BIG_L = [["#","#"],["#","#"],["# "," "]];
@@ -147,19 +149,28 @@ function createBoard(type) {
         b[2][8].value = "M"; // montagne
         b[7][9].value = "M"; // montagne
 
-        templesPosition = [
-            {X:1,Y:2},
-            {X:5,Y:1},
-            {X:9,Y:2},
-            {X:1,Y:8},
-            {X:5,Y:9},
-            {X:9,Y:8},
-        ];
+        templesPosition = getTemplePositions(0);
+    } else if( type === "B") {
+        b[3][2].value = "M"; // montagne
+        b[8][1].value = "M"; // montagne
+        b[5][7].value = "M"; // montagne
+        b[2][9].value = "M"; // montagne
+        b[9][8].value = "M"; // montagne
+
+        b[5][3].value = "B"; // bord interieur
+        b[4][4].value = "B"; // bord interieur
+        b[5][4].value = "B"; // bord interieur
+        b[4][5].value = "B"; // bord interieur
+        b[5][5].value = "B"; // bord interieur
+        b[6][5].value = "B"; // bord interieur
+        b[5][6].value = "B"; // bord interieur
+
+        templesPosition = getTemplePositions(1);
     }
     return b;
 }
 
-const board = createBoard("A");
+let board = createBoard("A");
 
 /**
  * Returns true if a monster os next to the given case position
@@ -511,12 +522,15 @@ let turn = 0;
 
 let curSelectedType = -1;
 
-const startButton = new BButton(40, window_height - 125, "START", startClicked);
-const startVersoButton = new BButton(40, window_height - 25, "START", startClicked);
-const copySeedButton = new BButton(window_width - 450, window_height - 40, "Copy", copySeed);
-const resetSeedButton = new BButton(window_width - 230, window_height - 40, "Reset", resetSeed);
+const startRectoButton = new BButton(40, window_height - 325, "START", ()=> startClicked(0));
+const startVersoButton = new BButton(40, window_height - 125, "START", ()=> startClicked(1));
+const copySeedButton = new BButton(60, window_height - 260, "Copy", ()=> copySeed(boardIndex));
+const copy2SeedButton = new BButton(60, window_height - 60, "Copy", ()=>copySeed(1));
+const resetSeedButton = new BButton(window_width - 450, window_height - 40, "Reset", resetSeed);
 copySeedButton.setTextSize(35);
 copySeedButton.w = 200;
+copy2SeedButton.setTextSize(35);
+copy2SeedButton.w = 200;
 resetSeedButton.setTextSize(35);
 resetSeedButton.w = 200;
 
@@ -552,7 +566,7 @@ function setup() {
 
 	frameRate(60);
 
-    spritesheet.addSpriteSheet('board', './board.png', 700, 697);
+    spritesheet.addSpriteSheet('board', './boards.png', 700, 697);
     spritesheet.addSpriteSheet('cases', './cases.png', 58, 58);
     spritesheet.addSpriteSheet('decret', './decret.png', cardWidth, cardHeight);
     spritesheet.addSpriteSheet('exploration', './exploration.png', cardWidth, cardHeight);
@@ -606,6 +620,7 @@ function setupMyUI() {
 
     copySeedButton.x = window_width/2-100;
     copySeedButton.y = 43;
+    copy2SeedButton.visible = false;
 
     uiManager.setUI([...buttons, nextButton, undoButton, pointButton, ...shapeButtons, copySeedButton]);
     nextButton.enabled = false;
@@ -647,10 +662,9 @@ function drawLoading() {
 		spritesheet.totalLoadedImages === spritesheet.totalImagesToLoad
 	) {
 		gameState = GAME_START_STATE;
-        uiManager.setUI([startButton, startVersoButton, copySeedButton, resetSeedButton]);
-        startVersoButton.enabled = false;
+        uiManager.setUI([startRectoButton, startVersoButton, copySeedButton, copy2SeedButton, resetSeedButton]);
         if( document.location.toString().includes("seed=") ) {
-            startClicked();
+            startClicked(boardIndex);
         }
 	}
 }
@@ -660,9 +674,15 @@ function preload() {
 }
 
 
-function startClicked() {
+function startClicked(boardSide) {
     gameState = GAME_PLAY_STATE;
+    boardIndex = boardSide;
     uiManager.addLogger("Cartographer solo");
+    if( boardSide === 0 ) {
+        board = createBoard("A");
+    } else {
+        board = createBoard("B");
+    }
     setupMyUI();
 }
 
@@ -979,7 +999,7 @@ const letters = "ABCDEFGHIJK".split('');
 function drawBoard() {
     const X = window_width/2-350;
     const Y = 50;
-	spritesheet.drawScaledSprite('board', 0, X, Y, scale);
+	spritesheet.drawScaledSprite('board', boardIndex, X, Y, scale);
 
     spritesheet.drawScaledSprite('decret', 0, 20, 20, scale*.75);
     spritesheet.drawScaledSprite('decret', 1, 190, 20, scale*.75);
@@ -1363,15 +1383,19 @@ function addCurrentCase() {
     }
 }
 
-function copySeed() {
+function copySeed(boardSide) {
     if( !navigator.clipboard ) {
         uiManager.addLogger("cannot copy");
         return;
     }
-    if( document.location.toString().includes("seed=") ) {
+    if( document.location.toString().includes("seed=") && document.location.toString().includes("board=") ) {
         navigator.clipboard.writeText(`${document.location.toString()}`);
+    } else if( document.location.toString().includes("seed=") ) {
+        navigator.clipboard.writeText(`${document.location.toString()}&board=${boardSide===1?"verso":"recto"}`);
+    } else if( document.location.toString().includes("board=") ) {
+        navigator.clipboard.writeText(`${document.location.toString()}&seed=${seed}`);
     } else {
-        navigator.clipboard.writeText(`${document.location.toString()}?seed=${seed}`);
+        navigator.clipboard.writeText(`${document.location.toString()}?board=${boardSide===1?"verso":"recto"}&seed=${seed}`);
     }
     if( titre ) {
         window.open(`mailto:someone@example.com?subject=${titre}&body=copie ta carte ici`, "_parent");

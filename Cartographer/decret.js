@@ -14,6 +14,11 @@ const NDV = -9999;
  * @param occurrence occurrence in the list of decret of a given type
  */
 function countPointsForDecret(board, type, occurrence) {
+    let templePositions = getTemplePositions(0);
+    // get board side from a known position of mountain
+    if( !["M","-M"].includes(board[3][1].value) ) {
+        templePositions = getTemplePositions(1);
+    }
     if( type === "champs") {
         if( occurrence === 0 ) {
             // vallee des mages
@@ -108,6 +113,12 @@ function isOnEdge(board, i,j) {
         return true;
     }
     if( i === board.length-1 || j === board.length-1 ) {
+        return true;
+    }
+    if( board[i-1][j].value === "B" || board[i+1][j].value === "B" ) {
+        return true;
+    }
+    if( board[i][j-1].value === "B" || board[i][j+1].value === "B" ) {
         return true;
     }
     return false;
@@ -345,14 +356,28 @@ function countCanauxIrrigation(board) {
     return count;
 }
 
-const templePositions = [
-    {X:1,Y:2},
-    {X:5,Y:1},
-    {X:9,Y:2},
-    {X:1,Y:8},
-    {X:5,Y:9},
-    {X:9,Y:8},
-];
+function getTemplePositions(boardSide) {
+    if( boardSide === 0 ) {
+        return [
+            {X:1,Y:2},
+            {X:5,Y:1},
+            {X:9,Y:2},
+            {X:1,Y:8},
+            {X:5,Y:9},
+            {X:9,Y:8},
+        ];
+    } else {
+        return [
+            {X:2,Y:2},
+            {X:6,Y:1},
+            {X:6,Y:4},
+            {X:1,Y:6},
+            {X:3,Y:9},
+            {X:8,Y:7},
+        ];
+    }
+
+}
 
 /**
  * 1 point par lac a cote d une ruine, 3 points par ferme sur une ruine
@@ -667,6 +692,14 @@ function test() {
         [
             [{value:FORESTCASE}, {value: FORESTCASE}, {value: "M"}],
             [{value:" "}, {value: FORESTCASE}, {value: "1"}],
+            [{value:"M"}, {value: "0"}, {value: FORESTCASE}]
+        ]), 3
+    );
+
+    expectToBe(countBoisSentinelle(
+        [
+            [{value:FORESTCASE}, {value: "2"}, {value: "M"}],
+            [{value:"B"}, {value: FORESTCASE}, {value: "1"}],
             [{value:"M"}, {value: "0"}, {value: FORESTCASE}]
         ]), 3
     );
