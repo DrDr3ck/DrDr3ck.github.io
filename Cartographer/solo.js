@@ -14,6 +14,7 @@ uiManager.loggerContainer.visible = true;
 
 const toolManager = new ToolManager();
 const jobManager = new JobManager();
+const soundManager = new SoundMgr();
 const spritesheet = new SpriteSheet();
 
 const GAME_LOADING_STATE = 0;
@@ -281,6 +282,7 @@ function undoClicked() {
     }
     nextButton.enabled = false;
     undoButton.enabled = false;
+    soundManager.playSound('undo');
 }
 
 let curSelectedShape = null;
@@ -522,22 +524,28 @@ let turn = 0;
 
 let curSelectedType = -1;
 
-const startRectoButton = new BButton(40, window_height - 325, "START", ()=> startClicked(0));
-const startVersoButton = new BButton(40, window_height - 125, "START", ()=> startClicked(1));
-const copySeedButton = new BButton(60, window_height - 260, "Copy", ()=> copySeed(boardIndex));
-const copy2SeedButton = new BButton(60, window_height - 60, "Copy", ()=>copySeed(1));
+function speakerClicked() {
+	speakerButton.checked = !speakerButton.checked;
+	soundManager.mute(!speakerButton.checked);
+}
+
+const speakerButton = new BFloatingSwitchButton(window_width - 70 - 10, window_height - 60, '\uD83D\uDD0A', speakerClicked);
+const startRectoButton = new BButton(40, window_height - 425, "START", ()=> startClicked(0));
+const startVersoButton = new BButton(1020, window_height - 425, "START", ()=> startClicked(1));
+const copySeedButton = new BButton(60, window_height - 360, "Copy", ()=> copySeed(boardIndex));
+const copy2SeedButton = new BButton(1040, window_height - 360, "Copy", ()=>copySeed(1));
 const resetSeedButton = new BButton(window_width - 450, window_height - 40, "Reset", resetSeed);
 copySeedButton.setTextSize(35);
-copySeedButton.w = 200;
+copySeedButton.w = 150;
 copy2SeedButton.setTextSize(35);
-copy2SeedButton.w = 200;
+copy2SeedButton.w = 150;
 resetSeedButton.setTextSize(35);
 resetSeedButton.w = 200;
 
-const nextButton = new BButton(window_width - 80 - 200*scale, window_height - 100, "NEXT", nextClicked);
+const nextButton = new BButton(window_width - 120 - 200*scale, window_height - 100, "NEXT", nextClicked);
 nextButton.setTextSize(45*scale);
 nextButton.w = 200*scale;
-const undoButton = new BButton(window_width - 80 - 200*scale, window_height - 30, "UNDO", undoClicked);
+const undoButton = new BButton(window_width - 120 - 200*scale, window_height - 30, "UNDO", undoClicked);
 undoButton.setTextSize(45*scale);
 undoButton.w = 200*scale;
 
@@ -566,24 +574,31 @@ function setup() {
 
 	frameRate(60);
 
-    spritesheet.addSpriteSheet('board', './boards.png', 700, 697);
-    spritesheet.addSpriteSheet('cases', './cases.png', 58, 58);
-    spritesheet.addSpriteSheet('decret', './decret.png', cardWidth, cardHeight);
-    spritesheet.addSpriteSheet('exploration', './exploration.png', cardWidth, cardHeight);
-    spritesheet.addSpriteSheet('icons', './icons.png', 60,60);
-    spritesheet.addSpriteSheet('piece', './piece.png', 33,33);
-    spritesheet.addSpriteSheet('season', './season.png', cardWidth, cardHeight);
-    spritesheet.addSpriteSheet('shapes', './shapes.png', 70,40);
+    spritesheet.addSpriteSheet('board', './resources/boards.png', 700, 697);
+    spritesheet.addSpriteSheet('cases', './resources/cases.png', 58, 58);
+    spritesheet.addSpriteSheet('decret', './resources/decret.png', cardWidth, cardHeight);
+    spritesheet.addSpriteSheet('exploration', './resources/exploration.png', cardWidth, cardHeight);
+    spritesheet.addSpriteSheet('icons', './resources/icons.png', 60,60);
+    spritesheet.addSpriteSheet('piece', './resources/piece.png', 33,33);
+    spritesheet.addSpriteSheet('season', './resources/season.png', cardWidth, cardHeight);
+    spritesheet.addSpriteSheet('shapes', './resources/shapes.png', 70,40);
 
-    spritesheet.addSpriteSheet('forest', './decret-forest-100.png', 400, 570);
-	spritesheet.addSpriteSheet('zone', './decret-zone-100.png', 400, 570);
-	spritesheet.addSpriteSheet('ville', './decret-ville-100.png', 400, 570);
-	spritesheet.addSpriteSheet('champs', './decret-champs-100.png', 400, 570);
+    spritesheet.addSpriteSheet('forest', './resources/decret-forest-100.png', 400, 570);
+	spritesheet.addSpriteSheet('zone', './resources/decret-zone-100.png', 400, 570);
+	spritesheet.addSpriteSheet('ville', './resources/decret-ville-100.png', 400, 570);
+	spritesheet.addSpriteSheet('champs', './resources/decret-champs-100.png', 400, 570);
+
+    soundManager.addSound('turn_shape', './resources/turn_shape.wav', 0.55);
+    soundManager.addSound('flip_shape', './resources/flip_shape.wav', 0.55);
+    soundManager.addSound('cannot_place', './resources/cannot_place.wav', 0.55);
+    soundManager.addSound('undo', './resources/undo.wav', 0.85);
+    soundManager.addSound('place_shape', './resources/place_shape.mp3', 0.85);
 
 	lastTime = Date.now();    
 }
 
 function setupMyUI() {
+    speakerClicked();
     const forestButton =new BImageButton(830, 65, spritesheet.getImage('cases', 0), ()=>{
         curSelectedType = 0;
     });
@@ -602,9 +617,11 @@ function setupMyUI() {
 
     const turnButton =new BImageButton(1280, 520, spritesheet.getImage('icons', 1), ()=>{
         curSelectedShape = turnShape(curSelectedShape);
+        soundManager.playSound('turn_shape');
     });
     const flipButton =new BImageButton(1280+70, 520, spritesheet.getImage('icons', 0), ()=>{
         curSelectedShape = flipShape(curSelectedShape);
+        soundManager.playSound('flip_shape');
     });
 
     typeButtons.push(...[forestButton, cityButton, fieldButton, waterButton, monsterButton]);
@@ -622,7 +639,7 @@ function setupMyUI() {
     copySeedButton.y = 43;
     copy2SeedButton.visible = false;
 
-    uiManager.setUI([...buttons, nextButton, undoButton, pointButton, ...shapeButtons, copySeedButton]);
+    uiManager.setUI([...buttons, nextButton, undoButton, pointButton, ...shapeButtons, copySeedButton, speakerButton]);
     nextButton.enabled = false;
     undoButton.enabled = false;
     pointButton.visible = false;
@@ -820,6 +837,7 @@ function setupCard(cardIndex) {
     if( !canBePlaced(cardIndex) ) {
         // set 'terres fracturees' as selected card
         cardIndex = 9;
+        soundManager.playSound('cannot_place');
         uiManager.addLogger("Cannot place this shape");
     }
     
@@ -841,6 +859,7 @@ function setupCard(cardIndex) {
         if( placeMonster(cardIndex) ) {
             uiManager.addLogger("Monster added to board");
         } else {
+            soundManager.playSound('cannot_place');
             uiManager.addLogger("Cannot place monster");
         }
         // undo disabled
@@ -1367,6 +1386,7 @@ function addCurrentCase() {
         return;
     }
     if( shapeAlreadyAdded() ) {
+        soundManager.playSound('cannot_place');
         uiManager.addLogger("Shape already added");
         setTimeout(function() {
             uiManager.addLogger("Please click Next or Undo");
@@ -1374,10 +1394,12 @@ function addCurrentCase() {
         return;
     }
     if( !canDraw ) {
+        soundManager.playSound('cannot_place');
         uiManager.addLogger("Cannot be drawn here");
         return;
     }
     if( addShape() ) {
+        soundManager.playSound('place_shape');
         nextButton.enabled = true;
         undoButton.enabled = true;
     }
@@ -1503,10 +1525,12 @@ function keyPressed() {
     if( key === "t" ) {
         // tourner la forme de 90 degres
         curSelectedShape = turnShape(curSelectedShape);
+        soundManager.playSound('turn_shape');
     }
     if( key === "r" || key === "f" ) {
         // retourner la forme (miroir)
         curSelectedShape = flipShape(curSelectedShape);
+        soundManager.playSound('flip_shape');
     }
 }
 

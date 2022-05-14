@@ -152,13 +152,13 @@ const cardHeight = 276;//Card.height;
 const cardWidth = 200;//Card.width;
 
 function preload() {
-	spritesheet.addSpriteSheet('decret', './decret.png', cardWidth, cardHeight);
-	spritesheet.addSpriteSheet('season', './season.png', cardWidth, cardHeight);
-	spritesheet.addSpriteSheet('exploration', './exploration.png', cardWidth, cardHeight);
-	spritesheet.addSpriteSheet('forest', './decret-forest.png', cardWidth, cardHeight);
-	spritesheet.addSpriteSheet('zone', './decret-zone.png', cardWidth, cardHeight);
-	spritesheet.addSpriteSheet('ville', './decret-ville.png', cardWidth, cardHeight);
-	spritesheet.addSpriteSheet('champs', './decret-champs.png', cardWidth, cardHeight);
+	spritesheet.addSpriteSheet('decret', './resources/decret.png', cardWidth, cardHeight);
+	spritesheet.addSpriteSheet('season', './resources/season.png', cardWidth, cardHeight);
+	spritesheet.addSpriteSheet('exploration', './resources/exploration.png', cardWidth, cardHeight);
+	spritesheet.addSpriteSheet('forest', './resources/decret-forest.png', cardWidth, cardHeight);
+	spritesheet.addSpriteSheet('zone', './resources/decret-zone.png', cardWidth, cardHeight);
+	spritesheet.addSpriteSheet('ville', './resources/decret-ville.png', cardWidth, cardHeight);
+	spritesheet.addSpriteSheet('champs', './resources/decret-champs.png', cardWidth, cardHeight);
 }
 
 function setup() {

@@ -448,12 +448,12 @@ undoButton.w = 400*scale;
 const pointButton = new BFloatingButton(window_width - 200 - 80 - 400*scale, window_height - 100, "+", pointsClicked);
 
 function preload() {
-	spritesheet.addSpriteSheet('board', './board.png', 700, 697);
-    spritesheet.addSpriteSheet('cases', './cases.png', 58, 58);
-    spritesheet.addSpriteSheet('temple', './temple.png', 58, 58);
-    spritesheet.addSpriteSheet('icons', './icons.png', 60,60);
-    spritesheet.addSpriteSheet('shapes', './shapes.png', 70,40);
-    spritesheet.addSpriteSheet('piece', './piece.png', 33,33);
+	spritesheet.addSpriteSheet('board', './resources/boards.png', 700, 697);
+    spritesheet.addSpriteSheet('cases', './resources/cases.png', 58, 58);
+    spritesheet.addSpriteSheet('temple', './resources/temple.png', 58, 58);
+    spritesheet.addSpriteSheet('icons', './resources/icons.png', 60,60);
+    spritesheet.addSpriteSheet('shapes', './resources/shapes.png', 70,40);
+    spritesheet.addSpriteSheet('piece', './resources/piece.png', 33,33);
 }
 
 const typeButtons = [];
