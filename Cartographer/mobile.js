@@ -1,7 +1,7 @@
-const window_width = 740; //window.screen.availWidth > 1280 ? 1280 : window.screen.availWidth;
-const window_height = 360; //window.screen.availHeight > 800 ? 800 : window.screen.availHeight;
+let window_width = 740; //window.screen.availWidth > 1280 ? 1280 : window.screen.availWidth;
+let window_height = 360; //window.screen.availHeight > 800 ? 800 : window.screen.availHeight;
 
-const version = 'Version 0.16';
+const version = 'Version 0.17';
 
 let scale = window_width < 800 ? .5 : 1;
 
@@ -557,11 +557,15 @@ const speakerButton = new BFloatingSwitchButton(window_width - 35 - 10, window_h
 const fullScreenButton = new BFloatingSwitchButton(window_width - 35*2 - 10*2 -10,window_height - 60,"F",()=>{
 	if(!toggleFullScreen()) {
 		fullScreenButton.checked = false;
+        window_width = 740;
+        window_height = 360;
 		resizeCanvas(window_width, window_height);
 		uiManager.addLogger(`Canvas size: ${window_width.toString()}x${window_height.toString()}`);
 	} else {
 		fullScreenButton.checked = true;
-		resizeCanvas(window.screen.availWidth, window.screen.availHeight);
+        window_width = window.screen.availWidth;
+        window_height = window.screen.availHeight;
+		resizeCanvas(window_width, window_height);
 		uiManager.addLogger(`Canvas size: ${window.screen.availWidth.toString()}x${window.screen.availHeight.toString()}`);
 	}
 });
@@ -1013,7 +1017,7 @@ function drawDecretCard(X,Y,title,index,selection) {
 	}
 	strokeWeight(4*scale);
 	noFill();
-	rect(X, Y, cardDecretWidth/2*scale*.75, cardDecretHeight/2*scale*.75, 10);
+	rect(X, Y, cardDecretWidth/2*scale*.75, cardDecretHeight/2*scale*.75, 5);
     
 }
 
@@ -1063,7 +1067,7 @@ function drawExplorationCard(X,Y, index, drawRuin=false) {
 	spritesheet.drawScaledSprite('exploration', index, X, Y, scale*.75);
 	strokeWeight(4*scale);
 	noFill();
-	rect(X, Y, cardWidth*scale*.75, cardHeight*scale*.75, 10);
+	rect(X, Y, cardWidth*scale*.75, cardHeight*scale*.75, 5);
 }
 
 const letters = "ABCDEFGHIJK".split('');
