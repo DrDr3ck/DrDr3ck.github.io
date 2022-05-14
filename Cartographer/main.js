@@ -136,6 +136,7 @@ fullScreenButton.checked = document.fullscreenElement;
 const boardButton = new BButton(window_width - 80 - 400*scale, window_height - 100, "E-MAP", boardClicked);
 const nextButton = new BButton(window_width - 80 - 400*scale, window_height - 100, "NEXT", nextClicked);
 const newSeason = new BButton(window_width - 80 - 400*scale, window_height/2+40*scale, "SEASON", nextClicked);
+fullScreenButton.setTextSize(45*scale);
 startButton.setTextSize(45*scale);
 startButton.w = 400*scale;
 boardButton.setTextSize(45*scale);
@@ -144,7 +145,7 @@ nextButton.setTextSize(45*scale);
 nextButton.w = 400*scale;
 newSeason.setTextSize(45*scale);
 newSeason.w = 400*scale;
-const menu = [startButton, boardButton, fullScreenButton];
+const menu = [startButton, boardButton];
 uiManager.setUI(menu);
 
 
