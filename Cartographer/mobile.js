@@ -530,26 +530,53 @@ function speakerClicked() {
 	soundManager.mute(!speakerButton.checked);
 }
 
+function toggleFullScreen() {
+    var doc = window.document;
+    var docEl = doc.documentElement;
+  
+    var requestFullScreen =
+      docEl.requestFullscreen ||
+      docEl.mozRequestFullScreen ||
+      docEl.webkitRequestFullScreen ||
+      docEl.msRequestFullscreen;
+    var cancelFullScreen =
+      doc.exitFullscreen ||
+      doc.mozCancelFullScreen ||
+      doc.webkitExitFullscreen ||
+      doc.msExitFullscreen;
+  
+    if (
+      !doc.fullscreenElement &&
+      !doc.mozFullScreenElement &&
+      !doc.webkitFullscreenElement &&
+      !doc.msFullscreenElement
+    ) {
+      requestFullScreen.call(docEl);
+      return true;
+    } else {
+      cancelFullScreen.call(doc);
+      return false;
+    }
+  }
+
 const speakerButton = new BFloatingSwitchButton(window_width - 35 - 10, window_height - 60, '\uD83D\uDD0A', speakerClicked);
 const fullScreenButton = new BFloatingSwitchButton(window_width - 35*2 - 10*2 -10,window_height - 60,"F",()=>{
-	if(document.fullscreenElement) {
-		document.exitFullscreen();
+	if(!toggleFullScreen()) {
 		fullScreenButton.checked = false;
 		resizeCanvas(window_width, window_height);
 		uiManager.addLogger(`Canvas size: ${window_width.toString()}x${window_height.toString()}`);
 	} else {
-		document.documentElement.requestFullscreen();
 		fullScreenButton.checked = true;
 		resizeCanvas(window.screen.availWidth, window.screen.availHeight);
 		uiManager.addLogger(`Canvas size: ${window.screen.availWidth.toString()}x${window.screen.availHeight.toString()}`);
 	}
 });
 fullScreenButton.checked = document.fullscreenElement;
-const startRectoButton = new BButton(40, window_height/2, "RECTO", ()=> startClicked(0));
-const startVersoButton = new BButton(40, window_height/2+75, "VERSO", ()=> startClicked(1));
+const startRectoButton = new BButton(20, window_height/2, "RECTO", ()=> startClicked(0));
+const startVersoButton = new BButton(20, window_height/2+75, "VERSO", ()=> startClicked(1));
 const copySeedButton = new BButton(60, window_height/2 + 60, "Copy", ()=> copySeed(boardIndex));
 const copy2SeedButton = new BButton(window_width-40-200, window_height/2 + 60, "Copy", ()=>copySeed(1));
-const resetSeedButton = new BButton(window_width - 260, window_height - 40, "Reset", resetSeed);
+const resetSeedButton = new BButton(window_width - 240, window_height - 40, "Reset", resetSeed);
 speakerButton.setTextSize(35);
 fullScreenButton.setTextSize(35);
 startRectoButton.setTextSize(35);
@@ -1493,7 +1520,7 @@ function draw() {
         spritesheet.drawScaledSprite('cartographer', 0, window_width/2 - 553/4, 10, .45);
         textSize(10);
         textAlign(LEFT, CENTER);
-        text(`${seed.replaceAll('_', ' ')}`, window_width  - 270, window_height - 80);
+        text(`${seed.replaceAll('_', ' ')}`, window_width  - 250, window_height - 80);
 	}
 
     textAlign(LEFT, TOP);
