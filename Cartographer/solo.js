@@ -687,7 +687,7 @@ function drawLoading() {
 }
 
 function preload() {
-	spritesheet.addSpriteSheet('cartographer', './cartographer.png', 553, 759);
+	spritesheet.addSpriteSheet('cartographer', './resources/cartographer.png', 553, 759);
 }
 
 
