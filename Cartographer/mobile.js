@@ -1,15 +1,15 @@
 const window_width = 740; //window.screen.availWidth > 1280 ? 1280 : window.screen.availWidth;
 const window_height = 360; //window.screen.availHeight > 800 ? 800 : window.screen.availHeight;
 
-const version = 'Version 0.13';
+const version = 'Version 0.14';
 
 let scale = window_width < 800 ? .5 : 1;
 
 const uiManager = new UIManager();
 uiManager.loggerContainer = new LoggerContainer(
-	540,
+	440,
 	205,
-	300*scale,
+	400*scale,
 	100*scale
 );
 uiManager.loggerContainer.visible = true;
@@ -618,6 +618,7 @@ function setup() {
 
 	frameRate(60);
 
+    spritesheet.addSpriteSheet('swipe', './resources/swipe_up.png', 512, 512);
     spritesheet.addSpriteSheet('board', './resources/boards.png', 700, 697);
     spritesheet.addSpriteSheet('cases', './resources/cases.png', 58, 58);
     spritesheet.addSpriteSheet('decret', './resources/decret.png', cardWidth, cardHeight);
@@ -903,7 +904,9 @@ function setupCard(cardIndex) {
     shapeButtons.forEach(b=>b.visible=false);
 
     const curCard = explorations[cardIndex];
-    uiManager.addLogger(curCard.title);
+    if( !curSelectedShape ) {
+        uiManager.addLogger(curCard.title);
+    }
     const types = curCard.type;
     const shapes = curCard.shape;
     
@@ -1072,7 +1075,13 @@ function drawExplorationCard(X,Y, index, drawRuin=false) {
 
 const letters = "ABCDEFGHIJK".split('');
 
+let swipeUp = true;
+let deltaSwipe = 0;
+
 function drawBoard() {
+    if( swipeUp ) {
+        spritesheet.drawScaledSprite('swipe',0, 350,210-deltaSwipe,0.2);
+    }
     // draw board
     const X = 10;
     const Y = 10;
@@ -1518,6 +1527,12 @@ function resetSeed() {
 function draw() {
 	const currentTime = Date.now();
 	const elapsedTime = currentTime - lastTime;
+    if( swipeUp ) {
+        deltaSwipe += 0.8;
+        if( deltaSwipe > 50 ) {
+            deltaSwipe = 0;
+        }
+    }
 	background(51);
     if (gameState === GAME_LOADING_STATE) {
 		drawLoading();
@@ -1586,10 +1601,11 @@ function mouseReleased() {
     const mouseDeltaY = mousePosition.Y - mouseY;
     console.log(mouseDeltaY, mouseDeltaX);
     if( mouseX > 360 && mousePosition.X > 360 && Math.abs(mouseDeltaY) > mouseDeltaX*5 ) {
-        if( mouseDeltaY > 100 ) {
+        if( mouseDeltaY > 80 ) {
             isBoardUp = true;
+            swipeUp = false;
             setupCard(curSeasonCards[curSeasonCards.length-1]);
-        } else if( mouseDeltaY < -100 ) {
+        } else if( mouseDeltaY < -80 ) {
             isBoardUp = false;
             buttons.forEach(b=>b.visible=false);
             shapeButtons.forEach(b=>b.visible=false);
