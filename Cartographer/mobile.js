@@ -1,4 +1,4 @@
-const window_width = 780; //window.screen.availWidth > 1280 ? 1280 : window.screen.availWidth;
+const window_width = 740; //window.screen.availWidth > 1280 ? 1280 : window.screen.availWidth;
 const window_height = 360; //window.screen.availHeight > 800 ? 800 : window.screen.availHeight;
 
 let scale = window_width < 800 ? .5 : 1;
@@ -341,7 +341,7 @@ class PointsDialog extends Dialog {
 
         this.components.forEach((c) => (c.visible = true));
         this.confirmButton = new BButton(10,190,"Confirm",()=>{this.confirmed()});
-        const plusDialogButton = new BFloatingButton(180, 180, '+', ()=>{
+        const plusDialogButton = new BFloatingButton(160, 210, '+', ()=>{
             if( this.decret1Buttons[0].visible || this.decret2Buttons[0].visible ) {
                 this.confirmButton.visible = true;
             } else {
@@ -504,7 +504,7 @@ class PointsDialog extends Dialog {
 }
 
 function pointsClicked() {
-    const dialog = new PointsDialog(540, 10, 770-540, 200);
+    const dialog = new PointsDialog(540, 10, 730-540, 200);
     let decret1Index = 0;
     if( season === Season.Ete ) {
         decret1Index = 1;
@@ -638,12 +638,12 @@ function setupMyUI() {
         curSelectedType = MONSTERCASE;
     });
 
-    const turnButton =new BImageButton(640, 170, spritesheet.getImage('icons', 1), ()=>{
+    const turnButton =new BImageButton(630, 170, spritesheet.getImage('icons', 1), ()=>{
         curSelectedShape = turnShape(curSelectedShape);
         soundManager.playSound('turn_shape');
     });
     turnButton.scale = 0.5;
-    const flipButton =new BImageButton(640+40, 170, spritesheet.getImage('icons', 0), ()=>{
+    const flipButton =new BImageButton(630+40, 170, spritesheet.getImage('icons', 0), ()=>{
         curSelectedShape = flipShape(curSelectedShape);
         soundManager.playSound('flip_shape');
     });
@@ -663,7 +663,7 @@ function setupMyUI() {
     typeButtons.forEach(b=>b.scale=scale);
     shapeButtons.forEach(b=>b.scale=scale);
 
-    copySeedButton.x = 680;
+    copySeedButton.x = 660;
     copySeedButton.y = 335;
     copy2SeedButton.visible = false;
 
@@ -739,7 +739,7 @@ function drawType(typeName, i, unique=true) {
     const typeButton = typeButtons[typeIndex];
     typeButton.visible = true;
     typeButton.enabled = !unique;
-    typeButton.x = 740;
+    typeButton.x = 710;
     typeButton.y = 20+70*i*scale;
     if( unique || i === 0 ) {
         curSelectedType = typeIndex;
@@ -751,7 +751,7 @@ function drawSingleShape(shape, i, unique=true) {
     const shapeButton = shapeButtons[shapeIndex];
     shapeButton.visible = true;
     shapeButton.enabled = !unique;
-    shapeButton.x = 1280*scale+45*i;
+    shapeButton.x = 1280*scale-10+40*i;
     shapeButton.y = 20;
     if( unique || i === 0 ) {
         chooseShape(shapeIndex);
@@ -1294,20 +1294,23 @@ function highlightTemples() {
 
 function drawPieces() {
     strokeWeight(1);
-    const X = 430;
-    const Y = 775;
+    const X = 30;
+    const Y = 350;
     const sizePiece = 20;
     for( let i = 0; i < piecesMax; i++ ) {
         if( i < pieces ) {
-            spritesheet.drawScaledSprite('piece', 0, X+i*sizePiece*2-sizePiece+3, Y-sizePiece+4, scale);
+            spritesheet.drawScaledSprite('piece', 0, X+i*sizePiece*1.2-sizePiece+3, Y-sizePiece+4, 1);
         } else {
             stroke(0);
             fill(151);
-            ellipse(X+i*sizePiece*2,Y,sizePiece);
+            ellipse(X+i*sizePiece*1.2,Y,sizePiece);
         }
     }
 
-    text(-monsters,1000,775);
+    stroke(144,0,211);
+    fill(138,43,226);
+    text(-monsters,360,350);
+    stroke(0);
 }
 
 let canDraw = true;
