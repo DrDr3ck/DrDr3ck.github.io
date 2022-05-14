@@ -119,6 +119,20 @@ function nextClicked() {
 }
 
 const startButton = new BButton(80, window_height - 100, "START", startClicked);
+const fullScreenButton = new BFloatingSwitchButton(window_width/2,window_height-100,"F",()=>{
+	if(document.fullscreenElement) {
+		document.exitFullscreen();
+		fullScreenButton.checked = false;
+		resizeCanvas(window_width, window_height);
+		uiManager.addLogger(`Canvas size: ${window_width.toString()}x${window_height.toString()}`);
+	} else {
+		document.documentElement.requestFullscreen();
+		fullScreenButton.checked = true;
+		resizeCanvas(window.screen.availWidth, window.screen.availHeight);
+		uiManager.addLogger(`Canvas size: ${window.screen.availWidth.toString()}x${window.screen.availHeight.toString()}`);
+	}
+});
+fullScreenButton.checked = document.fullscreenElement;
 const boardButton = new BButton(window_width - 80 - 400*scale, window_height - 100, "E-MAP", boardClicked);
 const nextButton = new BButton(window_width - 80 - 400*scale, window_height - 100, "NEXT", nextClicked);
 const newSeason = new BButton(window_width - 80 - 400*scale, window_height/2+40*scale, "SEASON", nextClicked);
@@ -130,7 +144,7 @@ nextButton.setTextSize(45*scale);
 nextButton.w = 400*scale;
 newSeason.setTextSize(45*scale);
 newSeason.w = 400*scale;
-const menu = [startButton, boardButton];
+const menu = [startButton, boardButton, fullScreenButton];
 uiManager.setUI(menu);
 
 
@@ -162,13 +176,14 @@ function preload() {
 }
 
 function setup() {
-	canvas = createCanvas(window_width, window_height);
+	const canvas = createCanvas(window_width, window_height);
 	canvas.parent("canvas");
 
 	frameRate(60);
 
 	uiManager.addLogger("Cartographer");
 	uiManager.addLogger(`Screen size: ${window.screen.width.toString()}x${window.screen.height.toString()}`);
+	uiManager.addLogger(`Canvas size: ${window_width.toString()}x${window_height.toString()}`);
 	lastTime = Date.now();
 }
 
