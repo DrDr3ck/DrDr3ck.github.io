@@ -93,20 +93,6 @@ const explorations = [
     {title: "Assaut de Gobelours", type: [monster], time: 0, shape: [DOUBLE_I]}
 ];
 
-function enableTypeButtons(index) {
-    const types = explorations[index].type;
-    curSelectedType = -1;
-    [forest,city,field,water,monster].forEach(
-        (type, i) => {
-            const isEnable = types.includes(type);
-            typeButtons[i].visible = isEnable;
-            if( isEnable && curSelectedType === -1) {
-                curSelectedType = i;
-            }
-        }
-    );
-}
-
 function chooseShape(index) {
     curSelectedShape = allShapes[index];
     isGoldShape = index < 4;
