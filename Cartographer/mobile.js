@@ -1,7 +1,7 @@
 const window_width = 740; //window.screen.availWidth > 1280 ? 1280 : window.screen.availWidth;
 const window_height = 360; //window.screen.availHeight > 800 ? 800 : window.screen.availHeight;
 
-const version = 'Version 0.15';
+const version = 'Version 0.16';
 
 let scale = window_width < 800 ? .5 : 1;
 
@@ -913,7 +913,7 @@ function setupCard(cardIndex) {
     types.forEach((t,i)=>drawType(t, i, types.length === 1));
     shapes.forEach((s,i)=>drawSingleShape(s, i, shapes.length === 1));
 
-    if( isMonsterCard(cardIndex) ) {
+    if( isMonsterCard(cardIndex) && !shapeAlreadyAdded() ) {
         // place card
         if( placeMonster(cardIndex) ) {
             uiManager.addLogger("Monster added to board");
@@ -1100,20 +1100,21 @@ function drawBoard() {
         if( overDecret !== 3 ) {
             drawDecretCard(370+170*3*scale, 20, decretTypes[3], occurrences[3], season === Season.Hiver || season === Season.Automne);
         }
-        drawExplorationCard(400,window_height-5, curSeasonCards[0], 0 === curSeasonCards.length-2);		
+        if( curSeasonCards.length > 0 ) {
+            drawExplorationCard(400,window_height-5, curSeasonCards[0], 0 === curSeasonCards.length-2);		
+        }
     } else {
         // draw exploration cards
-        const delta = 0; // TODO
-        for( i = 0; i < curSeasonCards.length+delta; i++ ) {
+        for( i = 0; i < curSeasonCards.length; i++ ) {
             const card = curSeasonCards[i];
-            drawExplorationCard(400,20+40*i*scale, card, i === curSeasonCards.length+delta-2);	
+            drawExplorationCard(400,20+40*i*scale, card, i === curSeasonCards.length-2);	
         } 
     }
 
     /*
-    for( i = 0; i < cards.length+delta; i++ ) {
+    for( i = 0; i < cards.length; i++ ) {
         const card = cards[i];
-        drawExplorationCard(1100,20+40*i, card, i === cards.length+delta-2);	
+        drawExplorationCard(1100,20+40*i, card, i === cards.length-2);	
     }
     */
 
@@ -1126,7 +1127,7 @@ function drawBoard() {
                 if( board[i][j].value === "-M") {
                     stroke(0);
                     fill(51);
-                    ellipse(xBoard+sizeBoard*i+sizeBoard/2,yBoard+sizeBoard*j+sizeBoard/2+12,22);
+                    ellipse(xBoard+sizeBoard*i+sizeBoard/2,yBoard+sizeBoard*j+sizeBoard/2+12*scale,22*scale);
                 }
             }
             stroke(0);
@@ -1228,7 +1229,10 @@ function drawBoard() {
     // affiche le titre si le joueur en a gagné un
     if( (season === Season.End||toggleDebug) && titre ) {
         textAlign(CENTER, CENTER);
-        text(titre, 450, 340);
+        textSize(12);
+        stroke(0);
+        fill(250);""
+        text(titre, 450, 190);
         textAlign(LEFT, TOP);
     }
 
@@ -1274,7 +1278,7 @@ function drawPoints() {
         text(`- ${totalSolo} = ${total-totalSolo}`,440,320);
         if( season === Season.End ) {
             if( total-totalSolo < -30 ) {
-                uiManager.addLogger("Fin du jeu");
+                titre = "Game Over";
             } else if( total-totalSolo < -20 ) {
                 titre = "Buveur d'encre patenté";
             } else if( total-totalSolo < -10 ) {
@@ -1611,7 +1615,9 @@ function mouseReleased() {
         if( mouseDeltaY > 80 ) {
             isBoardUp = true;
             swipeUp = false;
-            setupCard(curSeasonCards[curSeasonCards.length-1]);
+            if( curSeasonCards.length > 0 ) {
+                setupCard(curSeasonCards[curSeasonCards.length-1]);
+            }
         } else if( mouseDeltaY < -80 ) {
             isBoardUp = false;
             buttons.forEach(b=>b.visible=false);
