@@ -1,6 +1,8 @@
 const window_width = 740; //window.screen.availWidth > 1280 ? 1280 : window.screen.availWidth;
 const window_height = 360; //window.screen.availHeight > 800 ? 800 : window.screen.availHeight;
 
+const version = 'Version 0.12';
+
 let scale = window_width < 800 ? .5 : 1;
 
 const uiManager = new UIManager();
@@ -739,6 +741,10 @@ function drawLoading() {
             startClicked(boardIndex);
         }
 	}
+    textAlign(CENTER, CENTER);
+    textSize(6);
+    noStroke();
+    text(version, window_width-50, 10);
 }
 
 function preload() {
@@ -1220,6 +1226,11 @@ function drawBoard() {
         text(titre, 450, 340);
         textAlign(LEFT, TOP);
     }
+
+    textSize(6);
+    noStroke();
+    textAlign(CENTER, CENTER);
+    text(version, window_width-50, 10);
 }
 
 function drawTime() {
@@ -1521,6 +1532,9 @@ function draw() {
         textSize(10);
         textAlign(LEFT, CENTER);
         text(`${seed.replaceAll('_', ' ')}`, window_width  - 250, window_height - 80);
+        textSize(6);
+        textAlign(CENTER, CENTER);
+        text(version, window_width-50, 10);
 	}
 
     textAlign(LEFT, TOP);
