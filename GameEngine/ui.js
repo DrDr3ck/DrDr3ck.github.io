@@ -142,6 +142,7 @@ class UIComponent {
 		this.y = y;
 		this.w = width;
 		this.h = height;
+		this.scale = 1;
 		this.over = false;
 		this.enabled = true;
 		this.visible = false;
@@ -168,9 +169,9 @@ class UIComponent {
 		if (!this.enabled || !this.visible) {
 			return false;
 		}
-		if (mx > this.x + this.w) return false;
+		if (mx > this.x + this.w*this.scale) return false;
 		if (mx < this.x) return false;
-		if (my > this.y + this.h) return false;
+		if (my > this.y + this.h*this.scale) return false;
 		if (my < this.y) return false;
 		this.over = true;
 		return true;
@@ -314,7 +315,8 @@ class BButton extends BButtonTextBase {
 		} else {
 			noStroke();
 		}
-		drawText(this.text, this.x + this.w / 2, this.y - this.h / 2, this.enabled);
+		const deltaY = this.textSize < 30 ? 4 : 0;
+		drawText(this.text, this.x + this.w / 2, this.y - this.h / 2 - deltaY, this.enabled);
 	}
 }
 
@@ -384,6 +386,7 @@ class BImageButton extends BInteractiveButtonBase {
 	constructor(x, y, img, callback) {
 		super(x, y, img.width, img.height, callback);
 		this.img = img;
+		this.scale = 1;
 	}
 
 	doDraw() {
@@ -391,7 +394,11 @@ class BImageButton extends BInteractiveButtonBase {
 		if (this.over) {
 			tint(255, 200);
 		}
-		image(this.img, this.x, this.y, this.w, this.h);
+		if( this.scale === 1 ) {
+			image(this.img, this.x, this.y, this.w, this.h);
+		} else {
+			image(this.img, this.x, this.y, this.w*this.scale, this.h*this.scale, 0, 0, this.w, this.h);
+		}
 		pop();
 	}
 }
@@ -698,6 +705,7 @@ class LoggerContainer extends UIComponent {
 		this.loggers = [];
 		this.drawBox = false;
 		this.maxLines = 5;
+		this.textSize = 16;
 	}
 
 	addText(text) {
@@ -706,7 +714,7 @@ class LoggerContainer extends UIComponent {
 
 	doDraw() {
 		noStroke();
-		textSize(16);
+		textSize(this.textSize);
 		translate(this.x, this.y);
 		if (this.drawBox) {
 			push();
@@ -720,12 +728,12 @@ class LoggerContainer extends UIComponent {
 		// only display the 5 last messages
 		const maxLogger = Math.min(this.maxLines, this.loggers.length);
 		const minLogger = Math.max(0, this.loggers.length - this.maxLines);
-		let y = this.h + 10 - maxLogger * 20;
+		let y = this.h - 10 - maxLogger * this.textSize+2;
 		for (let i = minLogger; i < this.loggers.length; i++) {
 			const logger = this.loggers[i];
 			if (y > this.h) return;
 			logger.draw(x, y);
-			y += 20;
+			y += this.textSize+2;
 		}
 	}
 
