@@ -1,7 +1,7 @@
 const window_width = 740; //window.screen.availWidth > 1280 ? 1280 : window.screen.availWidth;
 const window_height = 360; //window.screen.availHeight > 800 ? 800 : window.screen.availHeight;
 
-const version = 'Version 0.12';
+const version = 'Version 0.13';
 
 let scale = window_width < 800 ? .5 : 1;
 
@@ -26,6 +26,8 @@ const GAME_PLAY_STATE = 2;
 let gameState = GAME_LOADING_STATE ;
 
 let titre = null;
+
+let isBoardUp = false;
 
 let toggleDebug = false;
 
@@ -95,20 +97,6 @@ const explorations = [
     {title: "Raid de Gnolls", type: [monster], time: 0, shape: [SIMPLE_U]},
     {title: "Assaut de Gobelours", type: [monster], time: 0, shape: [DOUBLE_I]}
 ];
-
-function enableTypeButtons(index) {
-    const types = explorations[index].type;
-    curSelectedType = -1;
-    [forest,city,field,water,monster].forEach(
-        (type, i) => {
-            const isEnable = types.includes(type);
-            typeButtons[i].visible = isEnable;
-            if( isEnable && curSelectedType === -1) {
-                curSelectedType = i;
-            }
-        }
-    );
-}
 
 function chooseShape(index) {
     curSelectedShape = allShapes[index];
@@ -270,7 +258,11 @@ function nextCard() {
 	        curSeasonCards.push(curCard);
         }
     }
-    setupCard(curCard);
+    curSelectedShape = null;
+    curSelectedType = -1;
+    if( isBoardUp ) {
+        setupCard(curSeasonCards[curSeasonCards.length-1]);
+    }
 }
 
 function undoClicked() {
@@ -701,7 +693,7 @@ function setupMyUI() {
     undoButton.enabled = false;
     pointButton.visible = false;
 
-    typeButtons.forEach(b=>b.visible=false);
+    buttons.forEach(b=>b.visible=false);
     shapeButtons.forEach(b=>b.visible=false);
 
     cardMgr = new CardMgr(seed);    
@@ -775,7 +767,9 @@ function drawType(typeName, i, unique=true) {
     typeButton.x = 710;
     typeButton.y = 20+70*i*scale;
     if( unique || i === 0 ) {
-        curSelectedType = typeIndex;
+        if( curSelectedType === -1 ) {
+            curSelectedType = typeIndex;
+        }
     }
 }
 
@@ -787,7 +781,9 @@ function drawSingleShape(shape, i, unique=true) {
     shapeButton.x = 1280*scale-10+40*i;
     shapeButton.y = 20;
     if( unique || i === 0 ) {
-        chooseShape(shapeIndex);
+        if( !curSelectedShape ) {
+            chooseShape(shapeIndex);
+        }
     }
 }
 
@@ -902,8 +898,7 @@ function setupCard(cardIndex) {
         uiManager.addLogger("Cannot place this shape");
     }
     
-    curSelectedShape = null;
-    curSelectedType = -1;
+    buttons.forEach(b=>b.visible=true);
     typeButtons.forEach(b=>b.visible=false);
     shapeButtons.forEach(b=>b.visible=false);
 
@@ -1020,22 +1015,23 @@ function drawDecretCard(X,Y,title,index,selection) {
 }
 
 function isMouseOverDecret(originalX,originalY) {
+    if( inMove ) return -1;
     let X = originalX;
     let Y = originalY;
 	if( mouseX > X && mouseX < X+cardWidth*scale*.75 && mouseY > Y && mouseY < Y+cardHeight*scale*.75) {
 		return 0;
 	}
-	X = X+170*scale;
+	X += 170*scale;
 	if( mouseX > X && mouseX < X+cardWidth*scale*.75 && mouseY > Y && mouseY < Y+cardHeight*scale*.75) {
 		return 1;
 	}
-	Y = Y+220*scale;
-	if( mouseX > X && mouseX < X+cardWidth*scale*.75 && mouseY > Y && mouseY < Y+cardHeight*scale*.75) {
-		return 3;
-	}
-	X = originalX;
+	X += 170*scale;
 	if( mouseX > X && mouseX < X+cardWidth*scale*.75 && mouseY > Y && mouseY < Y+cardHeight*scale*.75) {
 		return 2;
+	}
+	X += 170*scale;
+	if( mouseX > X && mouseX < X+cardWidth*scale*.75 && mouseY > Y && mouseY < Y+cardHeight*scale*.75) {
+		return 3;
 	}
 	return -1;
 }
@@ -1044,7 +1040,7 @@ function isMouseOverExploration() {
     if( season === Season.End ) {
         return false;
     }
-    let X = 1100*scale;
+    let X = 400;
 	let Y = 20+40*(curSeasonCards.length-1)*scale;
 	if( mouseX > X && mouseX < X+cardWidth*scale*.75 && mouseY > Y && mouseY < Y+cardHeight*scale*.75) {
 		return true;
@@ -1082,32 +1078,35 @@ function drawBoard() {
     const Y = 10;
 	spritesheet.drawScaledSprite('board', boardIndex, X, Y, scale);
 
+    let overDecret = -1;
     // draw decrets
-    spritesheet.drawScaledSprite('decret', 0, 370, 20, scale*.75);
-    spritesheet.drawScaledSprite('decret', 1, 370+170*scale, 20, scale*.75);
-    spritesheet.drawScaledSprite('decret', 2, 370, 20+220*scale, scale*.75);
-    spritesheet.drawScaledSprite('decret', 3, 370+170*scale, 20+220*scale, scale*.75);
+    if( !isBoardUp ) {
+        spritesheet.drawScaledSprite('decret', 0, 370, 20, scale*.75);
+        spritesheet.drawScaledSprite('decret', 1, 370+170*scale, 20, scale*.75);
+        spritesheet.drawScaledSprite('decret', 2, 370+170*2*scale, 20, scale*.75);
+        spritesheet.drawScaledSprite('decret', 3, 370+170*3*scale, 20, scale*.75);
 
-    const overDecret = isMouseOverDecret(370,20);
-    if( overDecret !== 0 ) {
-        drawDecretCard(370, 20, decretTypes[0], occurrences[0], season === Season.Printemps || season === Season.Hiver);
+        overDecret = isMouseOverDecret(370,20);
+        if( overDecret !== 0 ) {
+            drawDecretCard(370, 20, decretTypes[0], occurrences[0], season === Season.Printemps || season === Season.Hiver);
+        }
+        if( overDecret !== 1 ) {
+            drawDecretCard(370+170*scale, 20, decretTypes[1], occurrences[1], season === Season.Ete || season === Season.Printemps);
+        }
+        if( overDecret !== 2 ) {
+            drawDecretCard(370+170*2*scale, 20, decretTypes[2], occurrences[2], season === Season.Automne || season === Season.Ete);
+        }
+        if( overDecret !== 3 ) {
+            drawDecretCard(370+170*3*scale, 20, decretTypes[3], occurrences[3], season === Season.Hiver || season === Season.Automne);
+        }
+    } else {
+        // draw exploration cards
+        const delta = 0; // TODO
+        for( i = 0; i < curSeasonCards.length+delta; i++ ) {
+            const card = curSeasonCards[i];
+            drawExplorationCard(400,20+40*i*scale, card, i === curSeasonCards.length+delta-2);	
+        } 
     }
-    if( overDecret !== 1 ) {
-        drawDecretCard(370+170*scale, 20, decretTypes[1], occurrences[1], season === Season.Ete || season === Season.Printemps);
-    }
-    if( overDecret !== 2 ) {
-        drawDecretCard(370, 20+220*scale, decretTypes[2], occurrences[2], season === Season.Automne || season === Season.Ete);
-    }
-    if( overDecret !== 3 ) {
-        drawDecretCard(370+170*scale, 20+220*scale, decretTypes[3], occurrences[3], season === Season.Hiver || season === Season.Automne);
-    }
-
-    // draw exploration cards
-    const delta = 0; // TODO
-    for( i = 0; i < curSeasonCards.length+delta; i++ ) {
-        const card = curSeasonCards[i];
-        drawExplorationCard(1100*scale,20+40*i*scale, card, i === curSeasonCards.length+delta-2);	
-    } 
 
     /*
     for( i = 0; i < cards.length+delta; i++ ) {
@@ -1139,6 +1138,10 @@ function drawBoard() {
         }
     }
 
+    drawPieces();
+    drawTime();
+    drawPoints();
+
     // temple ?
     if( useTemple || pointButton.visible) {
         strokeWeight(4);
@@ -1147,16 +1150,19 @@ function drawBoard() {
     strokeWeight(1);
 
     // bigger cards
-    if( overDecret >= 0 ) {
-        scale*=3;
-        drawDecretCard(window_width/2-cardWidth/2*scale, 20, decretTypes[overDecret],occurrences[overDecret], false);
-        scale/=3;
-    }
-    if( !pointButton.visible && isMouseOverExploration() ) {
-        scale*=3;
-        const card = curSeasonCards[curSeasonCards.length-1];
-        drawExplorationCard(window_width/2-cardWidth/2*scale, 20, card, false);
-        scale/=3;
+    if( !isBoardUp ) {
+        if( overDecret >= 0 ) {
+            scale*=3;
+            drawDecretCard(window_width/2-cardWidth/2*scale, 20, decretTypes[overDecret],occurrences[overDecret], false);
+            scale/=3;
+        }
+    } else {
+        if( !pointButton.visible && isMouseOverExploration() ) {
+            scale*=3;
+            const card = curSeasonCards[curSeasonCards.length-1];
+            drawExplorationCard(window_width/2-cardWidth/2*scale, 20, card, false);
+            scale/=3;
+        }
     }
 
     // draw selected shape
@@ -1164,7 +1170,9 @@ function drawBoard() {
     fill(125);
     textAlign(LEFT, CENTER);
     if( curSelectedShape ) {
-        drawShape(35,4, false);
+        if( isBoardUp ) {
+            drawShape(35,4, false);
+        }
     } else if( pointButton.visible ) {
         text("End of Season", 770, 510);
     }
@@ -1194,8 +1202,6 @@ function drawBoard() {
         }
     }
 
-    drawPieces();
-
     // TODO:
     // selected type button
     /*
@@ -1216,9 +1222,6 @@ function drawBoard() {
             uiManager.loggerContainer.h
         );
     }
-
-    drawTime();
-    drawPoints();
 
     // affiche le titre si le joueur en a gagné un
     if( (season === Season.End||toggleDebug) && titre ) {
@@ -1246,12 +1249,12 @@ function drawTime() {
 }
 
 function drawPoints() {
-    /*
-    drawSeasonPoint(370,200,0);
-    drawSeasonPoint(460,200,1);
-    drawSeasonPoint(370,260,2);
-    drawSeasonPoint(460,260,3);
-    */
+    if( !isBoardUp ) {
+        drawSeasonPoint(370,135,0);
+        drawSeasonPoint(455,135,1);
+        drawSeasonPoint(540,135,2);
+        drawSeasonPoint(630,135,3);
+    }
     const total = points.reduce((acc,val)=>acc+val.total, 0);
     fill(250);
     stroke(0);
@@ -1347,6 +1350,8 @@ function drawPieces() {
 
     stroke(144,0,211);
     fill(138,43,226);
+    textAlign(LEFT, CENTER);
+    textSize(25);
     text(-monsters,360,350);
     stroke(0);
 }
@@ -1551,7 +1556,10 @@ function draw() {
 }
 
 function mouseClicked() {
-    if( !uiManager.currentDialog ) {
+    const mouseDeltaX = mousePosition.X - mouseX;
+    const mouseDeltaY = mousePosition.Y - mouseY;
+    const simpleClick = Math.abs(mouseDeltaX) < 10 && Math.abs(mouseDeltaY) < 10;
+    if( simpleClick && !uiManager.currentDialog ) {
         addCurrentCase();
     }
 
@@ -1561,14 +1569,33 @@ function mouseClicked() {
 	return false;
 }
 
+let mousePosition = {X:0, Y:0};
+let inMove = false;
+
 function mousePressed() {
 	console.log(mouseX, mouseY);
     if( toggleDebug ) {
         uiManager.addLogger(`X=${mouseX}, Y=${mouseY}`);
     }
+    mousePosition={X:mouseX, Y:mouseY};
+    inMove = true;
 }
 
 function mouseReleased() {
+    const mouseDeltaX = mousePosition.X - mouseX;
+    const mouseDeltaY = mousePosition.Y - mouseY;
+    console.log(mouseDeltaY, mouseDeltaX);
+    if( mouseX > 360 && mousePosition.X > 360 && Math.abs(mouseDeltaY) > mouseDeltaX*5 ) {
+        if( mouseDeltaY > 100 ) {
+            isBoardUp = true;
+            setupCard(curSeasonCards[curSeasonCards.length-1]);
+        } else if( mouseDeltaY < -100 ) {
+            isBoardUp = false;
+            buttons.forEach(b=>b.visible=false);
+            shapeButtons.forEach(b=>b.visible=false);
+        }
+    }
+    inMove = false;
 }
 
 function keyPressed() {
