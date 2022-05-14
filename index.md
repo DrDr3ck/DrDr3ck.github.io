@@ -13,10 +13,12 @@
     <a href="./Tetris">Tetris</a>
     <br>
     <a href="./MatchingCard">Matching Cards</a>
+    <!--
     <h2>Jeux de société</h2>
     <a href="./Cartographer">Cartographer</a>&nbsp;<a href="./Cartographer/solo.html">solo</a>
     <br>
     <a href="./PalmIsland">PalmIsland</a>
+    -->
     <h2>Jeux en cours de codage</h2>
     <a href="./Dungeon">Dungeon</a>
     <br>
