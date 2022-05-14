@@ -1,7 +1,7 @@
 const window_width = 740; //window.screen.availWidth > 1280 ? 1280 : window.screen.availWidth;
 const window_height = 360; //window.screen.availHeight > 800 ? 800 : window.screen.availHeight;
 
-const version = 'Version 0.14';
+const version = 'Version 0.15';
 
 let scale = window_width < 800 ? .5 : 1;
 
@@ -1051,12 +1051,6 @@ function isMouseOverExploration() {
     return false;
 }
 
-function drawEmptyCard(X,Y) {
-	strokeWeight(4);
-	rect(X, Y, cardWidth*scale*.75, cardHeight*scale*.75, 20);
-	strokeWeight(1);
-}
-
 function drawExplorationCard(X,Y, index, drawRuin=false) {
     if( index === 11 && (drawRuin || toggleDebug) ) {
         X-=20;
@@ -1066,7 +1060,6 @@ function drawExplorationCard(X,Y, index, drawRuin=false) {
     }
 	fill(250,150,10);
 	stroke(0);
-	drawEmptyCard(X,Y);
 	spritesheet.drawScaledSprite('exploration', index, X, Y, scale*.75);
 	strokeWeight(4*scale);
 	noFill();
@@ -1089,12 +1082,11 @@ function drawBoard() {
 
     let overDecret = -1;
     // draw decrets
+    spritesheet.drawScaledSprite('decret', 0, 370, isBoardUp ? -100 : 20, scale*.75);
+    spritesheet.drawScaledSprite('decret', 1, 370+170*scale, isBoardUp ? -100 : 20, scale*.75);
+    spritesheet.drawScaledSprite('decret', 2, 370+170*2*scale, isBoardUp ? -100 : 20, scale*.75);
+    spritesheet.drawScaledSprite('decret', 3, 370+170*3*scale, isBoardUp ? -100 : 20, scale*.75);
     if( !isBoardUp ) {
-        spritesheet.drawScaledSprite('decret', 0, 370, 20, scale*.75);
-        spritesheet.drawScaledSprite('decret', 1, 370+170*scale, 20, scale*.75);
-        spritesheet.drawScaledSprite('decret', 2, 370+170*2*scale, 20, scale*.75);
-        spritesheet.drawScaledSprite('decret', 3, 370+170*3*scale, 20, scale*.75);
-
         overDecret = isMouseOverDecret(370,20);
         if( overDecret !== 0 ) {
             drawDecretCard(370, 20, decretTypes[0], occurrences[0], season === Season.Printemps || season === Season.Hiver);
@@ -1108,6 +1100,7 @@ function drawBoard() {
         if( overDecret !== 3 ) {
             drawDecretCard(370+170*3*scale, 20, decretTypes[3], occurrences[3], season === Season.Hiver || season === Season.Automne);
         }
+        drawExplorationCard(400,window_height-5, curSeasonCards[0], 0 === curSeasonCards.length-2);		
     } else {
         // draw exploration cards
         const delta = 0; // TODO
@@ -1329,14 +1322,17 @@ function drawSeasonPoint(x,y,seasonIndex) {
     line(x-5,y+delta-7,x+delta*2-5,y+delta-7);
 }
 
+let flash = 250;
+let flashDown = true;
+
 function highlightTemples() {
     noFill();
     templesPosition.forEach(pos=>{
         if( board[pos.X][pos.Y].value === EMPTYCASE ) {
-            stroke(255,228,180);
+            stroke(255,228,180,flash);
             rect(xBoard+sizeBoard*pos.X, yBoard+sizeBoard*pos.Y, sizeBoard, sizeBoard);
         } else {
-            stroke(155,128,180);
+            stroke(155,128,180, flash);
             rect(xBoard+sizeBoard*pos.X, yBoard+sizeBoard*pos.Y, sizeBoard, sizeBoard);
         }
     });
@@ -1528,10 +1524,21 @@ function draw() {
 	const currentTime = Date.now();
 	const elapsedTime = currentTime - lastTime;
     if( swipeUp ) {
-        deltaSwipe += 0.8;
-        if( deltaSwipe > 50 ) {
+        deltaSwipe += 0.6;
+        if( deltaSwipe > 40 ) {
             deltaSwipe = 0;
         }
+    }
+    if( flashDown ) {
+        flash-=2;
+    } else {
+        flash+=2;
+    }
+    if( flash < 150 ) {
+        flashDown = false;
+    }
+    if( flash > 250 ) {
+        flashDown = true;
     }
 	background(51);
     if (gameState === GAME_LOADING_STATE) {
