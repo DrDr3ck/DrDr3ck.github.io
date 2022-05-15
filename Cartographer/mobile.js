@@ -23,6 +23,13 @@ window.addEventListener('resize', function(){
     undoButton.x = window_width - 120 - 200*scale;
     undoButton.y = window_height - 10;
 
+    templeButton.x = window_width-110-40;
+    templeButton.y = horizontalDisplay ? 170 : 170+350;
+    turnButton.x = window_width-110;
+    turnButton.y = horizontalDisplay ? 170 : 170+350;
+    flipButton.x = window_width-110+40;
+    flipButton.y = horizontalDisplay ? 170 : 170+350;
+
     speakerButton.x = window_width - 35 - 10;
     speakerButton.y = window_height - 60;
     fullScreenButton.x = window_width - 35*2 - 10*2 -10;
@@ -702,6 +709,10 @@ function setup() {
 
 let showTemple = false;
 
+let turnButton = null;
+let flipButton = null;
+let templeButton = null;
+
 function setupMyUI() {
     speakerClicked();
     const forestButton =new BImageButton(830, 65, spritesheet.getImage('cases', 0), ()=>{
@@ -721,17 +732,17 @@ function setupMyUI() {
     });
 
     const buttonY = horizontalDisplay ? 170 : 170+350;
-    const turnButton =new BImageButton(window_width-110, buttonY, spritesheet.getImage('icons', 1), ()=>{
+    turnButton =new BImageButton(window_width-110, buttonY, spritesheet.getImage('icons', 1), ()=>{
         curSelectedShape = turnShape(curSelectedShape);
         soundManager.playSound('turn_shape');
     });
     turnButton.scale = 0.5;
-    const flipButton =new BImageButton(window_width-110+40, buttonY, spritesheet.getImage('icons', 0), ()=>{
+    flipButton =new BImageButton(window_width-110+40, buttonY, spritesheet.getImage('icons', 0), ()=>{
         curSelectedShape = flipShape(curSelectedShape);
         soundManager.playSound('flip_shape');
     });
     flipButton.scale = 0.5;
-    const templeButton =new BImageButton(window_width-110-40, buttonY, spritesheet.getImage('temple', 0), ()=>{
+    templeButton =new BImageButton(window_width-110-40, buttonY, spritesheet.getImage('temple', 0), ()=>{
         showTemple = !showTemple;
     });
     flipButton.scale = 0.5;
