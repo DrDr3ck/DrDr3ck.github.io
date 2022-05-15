@@ -1,4 +1,4 @@
-const version = 'Version 0.29';
+const version = 'Version 0.30';
 
 let window_width = window.screen.width > window.screen.height ? 740 : 360;
 let window_height = window.screen.width > window.screen.height ? 360 : 740;
@@ -53,7 +53,7 @@ window.addEventListener('resize', function(){
     copySeedButton.y = window_height - 25;
 
     uiManager.loggerContainer.x = horizontalDisplay ? 440 : 130;
-    uiManager.loggerContainer.y = horizontalDisplay ? 205 : 550;
+    uiManager.loggerContainer.y = horizontalDisplay ? 205 : 560;
 
     startRectoButton.y = window_height/2+50;
     startVersoButton.y = window_height/2+75+50;
@@ -71,7 +71,7 @@ let scale = window_width < 800 ? .5 : 1;
 const uiManager = new UIManager();
 uiManager.loggerContainer = new LoggerContainer(
 	horizontalDisplay ? 440 : 130,
-	horizontalDisplay ? 205 : 550,
+	horizontalDisplay ? 300 : 630,
 	400*scale,
 	100*scale
 );
@@ -806,6 +806,8 @@ function setupMyUI() {
     fullScreenButton.visible = false;
     copySeedButton.visible = false;
     copy2SeedButton.visible = false;
+    nextButton.visible = false;
+    undoButton.visible = false;
 
     buttons.forEach(b=>b.visible=false);
     shapeButtons.forEach(b=>b.visible=false);
@@ -1122,13 +1124,13 @@ function drawDecretCard(X,Y,title,index,selection) {
     const cardDecretWidth = 400;
     const cardDecretHeight = 570;
     const decrets = ["A","B","C","D"];
-    scale/=2;
+    //scale/=2;
 	if( decrets.includes(title) ) {
 		spritesheet.drawScaledSprite('decret', index, X, Y, scale*.75);
 	} else {
 		spritesheet.drawScaledSprite(title, index, X, Y, scale*.75);
 	}
-    scale*=2;
+    //scale*=2;
 	if( selection ) {
 		stroke(255,228,180);
 	} else {
@@ -1136,7 +1138,7 @@ function drawDecretCard(X,Y,title,index,selection) {
 	}
 	strokeWeight(4*scale);
 	noFill();
-	rect(X, Y, cardDecretWidth/2*scale*.75, cardDecretHeight/2*scale*.75, 5);
+	rect(X, Y, cardDecretWidth*scale*.75, cardDecretHeight*scale*.75, 5);
     
 }
 
@@ -1144,19 +1146,24 @@ function isMouseOverDecret(originalX,originalY) {
     if( inMove ) return -1;
     let X = originalX;
     let Y = originalY;
-	if( mouseX > X && mouseX < X+cardWidth*scale*.75 && mouseY > Y && mouseY < Y+cardHeight*scale*.75) {
+	if( mouseX > X && mouseX < X+cardWidth*2*scale*.75 && mouseY > Y && mouseY < Y+cardHeight*2*scale*.75) {
 		return 0;
 	}
-	X += 170*scale;
-	if( mouseX > X && mouseX < X+cardWidth*scale*.75 && mouseY > Y && mouseY < Y+cardHeight*scale*.75) {
+	X += 170*2*scale;
+	if( mouseX > X && mouseX < X+cardWidth*2*scale*.75 && mouseY > Y && mouseY < Y+cardHeight*2*scale*.75) {
 		return 1;
 	}
-	X += 170*scale;
-	if( mouseX > X && mouseX < X+cardWidth*scale*.75 && mouseY > Y && mouseY < Y+cardHeight*scale*.75) {
+    if( horizontalDisplay ) {
+	    X += 170*2*scale;
+    } else {
+        X = originalX;
+        Y += 320;
+    }
+	if( mouseX > X && mouseX < X+cardWidth*2*scale*.75 && mouseY > Y && mouseY < Y+cardHeight*2*scale*.75) {
 		return 2;
 	}
-	X += 170*scale;
-	if( mouseX > X && mouseX < X+cardWidth*scale*.75 && mouseY > Y && mouseY < Y+cardHeight*scale*.75) {
+	X += 170*2*scale;
+	if( mouseX > X && mouseX < X+cardWidth*2*scale*.75 && mouseY > Y && mouseY < Y+cardHeight*2*scale*.75) {
 		return 3;
 	}
 	return -1;
@@ -1192,38 +1199,50 @@ const letters = "ABCDEFGHIJK".split('');
 let swipeUp = true;
 let deltaSwipe = 0;
 
-function drawBoard() {
+function drawGame() {
     if( swipeUp ) {
-        spritesheet.drawScaledSprite('swipe',horizontalDisplay ? 0 : 1, horizontalDisplay ? 420 : 250-deltaSwipe, horizontalDisplay ? 270-deltaSwipe : 550,0.2);
+        spritesheet.drawScaledSprite('swipe',horizontalDisplay ? 0 : 1, horizontalDisplay ? 260 : 250-deltaSwipe, horizontalDisplay ? 270-deltaSwipe : 600,0.2);
     }
-    // draw board
-    const X = 10;
-    const Y = 10;
-	spritesheet.drawScaledSprite('board', boardIndex, X, Y, scale);
 
     let overDecret = -1;
     // draw decrets
-    const decretX = horizontalDisplay ? 370 : 10;
-    const decretY = isBoardUp ? -100 : (horizontalDisplay ? 20 : 380);
+    const decretX = horizontalDisplay ? 10 : 10;
+    let decretY = isBoardUp ? -100 : (horizontalDisplay ? 20 : 380);
     const explorationX = horizontalDisplay ? 400 : 10;
     const explorationY = horizontalDisplay ? 20 : 380;
-    spritesheet.drawScaledSprite('decret', 0, decretX, decretY, scale*.75);
-    spritesheet.drawScaledSprite('decret', 1, decretX+170*scale, decretY, scale*.75);
-    spritesheet.drawScaledSprite('decret', 2, decretX+170*2*scale, decretY, scale*.75);
-    spritesheet.drawScaledSprite('decret', 3, decretX+170*3*scale, decretY, scale*.75);
     if( !isBoardUp ) {
+        if( horizontalDisplay ) {
+            spritesheet.drawScaledSprite('decret', 0, decretX, decretY, 0.78);
+            spritesheet.drawScaledSprite('decret', 1, decretX+170*2*scale, decretY, .78);
+            spritesheet.drawScaledSprite('decret', 2, decretX+170*2*2*scale, decretY, .78);
+            spritesheet.drawScaledSprite('decret', 3, decretX+170*2*3*scale, decretY, .78);
+        } else {
+            decretY = 20;
+            spritesheet.drawScaledSprite('decret', 0, decretX, decretY, 0.78);
+            spritesheet.drawScaledSprite('decret', 1, decretX+170*2*scale, decretY, .78);
+            spritesheet.drawScaledSprite('decret', 2, decretX, decretY + 320, .78);
+            spritesheet.drawScaledSprite('decret', 3, decretX+170*2*scale, decretY + 320, .78);
+        }
         overDecret = isMouseOverDecret(decretX,decretY);
         if( overDecret !== 0 ) {
             drawDecretCard(decretX, decretY, decretTypes[0], occurrences[0], season === Season.Printemps || season === Season.Hiver);
         }
         if( overDecret !== 1 ) {
-            drawDecretCard(decretX+170*scale, decretY, decretTypes[1], occurrences[1], season === Season.Ete || season === Season.Printemps);
+            drawDecretCard(decretX+170*2*scale, decretY, decretTypes[1], occurrences[1], season === Season.Ete || season === Season.Printemps);
         }
         if( overDecret !== 2 ) {
-            drawDecretCard(decretX+170*2*scale, decretY, decretTypes[2], occurrences[2], season === Season.Automne || season === Season.Ete);
+            if( horizontalDisplay ) {
+                drawDecretCard(decretX+170*2*2*scale, decretY, decretTypes[2], occurrences[2], season === Season.Automne || season === Season.Ete);
+            } else {
+                drawDecretCard(decretX, decretY+320, decretTypes[2], occurrences[2], season === Season.Automne || season === Season.Ete);    
+            }
         }
         if( overDecret !== 3 ) {
-            drawDecretCard(decretX+170*3*scale, decretY, decretTypes[3], occurrences[3], season === Season.Hiver || season === Season.Automne);
+            if( horizontalDisplay ) {
+                drawDecretCard(decretX+170*2*3*scale, decretY, decretTypes[3], occurrences[3], season === Season.Hiver || season === Season.Automne);
+            } else {
+                drawDecretCard(decretX+170*2*scale, decretY+320, decretTypes[3], occurrences[3], season === Season.Hiver || season === Season.Automne);
+            }
         }
         if( curSeasonCards.length > 0 ) {
             drawExplorationCard(explorationX,window_height-5, curSeasonCards[0], 0 === curSeasonCards.length-2);		
@@ -1243,31 +1262,11 @@ function drawBoard() {
     }
     */
 
-    // draw board lines
-    strokeWeight(1);
-    for( let j = 0; j<11; j++ ) {
-        for( let i = 0; i < 11; i++) {
-            if( !isEmptyCase({X:i, Y:j}) ) {
-                spritesheet.drawScaledSprite('cases', board[i][j].value, xBoard+sizeBoard*i, yBoard+sizeBoard*j, scale);
-                if( board[i][j].value === "-M") {
-                    stroke(0);
-                    fill(51);
-                    ellipse(xBoard+sizeBoard*i+sizeBoard/2,yBoard+sizeBoard*j+sizeBoard/2+12*scale,22*scale);
-                }
-            }
-            stroke(0);
-            noFill();
-            if( toggleDebug && board[i][j].value === "M" ) {
-                fill(0);
-            } else if( toggleDebug && templesPosition.findIndex(pos=>pos.X===i && pos.Y===j) >= 0 ) {
-                fill(250,150,0);
-            }
-            rect(xBoard+sizeBoard*i, yBoard+sizeBoard*j, sizeBoard, sizeBoard);
-        }
+    // draw board
+    if( isBoardUp ) {
+        drawBoard();
+        drawTime();
     }
-
-    drawPieces();
-    drawTime();
     drawPoints();
 
     // temple ?
@@ -1280,9 +1279,10 @@ function drawBoard() {
     // bigger cards
     if( !isBoardUp ) {
         if( overDecret >= 0 ) {
-            scale*=3;
-            drawDecretCard(window_width/2-cardWidth/2*scale, 20, decretTypes[overDecret],occurrences[overDecret], false);
-            scale/=3;
+            const curScale = scale;
+            scale*=1.5;
+            drawDecretCard(window_width/2-cardWidth*scale, 20, decretTypes[overDecret],occurrences[overDecret], false);
+            scale = curScale;
         }
     } else {
         if( !pointButton.visible && isMouseOverExploration(explorationX, explorationY+40*(curSeasonCards.length-1)*scale) ) {
@@ -1310,7 +1310,7 @@ function drawBoard() {
     }
 
     // draw cursor on board
-    if( !uiManager.currentDialog ) {
+    if( isBoardUp && !uiManager.currentDialog ) {
         const overCase = mouseOverCase();
         if( overCase !== null ) {
             push();
@@ -1384,6 +1384,35 @@ function drawBoard() {
     }
 }
 
+function drawBoard() {
+    const X = 10;
+    const Y = 10;
+	spritesheet.drawScaledSprite('board', boardIndex, X, Y, scale);
+    // draw board lines
+    strokeWeight(1);
+    for( let j = 0; j<11; j++ ) {
+        for( let i = 0; i < 11; i++) {
+            if( !isEmptyCase({X:i, Y:j}) ) {
+                spritesheet.drawScaledSprite('cases', board[i][j].value, xBoard+sizeBoard*i, yBoard+sizeBoard*j, scale);
+                if( board[i][j].value === "-M") {
+                    stroke(0);
+                    fill(51);
+                    ellipse(xBoard+sizeBoard*i+sizeBoard/2,yBoard+sizeBoard*j+sizeBoard/2+12*scale,22*scale);
+                }
+            }
+            stroke(0);
+            noFill();
+            if( toggleDebug && board[i][j].value === "M" ) {
+                fill(0);
+            } else if( toggleDebug && templesPosition.findIndex(pos=>pos.X===i && pos.Y===j) >= 0 ) {
+                fill(250,150,0);
+            }
+            rect(xBoard+sizeBoard*i, yBoard+sizeBoard*j, sizeBoard, sizeBoard);
+        }
+    }
+    drawPieces();
+}
+
 function drawTime() {
     fill(250);
     stroke(0);
@@ -1399,22 +1428,31 @@ function drawTime() {
 }
 
 function drawPoints() {
+    let total = 0;
     if( !isBoardUp ) {
-        const X = horizontalDisplay ? 370 : 10;
-        const Y = horizontalDisplay ? 135 : 500;
-        drawSeasonPoint(X,Y,0);
-        drawSeasonPoint(X+85,Y,1);
-        drawSeasonPoint(X+170,Y,2);
-        drawSeasonPoint(X+170+85,Y,3);
+        const X = horizontalDisplay ? 30 : 30;
+        const Y = horizontalDisplay ? 245 : 250;
+        if( horizontalDisplay ) {
+            drawSeasonPoint(X,Y,0);
+            drawSeasonPoint(X+85*2,Y,1);
+            drawSeasonPoint(X+170*2,Y,2);
+            drawSeasonPoint(X+(170+85)*2,Y,3);
+        } else {
+            drawSeasonPoint(X,Y,0);
+            drawSeasonPoint(X+85*2,Y,1);
+            drawSeasonPoint(X,Y+320,2);
+            drawSeasonPoint(X+85*2,Y+320,3);
+        }
+    } else {
+        total = points.reduce((acc,val)=>acc+val.total, 0);
+        fill(250);
+        stroke(0);
+        textSize(22);
+        textAlign(LEFT, CENTER);
+        text(total,horizontalDisplay ? 370 : 10, window_height - 40);
     }
-    const total = points.reduce((acc,val)=>acc+val.total, 0);
-    fill(250);
-    stroke(0);
-    textSize(22);
-    textAlign(LEFT, CENTER);
-    text(total,horizontalDisplay ? 370 : 10, window_height - 40);
 
-    if( season === Season.End || toggleDebug ) {
+    if( isBoardUp && (season === Season.End || toggleDebug) ) {
         const totalSolo = [0,1,2,3].reduce((acc,val)=>
             acc+decretPoints[decretTypes[val]][occurrences[val]], 0
         );
@@ -1629,7 +1667,6 @@ function addCurrentCase() {
     }
     if( shapeAlreadyAdded() && canDraw ) { 
         // do UNDO
-        console.log("undo");
         undoClicked();
     }else 
     if( shapeAlreadyAdded() ) {
@@ -1716,7 +1753,7 @@ function draw() {
 	uiManager.update(elapsedTime);
 
     if (gameState === GAME_PLAY_STATE) {
-	    drawBoard();
+	    drawGame();
     }
 
 	if (gameState === GAME_START_STATE) {
@@ -1746,7 +1783,7 @@ function mouseClicked() {
     const mouseDeltaX = mousePosition.X - mouseX;
     const mouseDeltaY = mousePosition.Y - mouseY;
     const simpleClick = Math.abs(mouseDeltaX) < 10 && Math.abs(mouseDeltaY) < 10;
-    if( simpleClick && !uiManager.currentDialog ) {
+    if( simpleClick && !uiManager.currentDialog && isBoardUp ) {
         addCurrentCase();
     }
 
@@ -1770,22 +1807,27 @@ function mousePressed() {
 
 function boardUp() {
     isBoardUp = true;
+    nextButton.visible = true;
+    undoButton.visible = true;
     swipeUp = false;
     if( curSeasonCards.length > 0 ) {
         setupCard(curSeasonCards[curSeasonCards.length-1]);
     }
+    uiManager.loggerContainer.y = horizontalDisplay ? 205 : 560;
 }
 
 function boardDown() {
     isBoardUp = false;
+    nextButton.visible = false;
+    undoButton.visible = false;
     buttons.forEach(b=>b.visible=false);
     shapeButtons.forEach(b=>b.visible=false);
+    uiManager.loggerContainer.y = horizontalDisplay ? 300 : 630;
 }
 
 function mouseReleased() {
     const mouseDeltaX = mousePosition.X - mouseX;
     const mouseDeltaY = mousePosition.Y - mouseY;
-    console.log(mouseDeltaY, mouseDeltaX);
     if( mouseX > 360 && mousePosition.X > 360 && Math.abs(mouseDeltaY) > mouseDeltaX*5 ) {
         if( mouseDeltaY > 80 ) {
             boardUp();
