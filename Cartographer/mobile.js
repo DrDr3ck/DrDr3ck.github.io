@@ -1,4 +1,4 @@
-const version = 'Version 0.22';
+const version = 'Version 0.23';
 
 let window_width = window.screen.width > window.screen.height ? 740 : 360;
 let window_height = window.screen.width > window.screen.height ? 360 : 740;
@@ -1128,7 +1128,7 @@ let deltaSwipe = 0;
 
 function drawBoard() {
     if( swipeUp ) {
-        spritesheet.drawScaledSprite('swipe',horizontalDisplay ? 0 : 1, horizontalDisplay ? 350 : 30-deltaSwipe, horizontalDisplay ? 210-deltaSwipe : 570,0.2);
+        spritesheet.drawScaledSprite('swipe',horizontalDisplay ? 0 : 1, horizontalDisplay ? 420 : 250-deltaSwipe, horizontalDisplay ? 270-deltaSwipe : 550,0.2);
     }
     // draw board
     const X = 10;
@@ -1138,9 +1138,9 @@ function drawBoard() {
     let overDecret = -1;
     // draw decrets
     const decretX = horizontalDisplay ? 370 : 10;
-    const decretY = isBoardUp ? -100 : (horizontalDisplay ? 20 : 370);
+    const decretY = isBoardUp ? -100 : (horizontalDisplay ? 20 : 380);
     const explorationX = horizontalDisplay ? 400 : 10;
-    const explorationY = horizontalDisplay ? 20 : 370;
+    const explorationY = horizontalDisplay ? 20 : 380;
     spritesheet.drawScaledSprite('decret', 0, decretX, decretY, scale*.75);
     spritesheet.drawScaledSprite('decret', 1, decretX+170*scale, decretY, scale*.75);
     spritesheet.drawScaledSprite('decret', 2, decretX+170*2*scale, decretY, scale*.75);
@@ -1298,7 +1298,7 @@ function drawBoard() {
         if( horizontalDisplay ) {
             text(titre, 430, 340);
         } else {
-            text(titre, 65, 720);
+            text(titre, 230, 615);
         }
         textAlign(LEFT, TOP);
     }
@@ -1307,6 +1307,15 @@ function drawBoard() {
     noStroke();
     textAlign(CENTER, CENTER);
     text(version, window_width-50, 5);
+
+    if( curSeasonCards.length > 0 ) {
+        if( curTime+explorations[curSeasonCards[curSeasonCards.length-1]].time >= seasonTime ) {
+            strokeWeight(8);
+            stroke(250,50,50,flash);
+            noFill();
+            rect(0,0,window_width,window_height,5);
+        }
+    }
 }
 
 function drawTime() {
@@ -1314,17 +1323,19 @@ function drawTime() {
     stroke(0);
     textSize(20);
     textAlign(LEFT, TOP);
+    const X = horizontalDisplay ? 380 : 30;
+    const Y = horizontalDisplay ? 1 : 360;
     if( season !== Season.End) {
-        text(`${season} ${curTime}/${seasonTime}`, 380, 1);
+        text(`${season} ${curTime}/${seasonTime}`, X, Y);
     } else {
-        text(season, 380, 1);
+        text(season, X, Y);
     }
 }
 
 function drawPoints() {
     if( !isBoardUp ) {
         const X = horizontalDisplay ? 370 : 10;
-        const Y = horizontalDisplay ? 135 : 490;
+        const Y = horizontalDisplay ? 135 : 500;
         drawSeasonPoint(X,Y,0);
         drawSeasonPoint(X+85,Y,1);
         drawSeasonPoint(X+170,Y,2);
@@ -1627,7 +1638,6 @@ function draw() {
     }
 
 	if (gameState === GAME_START_STATE) {
-		background(51);
         spritesheet.drawScaledSprite('cartographer', 0, window_width/2 - 553/4, 10, .45);
         textSize(10);
         textAlign(LEFT, CENTER);
