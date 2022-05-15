@@ -1,14 +1,51 @@
-let window_width = 740; //window.screen.availWidth > 1280 ? 1280 : window.screen.availWidth;
-let window_height = 360; //window.screen.availHeight > 800 ? 800 : window.screen.availHeight;
+const version = 'Version 0.20';
 
-const version = 'Version 0.19';
+let window_width = window.screen.width > window.screen.height ? 740 : 360; //window.screen.availWidth > 1280 ? 1280 : window.screen.availWidth;
+let window_height = window.screen.width > window.screen.height ? 360 : 740; //window.screen.availHeight > 800 ? 800 : window.screen.availHeight;
+
+let horizontalDisplay = window_width > window_height;
+
+window.addEventListener('resize', function(){
+    if( !fullScreenButton.checked ) {
+        window_width = window.screen.width > window.screen.height ? 740 : 360;
+        window_height = window.screen.width > window.screen.height ? 360 : 740;
+        horizontalDisplay = window_width > window_height;
+        resizeCanvas(window_width, window_height);
+    } else {
+        window_width = window.screen.width > window.screen.height ? window.screen.availWidth : window.screen.availHeight;
+        window_height = window.screen.width > window.screen.height ? window.screen.availHeight : window.screen.availWidth;
+        horizontalDisplay = window_width > window_height;
+        resizeCanvas(window_width, window_height);
+    }
+    // reset button position
+    nextButton.x = window_width - 120 - 200*scale;
+    nextButton.y = window_height - 50;
+    undoButton.x = window_width - 120 - 200*scale;
+    undoButton.y = window_height - 10;
+
+    speakerButton.x = window_width - 35 - 10;
+    speakerButton.y = window_height - 60;
+    fullScreenButton.x = window_width - 35*2 - 10*2 -10;
+    fullScreenButton.y = window_height - 60;
+
+    copySeedButton.x = window_width - 80;
+    copySeedButton.y = window_height - 25;
+
+    uiManager.loggerContainer.x = horizontalDisplay ? 440 : 130;
+    uiManager.loggerContainer.y = horizontalDisplay ? 205 : 550;
+
+    if( isBoardUp && curSeasonCards.length > 0 ) {
+        setupCard(curSeasonCards[curSeasonCards.length-1]);
+    }
+});
+
 
 let scale = window_width < 800 ? .5 : 1;
 
 const uiManager = new UIManager();
 uiManager.loggerContainer = new LoggerContainer(
-	440,
-	205,
+	horizontalDisplay ? 440 : 130,
+	horizontalDisplay ? 205 : 550,
 	400*scale,
 	100*scale
 );
@@ -498,7 +535,7 @@ class PointsDialog extends Dialog {
 }
 
 function pointsClicked() {
-    const dialog = new PointsDialog(540, 10, 730-540, 200);
+    const dialog = new PointsDialog(horizontalDisplay ? 540 : 10, horizontalDisplay ? 10 : 360, 730-540, 200);
     let decret1Index = 0;
     if( season === Season.Ete ) {
         decret1Index = 1;
@@ -557,14 +594,16 @@ const speakerButton = new BFloatingSwitchButton(window_width - 35 - 10, window_h
 const fullScreenButton = new BFloatingSwitchButton(window_width - 35*2 - 10*2 -10,window_height - 60,"F",()=>{
 	if(!toggleFullScreen()) {
 		fullScreenButton.checked = false;
-        window_width = 740;
-        window_height = 360;
+        window_width = window.screen.width > window.screen.height ? 740 : 360;
+        window_height = window.screen.width > window.screen.height ? 360 : 740;
+        horizontalDisplay = window_width > window_height;
 		resizeCanvas(window_width, window_height);
 		uiManager.addLogger(`Canvas size: ${window_width.toString()}x${window_height.toString()}`);
 	} else {
 		fullScreenButton.checked = true;
-        window_width = window.screen.availWidth;
-        window_height = window.screen.availHeight;
+        window_width = window.screen.width > window.screen.height ? window.screen.availWidth : window.screen.availHeight;
+        window_height = window.screen.width > window.screen.height ? window.screen.availHeight : window.screen.availWidth;
+        horizontalDisplay = window_width > window_height;
 		resizeCanvas(window_width, window_height);
 		uiManager.addLogger(`Canvas size: ${window.screen.availWidth.toString()}x${window.screen.availHeight.toString()}`);
 	}
@@ -677,12 +716,13 @@ function setupMyUI() {
         curSelectedType = MONSTERCASE;
     });
 
-    const turnButton =new BImageButton(630, 170, spritesheet.getImage('icons', 1), ()=>{
+    const buttonY = horizontalDisplay ? 170 : 170+350;
+    const turnButton =new BImageButton(window_width-110, buttonY, spritesheet.getImage('icons', 1), ()=>{
         curSelectedShape = turnShape(curSelectedShape);
         soundManager.playSound('turn_shape');
     });
     turnButton.scale = 0.5;
-    const flipButton =new BImageButton(630+40, 170, spritesheet.getImage('icons', 0), ()=>{
+    const flipButton =new BImageButton(window_width-110+40, buttonY, spritesheet.getImage('icons', 0), ()=>{
         curSelectedShape = flipShape(curSelectedShape);
         soundManager.playSound('flip_shape');
     });
@@ -702,8 +742,8 @@ function setupMyUI() {
     typeButtons.forEach(b=>b.scale=scale);
     shapeButtons.forEach(b=>b.scale=scale);
 
-    copySeedButton.x = 660;
-    copySeedButton.y = 335;
+    copySeedButton.x = window_width - 80;
+    copySeedButton.y = window_height - 25;
     copy2SeedButton.visible = false;
 
     uiManager.setUI([...buttons, nextButton, undoButton, pointButton, ...shapeButtons, copySeedButton, speakerButton, fullScreenButton]);
@@ -777,13 +817,14 @@ function startClicked(boardSide) {
 let cardButton = [];
 
 function drawType(typeName, i, unique=true) {
+    const Y = horizontalDisplay ? 20 : 370;
     const cardTypes = ["forest", "city", "field", "water", "monster"];
     const typeIndex = cardTypes.indexOf(typeName);
     const typeButton = typeButtons[typeIndex];
     typeButton.visible = true;
     typeButton.enabled = !unique;
-    typeButton.x = 710;
-    typeButton.y = 20+70*i*scale;
+    typeButton.x = window_width - 30;
+    typeButton.y = Y+70*i*scale;
     if( unique || i === 0 ) {
         if( curSelectedType === -1 ) {
             curSelectedType = typeIndex;
@@ -796,8 +837,8 @@ function drawSingleShape(shape, i, unique=true) {
     const shapeButton = shapeButtons[shapeIndex];
     shapeButton.visible = true;
     shapeButton.enabled = !unique;
-    shapeButton.x = 1280*scale-10+40*i;
-    shapeButton.y = 20;
+    shapeButton.x = window_width - 110 +40*i;
+    shapeButton.y = horizontalDisplay ? 20 : 370;
     if( unique || i === 0 ) {
         if( !curSelectedShape ) {
             chooseShape(shapeIndex);
@@ -1056,12 +1097,10 @@ function isMouseOverDecret(originalX,originalY) {
 	return -1;
 }
 
-function isMouseOverExploration() {
+function isMouseOverExploration(X,Y) {
     if( season === Season.End ) {
         return false;
     }
-    let X = 400;
-	let Y = 20+40*(curSeasonCards.length-1)*scale;
 	if( mouseX > X && mouseX < X+cardWidth*scale*.75 && mouseY > Y && mouseY < Y+cardHeight*scale*.75) {
 		return true;
 	}
@@ -1090,7 +1129,7 @@ let deltaSwipe = 0;
 
 function drawBoard() {
     if( swipeUp ) {
-        spritesheet.drawScaledSprite('swipe',0, 350,210-deltaSwipe,0.2);
+        spritesheet.drawScaledSprite('swipe',0, horizontalDisplay ? 350 : 20, horizontalDisplay ? 210-deltaSwipe : 570-deltaSwipe,0.2);
     }
     // draw board
     const X = 10;
@@ -1099,32 +1138,36 @@ function drawBoard() {
 
     let overDecret = -1;
     // draw decrets
-    spritesheet.drawScaledSprite('decret', 0, 370, isBoardUp ? -100 : 20, scale*.75);
-    spritesheet.drawScaledSprite('decret', 1, 370+170*scale, isBoardUp ? -100 : 20, scale*.75);
-    spritesheet.drawScaledSprite('decret', 2, 370+170*2*scale, isBoardUp ? -100 : 20, scale*.75);
-    spritesheet.drawScaledSprite('decret', 3, 370+170*3*scale, isBoardUp ? -100 : 20, scale*.75);
+    const decretX = horizontalDisplay ? 370 : 10;
+    const decretY = isBoardUp ? -100 : (horizontalDisplay ? 20 : 370);
+    const explorationX = horizontalDisplay ? 400 : 10;
+    const explorationY = horizontalDisplay ? 20 : 370;
+    spritesheet.drawScaledSprite('decret', 0, decretX, decretY, scale*.75);
+    spritesheet.drawScaledSprite('decret', 1, decretX+170*scale, decretY, scale*.75);
+    spritesheet.drawScaledSprite('decret', 2, decretX+170*2*scale, decretY, scale*.75);
+    spritesheet.drawScaledSprite('decret', 3, decretX+170*3*scale, decretY, scale*.75);
     if( !isBoardUp ) {
-        overDecret = isMouseOverDecret(370,20);
+        overDecret = isMouseOverDecret(decretX,decretY);
         if( overDecret !== 0 ) {
-            drawDecretCard(370, 20, decretTypes[0], occurrences[0], season === Season.Printemps || season === Season.Hiver);
+            drawDecretCard(decretX, decretY, decretTypes[0], occurrences[0], season === Season.Printemps || season === Season.Hiver);
         }
         if( overDecret !== 1 ) {
-            drawDecretCard(370+170*scale, 20, decretTypes[1], occurrences[1], season === Season.Ete || season === Season.Printemps);
+            drawDecretCard(decretX+170*scale, decretY, decretTypes[1], occurrences[1], season === Season.Ete || season === Season.Printemps);
         }
         if( overDecret !== 2 ) {
-            drawDecretCard(370+170*2*scale, 20, decretTypes[2], occurrences[2], season === Season.Automne || season === Season.Ete);
+            drawDecretCard(decretX+170*2*scale, decretY, decretTypes[2], occurrences[2], season === Season.Automne || season === Season.Ete);
         }
         if( overDecret !== 3 ) {
-            drawDecretCard(370+170*3*scale, 20, decretTypes[3], occurrences[3], season === Season.Hiver || season === Season.Automne);
+            drawDecretCard(decretX+170*3*scale, decretY, decretTypes[3], occurrences[3], season === Season.Hiver || season === Season.Automne);
         }
         if( curSeasonCards.length > 0 ) {
-            drawExplorationCard(400,window_height-5, curSeasonCards[0], 0 === curSeasonCards.length-2);		
+            drawExplorationCard(explorationX,window_height-5, curSeasonCards[0], 0 === curSeasonCards.length-2);		
         }
     } else {
         // draw exploration cards
         for( i = 0; i < curSeasonCards.length; i++ ) {
             const card = curSeasonCards[i];
-            drawExplorationCard(400,20+40*i*scale, card, i === curSeasonCards.length-2);	
+            drawExplorationCard(explorationX,explorationY+40*i*scale, card, i === curSeasonCards.length-2);	
         } 
     }
 
@@ -1177,7 +1220,7 @@ function drawBoard() {
             scale/=3;
         }
     } else {
-        if( !pointButton.visible && isMouseOverExploration() ) {
+        if( !pointButton.visible && isMouseOverExploration(explorationX, explorationY+40*(curSeasonCards.length-1)*scale) ) {
             scale*=3;
             const card = curSeasonCards[curSeasonCards.length-1];
             drawExplorationCard(window_width/2-cardWidth/2*scale, 20, card, false);
@@ -1191,7 +1234,11 @@ function drawBoard() {
     textAlign(LEFT, CENTER);
     if( curSelectedShape ) {
         if( isBoardUp ) {
-            drawShape(35,4, false);
+            if( horizontalDisplay ) {
+                drawShape(34,4, false);
+            } else {
+                drawShape(13,24, false);
+            }
         }
     } else if( pointButton.visible ) {
         text("End of Season", 770, 510);
@@ -1248,15 +1295,19 @@ function drawBoard() {
         textAlign(CENTER, CENTER);
         textSize(12);
         stroke(0);
-        fill(250);""
-        text(titre, 450, 190);
+        fill(250);
+        if( horizontalDisplay ) {
+            text(titre, 430, 340);
+        } else {
+            text(titre, 65, 720);
+        }
         textAlign(LEFT, TOP);
     }
 
     textSize(6);
     noStroke();
     textAlign(CENTER, CENTER);
-    text(version, window_width-50, 10);
+    text(version, window_width-50, 5);
 }
 
 function drawTime() {
@@ -1273,17 +1324,19 @@ function drawTime() {
 
 function drawPoints() {
     if( !isBoardUp ) {
-        drawSeasonPoint(370,135,0);
-        drawSeasonPoint(455,135,1);
-        drawSeasonPoint(540,135,2);
-        drawSeasonPoint(630,135,3);
+        const X = horizontalDisplay ? 370 : 10;
+        const Y = horizontalDisplay ? 135 : 490;
+        drawSeasonPoint(X,Y,0);
+        drawSeasonPoint(X+85,Y,1);
+        drawSeasonPoint(X+170,Y,2);
+        drawSeasonPoint(X+170+85,Y,3);
     }
     const total = points.reduce((acc,val)=>acc+val.total, 0);
     fill(250);
     stroke(0);
     textSize(22);
-    textAlign(CENTER, CENTER);
-    text(total,410,320);
+    textAlign(LEFT, CENTER);
+    text(total,horizontalDisplay ? 410 : 10, window_height - 40);
 
     if( season === Season.End || toggleDebug ) {
         const totalSolo = [0,1,2,3].reduce((acc,val)=>
@@ -1292,7 +1345,7 @@ function drawPoints() {
         textSize(18);
         fill(247, 255, 60);
         textAlign(LEFT, CENTER);
-        text(`- ${totalSolo} = ${total-totalSolo}`,440,320);
+        text(`- ${totalSolo} = ${total-totalSolo}`, horizontalDisplay ? 440 : 40, window_height - 40);
         if( season === Season.End ) {
             if( total-totalSolo < -30 ) {
                 titre = "Game Over";
@@ -1361,7 +1414,7 @@ function highlightTemples() {
 
 function drawPieces() {
     strokeWeight(1);
-    const X = 30;
+    const X = 10;
     const Y = 350;
     const sizePiece = 20;
     for( let i = 0; i < piecesMax; i++ ) {
@@ -1377,8 +1430,8 @@ function drawPieces() {
     stroke(144,0,211);
     fill(138,43,226);
     textAlign(LEFT, CENTER);
-    textSize(25);
-    text(-monsters,360,350);
+    textSize(15);
+    text(-monsters,335,350);
     stroke(0);
 }
 
@@ -1655,15 +1708,13 @@ function mouseReleased() {
 function swiped(event) {
     console.log(event);
     if (event.direction == 4) {
-      uiManager.addLogger("you swiped right");
+        // you swiped right
     } else if (event.direction == 8) {
-        uiManager.addLogger("you swiped up");
         boardUp();
     } else if (event.direction == 16) {
-        uiManager.addLogger("you swiped down");
         boardDown();
     } else if (event.direction == 2) {
-        uiManager.addLogger("you swiped left");
+        // you swiped left
     }
   }
 
