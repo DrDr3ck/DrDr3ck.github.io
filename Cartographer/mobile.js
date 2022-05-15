@@ -1,7 +1,7 @@
-const version = 'Version 0.21';
+const version = 'Version 0.22';
 
-let window_width = window.screen.width > window.screen.height ? 740 : 360; //window.screen.availWidth > 1280 ? 1280 : window.screen.availWidth;
-let window_height = window.screen.width > window.screen.height ? 360 : 740; //window.screen.availHeight > 800 ? 800 : window.screen.availHeight;
+let window_width = window.screen.width > window.screen.height ? 740 : 360;
+let window_height = window.screen.width > window.screen.height ? 360 : 740;
 
 let horizontalDisplay = window_width > window_height;
 
@@ -12,8 +12,8 @@ window.addEventListener('resize', function(){
         horizontalDisplay = window_width > window_height;
         resizeCanvas(window_width, window_height);
     } else {
-        window_width = window.screen.width > window.screen.height ? window.screen.availWidth : window.screen.availHeight;
-        window_height = window.screen.width > window.screen.height ? window.screen.availHeight : window.screen.availWidth;
+        window_width = window.screen.availWidth;
+        window_height = window.screen.availHeight;
         horizontalDisplay = window_width > window_height;
         resizeCanvas(window_width, window_height);
     }
@@ -601,11 +601,11 @@ const fullScreenButton = new BFloatingSwitchButton(window_width - 35*2 - 10*2 -1
 		uiManager.addLogger(`Canvas size: ${window_width.toString()}x${window_height.toString()}`);
 	} else {
 		fullScreenButton.checked = true;
-        window_width = window.screen.width > window.screen.height ? window.screen.availWidth : window.screen.availHeight;
-        window_height = window.screen.width > window.screen.height ? window.screen.availHeight : window.screen.availWidth;
+        window_width = window.screen.availWidth;
+        window_height = window.screen.availHeight;
         horizontalDisplay = window_width > window_height;
 		resizeCanvas(window_width, window_height);
-		uiManager.addLogger(`Canvas size: ${window.screen.availWidth.toString()}x${window.screen.availHeight.toString()}`);
+		uiManager.addLogger(`Canvas size: ${window_width.toString()}x${window_height.toString()}`);
 	}
 });
 fullScreenButton.checked = document.fullscreenElement;
@@ -1013,7 +1013,6 @@ function placeMonster(cardIndex) {
         // move it
         X += deltas[deltaSide].X;
         Y += deltas[deltaSide].Y;
-        console.log(Y, monsterHeight, Y+monsterHeight-1);
         if( Y < ring || Y+ring+monsterHeight-1 >= 11 || X < ring || X+ring+monsterWidth-1 >= 11) {
             // need to turn: go back first
             X -= deltas[deltaSide].X;
