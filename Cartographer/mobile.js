@@ -1,4 +1,4 @@
-const version = 'Version 0.23';
+const version = 'Version 0.24';
 
 let window_width = window.screen.width > window.screen.height ? 740 : 360;
 let window_height = window.screen.width > window.screen.height ? 360 : 740;
@@ -227,6 +227,7 @@ function hasDecret(decretName) {
 }
 
 function nextClicked() {
+    showTemple = false;
     // check if a mountain is closed:
     for( let j = 0; j< 11; j++) {
         for( let i = 0; i< 11; i++) {
@@ -667,6 +668,7 @@ function setup() {
     spritesheet.addSpriteSheet('decret', './resources/decret.png', cardWidth, cardHeight);
     spritesheet.addSpriteSheet('exploration', './resources/exploration.png', cardWidth, cardHeight);
     spritesheet.addSpriteSheet('icons', './resources/icons.png', 60,60);
+    spritesheet.addSpriteSheet('temple', './resources/temple.png', 60,60);
     spritesheet.addSpriteSheet('piece', './resources/piece.png', 33,33);
     spritesheet.addSpriteSheet('season', './resources/season.png', cardWidth, cardHeight);
     spritesheet.addSpriteSheet('shapes', './resources/shapes.png', 70,40);
@@ -698,6 +700,8 @@ function setup() {
 	lastTime = Date.now();    
 }
 
+let showTemple = false;
+
 function setupMyUI() {
     speakerClicked();
     const forestButton =new BImageButton(830, 65, spritesheet.getImage('cases', 0), ()=>{
@@ -727,9 +731,14 @@ function setupMyUI() {
         soundManager.playSound('flip_shape');
     });
     flipButton.scale = 0.5;
+    const templeButton =new BImageButton(window_width-110-40, buttonY, spritesheet.getImage('temple', 0), ()=>{
+        showTemple = !showTemple;
+    });
+    flipButton.scale = 0.5;
+    templeButton.scale = 0.5;
 
     typeButtons.push(...[forestButton, cityButton, fieldButton, waterButton, monsterButton]);
-    buttons.push(...[forestButton, cityButton, fieldButton, waterButton, monsterButton, turnButton, flipButton]);
+    buttons.push(...[forestButton, cityButton, fieldButton, waterButton, monsterButton, turnButton, flipButton, templeButton]);
 
     let X = 130;
     let Y = 490;
@@ -1205,7 +1214,7 @@ function drawBoard() {
     drawPoints();
 
     // temple ?
-    if( useTemple || pointButton.visible) {
+    if( useTemple || pointButton.visible || showTemple) {
         strokeWeight(4);
         highlightTemples();
     }
