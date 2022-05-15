@@ -1,10 +1,22 @@
-const version = 'Version 0.26';
+const version = 'Version 0.27';
 
 let window_width = window.screen.width > window.screen.height ? 740 : 360;
 let window_height = window.screen.width > window.screen.height ? 360 : 740;
 
 let horizontalDisplay = window_width > window_height;
 
+document.addEventListener("fullscreenchange", ()=>{
+    var doc = window.document;
+    if ( !doc.fullscreenElement &&
+        !doc.mozFullScreenElement &&
+        !doc.webkitFullscreenElement &&
+        !doc.msFullscreenElement
+    ) {
+        fullScreenButton.checked = false;
+    } else {
+        fullScreenButton.checked = true;
+    }
+});
 window.addEventListener('resize', function(){
     if( !fullScreenButton.checked ) {
         window_width = window.screen.width > window.screen.height ? 740 : 360;
@@ -608,14 +620,12 @@ function toggleFullScreen() {
 const speakerButton = new BFloatingSwitchButton(window_width - 35 - 10, window_height - 60, '\uD83D\uDD0A', speakerClicked);
 const fullScreenButton = new BFloatingSwitchButton(window_width - 35*2 - 10*2 -10,window_height - 60,"F",()=>{
 	if(!toggleFullScreen()) {
-		fullScreenButton.checked = false;
         window_width = window.screen.width > window.screen.height ? 740 : 360;
         window_height = window.screen.width > window.screen.height ? 360 : 740;
         horizontalDisplay = window_width > window_height;
 		resizeCanvas(window_width, window_height);
 		uiManager.addLogger(`Canvas size: ${window_width.toString()}x${window_height.toString()}`);
 	} else {
-		fullScreenButton.checked = true;
         window_width = window.screen.availWidth;
         window_height = window.screen.availHeight;
         horizontalDisplay = window_width > window_height;
@@ -817,6 +827,13 @@ function drawLoading() {
         if( document.location.toString().includes("seed=") ) {
             startClicked(boardIndex);
         }
+        let browser = navigator.userAgent;
+        const parIndex = browser.indexOf('(');
+        if( parIndex > 0 ) {
+            endIndex = browser.indexOf(')');
+            browser = browser.replace(browser.substring(parIndex, endIndex+2),"");
+        }
+        browser.split(" ").forEach(b=>uiManager.addLogger(`Browser: ${b}`));
 	}
     textAlign(CENTER, CENTER);
     textSize(6);
