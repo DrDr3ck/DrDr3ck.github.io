@@ -1,4 +1,4 @@
-const version = 'Version 0.28';
+const version = 'Version 0.29';
 
 let window_width = window.screen.width > window.screen.height ? 740 : 360;
 let window_height = window.screen.width > window.screen.height ? 360 : 740;
@@ -586,6 +586,11 @@ let curSelectedType = -1;
 function speakerClicked() {
 	speakerButton.checked = !speakerButton.checked;
 	soundManager.mute(!speakerButton.checked);
+
+    speakerButton.visible = false;
+    fullScreenButton.visible = false;
+    copySeedButton.visible = false;
+    settingsButton.visible = true;
 }
 
 function toggleFullScreen() {
@@ -617,6 +622,12 @@ function toggleFullScreen() {
     }
   }
 
+const settingsButton = new BFloatingButton(window_width - 40 - 10, window_height - 10, '\u273C', ()=>{
+    speakerButton.visible = true;
+    fullScreenButton.visible = true;
+    copySeedButton.visible = true;
+    settingsButton.visible = false;
+});
 const speakerButton = new BFloatingSwitchButton(window_width - 35 - 10, window_height - 60, '\uD83D\uDD0A', speakerClicked);
 const fullScreenButton = new BFloatingSwitchButton(window_width - 35*2 - 10*2 -10,window_height - 60,"F",()=>{
 	if(!toggleFullScreen()) {
@@ -632,14 +643,19 @@ const fullScreenButton = new BFloatingSwitchButton(window_width - 35*2 - 10*2 -1
 		resizeCanvas(window_width, window_height);
 		uiManager.addLogger(`Canvas size: ${window_width.toString()}x${window_height.toString()}`);
 	}
+    speakerButton.visible = false;
+    fullScreenButton.visible = false;
+    copySeedButton.visible = false;
+    settingsButton.visible = true;
 });
 fullScreenButton.checked = document.fullscreenElement;
-const startRectoButton = new BButton(20, window_height/2+50, "RECTO", ()=> startClicked(0));
-const startVersoButton = new BButton(20, window_height/2+75+50, "VERSO", ()=> startClicked(1));
+const startRectoButton = new BButton(20, window_height/2+50, "RECTO", ()=> startClicked(0, true));
+const startVersoButton = new BButton(20, window_height/2+75+50, "VERSO", ()=> startClicked(1, true));
 const copySeedButton = new BButton(60, window_height/2 + 60, "Copy", ()=> copySeed(boardIndex));
 const copy2SeedButton = new BButton(window_width-40-200, window_height/2 + 60, "Copy", ()=>copySeed(1));
 const resetSeedButton = new BButton(window_width - 240, window_height - 40, "Reset", resetSeed);
 speakerButton.setTextSize(35);
+settingsButton.setTextSize(35);
 fullScreenButton.setTextSize(35);
 startRectoButton.setTextSize(35);
 startRectoButton.w = 200;
@@ -781,12 +797,15 @@ function setupMyUI() {
 
     copySeedButton.x = window_width - 80;
     copySeedButton.y = window_height - 25;
-    copy2SeedButton.visible = false;
 
-    uiManager.setUI([...buttons, nextButton, undoButton, pointButton, ...shapeButtons, copySeedButton, speakerButton, fullScreenButton]);
+    uiManager.setUI([...buttons, nextButton, undoButton, pointButton, ...shapeButtons, copySeedButton, settingsButton, speakerButton, fullScreenButton]);
     nextButton.enabled = false;
     undoButton.enabled = false;
     pointButton.visible = false;
+    speakerButton.visible = false;
+    fullScreenButton.visible = false;
+    copySeedButton.visible = false;
+    copy2SeedButton.visible = false;
 
     buttons.forEach(b=>b.visible=false);
     shapeButtons.forEach(b=>b.visible=false);
@@ -846,8 +865,10 @@ function preload() {
 }
 
 
-function startClicked(boardSide) {
-    toggleFullScreen();
+function startClicked(boardSide, manual=false) {
+    if( manual ) {
+        toggleFullScreen();
+    }
     gameState = GAME_PLAY_STATE;
     boardIndex = boardSide;
     uiManager.addLogger("Cartographer solo");
@@ -1632,6 +1653,11 @@ function addCurrentCase() {
 }
 
 function copySeed(boardSide) {
+    speakerButton.visible = false;
+    fullScreenButton.visible = false;
+    copySeedButton.visible = false;
+    settingsButton.visible = true;
+
     if( !navigator.clipboard ) {
         uiManager.addLogger("cannot copy");
         return;
