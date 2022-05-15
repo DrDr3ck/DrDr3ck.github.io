@@ -1,7 +1,7 @@
 let window_width = 740; //window.screen.availWidth > 1280 ? 1280 : window.screen.availWidth;
 let window_height = 360; //window.screen.availHeight > 800 ? 800 : window.screen.availHeight;
 
-const version = 'Version 0.18';
+const version = 'Version 0.19';
 
 let scale = window_width < 800 ? .5 : 1;
 
