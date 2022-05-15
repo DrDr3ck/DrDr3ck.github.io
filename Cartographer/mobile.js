@@ -1,4 +1,4 @@
-const version = 'Version 0.24';
+const version = 'Version 0.26';
 
 let window_width = window.screen.width > window.screen.height ? 740 : 360;
 let window_height = window.screen.width > window.screen.height ? 360 : 740;
@@ -23,12 +23,14 @@ window.addEventListener('resize', function(){
     undoButton.x = window_width - 120 - 200*scale;
     undoButton.y = window_height - 10;
 
-    templeButton.x = window_width-110-40;
-    templeButton.y = horizontalDisplay ? 170 : 170+350;
-    turnButton.x = window_width-110;
-    turnButton.y = horizontalDisplay ? 170 : 170+350;
-    flipButton.x = window_width-110+40;
-    flipButton.y = horizontalDisplay ? 170 : 170+350;
+    if( templeButton ) {
+        templeButton.x = window_width-110-40;
+        templeButton.y = horizontalDisplay ? 170 : 170+350;
+        turnButton.x = window_width-110;
+        turnButton.y = horizontalDisplay ? 170 : 170+350;
+        flipButton.x = window_width-110+40;
+        flipButton.y = horizontalDisplay ? 170 : 170+350;
+    }
 
     speakerButton.x = window_width - 35 - 10;
     speakerButton.y = window_height - 60;
@@ -40,6 +42,11 @@ window.addEventListener('resize', function(){
 
     uiManager.loggerContainer.x = horizontalDisplay ? 440 : 130;
     uiManager.loggerContainer.y = horizontalDisplay ? 205 : 550;
+
+    startRectoButton.y = window_height/2+50;
+    startVersoButton.y = window_height/2+75+50;
+    resetSeedButton.x = window_width - 240;
+    resetSeedButton.y = window_height - 40;
 
     if( isBoardUp && curSeasonCards.length > 0 ) {
         setupCard(curSeasonCards[curSeasonCards.length-1]);
@@ -617,8 +624,8 @@ const fullScreenButton = new BFloatingSwitchButton(window_width - 35*2 - 10*2 -1
 	}
 });
 fullScreenButton.checked = document.fullscreenElement;
-const startRectoButton = new BButton(20, window_height/2, "RECTO", ()=> startClicked(0));
-const startVersoButton = new BButton(20, window_height/2+75, "VERSO", ()=> startClicked(1));
+const startRectoButton = new BButton(20, window_height/2+50, "RECTO", ()=> startClicked(0));
+const startVersoButton = new BButton(20, window_height/2+75+50, "VERSO", ()=> startClicked(1));
 const copySeedButton = new BButton(60, window_height/2 + 60, "Copy", ()=> copySeed(boardIndex));
 const copy2SeedButton = new BButton(window_width-40-200, window_height/2 + 60, "Copy", ()=>copySeed(1));
 const resetSeedButton = new BButton(window_width - 240, window_height - 40, "Reset", resetSeed);
@@ -791,11 +798,11 @@ function drawLoading() {
     spritesheet.drawScaledSprite('cartographer', 0, window_width/2 - 553/4, 10, .45);
     fill(51);
     stroke(0);
-    rect(width / 4, height / 4 * 3, width / 2, height / 10);
+    rect(width / 4, height / 4 * 3, width / 2, 36);
 	fill(9, 47, 18);
     const total = spritesheet.totalImagesToLoad;
 	const current = spritesheet.totalLoadedImages;
-    rect(width / 4, height / 4 * 3, current / total * width / 2, height / 10);
+    rect(width / 4, height / 4 * 3, current / total * width / 2, 36);
 
 	fill(250);
 	noStroke();
@@ -823,6 +830,7 @@ function preload() {
 
 
 function startClicked(boardSide) {
+    toggleFullScreen();
     gameState = GAME_PLAY_STATE;
     boardIndex = boardSide;
     uiManager.addLogger("Cartographer solo");
@@ -1280,7 +1288,7 @@ function drawBoard() {
             }
 
             // TODO: check if shape is OUT of the board
-            drawShape(overCase.X, overCase.Y);
+            drawShape(overCase.X, overCase.Y, true, true);
             if( isGoldShape ) {
                 spritesheet.drawScaledSprite('piece', 0, mouseX-33/2, mouseY-33/2, scale);
             }
@@ -1468,7 +1476,7 @@ function drawPieces() {
 let canDraw = true;
 let isDrawnOnTemple = false;
 
-function drawShape(X,Y,checkDraw=true) {
+function drawShape(X,Y,checkDraw=true, currentTurn=false) {
     if( !curSelectedShape ) {
         return;
     }
@@ -1489,7 +1497,7 @@ function drawShape(X,Y,checkDraw=true) {
             const curX = X+i;
             const curY = Y+j;
             spritesheet.drawScaledSprite('cases', curSelectedType, xBoard+sizeBoard*curX*curScale+deltaX, yBoard+sizeBoard*curY*curScale, curScale*scale);
-            if( checkDraw && !isEmptyCase({X:curX, Y:curY})) {
+            if( checkDraw && !isEmptyCase({X:curX, Y:curY}, currentTurn)) {
                 stroke(250,50,50);
                 strokeWeight(4);
                 noFill();
@@ -1538,13 +1546,16 @@ function addShapeAtPosition(X, Y) {
     }
 }
 
-function isEmptyCase(position) {
+function isEmptyCase(position, currentTurn = false) {
     if( position.X >= board.length ) {
         return 0;
     }
     const curCase = board[position.X][position.Y];
     if( !curCase ) {
         return false;
+    }
+    if( currentTurn && curCase.turn === turn ) {
+        return true;
     }
     return curCase.value === EMPTYCASE;
 }
@@ -1575,6 +1586,11 @@ function addCurrentCase() {
         // out of board
         return;
     }
+    if( shapeAlreadyAdded() && canDraw ) { 
+        // do UNDO
+        console.log("undo");
+        undoClicked();
+    }else 
     if( shapeAlreadyAdded() ) {
         soundManager.playSound('cannot_place');
         uiManager.addLogger("Shape already added");
