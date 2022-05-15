@@ -1,4 +1,4 @@
-const version = 'Version 0.20';
+const version = 'Version 0.21';
 
 let window_width = window.screen.width > window.screen.height ? 740 : 360; //window.screen.availWidth > 1280 ? 1280 : window.screen.availWidth;
 let window_height = window.screen.width > window.screen.height ? 360 : 740; //window.screen.availHeight > 800 ? 800 : window.screen.availHeight;
@@ -661,7 +661,7 @@ function setup() {
 
 	frameRate(60);
 
-    spritesheet.addSpriteSheet('swipe', './resources/swipe_up.png', 512, 512);
+    spritesheet.addSpriteSheet('swipe', './resources/swipe_up_left.png', 512, 512);
     spritesheet.addSpriteSheet('board', './resources/boards.png', 700, 697);
     spritesheet.addSpriteSheet('cases', './resources/cases.png', 58, 58);
     spritesheet.addSpriteSheet('decret', './resources/decret.png', cardWidth, cardHeight);
@@ -1129,7 +1129,7 @@ let deltaSwipe = 0;
 
 function drawBoard() {
     if( swipeUp ) {
-        spritesheet.drawScaledSprite('swipe',0, horizontalDisplay ? 350 : 20, horizontalDisplay ? 210-deltaSwipe : 570-deltaSwipe,0.2);
+        spritesheet.drawScaledSprite('swipe',horizontalDisplay ? 0 : 1, horizontalDisplay ? 350 : 30-deltaSwipe, horizontalDisplay ? 210-deltaSwipe : 570,0.2);
     }
     // draw board
     const X = 10;
@@ -1706,15 +1706,19 @@ function mouseReleased() {
 }
 
 function swiped(event) {
-    console.log(event);
-    if (event.direction == 4) {
-        // you swiped right
-    } else if (event.direction == 8) {
-        boardUp();
-    } else if (event.direction == 16) {
-        boardDown();
-    } else if (event.direction == 2) {
-        // you swiped left
+    //console.log(event);
+    if( horizontalDisplay ) {
+        if (event.direction == 8) {
+            boardUp();
+        } else if (event.direction == 16) {
+            boardDown();
+        }
+    } else {
+        if (event.direction == 4) { // right
+            boardDown();
+        } else if (event.direction == 2) { // left
+            boardUp();
+        }
     }
   }
 
