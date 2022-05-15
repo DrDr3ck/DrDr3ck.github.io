@@ -1,4 +1,4 @@
-const version = 'Version 0.27';
+const version = 'Version 0.28';
 
 let window_width = window.screen.width > window.screen.height ? 740 : 360;
 let window_height = window.screen.width > window.screen.height ? 360 : 740;
@@ -1336,14 +1336,14 @@ function drawBoard() {
 
     // affiche le titre si le joueur en a gagné un
     if( (season === Season.End||toggleDebug) && titre ) {
-        textAlign(CENTER, CENTER);
+        textAlign(LEFT, CENTER);
         textSize(12);
         stroke(0);
         fill(250);
         if( horizontalDisplay ) {
-            text(titre, 430, 340);
+            text(titre, 370, window_height - 20);
         } else {
-            text(titre, 230, 615);
+            text(titre, 10, window_height - 20);
         }
         textAlign(LEFT, TOP);
     }
@@ -1391,7 +1391,7 @@ function drawPoints() {
     stroke(0);
     textSize(22);
     textAlign(LEFT, CENTER);
-    text(total,horizontalDisplay ? 410 : 10, window_height - 40);
+    text(total,horizontalDisplay ? 370 : 10, window_height - 40);
 
     if( season === Season.End || toggleDebug ) {
         const totalSolo = [0,1,2,3].reduce((acc,val)=>
@@ -1400,8 +1400,11 @@ function drawPoints() {
         textSize(18);
         fill(247, 255, 60);
         textAlign(LEFT, CENTER);
-        text(`- ${totalSolo} = ${total-totalSolo}`, horizontalDisplay ? 440 : 40, window_height - 40);
+        text(`- ${totalSolo} = ${total-totalSolo}`, horizontalDisplay ? 400 : 40, window_height - 40);
         if( season === Season.End ) {
+            nextButton.visible = false;
+            undoButton.visible = false;
+            curSelectedShape = null;
             if( total-totalSolo < -30 ) {
                 titre = "Game Over";
             } else if( total-totalSolo < -20 ) {
