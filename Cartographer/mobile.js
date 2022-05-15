@@ -1,7 +1,7 @@
 let window_width = 740; //window.screen.availWidth > 1280 ? 1280 : window.screen.availWidth;
 let window_height = 360; //window.screen.availHeight > 800 ? 800 : window.screen.availHeight;
 
-const version = 'Version 0.17';
+const version = 'Version 0.18';
 
 let scale = window_width < 800 ? .5 : 1;
 
@@ -642,6 +642,19 @@ function setup() {
     soundManager.addSound('cannot_place', './resources/cannot_place.wav', 0.55);
     soundManager.addSound('undo', './resources/undo.wav', 0.85);
     soundManager.addSound('place_shape', './resources/place_shape.mp3', 0.85);
+
+    // set options to prevent default behaviors for swipe, pinch, etc
+    var options = {
+        preventDefault: true
+    };
+
+    // document.body registers gestures anywhere on the page
+    var hammer = new Hammer(document.body, options);
+    hammer.get('swipe').set({
+        direction: Hammer.DIRECTION_ALL
+    });
+
+    hammer.on("swipe", swiped);
 
 	lastTime = Date.now();    
 }
@@ -1611,25 +1624,48 @@ function mousePressed() {
     inMove = true;
 }
 
+function boardUp() {
+    isBoardUp = true;
+    swipeUp = false;
+    if( curSeasonCards.length > 0 ) {
+        setupCard(curSeasonCards[curSeasonCards.length-1]);
+    }
+}
+
+function boardDown() {
+    isBoardUp = false;
+    buttons.forEach(b=>b.visible=false);
+    shapeButtons.forEach(b=>b.visible=false);
+}
+
 function mouseReleased() {
     const mouseDeltaX = mousePosition.X - mouseX;
     const mouseDeltaY = mousePosition.Y - mouseY;
     console.log(mouseDeltaY, mouseDeltaX);
     if( mouseX > 360 && mousePosition.X > 360 && Math.abs(mouseDeltaY) > mouseDeltaX*5 ) {
         if( mouseDeltaY > 80 ) {
-            isBoardUp = true;
-            swipeUp = false;
-            if( curSeasonCards.length > 0 ) {
-                setupCard(curSeasonCards[curSeasonCards.length-1]);
-            }
+            boardUp();
         } else if( mouseDeltaY < -80 ) {
-            isBoardUp = false;
-            buttons.forEach(b=>b.visible=false);
-            shapeButtons.forEach(b=>b.visible=false);
+            boardDown();
         }
     }
     inMove = false;
 }
+
+function swiped(event) {
+    console.log(event);
+    if (event.direction == 4) {
+      uiManager.addLogger("you swiped right");
+    } else if (event.direction == 8) {
+        uiManager.addLogger("you swiped up");
+        boardUp();
+    } else if (event.direction == 16) {
+        uiManager.addLogger("you swiped down");
+        boardDown();
+    } else if (event.direction == 2) {
+        uiManager.addLogger("you swiped left");
+    }
+  }
 
 function keyPressed() {
 	if (key === "D") {
