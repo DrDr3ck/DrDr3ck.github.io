@@ -1038,8 +1038,8 @@ function drawBoard() {
     }
     */
 
+    // draw board lines
     strokeWeight(1);
-
     for( let j = 0; j<11; j++ ) {
         for( let i = 0; i < 11; i++) {
             if( !isEmptyCase({X:i, Y:j}) ) {
@@ -1107,7 +1107,7 @@ function drawBoard() {
             }
 
             // TODO: check if shape is OUT of the board
-            drawShape(overCase.X, overCase.Y);
+            drawShape(overCase.X, overCase.Y, true, true);
             if( isGoldShape ) {
                 spritesheet.drawScaledSprite('piece', 0, mouseX-33/2, mouseY-33/2, scale);
             }
@@ -1264,7 +1264,7 @@ function drawPieces() {
 let canDraw = true;
 let isDrawnOnTemple = false;
 
-function drawShape(X,Y,checkDraw=true) {
+function drawShape(X,Y,checkDraw=true, currentTurn=false) {
     if( !curSelectedShape ) {
         return;
     }
@@ -1285,7 +1285,7 @@ function drawShape(X,Y,checkDraw=true) {
             const curX = X+i;
             const curY = Y+j;
             spritesheet.drawScaledSprite('cases', curSelectedType, xBoard+sizeBoard*curX*scale+deltaX, yBoard+sizeBoard*curY*scale, scale);
-            if( checkDraw && !isEmptyCase({X:curX, Y:curY})) {
+            if( checkDraw && !isEmptyCase({X:curX, Y:curY}, currentTurn)) {
                 stroke(250,50,50);
                 strokeWeight(4);
                 noFill();
@@ -1334,13 +1334,16 @@ function addShapeAtPosition(X, Y) {
     }
 }
 
-function isEmptyCase(position) {
+function isEmptyCase(position, currentTurn = false) {
     if( position.X >= board.length ) {
         return 0;
     }
     const curCase = board[position.X][position.Y];
     if( !curCase ) {
         return false;
+    }
+    if( currentTurn && curCase.turn === turn ) {
+        return true;
     }
     return curCase.value === EMPTYCASE;
 }
@@ -1371,6 +1374,10 @@ function addCurrentCase() {
         // out of board
         return;
     }
+    if( shapeAlreadyAdded() && canDraw ) { 
+        // do UNDO
+        undoClicked();
+    }else 
     if( shapeAlreadyAdded() ) {
         soundManager.playSound('cannot_place');
         uiManager.addLogger("Shape already added");
