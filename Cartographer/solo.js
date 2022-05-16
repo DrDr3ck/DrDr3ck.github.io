@@ -516,8 +516,8 @@ function speakerClicked() {
 }
 
 const speakerButton = new BFloatingSwitchButton(window_width - 70 - 10, window_height - 60, '\uD83D\uDD0A', speakerClicked);
-const startRectoButton = new BButton(40, window_height - 425, "START", ()=> startClicked(0));
-const startVersoButton = new BButton(1020, window_height - 425, "START", ()=> startClicked(1));
+const startRectoButton = new BButton(40, window_height - 425, "RECTO", ()=> startClicked(0));
+const startVersoButton = new BButton(1020, window_height - 425, "VERSO", ()=> startClicked(1));
 const copySeedButton = new BButton(60, window_height - 360, "Copy", ()=> copySeed(boardIndex));
 const copy2SeedButton = new BButton(1040, window_height - 360, "Copy", ()=>copySeed(1));
 const resetSeedButton = new BButton(window_width - 450, window_height - 40, "Reset", resetSeed);
@@ -623,6 +623,7 @@ function setupMyUI() {
 
     copySeedButton.x = window_width/2-100;
     copySeedButton.y = 43;
+    copySeedButton.visible = true;
     copy2SeedButton.visible = false;
 
     uiManager.setUI([...buttons, nextButton, undoButton, pointButton, ...shapeButtons, copySeedButton, speakerButton]);
@@ -666,6 +667,8 @@ function drawLoading() {
 	) {
 		gameState = GAME_START_STATE;
         uiManager.setUI([startRectoButton, startVersoButton, copySeedButton, copy2SeedButton, resetSeedButton]);
+        copySeedButton.visible = false;
+        copy2SeedButton.visible = false;
         if( document.location.toString().includes("seed=") ) {
             startClicked(boardIndex);
         }
