@@ -25,8 +25,9 @@ let cards = [];
 let stacks = [[],[],[],[]];
 let cardTurn = 0;
 
+let rules = false;
+
 function preload() {
-    spritesheet.addSpriteSheet('cards', './cards.png', cardWidth, cardHeight);
 }
 
 function musicClicked() {
@@ -40,6 +41,15 @@ function speakerClicked() {
 
 const speakerButton = new BFloatingSwitchButton(windowWidth - 70 - 10 - 70, 70, '\uD83D\uDD0A', speakerClicked);
 const musicButton = new BFloatingSwitchButton(windowWidth - 70, 70, '\uD83C\uDFB6', musicClicked);
+
+const rulesButton = new BFloatingButton(windowWidth - 80, 80, '?', ()=>{
+	// display/hide rules
+	rules = !rules;
+	if( rules ) {
+		sortButton.enabled = false;
+		rulesButton.enabled = false;
+	}
+});
 
 const sortButton = new BFloatingButton(windowWidth - 80, windowHeight - 10, 'S', ()=>{
 	cards = cards.sort((a,b)=>a-b);
@@ -73,7 +83,7 @@ function initUI() {
 	musicButton.setTextSize(50);
 	musicButton.enabled = false;
 	musicButton.checked = false;
-	const menu = [nextButton, resetButton, sortButton]; // speakerButton, musicButton ];
+	const menu = [nextButton, resetButton, sortButton, rulesButton]; // speakerButton, musicButton ];
 	uiManager.setUI(menu);
 	nextButton.enabled = false;
 	resetButton.visible = false;
@@ -85,6 +95,10 @@ function setup() {
     canvas.parent('canvas');
 
     frameRate(60);
+
+	spritesheet.addSpriteSheet('cards', './cards.png', cardWidth, cardHeight);
+	spritesheet.addSpriteSheet('rules1', './rules1.png', 460, 317);
+	spritesheet.addSpriteSheet('rules2', './rules2.png', 459, 224);
 
     lastTime = Date.now();
 }
@@ -212,14 +226,13 @@ function drawLoading() {
 function draw() {
     const currentTime = Date.now();
 	const elapsedTime = currentTime - lastTime;
-    background(51);
+   	background(51);
     if (curState === GAME_LOADING_STATE) {
 		drawLoading();
 		return;
 	}
 
     uiManager.processInput();
-
     uiManager.update(elapsedTime);
 
     // draw game
@@ -227,6 +240,12 @@ function draw() {
 		updateGame(elapsedTime);
 	}
 	drawGame();
+
+	if( rules ) {
+		background(51, 51, 51, 200);
+		spritesheet.drawSprite('rules1', 0, windowWidth/2-460/2, 110);
+		spritesheet.drawSprite('rules2', 0, windowWidth/2-460/2, 110+317);
+	}
 
 	textAlign(LEFT, TOP);
     uiManager.draw();
@@ -259,6 +278,9 @@ function getCardIndex(X,Y,negativ=false) {
 }
 
 function mousePressed() {
+	if( rules ) {
+		return;
+	}
 	// if player already clicks a card, do nothing
 	if( clickedCard !== null ) {
 		return;
@@ -347,6 +369,11 @@ function putCardOnStack(card, stack) {
 }
 
 function mouseReleased() {
+	if( rules ) {
+		rules = !rules;
+		sortButton.enabled = true;
+		rulesButton.enabled = true;
+	}
 	if( !clickedCard ) return;
 	const stackIndex = getStack(mouseX, mouseY);
 	if( stackIndex !== -1 ) {
