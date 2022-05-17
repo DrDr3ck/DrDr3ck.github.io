@@ -141,11 +141,13 @@ function drawGame() {
 		drawCard(stackX, stackY, s[s.length-1]);
 	});
 
-	drawCard(1400, 340, "");
-	noStroke();
-	fill(250);
-	textAlign(LEFT, BOTTOM);
-	text(talon.length,1400,320);
+	if( talon.length > 0 ) {
+		drawCard(1400, 340, "");
+		noStroke();
+		fill(250);
+		textAlign(LEFT, BOTTOM);
+		text(talon.length,1400,320);
+	}
 
 	if( resetButton.visible ) {
 		textAlign(CENTER, BOTTOM);
