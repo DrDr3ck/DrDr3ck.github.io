@@ -41,6 +41,10 @@ function speakerClicked() {
 const speakerButton = new BFloatingSwitchButton(windowWidth - 70 - 10 - 70, 70, '\uD83D\uDD0A', speakerClicked);
 const musicButton = new BFloatingSwitchButton(windowWidth - 70, 70, '\uD83C\uDFB6', musicClicked);
 
+const sortButton = new BFloatingButton(windowWidth - 80, windowHeight - 10, 'S', ()=>{
+	cards.sort((a,b)=>a>b);
+});
+
 const nextButton = new BButton(130, 580, "END TURN", ()=>{
 	// put cards from talon...
 	cards.forEach((c,i) => {
@@ -53,11 +57,13 @@ const nextButton = new BButton(130, 580, "END TURN", ()=>{
 	if( talon.length === 0 ) {
 		nextButton.visible = false;
 	}
+	resetButton.visible = !canPlay();
 });
 nextButton.setTextSize(45);
 
 const resetButton = new BButton(130, 580, "Reset", ()=>{
 	initGame();
+	resetButton.visible = false;
 });
 resetButton.setTextSize(45);
 
@@ -66,7 +72,7 @@ function initUI() {
 	musicButton.setTextSize(50);
 	musicButton.enabled = false;
 	musicButton.checked = false;
-	const menu = [nextButton, resetButton]; // speakerButton, musicButton ];
+	const menu = [nextButton, resetButton, sortButton]; // speakerButton, musicButton ];
 	uiManager.setUI(menu);
 	nextButton.enabled = false;
 	resetButton.visible = false;
@@ -139,6 +145,11 @@ function drawGame() {
 	textAlign(LEFT, BOTTOM);
 	text(talon.length,1400,320);
 
+	if( resetButton.visible ) {
+		textAlign(CENTER, CENTER);
+		text("End of Game", windowWidth/2, 540);
+	}
+
 	if( clickedCard ) {
 		drawCard(mouseX-cardWidth/2,mouseY-50,clickedCard);
 	}
@@ -209,6 +220,7 @@ function draw() {
 	}
 	drawGame();
 
+	textAlign(LEFT, TOP);
     uiManager.draw();
 	if (toolManager.currentTool) {
 		toolManager.currentTool.draw();
@@ -227,20 +239,30 @@ function mouseClicked() {
 
 let clickedCard = null;
 
+function getCardIndex(X,Y,negativ=false) {
+	const cardY = windowHeight-100;
+	for( let i=cards.length-1; i>= 0; i--) {
+		const cardX = 100+150*i;
+		if( (negativ || cards[i] > 0) && between(cardX, X, cardX+cardWidth) && Y >= cardY ) {
+			return i;
+		}
+	}
+	return -1;
+}
+
 function mousePressed() {
 	// if player already clicks a card, do nothing
 	if( clickedCard !== null ) {
 		return;
 	}
 	// check which card is clicked (if any)
-	const Y = windowHeight-100;
-	for( let i=cards.length-1; i>= 0; i--) {
-		const X = 100+150*i;
-		if( cards[i] > 0 && between(X, mouseX, X+cardWidth) && mouseY >= Y ) {
-			clickedCard = cards[i];
-			uiManager.addLogger(`card ${clickedCard} has been selected`)
-			return;
-		}
+	const cardIndex = getCardIndex(mouseX, mouseY);
+	if( cardIndex === -1 ) {
+		return;
+	}
+	if( cards[cardIndex] > 0 ) {
+		clickedCard = cards[cardIndex];
+		uiManager.addLogger(`card ${clickedCard} has been selected`)
 	}
 }
 
@@ -265,11 +287,45 @@ function removeCardFromHand(card) {
 	cards[cardIndex] = -cards[cardIndex];	
 }
 
+function canBePlayed(card) {
+	for( let stackIndex = 0; stackIndex < stacks.length; stackIndex++ ) {
+		const stack = stacks[stackIndex];
+		if( stack.length === 0 ) {
+			console.log("a stack is empty");
+			return true;
+		}
+		const topCard = stack[stack.length-1];
+		// can this card be put on this stack ?
+		if( stackIndex <= 1 ) { // 100 to 2
+			if( card < topCard || card === topCard+10) {
+				console.log(`card ${card} can be put on stack ${stackIndex}`);
+				return true;
+			}
+		} else { // 1 to 99
+			if( card > topCard || card === topCard-10) {
+				console.log(`card ${card} can be put on stack ${stackIndex}`);
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 function canPlay() {
-	if( talon.length === 0 && cards.filter(c=>c>0).length === 0 ) {
+	const availableCards = cards.filter(c=>c>0);
+	if( talon.length === 0 && availableCards.length === 0 ) {
+		console.log("no more cards");
 		return false;
 	}
-	return true;
+	if( talon.length > 0 && availableCards.length <= 6 ) {
+		console.log("can click on 'end turn'");
+		return true; // can click on 'End Turn' ?
+	}
+	if( talon.length === 0 ) {
+		// check if one availableCards can be played
+		return availableCards.some(c=>canBePlayed(c));
+	}
+	return availableCards.some(c=>canBePlayed(c));
 }
 
 function putCardOnStack(card, stack) {
@@ -302,6 +358,17 @@ function mouseReleased() {
 				}
 			}
 		}
+	} else {
+		// moving card in the hand ?
+		const cardIndex = getCardIndex(mouseX, mouseY, true);
+		if( cardIndex >= 0 ) {
+			const clickedCardIndex = cards.indexOf(clickedCard);
+			console.log("move card from", clickedCardIndex, "to", cardIndex);
+			const cardValue = cards[clickedCardIndex];
+			cards = cards.filter(c=>c!==cardValue);
+			cards.splice(cardIndex, 0, cardValue);
+		}
+
 	}
 	clickedCard = null;
 }
