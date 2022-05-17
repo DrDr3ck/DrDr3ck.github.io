@@ -346,7 +346,9 @@ class BFloatingButton extends BButtonTextBase {
 			stroke(29, 105, 62);
 			strokeWeight(Math.ceil(this.textSize / 30));
 		}
-		fill(this.color.r, this.color.g, this.color.b);
+		const factor = this.enabled ? 1 : 1.5;
+		fill(this.color.r*factor, this.color.g*factor, this.color.b*factor);
+		fill(this.color.r*factor, this.color.g*factor, this.color.b*factor);
 		ellipse(this.x + this.w / 2, this.y - this.h / 2, this.w + extend, this.h + extend);
 
 		push();
