@@ -64,6 +64,7 @@ const nextButton = new BFloatingButton(1320, 540, "+", ()=>{
 const resetButton = new BButton(130, 580, "Reset", ()=>{
 	initGame();
 	resetButton.visible = false;
+	nextButton.visible = true;
 });
 resetButton.setTextSize(45);
 
@@ -147,8 +148,10 @@ function drawGame() {
 	text(talon.length,1400,320);
 
 	if( resetButton.visible ) {
-		textAlign(CENTER, CENTER);
-		text("End of Game", windowWidth/2, 540);
+		textAlign(CENTER, BOTTOM);
+		text("End of Game", windowWidth/2, 560);
+		textAlign(CENTER, TOP);
+		text(`(${talon.length + cards.filter(c=>c>0).length} points)`, windowWidth/2, 570);
 	}
 
 	if( clickedCard ) {
