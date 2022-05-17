@@ -42,10 +42,10 @@ const speakerButton = new BFloatingSwitchButton(windowWidth - 70 - 10 - 70, 70, 
 const musicButton = new BFloatingSwitchButton(windowWidth - 70, 70, '\uD83C\uDFB6', musicClicked);
 
 const sortButton = new BFloatingButton(windowWidth - 80, windowHeight - 10, 'S', ()=>{
-	cards.sort((a,b)=>a>b);
+	cards = cards.sort((a,b)=>a-b);
 });
 
-const nextButton = new BButton(130, 580, "END TURN", ()=>{
+const nextButton = new BFloatingButton(1320, 540, "+", ()=>{
 	// put cards from talon...
 	cards.forEach((c,i) => {
 		if( c < 0 && talon.length > 0 ) {
@@ -58,8 +58,8 @@ const nextButton = new BButton(130, 580, "END TURN", ()=>{
 		nextButton.visible = false;
 	}
 	resetButton.visible = !canPlay();
+	deltaY = [randomInt(5),randomInt(8),randomInt(5),randomInt(5),randomInt(7),randomInt(5),randomInt(5),randomInt(9)];
 });
-nextButton.setTextSize(45);
 
 const resetButton = new BButton(130, 580, "Reset", ()=>{
 	initGame();
@@ -92,33 +92,34 @@ function updateGame(elapsedTime) {
 
 }
 
+let deltaY = [1,5,0,4,7,2,5,3];
+
 function drawGame() {
-    spritesheet.drawSprite('cards', 1, 100, 100);
-    spritesheet.drawSprite('cards', 1, 100+320, 100);
-    spritesheet.drawSprite('cards', 2, 100+320*2, 100);
-    spritesheet.drawSprite('cards', 2, 100+320*3, 100);
+    spritesheet.drawSprite('cards', 2, 100, 100);
+    spritesheet.drawSprite('cards', 2, 100+320, 100);
+    spritesheet.drawSprite('cards', 1, 100+320*2, 100);
+    spritesheet.drawSprite('cards', 1, 100+320*3, 100);
 	
 	noStroke();
 	fill(250);
 	textAlign(CENTER, TOP);
-	text("100",370,100);
-	text("99",1010,100);
+	text("100",1010,100);
+	text("99",370,100);
 	textAlign(CENTER, BOTTOM);
-	text("2",370,440);
-	text("1",1010,440);
+	text("2",1010,440);
+	text("1",370,440);
 
 	stroke(1);
 	strokeWeight(10);
 
-	line(370,200,370,340);
-	line(350,320,370,340);
-	line(390,320,370,340);
-
 	line(1010,200,1010,340);
-	line(990,220,1010,200);
-	line(1030,220,1010,200);
+	line(990,320,1010,340);
+	line(1030,320,1010,340);
 
-	const deltaY = [1,5,0,4,7,2,5,3];
+	line(370,200,370,340);
+	line(350,220,370,200);
+	line(390,220,370,200);
+
 	textSize(50);
 	strokeWeight(2);
 	cards.forEach( (c,i) => {
@@ -198,6 +199,8 @@ function drawLoading() {
         initGame();
 		textAlign(LEFT, BASELINE);
 		uiManager.addLogger('The Game');
+		uiManager.addLogger('Press S to sort');
+		uiManager.addLogger('Press + for more cards');
 	}
 }
 
@@ -296,7 +299,7 @@ function canBePlayed(card) {
 		}
 		const topCard = stack[stack.length-1];
 		// can this card be put on this stack ?
-		if( stackIndex <= 1 ) { // 100 to 2
+		if( stackIndex > 1 ) { // 100 to 2
 			if( card < topCard || card === topCard+10) {
 				console.log(`card ${card} can be put on stack ${stackIndex}`);
 				return true;
@@ -348,7 +351,7 @@ function mouseReleased() {
 		} else {
 			const topCard = stack[stack.length-1];
 			// can this card be put on this stack ?
-			if( stackIndex <= 1 ) { // 100 to 2
+			if( stackIndex > 1 ) { // 100 to 2
 				if( clickedCard < topCard || clickedCard === topCard+10) {
 					putCardOnStack(clickedCard, stack);
 				}
@@ -373,12 +376,13 @@ function mouseReleased() {
 	clickedCard = null;
 }
 
+const generator = Math.random;
+const randomInt = (i) => {
+	return Math.floor(generator() * i);
+}
+
 /* Randomize array in-place using Durstenfeld shuffle algorithm */
 function shuffleArray(array) {
-	const generator = Math.random;
-	const randomInt = (i) => {
-        return Math.floor(generator() * i);
-    }
 	for (var i = array.length - 1; i > 0; i--) {
 		var j = randomInt(i + 1);
 		var temp = array[i];
