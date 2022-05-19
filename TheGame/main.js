@@ -103,10 +103,6 @@ function setup() {
     lastTime = Date.now();
 }
 
-function updateGame(elapsedTime) {
-
-}
-
 let deltaY = [1,5,0,4,7,2,5,3];
 
 function drawGame() {
@@ -236,9 +232,6 @@ function draw() {
     uiManager.update(elapsedTime);
 
     // draw game
-	if (curState === GAME_PLAY_STATE) {
-		updateGame(elapsedTime);
-	}
 	drawGame();
 
 	if( rules ) {
@@ -249,10 +242,13 @@ function draw() {
 
 	textAlign(LEFT, TOP);
     uiManager.draw();
-	if (toolManager.currentTool) {
-		toolManager.currentTool.draw();
+
+	if (gameState === GAME_PLAY_STATE) {
+		if (toolManager.currentTool) {
+			toolManager.currentTool.draw();
+		}
+		jobManager.draw();
 	}
-    jobManager.draw();
     
     lastTime = currentTime;
 }
