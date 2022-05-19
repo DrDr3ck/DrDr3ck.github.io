@@ -1,7 +1,7 @@
 const uiManager = new UIManager();
 const windowWidth = 1460;
 const windowHeight = 900;
-uiManager.loggerContainer = new LoggerContainer(windowWidth-300, windowHeight-100, 240, 100);
+uiManager.loggerContainer = new LoggerContainer(160, 510, 240, 100);
 uiManager.loggerContainer.visible = true;
 
 const toolManager = new ToolManager();
@@ -13,6 +13,7 @@ const GAME_LOADING_STATE = 0;
 const GAME_START_STATE = 1;
 const GAME_PLAY_STATE = 2;
 const GAME_OVER_STATE = 3;
+const GAME_STOP_STATE = 4;
 let curState = GAME_LOADING_STATE;
 
 let lastTime = 0;
@@ -20,6 +21,47 @@ let lastTime = 0;
 let board = [];
 
 let players = [];
+
+let turn = 0;
+
+class Player {
+	constructor(name, color, id, position) {
+		this.name = name;
+		this.color = color;
+		this.id = id;
+		this.position = position;
+		this.actions = [];
+	}
+
+	clickAction(i) {
+		this.actions[i].enabled = false;
+		this.actions[i].img = spritesheet.getImage('avatars', this.id);
+	}
+
+	resetActions() {
+		for( let i=0; i < 4; i++ ) {
+			this.actions[i].enabled = true;
+			this.actions[i].img = spritesheet.getImage('actions', i);
+		}
+	}
+
+	getActionButtons() {
+		const actionButtons = [];
+		const actionScale = 0.75;
+		for( let i= 0; i < 4; i++ ) {
+			const X = this.position.left ? this.position.x+134*actionScale*i : this.position.x -134*actionScale*(i+1);
+			const Y = this.position.top ? 20+134+10 : 650-134-10-134*actionScale;
+			actionButtons.push(new BImageButton(X, Y, spritesheet.getImage('actions', i), ()=>{this.clickAction(i);}));
+		}
+		actionButtons.forEach(b=>b.scale = actionScale);
+		this.actions = actionButtons;
+		return actionButtons;
+	}
+
+	draw() {
+		spritesheet.drawSprite('avatars', this.id, this.position.x+(this.position.left?10:-10-134), this.position.y);
+	}
+}
 
 function preload() {
 }
@@ -51,7 +93,7 @@ function updateGame(elapsedTime) {
 
 function drawGame() {
 	const timeScale = 0.85;
-	spritesheet.drawScaledSprite('timeline', 0, windowWidth/2-1020*timeScale/2, windowHeight - 225*timeScale - 10, timeScale);
+	spritesheet.drawScaledSprite('timeline', 0, 50, windowHeight - 225*timeScale - 10, timeScale);
 
 	const X = 415;
 	const Y = 30;
@@ -61,43 +103,32 @@ function drawGame() {
 		}
 	}
 
-	players.forEach(p=>{
-		const X = 415+125*2 + p.x;
-		const Y = 30+125*2 + p.y;
+	players.forEach((p,i)=>{
+		const X = 415+125*2 + p.position.tileX;
+		const Y = 30+125*2 + p.position.tileY;
 		stroke(0);
 		fill(p.color.r,p.color.g,p.color.b);
 		ellipse(X,Y,30,30);
+		p.draw();
+		rect(250+55*(i+turn), 780, 55, 90);
+		fill(250);
+		textAlign(LEFT, TOP);
+		text(i+1, 250+55*(i+turn)+15, 780+20);
 	});
 
-	spritesheet.drawSprite('avatars', 0, 20, 20);
-	spritesheet.drawSprite('avatars', 1, windowWidth - 20 - 134, 20);
-	spritesheet.drawSprite('avatars', 2, windowWidth - 20 - 134, 650-134);
-	spritesheet.drawSprite('avatars', 3, 20, 650-134);
-
-	const actionScale = 0.75;
-	spritesheet.drawScaledSprite('actions', 0, 10, 20+134+10, actionScale);
-	spritesheet.drawScaledSprite('actions', 1, 10+134*actionScale, 20+134+10, actionScale);
-	spritesheet.drawScaledSprite('actions', 2, 10+2*134*actionScale, 20+134+10, actionScale);
-	spritesheet.drawScaledSprite('actions', 3, 10+3*134*actionScale, 20+134+10, actionScale);
-
-	spritesheet.drawScaledSprite('actions', 0, 10, 650-134-10-134*actionScale, actionScale);
-	spritesheet.drawScaledSprite('actions', 1, 10+134*actionScale, 650-134-10-134*actionScale, actionScale);
-	spritesheet.drawScaledSprite('actions', 2, 10+2*134*actionScale, 650-134-10-134*actionScale, actionScale);
-	spritesheet.drawScaledSprite('actions', 3, 10+3*134*actionScale, 650-134-10-134*actionScale, actionScale);
-
-	spritesheet.drawScaledSprite('actions', 0, windowWidth - 10 -134*actionScale, 20+134+10, actionScale);
-	spritesheet.drawScaledSprite('actions', 1, windowWidth - 10 -2*134*actionScale, 20+134+10, actionScale);
-	spritesheet.drawScaledSprite('actions', 2, windowWidth - 10 -3*134*actionScale, 20+134+10, actionScale);
-	spritesheet.drawScaledSprite('actions', 3, windowWidth - 10 -4*134*actionScale, 20+134+10, actionScale);
-
-	spritesheet.drawScaledSprite('actions', 0, windowWidth - 10 -134*actionScale, 650-134-10-134*actionScale, actionScale);
-	spritesheet.drawScaledSprite('actions', 1, windowWidth - 10 -2*134*actionScale, 650-134-10-134*actionScale, actionScale);
-	spritesheet.drawScaledSprite('actions', 2, windowWidth - 10 -3*134*actionScale, 650-134-10-134*actionScale, actionScale);
-	spritesheet.drawScaledSprite('actions', 3, windowWidth - 10 -4*134*actionScale, 650-134-10-134*actionScale, actionScale);
-
 	if( clickedCardValue > 0 ) {
-		spritesheet.drawSprite('cartes', clickedCardValue, 1090, 150);
+		spritesheet.drawSprite('cartes', clickedCardValue, 1045, 640);
 	}
+}
+
+function nextTurn() {
+	players.forEach(p=>p.resetActions());
+	turn++;
+	if( turn === 8 ) {
+		curState = GAME_STOP_STATE
+	}
+	const p = players.shift();
+	players.push(p);
 }
 
 function initGame() {
@@ -107,18 +138,13 @@ function initGame() {
 	board.push([{card: 0}, {card: 0}, {card: 0}, {card: 0}, {card: 0}]);
 	board.push([{card: 0}, {card: 0}, {card: 0}, {card: 0}, {card: 2}]);
 
-	players.push(
-		{name: "Jennifer", id: 0, color: {r:191,g:148,b:45}, x: 255/2-25, y: 25}
-	);
-	players.push(
-		{name: "Jack", id: 1, color: {r:101,g:118,b:143}, x: 25, y: 25}
-	);
-	players.push(
-		{name: "Jack", id: 2, color: {r:124,g:135,b:67}, x: 255/2-25, y: 250/2-25}
-	);
-	players.push(
-		{name: "Jack", id: 3, color: {r:151,g:115,b:148}, x: 25, y: 250/2-25}
-	);
+	players.push(new Player("Jack", {r:101,g:118,b:143}, 0, {x: 10, y: 20, left: true, top: true, tileX: 25, tileY: 25}));
+	players.push(new Player("Jennifer", {r:191,g:148,b:45}, 1, {x: windowWidth - 10, y: 20, left: false, top: true, tileX: 255/2-25, tileY: 25}));
+	players.push(new Player("Kevin", {r:124,g:135,b:67}, 2, {x: windowWidth - 10, y: 650-134, left: false, top: false, tileX: 255/2-25, tileY: 250/2-25}));
+	players.push(new Player("Alice", {r:151,g:115,b:148}, 3, {x: 10, y: 650-134, left: true, top: false, tileX: 25, tileY: 250/2-25}));
+
+	const menu = [ ...players[0].getActionButtons(), ...players[1].getActionButtons(), ...players[2].getActionButtons(), ...players[3].getActionButtons() ];
+	uiManager.setUI(menu);
 }
 
 function drawLoading() {
@@ -158,6 +184,9 @@ function draw() {
 		updateGame(elapsedTime);
 	}
 	drawGame();
+	if (curState === GAME_STOP_STATE) {
+		// END OF GAME
+	}
 
     uiManager.draw();
 	if (toolManager.currentTool) {
@@ -196,4 +225,10 @@ function mouseClicked() {
 	clickedCardValue = getClickedCard(mouseX, mouseY);
 
 	return false;
+}
+
+function keyPressed() {
+	if( key === "N" ) {
+		nextTurn();
+	}
 }
