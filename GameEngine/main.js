@@ -1,6 +1,6 @@
 const uiManager = new UIManager();
-const windowWidth = 800;
-const windowHeight = 600;
+const windowWidth = 1400;
+const windowHeight = 800;
 uiManager.loggerContainer = new LoggerContainer(windowWidth-300, windowHeight-100, 240, 100);
 uiManager.loggerContainer.visible = true;
 
