@@ -243,7 +243,7 @@ function draw() {
 	textAlign(LEFT, TOP);
     uiManager.draw();
 
-	if (gameState === GAME_PLAY_STATE) {
+	if (curState === GAME_PLAY_STATE) {
 		if (toolManager.currentTool) {
 			toolManager.currentTool.draw();
 		}
