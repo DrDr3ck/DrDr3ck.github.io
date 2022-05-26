@@ -16,12 +16,10 @@ const GAME_OVER_STATE = 3;
 let curState = GAME_LOADING_STATE;
 
 let lastTime = 0;
+let toggleDebug = false;
 
 const tileSize = 40;
 const board = new Board();
-
-const nomad = new Nomad({x:5,y:5});
-nomad.moveUp();
 
 function preload() {
 }
@@ -29,7 +27,8 @@ function preload() {
 const startClicked = () => {
 	curState = GAME_PLAY_STATE;
 	uiManager.setUI([turnButton]);
-	uiManager.addLogger(`Start Nomad game #${curSaveIndex}`)
+	turnButton.enabled = false;
+	uiManager.addLogger(`Start Nomad Game#${curSaveIndex}`)
 }
 
 const speakerButton = new BFloatingSwitchButton(windowWidth - 70 - 10 - 70, 70, '\uD83D\uDD0A', ()=>{
@@ -50,8 +49,36 @@ const startButton = new BButton(80, 80*5, "NEW GAME", ()=> {
 	startClicked();
 });
 
-const turnButton = new BButton(80, windowHeight - 50, "NEXT TURN", ()=>{
+const turnButton = new BButton(80, windowHeight - 50, "END OF TURN", ()=>{
+	for( let j=0; j < board.tiles.length; j++ ) {
+		const row = board.tiles[j];
+		row.forEach(r=>{
+			if( r.type.endsWith("-") ) {
+				r.type = r.type.slice(0,-1);
+			}
+		});
+	}
+	if( board.turn % 10 === 0 ) {
+		// need to eat
+		board.eatFood();
+	}
+	board.nomads.forEach(n=>{
+		// cannot move if dead :)
+		if( n.health > 0 ) {
+			n.hasMoved = false;
+		}
+	});
+	board.checkBlockedNomads();
+	if( board.nomads.length === 0 ) {
+		turnButton.visible = false;
+	}
 	board.turn++;
+	turnButton.enabled = false;
+	if( board.turn % 10 === 0 ) {
+		turnButton.text = "END OF DAY";
+	} else {
+		turnButton.text = "END OF TURN";
+	}
 	const json = board.dump();
 	localStorage.setItem(`Nomad/board/${curSaveIndex}`, JSON.stringify(json));
 });
@@ -124,7 +151,7 @@ function updateGame(elapsedTime) {
 
 function drawGame() {
 	const X = 30;
-	const Y = 30;
+	const Y = 80;
 	stroke(51);
 	for( let j=0; j < board.tiles.length; j++ ) {
 		const row = board.tiles[j];
@@ -134,7 +161,8 @@ function drawGame() {
 		});
 	}
 
-	fill(51);
+	fill(170,135,130);
+	stroke(151);
 	board.nomads.forEach(nomad=>{
 		ellipse(X+tileSize*nomad.position.x+tileSize/2,Y+tileSize*nomad.position.y+tileSize/2,tileSize/2,tileSize/2);
 	});
@@ -145,15 +173,30 @@ function drawGame() {
 	textAlign(LEFT, TOP);
 	text(`Turn ${board.turn}`, 1240, 30);
 
-	// TILE TYPE
-	const curTile = board.curTile();
-	text( curTile.type, 1240, 60);
+	// RESSOURCES
+	text(`plank: ${board.ressources.plank}, brick: ${board.ressources.brick}, food: ${board.ressources.food}`, 30, 20);
+
+	if( board.nomads.length > 0 ) {
+		// CUR TILE
+		// TILE TYPE
+		const curTile = board.curTile();
+		text( curTile.type, 1240, 60);
+
+		const nomad = board.curNomad();
+		if( nomad.hasMoved ) {
+			stroke(230,100,20);
+		} else {
+			stroke(250,210,10);
+		}
+		noFill();
+		rect(X+tileSize*nomad.position.x, Y+tileSize*nomad.position.y, tileSize, tileSize);
+	}
 }
 
 function initGame() {
 	noiseSeed( Math.random()*5000 );
 	board.initTiles(30,15);
-	board.addNomad({x:15,y:8});
+	board.addNomad({x:15,y:7});
 	board.addNomad({x:16,y:8});
 	board.addNomad({x:14,y:8});
 	console.log(board);
@@ -195,6 +238,9 @@ function draw() {
 	if (curState === GAME_PLAY_STATE) {
 		updateGame(elapsedTime);
 		drawGame();
+		if( board.nomads.length === 0 ) {
+			text("GAME OVER", 10, 10);
+		}
 	}
 
     uiManager.draw();
@@ -215,19 +261,38 @@ function mouseClicked() {
 	return false;
 }
 
-let toggleDebug = false;
-
 function keyPressed() {
 	if (key === "D") {
 		toggleDebug = !toggleDebug;
 	}
-	if (keyCode === UP_ARROW) {
-		board.curNomad().moveUp();
-	} else if (keyCode === DOWN_ARROW) {
-		board.curNomad().moveDown();
-	} else if (keyCode === LEFT_ARROW) {
-		board.curNomad().moveLeft();
-	} else if (keyCode === RIGHT_ARROW) {
-		board.curNomad().moveRight();
+	if( board.nomads.length === 0 ) {
+		return;
 	}
+	if (key === "n") {
+		// next nomad
+		board.nextNomad(true);
+	}
+	if (key === "p") {
+		// previous nomad
+		board.nextNomad(false);
+	}
+	if (key === "t") {
+		// previous nomad
+		board.doTransform();
+	}
+	if (key === "w") {
+		// nomad is waiting
+		board.curNomad().hasMoved = true;
+	}
+	if (keyCode === UP_ARROW) {
+		board.curNomad().moveUp(board);
+	} else if (keyCode === DOWN_ARROW) {
+		board.curNomad().moveDown(board);
+	} else if (keyCode === LEFT_ARROW) {
+		board.curNomad().moveLeft(board);
+	} else if (keyCode === RIGHT_ARROW) {
+		board.curNomad().moveRight(board);
+	}
+	// check if "next turn" can be enabled
+	turnButton.enabled = board.nomads.every(n=>n.hasMoved);
 }

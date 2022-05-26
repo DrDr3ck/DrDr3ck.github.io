@@ -2,29 +2,43 @@ const randomInt = (i) => {
     return Math.floor(Math.random() * i);
 }
 
+const noneColor = {r: 51, g: 51, b: 51};
+
 class Nomad {
-    constructor(position, health) {
+    constructor(position, health, hasMoved=false) {
         this.position = position;
         this.health = health;
+        this.hasMoved = hasMoved;
     }
 
-    move(dX,dY) {
+    move(board,dX,dY) {
+        if( this.hasMoved ) {
+            return;
+        }
         // is new position free ?
-        this.position.x = this.position.x + dX;
-        this.position.y = this.position.y + dY;
+        if( board.isTileFree(this.position.x + dX, this.position.y + dY) ) {
+            this.position.x = this.position.x + dX;
+            this.position.y = this.position.y + dY;
+            this.hasMoved = true;
+        }
     }
 
-    moveLeft() {
-        this.move(-1,0);
+    moveLeft(board) {
+        this.move(board,-1,0);
     }
     moveRight() {
-        this.move(1,0);
+        this.move(board,1,0);
     }
     moveUp() {
-        this.move(0,-1);
+        this.move(board,0,-1);
     }
     moveDown() {
-        this.move(0,1);
+        this.move(board,0,1);
+    }
+
+    transform(board) {
+        // transform cur tile
+        board.doTransform();
     }
 }
 
@@ -34,6 +48,11 @@ class Board {
         this.turn = 0;
         this.nomads = [];
         this.curNomadIndex = 0;
+        this.ressources = {
+            "plank": 0,
+            "brick": 0,
+            "food": 0
+        };
     }
 
     dump() {
@@ -41,7 +60,8 @@ class Board {
             tiles: this.tiles,
             turn: this.turn,
             nomads: this.nomads,
-            curNomadIndex: this.curNomadIndex
+            curNomadIndex: this.curNomadIndex,
+            ressources: this.ressources
         }
     }
 
@@ -54,10 +74,13 @@ class Board {
         }
         if( json["nomads"] ) {
             this.nomads = [];
-            json["nomads"].forEach(n=>this.addNomad(n.position, n.health));
+            json["nomads"].forEach(n=>this.addNomad(n.position, n.health, n.hasMoved));
         }
         if( json["curNomadIndex"] ) {
             this.curNomadIndex = json["curNomadIndex"];
+        }
+        if( json["ressources"] ) {
+            this.ressources = json["ressources"];
         }
     }
 
@@ -119,6 +142,14 @@ class Board {
         return this.nomads[this.curNomadIndex];
     }
 
+    nextNomad(next) {
+        if( next ) {
+            this.curNomadIndex = (this.curNomadIndex+1)%this.nomads.length;
+        } else {
+            this.curNomadIndex = (this.curNomadIndex-1+this.nomads.length)%this.nomads.length;
+        }
+    }
+
     /**
      * Returns tile where the current Nomad is standing on
      */
@@ -127,7 +158,113 @@ class Board {
         return this.tiles[nomad.position.y][nomad.position.x];
     }
 
+    addRessource(ressourceType) {
+        board.ressources[ressourceType] = board.ressources[ressourceType] + 1;
+    }
+
+    doTransform() {
+        // transform cur tile
+        const tile = this.curTile();
+        switch(tile.type) {
+            case "dirt":
+                // transform into 'field'
+                // check neighborhood: if water, it should be a field+
+                const neighborhood = this.getNeighboorTiles();
+                if( neighborhood.some(n=>n.type === "water") ) {
+                    tile.type = "field+-";
+                } else {
+                    tile.type = "field-";
+                }
+                const c = randomInt(20);
+                tile.color = {r:255-c, g:219-c, b:88-c};
+                break;
+            case "field+":
+                // recolt
+                tile.type= "none";
+                this.addRessource("food");
+                this.addRessource("food");
+                tile.color = noneColor;
+                break;
+            case "field":
+                // recolt
+                tile.type= "none";
+                this.addRessource("food");
+                tile.color = noneColor;
+                break;
+            case "rock":
+                // recolt 'brick'
+                tile.type= "none";
+                this.addRessource("brick");
+                tile.color = noneColor;
+                break;
+            case "tree":
+                // recolt 'plank'
+                tile.type= "none";
+                this.addRessource("plank");
+                tile.color = noneColor;
+                break;
+        }
+    }
+
     addNomad(position, health=20) {
         this.nomads.push(new Nomad(position, health));
+    }
+
+    isTileFree(X,Y) {
+        if( this.tiles[Y][X].type === "water" || this.tiles[Y][X].type === "none" ) {
+            return false;
+        }
+        const result = this.nomads.some(nomad=>
+            nomad.position.x === X && nomad.position.y === Y
+        );
+        return !result;
+    }
+
+    getTile(X,Y) {
+        return this.tiles[Y][X];
+    }
+
+    checkBlockedNomads() {
+        for( let i= this.nomads.length-1; i >= 0; i-- ) {
+            const neighborhoods = this.getNeighboorTiles(this.nomads[i].position);
+            if( neighborhoods.every(n=>n.type==="none"||n.type==="water") ) {
+                // this nomad is blocked: kill him!!
+                this.nomads.splice(i,1);
+                this.curNomadIndex = 0;
+            }
+        }
+    }
+
+    eatFood() {
+        const nbNeededFood = this.nomads.length;
+        if( this.ressources.food >= nbNeededFood ) {
+            this.ressources.food -= nbNeededFood;
+        } else {
+            // health damage for those who cannot eat
+            const damage = nbNeededFood - this.ressources.food;
+            for( let i=0; i < damage; i++ ) {
+                const nomad = this.nomads[i];
+                nomad.health--;
+            }
+            this.ressources.food = 0;
+        }
+    }
+
+    getNeighboorTiles(curPosition) {
+        const tiles = [];
+        const position = curPosition ? curPosition : this.curNomad().position;
+        if( position.x>0 ) {
+            tiles.push(this.getTile(position.x-1, position.y));
+        }
+        if( position.x<this.tiles[0].length-1 ) {
+            tiles.push(this.getTile(position.x+1, position.y));
+        }
+        if( position.y>0 ) {
+            tiles.push(this.getTile(position.x, position.y-1));
+        }
+        if( position.y<this.tiles.length-1 ) {
+            tiles.push(this.getTile(position.x, position.y+1));
+        }
+        return tiles;
     }
 }
