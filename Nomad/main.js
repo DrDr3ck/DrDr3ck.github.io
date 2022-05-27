@@ -280,6 +280,10 @@ function keyPressed() {
 		// previous nomad
 		board.doTransform();
 	}
+	if (key === "r") {
+		// previous nomad
+		board.reproduce();
+	}
 	if (key === "w") {
 		// nomad is waiting
 		board.curNomad().hasMoved = true;

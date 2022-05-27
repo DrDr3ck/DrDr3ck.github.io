@@ -235,6 +235,24 @@ class Board {
         }
     }
 
+    reproduce() {
+        const nomad = this.curNomad();
+        if( this.nomads.filter(n=>n.position.x === nomad.position.x && n.position.y === nomad.position.y).length > 1 ) {
+            // cannot reproduce anymore during this turn
+            console.log("cannot reproduce anymore");
+            return;
+        }
+        // find a nomad next to the current nomad
+        const nomads = this.getNeighboorNomads(nomad.position);
+        if( nomads.length === 0 ) {
+            console.log("no nomads for reproduction");
+            return;
+        }
+        // create a new nomad
+        console.log("new nomad");
+        this.addNomad({...nomad.position}, 20);
+    }
+
     eatFood() {
         const nbNeededFood = this.nomads.length;
         if( this.ressources.food >= nbNeededFood ) {
@@ -248,6 +266,36 @@ class Board {
             }
             this.ressources.food = 0;
         }
+    }
+
+    getNeighboorNomads(curPosition) {
+        const neighbors = [];
+        const position = curPosition ? curPosition : this.curNomad().position;
+        if( position.x>0 ) {
+            const nomads = this.nomads.filter(n=>n.position.x === position.x-1 && n.position.y === position.y);
+            if( nomads.length === 1 ) {
+                neighbors.push(nomads[0]);
+            }
+        }
+        if( position.x<this.tiles[0].length-1 ) {
+            const nomads = this.nomads.filter(n=>n.position.x === position.x+1 && n.position.y === position.y);
+            if( nomads.length === 1 ) {
+                neighbors.push(nomads[0]);
+            }
+        }
+        if( position.y>0 ) {
+            const nomads = this.nomads.filter(n=>n.position.x === position.x && n.position.y === position.y-1);
+            if( nomads.length === 1 ) {
+                neighbors.push(nomads[0]);
+            }
+        }
+        if( position.y<this.tiles.length-1 ) {
+            const nomads = this.nomads.filter(n=>n.position.x === position.x && n.position.y === position.y+1);
+            if( nomads.length === 1 ) {
+                neighbors.push(nomads[0]);
+            }
+        }
+        return neighbors;
     }
 
     getNeighboorTiles(curPosition) {
