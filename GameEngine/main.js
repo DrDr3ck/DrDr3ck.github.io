@@ -14,7 +14,7 @@ const GAME_START_STATE = 1;
 const GAME_PLAY_STATE = 2;
 const GAME_OVER_STATE = 3;
 let curState = GAME_LOADING_STATE;
-
+let toggleDebug = false;
 let lastTime = 0;
 
 function preload() {
@@ -111,7 +111,16 @@ function draw() {
 }
 
 function mouseClicked() {
+	if( toggleDebug ) {
+		uiManager.addLogger(`X=${mouseX}, Y=${mouseY}`);
+	}
 	toolManager.mouseClicked();
 	uiManager.mouseClicked();
 	return false;
+}
+
+function keyPressed() {
+	if (key === "D") {
+		toggleDebug = !toggleDebug;
+	}
 }
