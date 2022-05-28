@@ -93,67 +93,103 @@ function freeTile(x,y) {
 	}
 }
 
-function getFreeAlpinistePositionOnTile(tile) {
+function getFreeAlpinistPositionOnTile(tile) {
 	const row = positions[tile];
 	for( let i=0; i < row.length; i++ ) {
 		if( row[i].state === "free" ) {
 			return i;
 		}
 	}
-	// should never go here
-	uiManager.addLogger("Error: you should not be here");
-	return getNbAlpinistesOnTile(tile);
+	return 0;
 }
 
-function getNbAlpinistesOnTile(tile) {
-	let nbAlpinistesOnTile = 0;
-	players.forEach(p=>p.alpinistes.forEach(a=>{
+function getNbAlpinistsOnTile(tile) {
+	let nbAlpinistsOnTile = 0;
+	players.forEach(p=>p.alpinists.forEach(a=>{
 		if( a.tile === tile ) {
-			nbAlpinistesOnTile++;
+			nbAlpinistsOnTile++;
 		}
 	}));
-	return nbAlpinistesOnTile;
+	return nbAlpinistsOnTile;
 }
 
 function isTileOccupied(tile) {
-	const nbAlpinistesOnTile = getNbAlpinistesOnTile(tile);
-	const maxAlpinistes = positions[tile].length;
-	return nbAlpinistesOnTile > maxAlpinistes;
+	const nbAlpinistsOnTile = getNbAlpinistsOnTile(tile);
+	const maxAlpinists = positions[tile].length;
+	return nbAlpinistsOnTile > maxAlpinists;
 }
 
-function reposPlayer(playerIndex, alpinisteIndex) {
+function getAlpinistOnTile(tile) {
+	for( const player of players ) {
+		for( const alpinist of player.alpinists ) {
+			if( alpinist.tile === tile ) {
+				return alpinist;
+			}
+		}
+	}
+}
+
+function moveAlpinist(alpinist, newTile) {
+	let oldAlpinist = null;
+	if( positions[newTile].length === 1 ) {
+		// should we slide down an alpinist ?
+		oldAlpinist = getAlpinistOnTile(newTile);
+		if( oldAlpinist ) {
+			// move it down
+			oldAlpinist.tile = oldAlpinist.tile-1;
+			while( isTileOccupied(oldAlpinist.tile) ) {
+				oldAlpinist.tile = oldAlpinist.tile-1;
+			}
+		}
+	}
+
+	alpinist.tile = newTile;
+	doMoveAlpinist(alpinist, true);
+	if( oldAlpinist ) {
+		doMoveAlpinist(oldAlpinist, false);
+	}
+}
+
+function doMoveAlpinist(alpinist, free) {
+	// change position: move alpinist
+	const alpinistPosition = getFreeAlpinistPositionOnTile(alpinist.tile);
+	const position = positions[alpinist.tile][alpinistPosition];
+	const oldX = alpinist.button.x;
+	const oldY = alpinist.button.y;
+	alpinist.button.x = position.x;
+	alpinist.button.y = position.y;
+	position.state = "occupied";
+	if( free ) {
+		freeTile(oldX, oldY);
+	}
+}
+
+function prepareNextPlayer() {
+	dices.forEach(d=>{d.state = "hidden";d.value=0;});
+	roleDicesButton.enabled = true;
+	reposButton.visible = false;
+
+	players[curPlayerIndex].alpinists.forEach(a=>a.button.enabled = false);
+}
+
+function reposPlayer(playerIndex, alpinistIndex) {
 	// how many dices ?
 	const ascension = dices.filter(d=>diceFace[d.value] === "ascension").length;
 	const meteo = dices.filter(d=>diceFace[d.value] === "meteo").length;
 
 	uiManager.addLogger(`ascension ${ascension}`);
 	uiManager.addLogger(`player ${players[playerIndex].color}`);
-	uiManager.addLogger(`alpiniste ${alpinisteIndex}`);
-	const alpiniste = players[playerIndex].alpinistes[alpinisteIndex];
-	alpiniste.tile = Math.min(alpiniste.tile+ascension,10);
+	uiManager.addLogger(`alpinist ${alpinistIndex}`);
+	const alpinist = players[playerIndex].alpinists[alpinistIndex];
 
-	// how many alpiniste on this tile ?
-	while( isTileOccupied(alpiniste.tile) ) {
-		alpiniste.tile = alpiniste.tile-1;
-	}
+	moveAlpinist(alpinist, Math.min(alpinist.tile+ascension,10));
+	
+	nextPlayer(ascension + meteo < 6);
+}
 
-	// change position: move alpiniste
-	const alpinistePosition = getFreeAlpinistePositionOnTile(alpiniste.tile);
-	const position = positions[alpiniste.tile][alpinistePosition];
-	const oldX = alpiniste.button.x;
-	const oldY = alpiniste.button.y;
-	alpiniste.button.x = position.x;
-	alpiniste.button.y = position.y;
-	position.state = "occupied";
-	freeTile(oldX, oldY);
-
-	dices.forEach(d=>{d.state = "hidden";d.value=0;});
-	roleDicesButton.enabled = true;
-	reposButton.visible = false;
-
-	players[curPlayerIndex].alpinistes.forEach(a=>a.button.enabled = false);
-	// next player ?
-	if( ascension + meteo < 6 ) {
+function nextPlayer(next) {
+	prepareNextPlayer();
+	if( next ) {
 		curPlayerIndex = (curPlayerIndex+1) % players.length;
 	}
 }
@@ -164,12 +200,36 @@ const reposButton = new BButton(80, windowHeight - 30, "REPOS", ()=>{
 	reposButton.enabled = false;
 	if( reposButton.text === "CHUTE" ) {
 		// TODO
-		// get higher alpiniste
-		// get second higher alpiniste
-		// move higher alpiniste just below second alpinist
+		// get higher alpinist
+		const alpinists = players[curPlayerIndex].alpinists;
+		let higherAlpinistsIndex = -1;
+		alpinists.forEach((a,i)=>{
+			if( a.tile === 10) return;
+			if( higherAlpinistsIndex === -1 || a.tile > alpinists[higherAlpinistsIndex].tile ) {
+				higherAlpinistsIndex = i;
+			}
+		});
+		if( alpinists[higherAlpinistsIndex].tile > 0 ) {
+			// get second higher alpinist
+			alpinists[higherAlpinistsIndex].tile = 0;
+			secondHigherAlpinistsIndex = -1;
+			alpinists.forEach((a,i)=>{
+				if( a.tile === 10) return;
+				if( secondHigherAlpinistsIndex === -1 ||  a.tile > alpinists[secondHigherAlpinistsIndex].tile ) {
+					secondHigherAlpinistsIndex = i;
+				}
+			});
+			if( alpinists[secondHigherAlpinistsIndex].tile > 0 ) {
+				// move higher alpinist just below second alpinist
+				moveAlpinist(alpinists[higherAlpinistsIndex], alpinists[secondHigherAlpinistsIndex].tile-1);
+			} else {
+				moveAlpinist(alpinists[higherAlpinistsIndex], 0);
+			}
+		}
+		nextPlayer(true);
 	} else {
-		// enable all alpinistes of cur player
-		players[curPlayerIndex].alpinistes.forEach(a=>a.button.enabled = true);
+		// enable all alpinists of cur player
+		players[curPlayerIndex].alpinists.forEach(a=>a.button.enabled = true);
 	}
 	reposButton.text = "REPOS";
 });
@@ -223,16 +283,10 @@ function updateGame(elapsedTime) {
 }
 
 function drawGame() {
-	const X=500;
-	const Y=2;
-	spritesheet.drawSprite('board', 0, X, Y);
-
 	textAlign(LEFT, TOP);
 	text(players[curPlayerIndex].color,10,10);
 
 	drawDices();
-
-	drawPlayers();
 }
 
 function drawDices() {
@@ -276,14 +330,14 @@ function initGame(nbPlayers) {
 	let curP = 0;
 	const colors = ["red","blue", "yellow","green"];
 	for( let i=0; i < nbPlayers; i++ ) {
-		const curPlayer = {color: colors[i], colorIndex: i, alpinistes: []};
+		const curPlayer = {color: colors[i], colorIndex: i, alpinists: []};
 		for( let j=0; j < 6-nbPlayers; j++ ) {
 			const position = positions[0][curP];
 			const playerButton = new BImageButton(position.x, position.y, spritesheet.getImage('players', i), ()=>{
 				reposPlayer(i, j);
 			});
 			playerButtons.push(playerButton);
-			curPlayer.alpinistes.push({tile: 0, button: playerButton});
+			curPlayer.alpinists.push({tile: 0, button: playerButton});
 			curP++;
 		}
 		players.push(curPlayer);
@@ -308,21 +362,6 @@ function drawLoading() {
 	}
 }
 
-function drawPlayers() {
-	/*
-	let pi = 0;
-	players.forEach(p=>{
-		p.alpinistes.forEach(alpiniste=>{
-			const positionIndex = alpiniste.tile;
-			const curP = positions[positionIndex].length > pi ? pi : 0;
-			const position = positions[positionIndex][curP];
-			spritesheet.drawScaledSprite('players', p.colorIndex, position.x, position.y, scale);
-			pi++;
-		});
-	});
-	*/
-}
-
 function draw() {
     const currentTime = Date.now();
 	const elapsedTime = currentTime - lastTime;
@@ -335,6 +374,10 @@ function draw() {
     uiManager.processInput();
 
     uiManager.update(elapsedTime);
+
+	const X=500;
+	const Y=2;
+	spritesheet.drawSprite('board', 0, X, Y);
 
     // draw game
 	if (curState === GAME_PLAY_STATE) {
