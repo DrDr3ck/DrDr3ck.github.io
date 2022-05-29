@@ -227,7 +227,6 @@ const reposButton = new BButton(80, windowHeight - 30, "REPOS", ()=>{
 	roleDicesButton.enabled = false;
 	reposButton.enabled = false;
 	if( reposButton.text === "CHUTE" ) {
-		// TODO
 		// get higher alpinist
 		const alpinists = players[curPlayerIndex].alpinists;
 		let higherAlpinistsIndex = -1;
@@ -423,7 +422,7 @@ function draw() {
 		updateGame(elapsedTime);
 		drawGame();
 	}
-	if( GAME_OVER_STATE ) {
+	if( curState === GAME_OVER_STATE ) {
 		drawWinner();
 	}
 
