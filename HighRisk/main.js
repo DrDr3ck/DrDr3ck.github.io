@@ -74,6 +74,14 @@ function roleDices() {
 		uiManager.addLogger("Chute");
 		roleDicesButton.enabled = false;
 		reposButton.text = "CHUTE";
+		players[curPlayerIndex].alpinists.forEach(a=>a.button.enabled = false);
+	} else {
+		// enable all alpinists of cur player
+		players[curPlayerIndex].alpinists.forEach(a=>a.button.enabled = true);
+	}
+	if( dangerAfter === 0 ) {
+		roleDicesButton.enabled = false;
+		reposButton.text = "BOOST";
 	}
 
 	reposButton.visible = true;
@@ -135,6 +143,7 @@ function moveAlpinist(alpinist, newTile) {
 		// should we slide down an alpinist ?
 		oldAlpinist = getAlpinistOnTile(newTile);
 		if( oldAlpinist ) {
+			alpinist.tile = newTile;
 			// move it down
 			oldAlpinist.tile = oldAlpinist.tile-1;
 			while( isTileOccupied(oldAlpinist.tile) ) {
@@ -185,6 +194,24 @@ function reposPlayer(playerIndex, alpinistIndex) {
 	moveAlpinist(alpinist, Math.min(alpinist.tile+ascension,10));
 	
 	nextPlayer(ascension + meteo < 6);
+	reposButton.text = "REPOS";
+
+	// check if we have a winner
+	if( playerOnSommet() ) {
+		curState = GAME_OVER_STATE;
+		roleDicesButton.visible = false;
+		reposButton.visible = false;
+		dices.forEach(d=>{d.state = "hidden";d.value=0;});
+		uiManager.addLogger(`The winner is ${colors[curPlayerIndex]}`);
+	}
+}
+
+/**
+ * Checks if cur player has all alpinists on 'sommet'
+ */
+function playerOnSommet() {
+	const alpinistsOnSommet = players[curPlayerIndex].alpinists.filter(a=>a.tile === 10).length;
+	return alpinistsOnSommet === 6-players.length;
 }
 
 function nextPlayer(next) {
@@ -195,6 +222,7 @@ function nextPlayer(next) {
 }
 
 const roleDicesButton = new BButton(80, 200, "LANCER", ()=>{roleDices();});
+
 const reposButton = new BButton(80, windowHeight - 30, "REPOS", ()=>{
 	roleDicesButton.enabled = false;
 	reposButton.enabled = false;
@@ -227,11 +255,12 @@ const reposButton = new BButton(80, windowHeight - 30, "REPOS", ()=>{
 			}
 		}
 		nextPlayer(true);
+		reposButton.text = "REPOS";
 	} else {
 		// enable all alpinists of cur player
 		players[curPlayerIndex].alpinists.forEach(a=>a.button.enabled = true);
 	}
-	reposButton.text = "REPOS";
+	
 });
 
 const playerButtons = [];
@@ -326,9 +355,10 @@ const positions = [
 	],
 ];
 
+const colors = ["red","blue", "yellow","green"];
+
 function initGame(nbPlayers) {
 	let curP = 0;
-	const colors = ["red","blue", "yellow","green"];
 	for( let i=0; i < nbPlayers; i++ ) {
 		const curPlayer = {color: colors[i], colorIndex: i, alpinists: []};
 		for( let j=0; j < 6-nbPlayers; j++ ) {
@@ -362,6 +392,15 @@ function drawLoading() {
 	}
 }
 
+function drawWinner() {
+	noStroke();
+	fill(51);
+	rect(0,330,windowWidth,450-330);
+	stroke(0);
+	fill(250);
+	text(`${colors[curPlayerIndex]} wins the game`, 560, 360);
+}
+
 function draw() {
     const currentTime = Date.now();
 	const elapsedTime = currentTime - lastTime;
@@ -383,7 +422,10 @@ function draw() {
 	if (curState === GAME_PLAY_STATE) {
 		updateGame(elapsedTime);
 		drawGame();
-	} 
+	}
+	if( GAME_OVER_STATE ) {
+		drawWinner();
+	}
 
     uiManager.draw();
 	if (toolManager.currentTool) {
