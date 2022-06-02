@@ -193,9 +193,6 @@ function reposPlayer(playerIndex, alpinistIndex) {
 
 	moveAlpinist(alpinist, Math.min(alpinist.tile+ascension,10));
 	
-	nextPlayer(ascension + meteo < 6);
-	reposButton.text = "REPOS";
-
 	// check if we have a winner
 	if( playerOnSommet() ) {
 		curState = GAME_OVER_STATE;
@@ -204,6 +201,9 @@ function reposPlayer(playerIndex, alpinistIndex) {
 		dices.forEach(d=>{d.state = "hidden";d.value=0;});
 		uiManager.addLogger(`The winner is ${colors[curPlayerIndex]}`);
 	}
+
+	nextPlayer(ascension + meteo < 6);
+	reposButton.text = "REPOS";
 }
 
 /**
