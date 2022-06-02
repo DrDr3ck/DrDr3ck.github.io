@@ -200,10 +200,10 @@ function reposPlayer(playerIndex, alpinistIndex) {
 		reposButton.visible = false;
 		dices.forEach(d=>{d.state = "hidden";d.value=0;});
 		uiManager.addLogger(`The winner is ${colors[curPlayerIndex]}`);
+	} else {
+		nextPlayer(ascension + meteo < 6);
+		reposButton.text = "REPOS";
 	}
-
-	nextPlayer(ascension + meteo < 6);
-	reposButton.text = "REPOS";
 }
 
 /**
@@ -311,8 +311,7 @@ function updateGame(elapsedTime) {
 }
 
 function drawGame() {
-	textAlign(LEFT, TOP);
-	text(players[curPlayerIndex].color,10,10);
+	spritesheet.drawSprite('players', curPlayerIndex, 10, 10);
 
 	drawDices();
 }
@@ -397,6 +396,7 @@ function drawWinner() {
 	rect(0,330,windowWidth,450-330);
 	stroke(0);
 	fill(250);
+	textAligh(LEFT, TOP);
 	text(`${colors[curPlayerIndex]} wins the game`, 560, 360);
 }
 
