@@ -396,7 +396,7 @@ function drawWinner() {
 	rect(0,330,windowWidth,450-330);
 	stroke(0);
 	fill(250);
-	textAligh(LEFT, TOP);
+	textAlign(LEFT, TOP);
 	text(`${colors[curPlayerIndex]} wins the game`, 560, 360);
 }
 
