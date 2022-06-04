@@ -89,23 +89,7 @@ function drawGame() {
 	);
 
 	// draw tiles
-	//spritesheet.drawSprite("players", 0, 325, 325);
-	push();
-	noFill();
-	stroke(0);
-	for( let i=0; i < 5; i++ ) {
-		for( let j=0; j < 5; j++ ) {
-			const tile = board.tiles[i][j];
-			if( tile.type === "chateau" ) {
-				spritesheet.drawSprite("players", 0, 25+j*150, 25+i*150);
-			} else if( tile.type === "none" ) {
-				rect(25+j*150, 25+i*150,150,150);
-			} else {
-				spritesheet.drawSprite("tiles", getCardIndex(tile), 25+j*150, 25+i*150);
-			}
-		}
-	}
-	pop();
+	drawTiles();
 
 	if( board.curCardClickedIndex >= 0 ) {
 		spritesheet.drawSprite("meeple", 0, 860+75, 25+200*board.curCardClickedIndex);
@@ -156,6 +140,25 @@ function drawLoading() {
 	}
 }
 
+function drawTiles() {
+	push();
+	noFill();
+	stroke(0);
+	for( let i=0; i < 5; i++ ) {
+		for( let j=0; j < 5; j++ ) {
+			const tile = board.tiles[i][j];
+			if( tile.type === "chateau" ) {
+				spritesheet.drawSprite("players", 0, 25+j*150, 25+i*150);
+			} else if( tile.type === "none" ) {
+				rect(25+j*150, 25+i*150,150,150);
+			} else {
+				spritesheet.drawSprite("tiles", getCardIndex(tile), 25+j*150, 25+i*150);
+			}
+		}
+	}
+	pop();
+}
+
 function draw() {
     const currentTime = Date.now();
 	const elapsedTime = currentTime - lastTime;
@@ -183,6 +186,7 @@ function draw() {
 		drawGame();
 	}
 	if( curState === GAME_OVER_STATE ) {
+		drawTiles();
 		push();
 		fill(250);
 		textAlign(LEFT, BOTTOM);
