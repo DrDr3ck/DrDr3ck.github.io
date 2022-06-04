@@ -81,6 +81,9 @@ class Board {
         this.playerFirst = true;
 
         this.tiles = [];
+
+        this.brunoTiles = [];
+        this.brunoPoints = 0;
     }
 
     moveBoard(keyCode) {
@@ -259,9 +262,38 @@ class Board {
         this.curCards.sort((card1, card2)=>card1.index > card2.index);
     }
 
+    computeBrunoPoints() {
+        this.brunoTiles.sort((t1,t2)=>t1.type < t2.type);        
+        const points = {
+            water:{tiles: 0, coef: 0},
+            grass:{tiles: 0, coef: 0},
+            swamp:{tiles: 0, coef: 0},
+            forest:{tiles: 0, coef: 0},
+            field:{tiles: 0, coef: 0},
+            mine:{tiles: 0, coef: 0},
+        };
+        this.brunoTiles.forEach(t=>{
+            points[t.type].tiles = points[t.type].tiles+1;
+            points[t.type].coef = points[t.type].coef+t.value;
+        });
+        let total = 0;
+        for( const point in points ) {
+            const p = points[point];
+            total = total+p.tiles*p.coef
+        }
+        return total;
+    }
+
     nextTurn() {
-        this.playerFirst = this.curCardClickedIndex < this.brunoCardClickedIndex;
+        const brunoCard = this.curCards[this.brunoCardClickedIndex];
+        this.brunoTiles.push(brunoCard.tiles[0]);
+        this.brunoTiles.push(brunoCard.tiles[1]);
+
+        this.brunoPoints = this.computeBrunoPoints();
+        
         this.startTurn();
+
+        this.playerFirst = this.curCardClickedIndex < this.brunoCardClickedIndex;
         this.curCardClickedIndex = -1;
         this.brunoCardClickedIndex = -1;
         if( !this.playerFirst ) {

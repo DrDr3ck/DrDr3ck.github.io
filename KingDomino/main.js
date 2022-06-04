@@ -67,7 +67,7 @@ function setup() {
 	spritesheet.addSpriteSheet('players', './players.png', 150, 150);
 	spritesheet.addSpriteSheet('tiles', './tiles.png', 150, 150);
 
-    frameRate(60);
+    frameRate(20);
 
     lastTime = Date.now();
 }
@@ -113,6 +113,8 @@ function drawGame() {
 	textAlign(LEFT, BOTTOM);
 	textSize(25);
 	text(gameState, 1170, 175);
+
+	text(board.brunoPoints, 1200, 570);
 	pop();
 }
 
