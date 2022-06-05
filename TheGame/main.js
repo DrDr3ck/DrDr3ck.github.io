@@ -1,6 +1,6 @@
 const uiManager = new UIManager();
 const windowWidth = 1460;
-const windowHeight = 800;
+const windowHeight = 700;
 uiManager.loggerContainer = new LoggerContainer(windowWidth-300, windowHeight-300, 240, 100);
 uiManager.loggerContainer.visible = true;
 
@@ -28,6 +28,7 @@ let cardTurn = 0;
 let rules = false;
 
 function preload() {
+	spritesheet.addSpriteSheet('sort', './sort.png', 50, 50);
 }
 
 function musicClicked() {
@@ -41,6 +42,7 @@ function speakerClicked() {
 
 const speakerButton = new BFloatingSwitchButton(windowWidth - 70 - 10 - 70, 70, '\uD83D\uDD0A', speakerClicked);
 const musicButton = new BFloatingSwitchButton(windowWidth - 70, 70, '\uD83C\uDFB6', musicClicked);
+let sortButton = null;
 
 const rulesButton = new BFloatingButton(windowWidth - 80, 80, '?', ()=>{
 	// display/hide rules
@@ -51,9 +53,9 @@ const rulesButton = new BFloatingButton(windowWidth - 80, 80, '?', ()=>{
 	}
 });
 
-const sortButton = new BFloatingButton(windowWidth - 80, windowHeight - 10, 'S', ()=>{
+const sortCards = () => {
 	cards = cards.sort((a,b)=>a-b);
-});
+}
 
 const nextButton = new BFloatingButton(1320, 540, "+", ()=>{
 	// put cards from talon...
@@ -64,11 +66,13 @@ const nextButton = new BFloatingButton(1320, 540, "+", ()=>{
 	});
 	cardTurn = 0;
 	nextButton.enabled = false;
+	nextButton.visible = false;
 	if( talon.length === 0 ) {
 		nextButton.visible = false;
 	}
 	resetButton.visible = !canPlay();
 	deltaY = [randomInt(5),randomInt(8),randomInt(5),randomInt(5),randomInt(7),randomInt(5),randomInt(5),randomInt(9)];
+	sortCards();
 });
 
 const resetButton = new BButton(130, 580, "Reset", ()=>{
@@ -83,9 +87,11 @@ function initUI() {
 	musicButton.setTextSize(50);
 	musicButton.enabled = false;
 	musicButton.checked = false;
+	sortButton = new BImageBorderButton( windowWidth - 70,  windowHeight - 70, spritesheet.getImage('sort', 0), sortCards);
 	const menu = [nextButton, resetButton, sortButton, rulesButton]; // speakerButton, musicButton ];
 	uiManager.setUI(menu);
 	nextButton.enabled = false;
+	nextButton.visible = false;
 	resetButton.visible = false;
 }
 
@@ -150,13 +156,14 @@ function drawGame() {
 		const stackY = 100;
 		drawCard(stackX, stackY, s[s.length-1]);
 	});
-
+	
+	// draw talon
 	if( talon.length > 0 ) {
-		drawCard(1400, 340, "");
+		drawCard(1400, 240, "");
 		noStroke();
 		fill(250);
 		textAlign(LEFT, BOTTOM);
-		text(talon.length,1400,320);
+		text(talon.length,1400,220);
 	}
 
 	if( resetButton.visible ) {
@@ -194,6 +201,7 @@ function initGame() {
 	for( let i=0; i < 8; i++ ) {
 		cards.push( talon.shift() );
 	}
+	sortCards();
 	stacks = [[],[],[],[]];
 	cardTurn = 0;
 }
@@ -214,8 +222,7 @@ function drawLoading() {
         initGame();
 		textAlign(LEFT, BASELINE);
 		uiManager.addLogger('The Game');
-		uiManager.addLogger('Press S to sort');
-		uiManager.addLogger('Press + for more cards');
+		//uiManager.addLogger('Press S to sort');
 	}
 }
 
@@ -288,7 +295,7 @@ function mousePressed() {
 	}
 	if( cards[cardIndex] > 0 ) {
 		clickedCard = cards[cardIndex];
-		uiManager.addLogger(`card ${clickedCard} has been selected`)
+		//uiManager.addLogger(`card ${clickedCard} has been selected`)
 	}
 }
 
@@ -360,6 +367,8 @@ function putCardOnStack(card, stack) {
 	cardTurn++;
 	if( cardTurn > 1 ) {
 		nextButton.enabled = true;
+		nextButton.visible = true;
+		//uiManager.addLogger('Press + for more cards');
 	}
 	resetButton.visible = !canPlay();
 }
