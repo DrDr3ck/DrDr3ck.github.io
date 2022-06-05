@@ -92,6 +92,7 @@ function setup() {
 
 	soundManager.addSound('place_pawn', './place_pawn.mp3', 1.);
 	soundManager.addSound('place_tile', './place_tile.wav', 1.);
+	soundManager.addSound('cannot_place_tile', './cannot_place_tile.wav', 1.);
 
     frameRate(20);
 
@@ -286,6 +287,16 @@ function tileClicked() {
 	return null;
 }
 
+function nextTurn() {
+	board.lastChosenCardIndex = board.curCardClickedIndex;
+	board.nextTurn();
+	gameState = CHOOSECARD;
+	if( board.curCards.length === 0 ) {
+		curState = GAME_OVER_STATE;
+		gameState = GAMEOVER;
+	}
+}
+
 function mouseClicked() {
 	if( displayRules ) {
 		displayRules = !displayRules;
@@ -302,24 +313,31 @@ function mouseClicked() {
 
 	if( gameState === CHOOSECARD ) {
 		board.curCardClickedIndex = cardClicked();
-		if( board.curCardClickedIndex >= 0 && board.curCardClickedIndex <= 3-board.lastChosenCardIndex && board.curCardClickedIndex !== board.brunoCardClickedIndex ) {
-			gameState = PLACECARD;
+		if(
+			board.curCardClickedIndex >= 0 &&
+			board.curCardClickedIndex <= 3-board.lastChosenCardIndex &&
+			board.curCardClickedIndex !== board.brunoCardClickedIndex
+		) {
 			board.brunoCardClickedIndex = board.curCardClickedIndex === 2 ? 3 : 2;
-			soundManager.playSound('place_tile');
+			// check if card can be placed. if not, we loose the card for this turn
+			if( board.canPlaceCard() ) {
+				gameState = PLACECARD;
+				soundManager.playSound('place_tile');
+			} else {
+				// cannot place this tile
+				uiManager.addLogger("Cannot place this card");
+				soundManager.playSound('cannot_place_tile');
+				nextTurn();
+			}
 		} else {
 			board.curCardClickedIndex = -1;
 		}
 	} else if( gameState === PLACECARD ) {
 		const tilePosition = tileClicked();
 		if( tilePosition && board.tryPlaceCard(tilePosition) ) {
-			board.lastChosenCardIndex = board.curCardClickedIndex;
-			board.nextTurn();
+			board.placeCardOnTile(tilePosition);
 			soundManager.playSound('place_pawn');
-			gameState = CHOOSECARD;
-			if( board.curCards.length === 0 ) {
-				curState = GAME_OVER_STATE;
-				gameState = GAMEOVER;
-			}
+			nextTurn();
 		}
 	}
 

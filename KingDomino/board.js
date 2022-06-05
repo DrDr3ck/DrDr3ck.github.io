@@ -194,6 +194,36 @@ class Board {
         this.cards.push(new Card(index, {type: type1, value: value1}, {type: type2, value: value2}));
     }
 
+    canPlaceCard() {
+        const card = this.getCurCard();
+        for( let j=0; j < 5; j++ ) {
+            for( let i=0; i < 5; i++ ) {
+                const tilePosition = {X: i, Y: j}
+                let result = false;
+                if( this.tryPlaceCard(tilePosition) ) {
+                    result = true;
+                }
+                card.position = 1;
+                if( this.tryPlaceCard(tilePosition) ) {
+                    result = true;
+                }
+                card.position = 2;
+                if( this.tryPlaceCard(tilePosition) ) {
+                    result = true;
+                }
+                card.position = 3;
+                if( this.tryPlaceCard(tilePosition) ) {
+                    result = true;
+                }
+                if( result ) {
+                    card.position = 0;
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     tryPlaceCard(tilePosition) {
         const card = this.getCurCard();
         if( card.position === 0 && tilePosition.X === 4 ) {
@@ -240,11 +270,31 @@ class Board {
             this.canPlaceTile(tilePosition.X, tilePosition.Y, card.tiles[0]) ||
             this.canPlaceTile(tilePosition.X+deltaX, tilePosition.Y+deltaY, card.tiles[1])
         ) {
-            this.tiles[tilePosition.Y][tilePosition.X] = card.tiles[0];
-            this.tiles[tilePosition.Y+deltaY][tilePosition.X+deltaX] = card.tiles[1]
             return true;
         }
         return false;    
+    }
+
+    placeCardOnTile(tilePosition) {
+        const card = this.getCurCard();
+        let deltaX = 0;
+        let deltaY = 0;
+        switch(card.position) {
+            case 0:
+                deltaX = 1;
+                break;
+            case 1:
+                deltaY = 1;
+                break;
+            case 2:
+                deltaX = -1;
+                break;
+            case 3:
+                deltaY = -1
+                break;
+        }
+        this.tiles[tilePosition.Y][tilePosition.X] = card.tiles[0];
+        this.tiles[tilePosition.Y+deltaY][tilePosition.X+deltaX] = card.tiles[1]
     }
 
     getTile(X,Y) {
