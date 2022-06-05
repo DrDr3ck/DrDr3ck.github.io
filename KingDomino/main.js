@@ -30,6 +30,8 @@ let board = null;
 function preload() {
 	spritesheet.addSpriteSheet('back', './back.png', 300, 150);
 	spritesheet.addSpriteSheet('meeple', './meeple.png', 150, 150);
+	spritesheet.addSpriteSheet('rules', './rules.jpg', 950, 780);
+	spritesheet.addSpriteSheet('rules_chart', './rules_chart.jpg', 400, 356);
 }
 
 function musicClicked() {
@@ -67,11 +69,11 @@ const rulesButton = new BFloatingButton(windowWidth - 70, 70, '?', ()=>{
 });
 
 function initUI() {
-	const isSpeakerOn = localStorage.getItem(speakerStorageKey);
-    speakerButton.setTextSize(50);
+	speakerButton.setTextSize(50);
 	rulesButton.setTextSize(50);
 	musicButton.enabled = false;
 	musicButton.checked = false;
+	const isSpeakerOn = localStorage.getItem(speakerStorageKey);
 	if( isSpeakerOn === "off" ) {
 		speakerButton.checked = false;
 		soundManager.mute(true);
@@ -87,8 +89,6 @@ function setup() {
 
 	spritesheet.addSpriteSheet('players', './players.png', 150, 150);
 	spritesheet.addSpriteSheet('tiles', './tiles.png', 150, 150);
-	spritesheet.addSpriteSheet('rules', './rules.jpg', 950, 780);
-	spritesheet.addSpriteSheet('rules_chart', './rules_chart.jpg', 400, 356);
 
 	soundManager.addSound('place_pawn', './place_pawn.mp3', 1.);
 	soundManager.addSound('place_tile', './place_tile.wav', 1.);
