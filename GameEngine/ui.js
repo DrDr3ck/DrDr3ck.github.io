@@ -348,7 +348,6 @@ class BFloatingButton extends BButtonTextBase {
 		}
 		const factor = this.enabled ? 1 : 1.5;
 		fill(this.color.r*factor, this.color.g*factor, this.color.b*factor);
-		fill(this.color.r*factor, this.color.g*factor, this.color.b*factor);
 		ellipse(this.x + this.w / 2, this.y - this.h / 2, this.w + extend, this.h + extend);
 
 		push();
@@ -402,6 +401,31 @@ class BImageButton extends BInteractiveButtonBase {
 			image(this.img, this.x, this.y, this.w*this.scale, this.h*this.scale, 0, 0, this.w, this.h);
 		}
 		pop();
+	}
+}
+
+class BImageBorderButton extends BImageButton {
+	constructor(x, y, img, callback) {
+		super(x, y, img, callback);
+		this.color= {r: 9, g: 47, b: 18};
+	}
+
+	doDraw() {
+		let extend = 0;
+		push();
+		if (this.over) {
+			stroke(188, 255, 219);
+			strokeWeight(3);
+			extend = 16;
+		} else {
+			stroke(29, 105, 62);
+			strokeWeight(1);
+		}
+		const factor = this.enabled ? 1 : 1.5;
+		fill(this.color.r*factor, this.color.g*factor, this.color.b*factor);
+		rect(this.x-extend/2, this.y-extend/2, this.w + extend, this.h + extend, 5);
+		pop();
+		super.doDraw();
 	}
 }
 
