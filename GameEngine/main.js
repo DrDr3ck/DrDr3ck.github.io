@@ -24,20 +24,34 @@ function musicClicked() {
 	// TODO
 }
 
+const speakerStorageKey = 'DrDr3ck/GameEngine/Speaker';
 function speakerClicked() {
 	speakerButton.checked = !speakerButton.checked;
 	soundManager.mute(!speakerButton.checked);
+	localStorage.setItem(speakerStorageKey, speakerButton.checked?"on":"off");
+}
+
+function startClicked() {
+	curState = GAME_PLAY_STATE;
+	uiManager.setUI([ speakerButton, musicButton ]);
+	uiManager.addLogger("Start game");
 }
 
 const speakerButton = new BFloatingSwitchButton(windowWidth - 70 - 10 - 70, 70, '\uD83D\uDD0A', speakerClicked);
 const musicButton = new BFloatingSwitchButton(windowWidth - 70, 70, '\uD83C\uDFB6', musicClicked);
+const startButton = new BButton(80, windowHeight - 50 - 200, "START", startClicked);
 
 function initUI() {
     speakerButton.setTextSize(50);
 	musicButton.setTextSize(50);
 	musicButton.enabled = false;
 	musicButton.checked = false;
-	const menu = [ speakerButton, musicButton ];
+	const isSpeakerOn = localStorage.getItem(speakerStorageKey);
+	if( isSpeakerOn === "off" ) {
+		speakerButton.checked = false;
+		soundManager.mute(true);
+	}
+	const menu = [ speakerButton, startButton, musicButton ];
 	uiManager.setUI(menu);
 }
 
@@ -96,10 +110,12 @@ function draw() {
     uiManager.update(elapsedTime);
 
     // draw game
+	if( curState === GAME_START_STATE ) {
+	}
 	if (curState === GAME_PLAY_STATE) {
 		updateGame(elapsedTime);
+		drawGame();
 	}
-	drawGame();
 
     uiManager.draw();
 	if (toolManager.currentTool) {
