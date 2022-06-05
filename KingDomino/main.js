@@ -227,6 +227,8 @@ function draw() {
 		text(gameState, 1170, 175);
 		text(board.points, 1200, 375);
 		text(board.brunoPoints, 1200, 570);
+		spritesheet.drawSprite("meeple", 0, 1220, 225);
+		spritesheet.drawSprite("meeple", 1, 1220, 425);
 		pop();
 	}
 

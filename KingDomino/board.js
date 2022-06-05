@@ -244,7 +244,15 @@ class Board {
             this.tiles[tilePosition.Y+deltaY][tilePosition.X+deltaX] = card.tiles[1]
             return true;
         }
-        return false;
+        return false;    
+    }
+
+    getTile(X,Y) {
+        if( X < 0 ) return null;
+        if( Y < 0 ) return null;
+        if( X > 4 ) return null;
+        if( Y > 4 ) return null;
+        return this.tiles[Y][X];
     }
 
     getTileType(X,Y) {
@@ -257,7 +265,6 @@ class Board {
 
     canPlaceTile(X, Y, tile) {
         const types = [ this.getTileType(X-1,Y), this.getTileType(X+1,Y), this.getTileType(X,Y-1), this.getTileType(X,Y+1)];
-        console.log(types);
         return types.some(t=>t==="chateau"||t===tile.type);
     }
 
@@ -273,37 +280,67 @@ class Board {
         this.curCards.sort((card1, card2)=>card1.index > card2.index);
     }
 
+    getSameTypedNeighboors(X,Y,type) {
+        const neighboors = [];
+        let tile = this.getTile(X-1,Y);
+        if( tile && tile.type === type ) {
+            neighboors.push({i: X-1, j: Y, coef: tile.value});
+        }
+        tile = this.getTile(X+1,Y);
+        if( tile && tile.type === type ) {
+            neighboors.push({i: X+1, j: Y, coef: tile.value});
+        }
+        tile = this.getTile(X,Y-1);
+        if( tile && tile.type === type ) {
+            neighboors.push({i: X, j: Y-1, coef: tile.value});
+        }
+        tile = this.getTile(X,Y+1);
+        if( tile && tile.type === type ) {
+            neighboors.push({i: X, j: Y+1, coef: tile.value});
+        }
+        return neighboors;
+    }
+
     computePoints() {
         const points = [];
         const legend = {};
         const legendNames = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         let curLegendIndex = -1;
-        let curTotal = 0;
         for( let i=0; i < 5; i++ ) {
-            points.push([0,0,0,0,0]);
+            points.push(["0","0","0","0","0"]);
         }
         for( let j=0; j < 5; j++ ) {
             for( let i=0; i < 5; i++ ) {
-                if( points[i][j] !== 0 ) {
+                if( points[j][i] !== "0" ) {
                     continue;
                 }
-                if( this.tiles[i][j].type === "none" ) {
+                if( this.tiles[j][i].type === "none" ) {
                     continue;
                 }
                 // start a new region
                 curLegendIndex++;
-                curTotal = 0;
-                points[i][j] = legendNames[curLegendIndex];
-                // TODO: get region !!
-
-                legend[legendNames[curLegendIndex]] = curTotal;
+                let coef = this.tiles[j][i].value;
+                let totalCards = 1;
+                points[j][i] = legendNames[curLegendIndex];
+                // get region !!
+                const curType = this.tiles[j][i].type;
+                const neighboors = this.getSameTypedNeighboors(i,j,curType);
+                while( neighboors.length > 0 ) {
+                    const curNeighbor = neighboors.shift();
+                    if( points[curNeighbor.j][curNeighbor.i] === "0" ) {
+                        points[curNeighbor.j][curNeighbor.i] = legendNames[curLegendIndex];
+                        totalCards++;
+                        coef += curNeighbor.coef;
+                        neighboors.push(...this.getSameTypedNeighboors(curNeighbor.i,curNeighbor.j,curType));
+                    }
+                }
+                legend[legendNames[curLegendIndex]] = coef * totalCards;
             }
         }
         let total = 0;
         for( const l in legend ) {
             total += legend[l];
         }
-        console.log(total);
         return total;
     }
 
