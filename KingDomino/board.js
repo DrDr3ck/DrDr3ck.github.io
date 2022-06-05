@@ -76,6 +76,7 @@ class Board {
         this.cards = [];
         this.curCards = [];
         this.turn = 0;
+        this.lastChosenCardIndex = 0;
         this.curCardClickedIndex = -1;
         this.brunoCardClickedIndex = -1;
         this.playerFirst = true;
@@ -84,6 +85,7 @@ class Board {
 
         this.brunoTiles = [];
         this.brunoPoints = 0;
+        this.points = 0;
     }
 
     moveBoard(keyCode) {
@@ -245,9 +247,18 @@ class Board {
         return false;
     }
 
+    getTileType(X,Y) {
+        if( X < 0 ) return "none";
+        if( Y < 0 ) return "none";
+        if( X > 4 ) return "none";
+        if( Y > 4 ) return "none";
+        return this.tiles[Y][X].type;
+    }
+
     canPlaceTile(X, Y, tile) {
-        // TODO: get neighboors
-        return true;
+        const types = [ this.getTileType(X-1,Y), this.getTileType(X+1,Y), this.getTileType(X,Y-1), this.getTileType(X,Y+1)];
+        console.log(types);
+        return types.some(t=>t==="chateau"||t===tile.type);
     }
 
     startTurn() {
@@ -260,6 +271,40 @@ class Board {
             this.curCards.push(this.cards.pop());
         }
         this.curCards.sort((card1, card2)=>card1.index > card2.index);
+    }
+
+    computePoints() {
+        const points = [];
+        const legend = {};
+        const legendNames = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        let curLegendIndex = -1;
+        let curTotal = 0;
+        for( let i=0; i < 5; i++ ) {
+            points.push([0,0,0,0,0]);
+        }
+        for( let j=0; j < 5; j++ ) {
+            for( let i=0; i < 5; i++ ) {
+                if( points[i][j] !== 0 ) {
+                    continue;
+                }
+                if( this.tiles[i][j].type === "none" ) {
+                    continue;
+                }
+                // start a new region
+                curLegendIndex++;
+                curTotal = 0;
+                points[i][j] = legendNames[curLegendIndex];
+                // TODO: get region !!
+
+                legend[legendNames[curLegendIndex]] = curTotal;
+            }
+        }
+        let total = 0;
+        for( const l in legend ) {
+            total += legend[l];
+        }
+        console.log(total);
+        return total;
     }
 
     computeBrunoPoints() {
@@ -290,10 +335,11 @@ class Board {
         this.brunoTiles.push(brunoCard.tiles[1]);
 
         this.brunoPoints = this.computeBrunoPoints();
+        this.points = this.computePoints();
         
         this.startTurn();
 
-        this.playerFirst = this.curCardClickedIndex < this.brunoCardClickedIndex;
+        this.playerFirst = true; // always first: this.curCardClickedIndex < this.brunoCardClickedIndex;
         this.curCardClickedIndex = -1;
         this.brunoCardClickedIndex = -1;
         if( !this.playerFirst ) {
