@@ -168,9 +168,9 @@ function drawGame() {
 
 	if( resetButton.visible ) {
 		textAlign(CENTER, BOTTOM);
-		text("End of Game", windowWidth/2, 560);
+		text("End of Game", windowWidth/2, 520);
 		textAlign(CENTER, TOP);
-		text(`(${talon.length + cards.filter(c=>c>0).length} points)`, windowWidth/2, 570);
+		text(`(${talon.length + cards.filter(c=>c>0).length} points)`, windowWidth/2, 530);
 	}
 
 	if( clickedCard ) {
