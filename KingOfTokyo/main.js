@@ -17,6 +17,8 @@ let curState = GAME_LOADING_STATE;
 let toggleDebug = false;
 let lastTime = 0;
 
+let board = null;
+
 const diceButtons = [];
 
 function preload() {
@@ -70,18 +72,27 @@ function startClicked() {
 		}));
 	}
 	curState = GAME_PLAY_STATE;
-	uiManager.setUI([ speakerButton, rulesButton, roleDiceButton, ...diceButtons ]);
+	uiManager.setUI([ speakerButton, rulesButton, roleDiceButton, ...diceButtons, settingsButton, resolveButton ]);
 	diceButtons.forEach(d=>{
 		d.visible = false;
 		d.used = false;
 	});
+	resolveButton.visible = false;
+	nextMonster();
 	uiManager.addLogger("Start game");
+}
+
+function nextMonster() {
+	board.nextMonster();
+	resolveButton.visible = false;
+	roleDiceButton.enabled = true;
 }
 
 let displayRules = false;
 
 const speakerButton = new BFloatingSwitchButton(windowWidth - 70 - 10 - 70, 70, '\uD83D\uDD0A', speakerClicked);
 const musicButton = new BFloatingSwitchButton(windowWidth - 70, 70, '\uD83C\uDFB6', musicClicked);
+const settingsButton = new BFloatingButton(windowWidth - 70, windowHeight - 10, '\u273C', ()=>{});
 const startButton = new BButton(80, windowHeight - 50 - 200, "START", startClicked);
 const rulesButton = new BFloatingButton(windowWidth - 70, 70, '?', ()=>{
 	// display/hide rules
@@ -100,12 +111,21 @@ const roleDiceButton = new BFloatingButton(831-249, 80, '\u2685', ()=>{
 			d.setValue(Math.floor(Math.random()*6))
 		}
 	});
+	resolveButton.visible = true;
+	board.role--;
+	if( board.role === 0 ) {
+		roleDiceButton.enabled = false;
+	}
+});
+const resolveButton = new BButton(430, 370, "RESOLVE", ()=>{
+	nextMonster();
 });
 
 function initUI() {
     speakerButton.setTextSize(50);
 	rulesButton.setTextSize(50);
 	musicButton.setTextSize(50);
+	settingsButton.setTextSize(50);
 	musicButton.enabled = false;
 	musicButton.checked = false;
 	const isSpeakerOn = localStorage.getItem(speakerStorageKey);
@@ -113,7 +133,7 @@ function initUI() {
 		speakerButton.checked = false;
 		soundManager.mute(true);
 	}
-	const menu = [ speakerButton, startButton, rulesButton ];
+	const menu = [ speakerButton, startButton, rulesButton, settingsButton ];
 	uiManager.setUI(menu);
 }
 
@@ -140,29 +160,50 @@ function updateGame(elapsedTime) {
 function drawGame() {
 	spritesheet.drawScaledSprite('board', 0, 10, 10, 0.85);
 
+	noFill();
+	strokeWeight(3);
+	stroke(255,228,180);
 	const monsterX = 1100-249;
 	spritesheet.drawScaledSprite('fiches', 0, monsterX, 10, 0.75);
+	if( board.curMonsterIndex === 0 ) {
+		rect(monsterX, 10, 435*.75, 344*.75);
+	}
+	if( board.monsters[0].inTokyo ) {
+		spritesheet.drawScaledSprite('monsters',0,6,130,0.75);
+	}
 	spritesheet.drawScaledSprite('fiches', 1, monsterX, 10+344*.75+5, 0.75);
+	if( board.curMonsterIndex === 1 ) {
+		rect(monsterX, 10+344*.75+5, 435*.75, 344*.75);
+	}
+	if( board.monsters[1].inTokyo ) {
+		spritesheet.drawScaledSprite('monsters',1,6,130,0.75);
+	}
 	spritesheet.drawScaledSprite('fiches', 2, monsterX, 10+344*2*.75+10, 0.75);
+	if( board.curMonsterIndex === 2 ) {
+		rect(monsterX, 10+344*2*.75+10, 435*.75, 344*.75);
+	}
+	if( board.monsters[2].inTokyo ) {
+		spritesheet.drawScaledSprite('monsters',2,6,130,0.75);
+	}
+	strokeWeight(1);
 
-	// spritesheet.drawScaledSprite('monsters',0,6,130,0.75);
 	textAlign(CENTER, CENTER);
 	textSize(15);
 	stroke(250);
 	fill(51);
-	text("0", 942, 30);
-	text("0", 942, 292);
-	text("0", 942, 554);
+	text(board.monsters[0].victory, 942, 30);
+	text(board.monsters[1].victory, 942, 292);
+	text(board.monsters[2].victory, 942, 554);
 
 	stroke(51);
 	fill(250);
-	text("10", 1115, 250);
-	text("10", 1115, 510);
-	text("10", 1124, 773);
+	text(board.monsters[0].health, 1115, 250);
+	text(board.monsters[1].health, 1115, 510);
+	text(board.monsters[2].health, 1124, 773);
 }
 
 function initGame() {
-
+	board = new Board();
 }
 
 function drawLoading() {
@@ -205,16 +246,16 @@ function draw() {
 		drawGame();
 	}
 
-	if( displayRules ) {
-		background(51, 51, 51, 200);
-		spritesheet.drawSprite('rules', 0, windowWidth/2-692/2, windowHeight/2-305/2);
-	}
-
     uiManager.draw();
 	if (toolManager.currentTool) {
 		toolManager.currentTool.draw();
 	}
     jobManager.draw();
+
+	if( displayRules ) {
+		background(51, 51, 51, 200);
+		spritesheet.drawSprite('rules', 0, windowWidth/2-692/2, windowHeight/2-305/2);
+	}
     
     lastTime = currentTime;
 }
