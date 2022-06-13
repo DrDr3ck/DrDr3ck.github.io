@@ -5,6 +5,7 @@ class UIManager {
 		this.currentMenu = null;
 		this.currentDialog = null;
 		this.loggerContainer = null;
+		this.animations = [];
 	}
 
 	addLogger(text, time = 0) {
@@ -24,6 +25,10 @@ class UIManager {
 		this.currentUI = [ ...components ];
 		this.currentUI.forEach((c) => (c.visible = true));
 		this.setMenu(null);
+	}
+
+	addAnimations(animations) {
+		this.animations.push(animations);
 	}
 
 	setDialog(dialog) {
@@ -76,10 +81,14 @@ class UIManager {
 		this.currentUI.forEach((c) => {
 			c.draw();
 		});
+		this.animations.forEach(animations => animations.forEach(animation => animation.draw()));
 		if (this.currentDialog) {
 			this.currentDialog.draw();
 		}
+		push();
+		textAlign(LEFT, BOTTOM);
 		this.loggerContainer.draw();
+		pop();
 	}
 
 	mouseClicked() {
@@ -120,6 +129,14 @@ class UIManager {
 		this.components.forEach((c) => {
 			c.update(elapsedTime);
 		});
+		if( this.animations.length > 0 ) {
+			let animations = this.animations[0];
+			animations = animations.filter(animation => animation.time > 0);
+			animations.forEach(animation => animation.update(elapsedTime));
+			if( animations.length === 0 ) {
+				this.animations.shift();
+			}
+		}
 		if (this.currentDialog) {
 			this.currentDialog.update(elapsedTime);
 		}
@@ -786,6 +803,59 @@ class Logger {
 		const nbLetters = Math.round(this.text.length * percent);
 		const text = this.text.slice(0, nbLetters);
 		drawText(text, x, y);
+	}
+}
+
+function dist(x1, y1, x2, y2) {
+	return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2));
+}
+
+class Animation {
+	constructor(src, dst, speed, callback=null) {
+		this.sourcePosition = src;
+		this.destinationPosition = dst;
+		this.speed = speed; // nb pixels per sec.
+		this.x = src.X;
+		this.y = src.Y;
+		const distance = dist(src.X, src.Y, dst.X, dst.Y);
+		this.originTime = 100 * (distance / this.speed);
+		this.time = this.originTime;
+		this.callback = callback;
+	}
+
+	update(elapsedTime) {
+		this.time = Math.max(0, this.time - elapsedTime);
+		const coef = this.time === 0 ? 0 : this.time / this.originTime;
+		this.x = this.sourcePosition.X + (this.destinationPosition.X-this.sourcePosition.X)*(1-coef);
+		this.y = this.sourcePosition.Y + (this.destinationPosition.Y-this.sourcePosition.Y)*(1-coef);
+		if( this.time === 0 && this.callback ) {
+			this.callback();
+			this.callback = null;
+		}
+	}
+
+	draw() {
+		push();
+		this.doDraw();
+		pop();
+	}
+}
+
+class MoveAnimation extends Animation {
+	constructor(src, dst, speed, img, callback) {
+		super(src, dst, speed, callback);
+		this.img = img;
+		this.w = img.width;
+		this.h = img.height;
+		this.scale = 1;
+	}
+
+	doDraw() {
+		if( this.scale === 1 ) {
+			image(this.img, this.x, this.y, this.w, this.h);
+		} else {
+			image(this.img, this.x, this.y, this.w*this.scale, this.h*this.scale, 0, 0, this.w, this.h);
+		}
 	}
 }
 
