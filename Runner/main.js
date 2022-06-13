@@ -497,6 +497,15 @@ function draw() {
 	lastTime = currentTime;
 }
 
+function touchStarted() {
+	if (curState === GAME_PLAY_STATE && mouseY > height - groundLevel) {
+		if (sprite.jump() && speakerButton.checked) {
+			soundManager.playSound('jump');
+		}
+	}
+	return false;
+}
+
 function mouseClicked() {
 	if (curState === GAME_PLAY_STATE && mouseY > height - groundLevel) {
 		if (sprite.jump() && speakerButton.checked) {
