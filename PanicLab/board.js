@@ -133,6 +133,7 @@ class Board {
     }
 
     roleDices() {
+        soundManager.playSound('dice-rolling');
         if( this.dices.length === 0 ) {
             this.dices.push(new Dice("forme"));
             this.dices.push(new Dice("color"));

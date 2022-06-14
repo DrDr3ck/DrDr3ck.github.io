@@ -53,8 +53,6 @@ const roleDiceButton = new BFloatingButton(666, 80, '\u2685', ()=>{
 
 const resetDice = () => {
 	roleDiceButton.enabled = true;
-	selectedCardIndex = -1;
-	monsterIndex = -1;
 }
 
 function initUI() {
@@ -73,11 +71,16 @@ function initUI() {
 
 function setup() {
     initUI();
+	angleMode(DEGREES);
 	canvas = createCanvas(windowWidth, windowHeight);
     canvas.parent('canvas');
 
 	spritesheet.addSpriteSheet('cards', './cards.png', 205, 205);
 	spritesheet.addSpriteSheet('dices', './dices.png', 70, 70);
+
+	soundManager.addSound('dice-rolling', './dice-rolling.wav', 1);
+	soundManager.addSound('loose', './loose.wav', 1);
+	soundManager.addSound('win', './win.wav', 1);
 
     frameRate(60);
 
@@ -85,7 +88,17 @@ function setup() {
 }
 
 function updateGame(elapsedTime) {
-
+	if( flashDown ) {
+        flash-=2;
+    } else {
+        flash+=2;
+    }
+    if( flash < 150 ) {
+        flashDown = false;
+    }
+    if( flash > 250 ) {
+        flashDown = true;
+    }
 }
 
 let board = null;
@@ -96,12 +109,39 @@ const cardPositions =
 	[
 		{X:5,Y:Y100}, {X:220-75,Y:Y100}, {X:360-75,Y:Y100}, {X:500-75,Y:Y100}, {X:640-75,Y:Y100},
 		{X:780-75,Y:Y100}, {X:920-75,Y:Y100}, {X:1060-75,Y:Y100}, {X:1200-75,Y:Y100}, {X:1340-75,Y:Y100},
+
+		{X:1340+40+20-12,Y:240}, {X:1340+20+40-22,Y:380}, {X:1340+20+40-32,Y:520}, // 90
+
+		{X:1200+133,Y:Y600+133}, {X:1060+133,Y:Y600+133}, {X:920+133,Y:Y600+133}, {X:780+133,Y:Y600+133}, {X:640+133,Y:Y600+133}, // 180
+		{X:500+133,Y:Y600+133}, {X:360+133,Y:Y600+133}, {X:220+133,Y:Y600+133}, {X:80+133,Y:Y600+133},
+		
+		{X:80-20,Y:520+133}, {X:80-40,Y:380+133}, {X:80-60,Y:240+133}, // 270
+	];
+const nonRotatedCardPositions = 
+	[
+		{X:5,Y:Y100}, {X:220-75,Y:Y100}, {X:360-75,Y:Y100}, {X:500-75,Y:Y100}, {X:640-75,Y:Y100},
+		{X:780-75,Y:Y100}, {X:920-75,Y:Y100}, {X:1060-75,Y:Y100}, {X:1200-75,Y:Y100}, {X:1340-75,Y:Y100},
 		{X:1340-75-10,Y:240}, {X:1340-75-20,Y:380}, {X:1340-75-30,Y:520}, {X:1200,Y:Y600}, {X:1060,Y:Y600}, {X:920,Y:Y600}, {X:780,Y:Y600}, {X:640,Y:Y600},
 		{X:500,Y:Y600}, {X:360,Y:Y600}, {X:220,Y:Y600}, {X:80,Y:Y600}, {X:80-20,Y:520}, {X:80-40,Y:380}, {X:80-60,Y:240},
-	]
+	];
+
+let flash = 250;
+let flashDown = true;	
 
 function drawGame() {
-	cardPositions.forEach((c,i)=>spritesheet.drawScaledSprite('cards', board.cards[i].cardIndex, c.X, c.Y, 0.65));
+	cardPositions.forEach((c,i)=>{
+		push();
+		translate(c.X, c.Y);
+		if( i >= 10 && i <= 12 ) {
+			rotate(90);
+		} else if( i >= 13 && i <= 21 ) {
+			rotate(180);
+		} else if( i >= 22 && i <= 24 ) {
+			rotate(270);
+		}
+		spritesheet.drawScaledSprite('cards', board.cards[i].cardIndex, 0, 0, 0.65)
+		pop();
+	});
 
 	noFill();
 	stroke(0);
@@ -110,6 +150,17 @@ function drawGame() {
 		spritesheet.drawScaledSprite('dices', board.dices[i].getFace().index, 460+100*i, 380, 1)
 		rect(460+100*i, 380,70, 70, 5);
 	});
+
+	if( selectedCardIndex !== -1 && monsterIndex !== -1 ) {
+		strokeWeight(8);
+		const select = nonRotatedCardPositions[selectedCardIndex];
+		stroke(255,228,180,flash);
+		rect(select.X-3, select.Y-3, 205*0.65+6, 205*0.65+6, 12);
+
+		const monster = nonRotatedCardPositions[monsterIndex];
+		stroke(255,80,80,flash);
+		rect(monster.X-3, monster.Y-3, 205*0.65+6, 205*0.65+6, 12);
+	}
 }
 
 function initGame() {
@@ -151,7 +202,19 @@ function draw() {
 
     // draw game
 	if( curState === GAME_START_STATE ) {
-		cardPositions.forEach(c=>spritesheet.drawScaledSprite('cards', 17, c.X, c.Y, 0.65));
+		cardPositions.forEach((c,i)=>{
+			push();
+			translate(c.X, c.Y);
+			if( i >= 10 && i <= 12 ) {
+				rotate(90);
+			} else if( i >= 13 && i <= 21 ) {
+				rotate(180);
+			} else if( i >= 22 && i <= 24 ) {
+				rotate(270);
+			}
+			spritesheet.drawScaledSprite('cards', 17, 0, 0, 0.65)
+			pop();
+		});
 	}
 	if (curState === GAME_PLAY_STATE) {
 		updateGame(elapsedTime);
@@ -171,13 +234,23 @@ function mouseClicked() {
 	if( toggleDebug ) {
 		uiManager.addLogger(`X=${mouseX}, Y=${mouseY}`);
 	}
-	const cardWidth = 205*0.65;
-	cardPositions.forEach((c,i)=>{
-		if( mouseX > c.X && mouseX < c.X+cardWidth && mouseY > c.Y && mouseY < c.Y+cardWidth ) {
-			uiManager.addLogger(board.cards[i].type);
-			resetDice();
-		}
-	});
+	if( selectedCardIndex === -1 ) {
+		const cardWidth = 205*0.65;
+		nonRotatedCardPositions.forEach((c,i)=>{
+			if( mouseX > c.X && mouseX < c.X+cardWidth && mouseY > c.Y && mouseY < c.Y+cardWidth ) {
+				//uiManager.addLogger(board.cards[i].type);
+				selectedCardIndex = i;
+				if( monsterIndex === selectedCardIndex ) {
+					uiManager.addLogger("You win !!");
+					soundManager.playSound('win');
+				} else {
+					uiManager.addLogger("You loose !!");
+					soundManager.playSound('loose');
+				}
+				resetDice();
+			}
+		});
+	}
 	toolManager.mouseClicked();
 	uiManager.mouseClicked();
 	return false;
