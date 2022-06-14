@@ -503,6 +503,8 @@ function touchStarted() {
 			soundManager.playSound('jump');
 		}
 	}
+	toolManager.touchStarted();
+	uiManager.touchStarted();
 	return false;
 }
 

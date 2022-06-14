@@ -125,6 +125,10 @@ class UIManager {
 		return false;
 	}
 
+	touchStarted() {
+		return this.mouseClicked();
+	}
+
 	update(elapsedTime) {
 		this.components.forEach((c) => {
 			c.update(elapsedTime);

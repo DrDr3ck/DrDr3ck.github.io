@@ -18,6 +18,12 @@ class ToolManager {
 		this.currentTool.action();
 		return false;
 	}
+
+	touchStarted() {
+		if (!this.currentTool) return true;
+		this.currentTool.action();
+		return false;
+	}
 }
 
 class ToolBase {
