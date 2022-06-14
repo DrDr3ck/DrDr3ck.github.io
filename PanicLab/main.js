@@ -1,13 +1,16 @@
 const uiManager = new UIManager();
 const windowWidth = 1400;
 const windowHeight = 800;
-uiManager.loggerContainer = new LoggerContainer(windowWidth-300, windowHeight-100, 240, 100);
+uiManager.loggerContainer = new LoggerContainer(windowWidth-500, windowHeight-300, 240, 100);
 uiManager.loggerContainer.visible = true;
 
 const toolManager = new ToolManager();
 const jobManager = new JobManager();
 const soundManager = new SoundMgr();
 const spritesheet = new SpriteSheet();
+
+let selectedCardIndex = -1;
+let monsterIndex = -1;
 
 const GAME_LOADING_STATE = 0;
 const GAME_START_STATE = 1;
@@ -39,12 +42,20 @@ function startClicked() {
 
 const speakerButton = new BFloatingSwitchButton(windowWidth - 70 - 10 - 70, 70, '\uD83D\uDD0A', speakerClicked);
 const musicButton = new BFloatingSwitchButton(windowWidth - 70, 70, '\uD83C\uDFB6', musicClicked);
-const startButton = new BButton(80, windowHeight - 50 - 200, "START", startClicked);
+const startButton = new BButton(250, windowHeight - 50 - 200, "START", startClicked);
 
 const roleDiceButton = new BFloatingButton(666, 80, '\u2685', ()=>{
 	board.roleDices();
 	roleDiceButton.enabled = false;
+	selectedCardIndex = -1;
+	monsterIndex = board.getMonster();
 });
+
+const resetDice = () => {
+	roleDiceButton.enabled = true;
+	selectedCardIndex = -1;
+	monsterIndex = -1;
+}
 
 function initUI() {
     speakerButton.setTextSize(50);
@@ -92,7 +103,13 @@ const cardPositions =
 function drawGame() {
 	cardPositions.forEach((c,i)=>spritesheet.drawScaledSprite('cards', board.cards[i].cardIndex, c.X, c.Y, 0.65));
 
-	board.dices.forEach((d,i)=>spritesheet.drawScaledSprite('dices', board.dices[i].getFace().index, 460+100*i, 380, 1));
+	noFill();
+	stroke(0);
+	strokeWeight(3);
+	board.dices.forEach((d,i)=>{
+		spritesheet.drawScaledSprite('dices', board.dices[i].getFace().index, 460+100*i, 380, 1)
+		rect(460+100*i, 380,70, 70, 5);
+	});
 }
 
 function initGame() {
@@ -154,6 +171,13 @@ function mouseClicked() {
 	if( toggleDebug ) {
 		uiManager.addLogger(`X=${mouseX}, Y=${mouseY}`);
 	}
+	const cardWidth = 205*0.65;
+	cardPositions.forEach((c,i)=>{
+		if( mouseX > c.X && mouseX < c.X+cardWidth && mouseY > c.Y && mouseY < c.Y+cardWidth ) {
+			uiManager.addLogger(board.cards[i].type);
+			resetDice();
+		}
+	});
 	toolManager.mouseClicked();
 	uiManager.mouseClicked();
 	return false;

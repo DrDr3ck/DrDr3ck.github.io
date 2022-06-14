@@ -30,10 +30,9 @@ class PotionTile extends Tile {
 }
 
 class StartTile extends Tile {
-    constructor( index, color, direction=true) {
+    constructor( index, color) {
         super("start", index);
         this.color = color;
-        this.direction = direction;
     }
 }
 
@@ -64,7 +63,7 @@ class Dice {
                 index = this.face < 3 ? 4 : 5;
                 value = this.face < 3 ? "blue" : "red";
                 break;
-            case "color":
+            case "start":
             default:
                 index = this.face + 6;
                 value = "green";
@@ -74,7 +73,7 @@ class Dice {
                 if( this.face < 2 ) {
                     value = "yellow";
                 }
-                if( this.faces % 2 ) {
+                if( this.face % 2 ) {
                     // black
                     value = `${value}:black`;
                 } else {
@@ -83,7 +82,7 @@ class Dice {
                 }
                 break;
         }
-        return {index: index, value: "none"};
+        return {index: index, value: value};
     }
 }
 
@@ -141,6 +140,87 @@ class Board {
             this.dices.push(new Dice("start"));
         }
         shuffleArray(this.dices);
-        this.dices.forEach(d=>d.role());
+        this.dices.forEach(d=>{
+            d.role();
+            if( d.type === "texture" ) {
+                this.texture = d.getFace().value;
+            }
+            if( d.type === "forme" ) {
+                this.forme = d.getFace().value;
+            }
+            if( d.type === "color" ) {
+                this.color = d.getFace().value;
+            }
+            if( d.type === "start" ) {
+                this.increment = d.getFace().value.endsWith("white") ? 1 : 24;
+            }
+        });
+        
+    }
+
+    findStartTileIndex(start) {
+        return this.cards.findIndex(c=>c.type === "start" && start.startsWith(c.color));
+    }
+
+    getNext(index) {
+        return (index+this.increment)%25;
+    }
+
+    curCardType(index) {
+        return this.cards[index].type;
+    }
+
+    isMonster(index) {
+        const monsterCard = this.cards[index];
+        if( monsterCard.color === this.color && monsterCard.forme === this.forme && monsterCard.texture === this.texture ) {
+            return true;
+        }
+        return false;
+    }
+
+    getNextTunnel(index) {
+        let curIndex = this.getNext(index);
+        while( this.curCardType(curIndex) !== "tunnel" ) {
+            curIndex = this.getNext(curIndex);
+        }
+        return curIndex;
+    }
+
+    changeMonsterDef(index) {
+        switch( this.cards[index].potion ) {
+            case "texture":
+                this.texture = this.texture === "trait" ? "point" : "trait";
+                break;
+            case "forme":
+                this.forme = this.forme === "fantome" ? "limace" : "fantome";
+                break;
+            case "color":
+                this.color = this.color === "red" ? "blue" : "red";
+                break;
+        }
+    }
+
+    getMonster() {
+        // find starter tile
+        const start = this.dices.filter(d=>d.type === "start")[0].getFace();
+        let curIndex = this.findStartTileIndex(start.value);
+        let found = false;
+        while( !found ) {
+            curIndex = this.getNext(curIndex);
+            switch( this.curCardType(curIndex) ) {
+                case "monster":
+                    if( this.isMonster(curIndex) ) {
+                        found = true;
+                    }
+                    break;
+                case "tunnel":
+                    curIndex = this.getNextTunnel(curIndex);
+                    break;
+                case "potion":
+                    this.changeMonsterDef(curIndex);
+                    break;
+            }
+        }
+        return curIndex;
     }
 }
