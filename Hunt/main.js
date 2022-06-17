@@ -15,6 +15,8 @@ const GAME_OVER_STATE = 3;
 const GAME_NEXT_LEVEL_STATE = 4;
 let curState = GAME_LOADING_STATE;
 
+const FPS = 60;
+
 const playerStart = { X: 4, Y: 9 };
 let lastTime = 0;
 let firstMove = false;
@@ -85,8 +87,6 @@ function fight() {
 		}
 	}
 }
-
-const FPS = 60;
 
 function setup() {
 	initUI();

@@ -1,4 +1,4 @@
-class Animation {
+class MyAnimation {
 	constructor(time) {
 		this.initialTime = time;
 		this.currentTime = time;
@@ -16,7 +16,7 @@ class Animation {
 	}
 }
 
-class textAnimation extends Animation {
+class textAnimation extends MyAnimation {
 	constructor(text, fromPosition, toPosition, time) {
 		super(time);
 		this.fromPosition = fromPosition;
