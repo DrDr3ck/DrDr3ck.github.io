@@ -49,7 +49,7 @@ const startButton = new BButton(80, 80*5, "NEW GAME", ()=> {
 	startClicked();
 });
 
-const turnButton = new BButton(80, windowHeight - 50, "END OF TURN", ()=>{
+const endTurn = () => {
 	for( let j=0; j < board.tiles.length; j++ ) {
 		const row = board.tiles[j];
 		row.forEach(r=>{
@@ -81,7 +81,9 @@ const turnButton = new BButton(80, windowHeight - 50, "END OF TURN", ()=>{
 	}
 	const json = board.dump();
 	localStorage.setItem(`Nomad/board/${curSaveIndex}`, JSON.stringify(json));
-});
+}
+
+const turnButton = new BButton(80, windowHeight - 50, "END OF TURN", endTurn);
 
 let curSaveIndex = 1;
 
@@ -149,22 +151,25 @@ function setup() {
 function updateGame(elapsedTime) {
 }
 
+const tileX = 30;
+const tileY = 80;
+
 function drawGame() {
-	const X = 30;
-	const Y = 80;
+	
 	stroke(51);
+	// draw tiles
 	for( let j=0; j < board.tiles.length; j++ ) {
 		const row = board.tiles[j];
 		row.forEach((r,i)=>{
 			fill(r.color.r,r.color.g,r.color.b);
-			rect(X+tileSize*i, Y+tileSize*j, tileSize, tileSize);
+			rect(tileX+tileSize*i, tileY+tileSize*j, tileSize, tileSize);
 		});
 	}
 
 	fill(170,135,130);
 	stroke(151);
 	board.nomads.forEach(nomad=>{
-		ellipse(X+tileSize*nomad.position.x+tileSize/2,Y+tileSize*nomad.position.y+tileSize/2,tileSize/2,tileSize/2);
+		ellipse(tileX+tileSize*nomad.position.x+tileSize/2,tileY+tileSize*nomad.position.y+tileSize/2,tileSize/2,tileSize/2);
 	});
 
 	// TURN
@@ -189,7 +194,7 @@ function drawGame() {
 			stroke(250,210,10);
 		}
 		noFill();
-		rect(X+tileSize*nomad.position.x, Y+tileSize*nomad.position.y, tileSize, tileSize);
+		rect(tileX+tileSize*nomad.position.x, tileY+tileSize*nomad.position.y, tileSize, tileSize);
 	}
 }
 
@@ -258,6 +263,8 @@ function mouseClicked() {
 	if( toggleDebug ) {
 		uiManager.addLogger(`X: ${Math.round(mouseX)}, Y: ${Math.round(mouseY)}`);
 	}
+	// check if clicked is selecting a nomad
+	board.selectNomad(Math.floor((mouseX-tileX)/tileSize), Math.floor((mouseY-tileY)/tileSize));
 	return false;
 }
 
@@ -287,6 +294,9 @@ function keyPressed() {
 	if (key === "w") {
 		// nomad is waiting
 		board.curNomad().hasMoved = true;
+	}
+	if( key === "N" && turnButton.enabled ) {
+		endTurn();
 	}
 	if (keyCode === UP_ARROW) {
 		board.curNomad().moveUp(board);
