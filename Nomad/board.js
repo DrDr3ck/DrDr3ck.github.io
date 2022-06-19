@@ -154,7 +154,6 @@ class Board {
      * Selects a nomad if any at tile X,Y
      */
     selectNomad(X,Y) {
-        uiManager.addLogger(`select nomad at ${X},${Y}`)
         this.nomads.forEach(n=>console.log(n.position));
         const nomadIndex = this.nomads.findIndex(n=>n.position.x === X && n.position.y === Y);
         console.log("nomadIndex", nomadIndex);

@@ -26,7 +26,7 @@ function preload() {
 
 const startClicked = () => {
 	curState = GAME_PLAY_STATE;
-	uiManager.setUI([turnButton]);
+	uiManager.setUI([turnButton, nextButton, prevButton, upButton, leftButton, rightButton, downButton, workButton, waitButton, reproduceButton]);
 	turnButton.enabled = false;
 	uiManager.addLogger(`Start Nomad Game#${curSaveIndex}`)
 }
@@ -85,6 +85,52 @@ const endTurn = () => {
 
 const turnButton = new BButton(80, windowHeight - 50, "END OF TURN", endTurn);
 
+const nextButton = new BFloatingButton(580, 795, '\u2AA7', () => {
+	board.nextNomad(true);
+	// check if "next turn" can be enabled
+	turnButton.enabled = board.nomads.every(n=>n.hasMoved);
+});
+const prevButton = new BFloatingButton(520, 795, '\u2AA6', () => {
+	board.nextNomad(false);
+	// check if "next turn" can be enabled
+	turnButton.enabled = board.nomads.every(n=>n.hasMoved);
+});
+const upButton = new BFloatingButton(700, 740, '\u2191', () => {
+	board.curNomad().moveUp(board);
+	// check if "next turn" can be enabled
+	turnButton.enabled = board.nomads.every(n=>n.hasMoved);
+});
+const leftButton = new BFloatingButton(640, 795, '\u2190', () => {
+	board.curNomad().moveLeft(board);
+	// check if "next turn" can be enabled
+	turnButton.enabled = board.nomads.every(n=>n.hasMoved);
+});
+const rightButton = new BFloatingButton(760, 795, '\u2192', () => {
+	board.curNomad().moveRight(board);
+	// check if "next turn" can be enabled
+	turnButton.enabled = board.nomads.every(n=>n.hasMoved);
+});
+const downButton = new BFloatingButton(700, 795, '\u2193', () => {
+	board.curNomad().moveDown(board);
+	// check if "next turn" can be enabled
+	turnButton.enabled = board.nomads.every(n=>n.hasMoved);
+});
+const workButton = new BFloatingButton(820, 795, 'T', () => {
+	board.doTransform();
+	// check if "next turn" can be enabled
+	turnButton.enabled = board.nomads.every(n=>n.hasMoved);
+});
+const waitButton = new BFloatingButton(940, 795, 'W', () => {
+	board.curNomad().hasMoved = true;
+	// check if "next turn" can be enabled
+	turnButton.enabled = board.nomads.every(n=>n.hasMoved);
+});
+const reproduceButton = new BFloatingButton(880, 795, 'R', () => {
+	board.reproduce();
+	// check if "next turn" can be enabled
+	turnButton.enabled = board.nomads.every(n=>n.hasMoved);
+});
+
 let curSaveIndex = 1;
 
 // checking existence of file synchronously
@@ -110,6 +156,15 @@ function initUI() {
 	musicButton.setTextSize(50);
 	startButton.setTextSize(45);
 	turnButton.setTextSize(45);
+	nextButton.setTextSize(45);
+	prevButton.setTextSize(45);
+	upButton.setTextSize(45);
+	leftButton.setTextSize(45);
+	rightButton.setTextSize(45);
+	downButton.setTextSize(45);
+	workButton.setTextSize(45);
+	waitButton.setTextSize(45);
+	reproduceButton.setTextSize(45);
 	musicButton.enabled = false;
 	musicButton.checked = false;
 	const gameButtons = [];
@@ -284,7 +339,7 @@ function keyPressed() {
 		board.nextNomad(false);
 	}
 	if (key === "t") {
-		// previous nomad
+		// transform field
 		board.doTransform();
 	}
 	if (key === "r") {
