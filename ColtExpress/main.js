@@ -1,6 +1,6 @@
 const uiManager = new UIManager();
 const windowWidth = 1600;
-const windowHeight = 840;
+const windowHeight = 860;
 uiManager.loggerContainer = new LoggerContainer(windowWidth-300, windowHeight-100-319*.75, 240, 100);
 uiManager.loggerContainer.visible = true;
 
@@ -37,7 +37,8 @@ function startClicked() {
 	curState = GAME_PLAY_STATE;
 	uiManager.setUI([ speakerButton, musicButton, plus3Button ]);
 	plus3Button.enabled = false;
-	uiManager.addLogger("Start game");
+	const banditName = board.bandit.name;
+	uiManager.addLogger(`Start game as ${banditName[0].toUpperCase() + banditName.substring(1)}`);
 }
 
 const speakerButton = new BFloatingSwitchButton(windowWidth - 70 - 10 - 70, 70, '\uD83D\uDD0A', speakerClicked);
@@ -70,9 +71,14 @@ function setup() {
 	spritesheet.addSpriteSheet('verso_card', './verso_card.png', 223, 319);
 	spritesheet.addSpriteSheet('avatars', './avatars.png', 64, 64);
 
-	spritesheet.addSpriteSheet('tuco_cards', './tuco_cards.png', 223, 319);
-	spritesheet.addSpriteSheet('tuco_gun', './tuco_gun_cards.png', 223, 319);
-	spritesheet.addSpriteSheet('tuco_main', './tuco_main_card.png', 793, 556);
+	banditNames.forEach(name=>{
+		spritesheet.addSpriteSheet(`${name}_cards`, `./${name}_cards.png`, 223, 319);
+		spritesheet.addSpriteSheet(`${name}_gun`, `./${name}_gun_cards.png`, 223, 319);
+		//spritesheet.addSpriteSheet(`${name}_main`, `./${name}_main_card.png`, 793, 556);
+	});
+
+	spritesheet.addSpriteSheet('verso_voyage', './verso_voyage.png', 319, 223);
+	spritesheet.addSpriteSheet('voyage_items', './voyage_items.png', 84, 64);
 
 	spritesheet.addSpriteSheet('toits', './toits.png', 300, 172);
 	spritesheet.addSpriteSheet('wagons', './wagons.png', 300, 172);
@@ -145,6 +151,21 @@ function drawGame() {
 
 	// draw train
 	board.wagons.forEach((w,i)=>drawWagon(w,i));
+
+	// voyage
+	for( let i=0; i < board.voyages.length; i++ ) {
+		spritesheet.drawSprite('verso_voyage', i===0 ? 0 : 1, 20+5*i, 350);	
+	}
+	const voyageItems = board.voyages[0];
+	const voyageIndex = (voyage_name) => {
+		if( voyage_name === "empty" ) return 0;
+		if( voyage_name === "reverse" ) return 1;
+		if( voyage_name === "Empty" ) return 2;
+		if( voyage_name === "tunnel" ) return 3;
+		if( voyage_name === "double" ) return 4;
+		if( voyage_name === "Tunnel" ) return 5;
+	};
+	voyageItems.forEach((v,i)=>spritesheet.drawScaledSprite('voyage_items', voyageIndex(v), 25+84*i*.75, 430, .75));
 }
 
 function initGame() {

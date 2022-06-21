@@ -19,6 +19,7 @@ const avatars = {
   ghost: 4,
   django: 5
 }
+const banditNames = ["cheyenne", "belle", "doc", "tuco", "ghost", "django"];
 
 class Bandit {
     constructor(name) {
@@ -111,13 +112,28 @@ const wagons = [
   }
 ];
 
+const voyages = [
+  ["empty","tunnel","empty","empty"],
+  ["empty","empty","empty","empty"],
+  ["empty","empty","tunnel","reverse"],
+  ["empty","tunnel","empty","tunnel","empty"],
+  ["empty","empty","tunnel","empty","empty"],
+  ["empty","tunnel","double","empty"],
+  ["empty","double","empty"]
+];
+const stop = ["Empty","Empty","Tunnel","Empty"];
+
 class Board {
     constructor() {
-        this.bandit = new Bandit("tuco");
+        console.log(banditNames);
+        shuffleArray(banditNames);
+        console.log(banditNames);
+        this.bandit = new Bandit(banditNames[0]);
         this.bandit.IA = false;
-        this.bandits = [this.bandit, new Bandit("belle"), new Bandit("ghost"), new Bandit("doc")];
+        this.bandits = [this.bandit, new Bandit(banditNames[1]), new Bandit(banditNames[2]), new Bandit(banditNames[3])];
         this.wagons = [];
         this.cards = [];
+        this.voyages = [];
     }
 
     init() {
@@ -138,8 +154,15 @@ class Board {
           }
         });
         shuffleArray(this.bandits);
-        this.wagons[0].bandits = [0,2];
-        this.wagons[1].bandits = [1,3];
+        this.wagons[0].bandits = [this.bandits[0].avatarIndex,this.bandits[2].avatarIndex];
+        this.wagons[1].bandits = [this.bandits[1].avatarIndex,this.bandits[3].avatarIndex];
+
+        shuffleArray(voyages);
+        for( let i=0; i < 4; i++ ) {
+          this.voyages.push(voyages[i]);
+        }
+        this.voyages.push(stop);
+        console.log(this.voyages[0]);
     }
 
     useCard(name, cardIndex) {
