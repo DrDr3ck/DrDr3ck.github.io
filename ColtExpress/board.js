@@ -137,6 +137,7 @@ class Board {
         console.log(banditNames);
         shuffleArray(banditNames);
         console.log(banditNames);
+        this.marshalIndex = 4;
         this.bandit = new Bandit(banditNames[0]);
         this.bandit.IA = false;
         this.bandits = [this.bandit, new Bandit(banditNames[1]), new Bandit(banditNames[2]), new Bandit(banditNames[3])];
@@ -201,6 +202,24 @@ class Board {
       return this.bandits[this.curBanditIndex].name;
     }
 
+    playState() {
+      // pop last card if needed
+      if( this.curTurn !== -1 ) {
+        this.cards.shift();
+      }
+      this.curTurn = 0;
+      if( this.cards.length === 0 ) {
+        // move to turn state again
+        // shuffle cards, ...
+        newTurnButton.visible = true;
+        playButton.visible = false;
+        return;
+      }
+      // take first card
+      const card = this.cards[0];
+      // according to card, add buttons to enable possibilities
+    }
+
     nextState() {
       if( this.curBanditIndex === 4 ) {
         this.curTurn = this.curTurn + 1;
@@ -217,8 +236,10 @@ class Board {
         if( this.curBanditName() === this.bandit.name ) {
           this.state = YOUR_TURN;
           uiManager.addLogger("Your turn");
+          plus3Button.enabled = true;
         } else {
           this.state = BANDIT_TURN;
+          plus3Button.enabled = false;
           uiManager.addLogger(`${this.curBanditName()} turn`);
         }
         if( this.state === BANDIT_TURN ) {
@@ -230,6 +251,8 @@ class Board {
           nextButton.visible = false;
         }
       } else { // PLAY_PHASE
+        this.curTurn = -1;
+        this.playState();
       }
     }
 }

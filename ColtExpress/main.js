@@ -20,6 +20,8 @@ let hoverCard = -1;
 const board = new Board();
 
 function preload() {
+	spritesheet.addSpriteSheet('background', './background.png', windowWidth, windowHeight);
+	spritesheet.addSpriteSheet('colt_express', './colt_express.jpg', 329, 153);
 }
 
 function musicClicked() {
@@ -35,9 +37,10 @@ function speakerClicked() {
 
 function startClicked() {
 	curState = GAME_PLAY_STATE;
-	uiManager.setUI([ speakerButton, musicButton, plus3Button, nextButton, playButton ]);
+	uiManager.setUI([ speakerButton, musicButton, plus3Button, nextButton, playButton, newTurnButton ]);
 	plus3Button.enabled = false;
 	playButton.visible = false;
+	newTurnButton.visible = false;
 	const banditName = board.bandit.name;
 	uiManager.addLogger(`Start game as ${banditName[0].toUpperCase() + banditName.substring(1)}`);
 	board.nextState();
@@ -47,12 +50,15 @@ const speakerButton = new BFloatingSwitchButton(windowWidth - 70 - 10 - 70, 70, 
 const musicButton = new BFloatingSwitchButton(windowWidth - 70, 70, '\uD83C\uDFB6', musicClicked);
 const startButton = new BButton(80, windowHeight - 50 - 200, "START", startClicked);
 const plus3Button = new BButton(35, 670, "+3", ()=>{
-	board.bandit.moreCards()
+	board.bandit.moreCards();
+	board.curBanditIndex = board.curBanditIndex + 1;
+	board.nextState();
 });
 plus3Button.w = 170;
 
-const nextButton = new BButton(760, 490, "NEXT", ()=>{board.nextState();});
-const playButton = new BButton(760, 490, "PLAY", ()=>{});
+const nextButton = new BButton(760, 160, "NEXT", ()=>{board.nextState();});
+const playButton = new BButton(760, 160, "PLAY", ()=>{board.playState();});
+const newTurnButton = new BButton(760, 160, "NEW TURN", ()=>{});
 
 function initUI() {
     speakerButton.setTextSize(50);
@@ -75,6 +81,7 @@ function setup() {
 
 	spritesheet.addSpriteSheet('verso_card', './verso_card.png', 223, 319);
 	spritesheet.addSpriteSheet('avatars', './avatars.png', 64, 64);
+	spritesheet.addSpriteSheet('marshal_avatar', './marshal_avatar.png', 64, 64);
 
 	banditNames.forEach(name=>{
 		spritesheet.addSpriteSheet(`${name}_cards`, `./${name}_cards.png`, 223, 319);
@@ -100,14 +107,14 @@ function updateGame(elapsedTime) {
 
 function drawWagon(wagon,index) {
 	const wagonX = 305*index;
-	const wagonY = 150;
+	const wagonY = 360;
 	spritesheet.drawSprite('wagons', wagon.index, 20+wagonX, wagonY);
 	spritesheet.drawSprite('toits', index ===4 ? 1 : 0, 20+wagonX, wagonY-85);
 
 	textAlign(CENTER, BOTTOM);
 	textSize(32);
 	if( wagon.butins[MALETTE] ) {
-		spritesheet.drawSprite('butins', 0, 50+wagonX, 260);
+		spritesheet.drawSprite('butins', 0, 50+wagonX, wagonY+110);
 		if( wagon.butins[MALETTE]>1) {
 			fill(0);
 			text(`x${wagon.butins[MALETTE]}`, 58+92/2+wagonX, 258+85);
@@ -116,26 +123,30 @@ function drawWagon(wagon,index) {
 		}
 	}
 	if( wagon.butins[SAC] ) {
-		spritesheet.drawSprite('butins', 1, 140+wagonX, 260);
+		spritesheet.drawSprite('butins', 1, 140+wagonX, wagonY+110);
 		if( wagon.butins[SAC]>1 ) {
 			fill(0);
-			text(`x${wagon.butins[SAC]}`, 148+92/2+wagonX, 258+85);
+			text(`x${wagon.butins[SAC]}`, 148+92/2+wagonX, wagonY+110-2+85);
 			fill(250);
-			text(`x${wagon.butins[SAC]}`, 150+92/2+wagonX, 260+85);
+			text(`x${wagon.butins[SAC]}`, 150+92/2+wagonX, wagonY+110+85);
 		}
 	}
 	if( wagon.butins[RUBIS] ) {
-		spritesheet.drawSprite('butins', 2, 230+wagonX, 260);
+		spritesheet.drawSprite('butins', 2, 230+wagonX, wagonY+110);
 		if( wagon.butins[RUBIS]>1 ) {
 			fill(0);
-			text(`x${wagon.butins[RUBIS]}`, 238+92/2+wagonX, 258+85);
+			text(`x${wagon.butins[RUBIS]}`, 238+92/2+wagonX, wagonY+110-2+85);
 			fill(250);
-			text(`x${wagon.butins[RUBIS]}`, 240+92/2+wagonX, 260+85);
+			text(`x${wagon.butins[RUBIS]}`, 240+92/2+wagonX, wagonY+110+85);
 		}
 	}
 
 	// draw bandits
-	wagon.bandits.forEach((b,i)=>spritesheet.drawSprite('avatars', b, 40+wagonX+70*i, 170));
+	wagon.bandits.forEach((b,i)=>spritesheet.drawSprite('avatars', b, 40+wagonX+70*i, wagonY+20));
+
+	if( board.marshalIndex === index ) {
+		spritesheet.drawSprite('marshal_avatar', 0, 40+wagonX+70*wagon.bandits.length, wagonY+20)
+	}
 
 }
 
@@ -159,7 +170,7 @@ function drawGame() {
 
 	// voyage
 	for( let i=0; i < board.voyages.length; i++ ) {
-		spritesheet.drawSprite('verso_voyage', i===0 ? 0 : 1, 20+5*i, 350);	
+		spritesheet.drawSprite('verso_voyage', i===0 ? 0 : 1, 20+5*i, 35);	
 	}
 	const voyageItems = board.voyages[0];
 	const voyageIndex = (voyage_name) => {
@@ -170,16 +181,22 @@ function drawGame() {
 		if( voyage_name === "double" ) return 4;
 		if( voyage_name === "Tunnel" ) return 5;
 	};
-	voyageItems.forEach((v,i)=>spritesheet.drawScaledSprite('voyage_items', voyageIndex(v), 25+84*i*.75, 430, .75));
+	voyageItems.forEach((v,i)=>spritesheet.drawScaledSprite('voyage_items', voyageIndex(v), 25+84*i*.75, 430-350+35, .75));
 
 	// draw turn cards
 	if( board.cards.length > 0 ) {
-		const lastCard = board.cards[board.cards.length-1];
-		const lastBanditName = lastCard.name;
-		if( lastCard.visible ) {
-			spritesheet.drawScaledSprite(`${lastBanditName}_cards`, lastCard.index, 550, 350, 0.75);
-		} else {
-			spritesheet.drawScaledSprite("verso_card", 0, 550, 350, 0.75);
+		if( board.phase === CARD_PHASE ) {
+			const lastCard = board.cards[board.cards.length-1];
+			const lastBanditName = lastCard.name;
+			if( lastCard.visible ) {
+				spritesheet.drawScaledSprite(`${lastBanditName}_cards`, lastCard.index, 550, 25, 0.75);
+			} else {
+				spritesheet.drawScaledSprite("verso_card", 0, 550, 25, 0.75);
+			}
+		} else { // PLAY_PHASE
+			const firstCard = board.cards[0];
+			const firstBanditName = firstCard.name;
+			spritesheet.drawScaledSprite(`${firstBanditName}_cards`, firstCard.index, 550, 25, 0.75);
 		}
 	}
 }
@@ -210,7 +227,6 @@ function drawLoading() {
 function draw() {
     const currentTime = Date.now();
 	const elapsedTime = currentTime - lastTime;
-    background(51);
     if (curState === GAME_LOADING_STATE) {
 		drawLoading();
 		return;
@@ -222,9 +238,13 @@ function draw() {
 
     // draw game
 	if( curState === GAME_START_STATE ) {
+		spritesheet.drawSprite('background', 0,0,0);
+		spritesheet.drawSprite('colt_express', 0,(windowWidth-329)/2,50);
 	}
 	if (curState === GAME_PLAY_STATE) {
 		updateGame(elapsedTime);
+		spritesheet.drawSprite('background', 0,0,0);
+		background(51,51,51,151);
 		drawGame();
 	}
 
