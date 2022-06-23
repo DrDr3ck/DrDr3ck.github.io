@@ -35,10 +35,12 @@ function speakerClicked() {
 
 function startClicked() {
 	curState = GAME_PLAY_STATE;
-	uiManager.setUI([ speakerButton, musicButton, plus3Button ]);
+	uiManager.setUI([ speakerButton, musicButton, plus3Button, nextButton, playButton ]);
 	plus3Button.enabled = false;
+	playButton.visible = false;
 	const banditName = board.bandit.name;
 	uiManager.addLogger(`Start game as ${banditName[0].toUpperCase() + banditName.substring(1)}`);
+	board.nextState();
 }
 
 const speakerButton = new BFloatingSwitchButton(windowWidth - 70 - 10 - 70, 70, '\uD83D\uDD0A', speakerClicked);
@@ -48,6 +50,9 @@ const plus3Button = new BButton(35, 670, "+3", ()=>{
 	board.bandit.moreCards()
 });
 plus3Button.w = 170;
+
+const nextButton = new BButton(760, 490, "NEXT", ()=>{board.nextState();});
+const playButton = new BButton(760, 490, "PLAY", ()=>{});
 
 function initUI() {
     speakerButton.setTextSize(50);
@@ -90,7 +95,7 @@ function setup() {
 }
 
 function updateGame(elapsedTime) {
-
+	
 }
 
 function drawWagon(wagon,index) {
@@ -166,6 +171,17 @@ function drawGame() {
 		if( voyage_name === "Tunnel" ) return 5;
 	};
 	voyageItems.forEach((v,i)=>spritesheet.drawScaledSprite('voyage_items', voyageIndex(v), 25+84*i*.75, 430, .75));
+
+	// draw turn cards
+	if( board.cards.length > 0 ) {
+		const lastCard = board.cards[board.cards.length-1];
+		const lastBanditName = lastCard.name;
+		if( lastCard.visible ) {
+			spritesheet.drawScaledSprite(`${lastBanditName}_cards`, lastCard.index, 550, 350, 0.75);
+		} else {
+			spritesheet.drawScaledSprite("verso_card", 0, 550, 350, 0.75);
+		}
+	}
 }
 
 function initGame() {
@@ -225,9 +241,10 @@ function mouseClicked() {
 	if( toggleDebug ) {
 		uiManager.addLogger(`X=${mouseX}, Y=${mouseY}`);
 	}
-	if( hoverCard >= 0 ) {
+	if( hoverCard >= 0 && board.state === YOUR_TURN ) {
 		// select this card for this turn
 		board.useCard(board.bandit.name, hoverCard);
+		board.nextState();
 	}
 	toolManager.mouseClicked();
 	uiManager.mouseClicked();

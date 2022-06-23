@@ -123,6 +123,15 @@ const voyages = [
 ];
 const stop = ["Empty","Empty","Tunnel","Empty"];
 
+const START_TURN = 0;
+const BANDIT_TURN = 1;
+const YOUR_TURN = 2;
+const WAIT_TURN = 3;
+const PLAY_TURN = 4;
+
+const CARD_PHASE = 0;
+const PLAY_PHASE = 1;
+
 class Board {
     constructor() {
         console.log(banditNames);
@@ -134,10 +143,13 @@ class Board {
         this.wagons = [];
         this.cards = [];
         this.voyages = [];
+        this.curTurn = 0;
+        this.curBanditIndex = 0;
+        this.state = START_TURN;
+        this.phase = CARD_PHASE;
     }
 
     init() {
-        this.bandit.shuffleCards();
         shuffleArray(wagons);
         wagons.forEach(w=>{
             if( this.wagons.length < 4 ) {
@@ -154,6 +166,7 @@ class Board {
           }
         });
         shuffleArray(this.bandits);
+        this.bandits.forEach(b=>b.shuffleCards());
         this.wagons[0].bandits = [this.bandits[0].avatarIndex,this.bandits[2].avatarIndex];
         this.wagons[1].bandits = [this.bandits[1].avatarIndex,this.bandits[3].avatarIndex];
 
@@ -165,9 +178,58 @@ class Board {
         console.log(this.voyages[0]);
     }
 
+    playCard() {
+      const bandit = this.bandits[this.curBanditIndex];
+      const card = bandit.cards.pop();
+      let visible = this.voyages[0][this.curTurn].toLowerCase() !== "tunnel";
+      if( bandit.name === "ghost" && this.curTurn === 0 ) {
+        visible = false;
+      }
+      this.cards.push({name: bandit.name, index: card, visible});
+      this.curBanditIndex = this.curBanditIndex + 1;
+    }
+
     useCard(name, cardIndex) {
-      this.cards.push({name, index: cardIndex});
+      const visible = this.voyages[0][this.curTurn].toLowerCase() !== "tunnel";
+      this.cards.push({name, index: this.bandit.cards[cardIndex], visible});
       const banditIndex = this.bandits.findIndex(b=>b.name === name);
       this.bandits[banditIndex].cards.splice(cardIndex, 1);
+      this.curBanditIndex = this.curBanditIndex + 1;
+    }
+
+    curBanditName() {
+      return this.bandits[this.curBanditIndex].name;
+    }
+
+    nextState() {
+      if( this.curBanditIndex === 4 ) {
+        this.curTurn = this.curTurn + 1;
+        this.curBanditIndex = 0;
+        // was it last turn ?
+        if( this.curTurn === this.voyages[0].length ) {
+          this.phase = PLAY_PHASE;
+          // replace next button by play button
+          nextButton.visible = false;
+          playButton.visible = true;
+        }
+      }
+      if( this.phase === CARD_PHASE ) {
+        if( this.curBanditName() === this.bandit.name ) {
+          this.state = YOUR_TURN;
+          uiManager.addLogger("Your turn");
+        } else {
+          this.state = BANDIT_TURN;
+          uiManager.addLogger(`${this.curBanditName()} turn`);
+        }
+        if( this.state === BANDIT_TURN ) {
+          this.playCard();
+          // bandit is playing, disable all buttons/cards except the 'next' button
+          this.state = WAIT_TURN;
+          nextButton.visible = true;
+        } else if( this.state === YOUR_TURN ) {
+          nextButton.visible = false;
+        }
+      } else { // PLAY_PHASE
+      }
     }
 }
