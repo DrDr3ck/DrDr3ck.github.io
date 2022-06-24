@@ -58,6 +58,7 @@ const RUBIS = 2;
 const wagons = [
   {
     index: 0,
+    name: "bar",
     butins: [0,1,1],
     bandits: [],
     toit: {
@@ -67,6 +68,7 @@ const wagons = [
   },
   {
     index: 1,
+    name: "soute",
     butins: [0,4,1],
     bandits: [],
     toit: {
@@ -76,6 +78,7 @@ const wagons = [
   },
   {
     index: 2,
+    name: "first class",
     butins: [0,3,1],
     bandits: [],
     toit: {
@@ -85,6 +88,7 @@ const wagons = [
   },
   {
     index: 4,
+    name: "dinner",
     butins: [0,3,0],
     bandits: [],
     toit: {
@@ -94,6 +98,7 @@ const wagons = [
   },
   {
     index: 5,
+    name: "second class",
     butins: [0,1,0],
     bandits: [],
     toit: {
@@ -103,6 +108,7 @@ const wagons = [
   },
   {
     index: 6,
+    name: "vip class",
     butins: [0,0,3],
     bandits: [],
     toit: {
@@ -137,15 +143,16 @@ class Board {
         console.log(banditNames);
         shuffleArray(banditNames);
         console.log(banditNames);
-        this.marshalIndex = 4;
+        this.marshalIndex = 4; // index of the wagon for the marshal
         this.bandit = new Bandit(banditNames[0]);
         this.bandit.IA = false;
         this.bandits = [this.bandit, new Bandit(banditNames[1]), new Bandit(banditNames[2]), new Bandit(banditNames[3])];
         this.wagons = [];
         this.cards = [];
+        this.banditIndices = []; // list of indices for the current turn
         this.voyages = [];
         this.curTurn = 0;
-        this.curBanditIndex = 0;
+        this.curBanditIndex = 0; // index of the first bandit for this turn
         this.state = START_TURN;
         this.phase = CARD_PHASE;
     }
@@ -166,6 +173,7 @@ class Board {
             bandits: []
           }
         });
+        // TODO: transform butin into 'real' butin value
         shuffleArray(this.bandits);
         this.bandits.forEach(b=>b.shuffleCards());
         this.wagons[0].bandits = [this.bandits[0].avatarIndex,this.bandits[2].avatarIndex];
@@ -218,6 +226,79 @@ class Board {
       // take first card
       const card = this.cards[0];
       // according to card, add buttons to enable possibilities
+      switch( card.index ) {
+        case 0: // tir
+          // on which wagon is the bandit ?
+          const wagon1 = this.findWagonIndex(card.name);
+          if( wagon1.roof ) {
+            uiManager.addLogger(`${card.name} fires from roof of wagon ${wagon1.wagon.name}`);
+          } else {
+            uiManager.addLogger(`${card.name} fires from wagon ${wagon1.wagon.name}`);
+          }
+          break;
+        case 1: // ramasser or
+          // on which wagon is the bandit ?
+          const wagon2 = this.findWagonIndex(card.name);
+          if( wagon2.roof ) {
+            uiManager.addLogger(`${card.name} is getting gold from roof of wagon ${wagon2.wagon.name}`);
+          } else {
+            uiManager.addLogger(`${card.name} is getting gold from wagon ${wagon2.wagon.name}`);
+          }
+          break;
+        case 2: // monter/descendre
+          // on which wagon is the bandit ?
+          const wagon3 = this.findWagonIndex(card.name);
+          if( wagon3.roof ) {
+            if( wagon3.wagonIndex === this.marshalIndex ) {
+              uiManager.addLogger(`${card.name} cannot go down because of the marshal`);  
+              // TODO: il prend un tir du marshal
+            } else {
+              uiManager.addLogger(`${card.name} is going down on wagon ${wagon3.wagon.name}`);
+              const banditIndex = avatars[card.name];
+              wagon3.wagon.toit.bandits = wagon3.wagon.toit.bandits.filter(b=>b!==banditIndex);
+              wagon3.wagon.bandits.push(banditIndex);
+            }
+          } else {
+            uiManager.addLogger(`${card.name} is going up on wagon ${wagon3.wagon.name}`);
+            const banditIndex = avatars[card.name];
+            wagon3.wagon.bandits = wagon3.wagon.bandits.filter(b=>b!==banditIndex);
+            wagon3.wagon.toit.bandits.push(banditIndex);
+          }
+          
+          break;
+        case 3: // coup de poing
+          // on which wagon is the bandit ?
+          const wagon4 = this.findWagonIndex(card.name);
+          // TODO: check if a bandit is present with the current one
+          uiManager.addLogger(`${card.name} fights on wagon ${wagon4.wagon.name}`);
+          break;
+        case 4: // marshal
+          uiManager.addLogger(`Marshal moves from wagon ${this.marshalIndex}`);
+          break;
+        case 5: // bouger
+          // on which wagon is the bandit ?
+          const wagon5 = this.findWagonIndex(card.name);
+          if( wagon3.roof ) {
+            uiManager.addLogger(`${card.name} moves from roof of wagon ${wagon5.wagon.name}`);
+          } else {
+            uiManager.addLogger(`${card.name} moves from wagon ${wagon5.wagon.name}`);
+          }
+          break;
+      }
+    }
+
+    findWagonIndex(banditName) {
+      const banditIndex = avatars[banditName];
+      for( let i=0; i < this.wagons.length; i++ ) {
+        const wagon = this.wagons[i];
+        if( wagon.bandits.includes(banditIndex) ) {
+          return {wagonIndex: i, wagon, roof: false};
+        }
+        if( wagon.toit.bandits.includes(banditIndex) ) {
+          return {wagonIndex: i, wagon, roof: true};
+        }
+      }
+      return 999;
     }
 
     nextState() {

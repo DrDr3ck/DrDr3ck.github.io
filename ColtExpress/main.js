@@ -1,7 +1,7 @@
 const uiManager = new UIManager();
 const windowWidth = 1600;
 const windowHeight = 860;
-uiManager.loggerContainer = new LoggerContainer(windowWidth-300, windowHeight-100-319*.75, 240, 100);
+uiManager.loggerContainer = new LoggerContainer(1200, 90, 240, 100);
 uiManager.loggerContainer.visible = true;
 
 const toolManager = new ToolManager();
@@ -143,6 +143,7 @@ function drawWagon(wagon,index) {
 
 	// draw bandits
 	wagon.bandits.forEach((b,i)=>spritesheet.drawSprite('avatars', b, 40+wagonX+70*i, wagonY+20));
+	wagon.toit.bandits.forEach((b,i)=>spritesheet.drawSprite('avatars', b, 40+wagonX+70*i, wagonY-20-64));
 
 	if( board.marshalIndex === index ) {
 		spritesheet.drawSprite('marshal_avatar', 0, 40+wagonX+70*wagon.bandits.length, wagonY+20)
