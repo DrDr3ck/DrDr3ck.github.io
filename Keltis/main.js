@@ -22,6 +22,7 @@ let board = new Board();
 function preload() {
 	spritesheet.addSpriteSheet('board', './board.png', 1007, 777);
 	spritesheet.addSpriteSheet('cards', './cards.png', 630/3, 652/2);
+	spritesheet.addSpriteSheet('rules', './regle_keltis.jpg', 865, 691);
 }
 
 function musicClicked() {
@@ -37,25 +38,29 @@ function speakerClicked() {
 
 function startClicked() {
 	curState = GAME_PLAY_STATE;
-	uiManager.setUI([ speakerButton, musicButton ]);
+	uiManager.setUI([ speakerButton, rulesButton ]);
 	uiManager.addLogger("Start game");
 }
 
 const speakerButton = new BFloatingSwitchButton(windowWidth - 70 - 10 - 70, 70, '\uD83D\uDD0A', speakerClicked);
 const musicButton = new BFloatingSwitchButton(windowWidth - 70, 70, '\uD83C\uDFB6', musicClicked);
 const startButton = new BButton(80, windowHeight - 50 - 200, "START", startClicked);
+let rules = false;
+const rulesButton = new BFloatingButton(windowWidth - 70, 70, '?', ()=>{
+	// display/hide rules
+	rules = !rules;
+	rulesButton.enabled = false;
+});
 
 function initUI() {
     speakerButton.setTextSize(50);
-	musicButton.setTextSize(50);
-	musicButton.enabled = false;
-	musicButton.checked = false;
+	rulesButton.setTextSize(50);
 	const isSpeakerOn = localStorage.getItem(speakerStorageKey);
 	if( isSpeakerOn === "off" ) {
 		speakerButton.checked = false;
 		soundManager.mute(true);
 	}
-	const menu = [ speakerButton, startButton, musicButton ];
+	const menu = [ speakerButton, startButton, rulesButton ];
 	uiManager.setUI(menu);
 }
 
@@ -174,6 +179,10 @@ function drawGame() {
 			}
 		});
 	}
+
+	if( board.state === "game_over" ) {
+		// TODO: draw final points
+	}
 }
 
 function initGame() {
@@ -231,8 +240,22 @@ function draw() {
 		toolManager.currentTool.draw();
 	}
     jobManager.draw();
+
+	if( rules ) {
+		background(51, 51, 51, 200);
+		const ruleX = 70;
+		spritesheet.drawSprite('rules', 0, (windowWidth-865)/2, (windowHeight-691)/2);
+	}
     
     lastTime = currentTime;
+}
+
+function removeCard(cardIndex) {
+	board.hand[cardIndex] = null;
+	if( board.hand.every(h=>!h) ) {
+		board.state = "game_over";
+		// TODO compute points !!!
+	}
 }
 
 function chooseSize(size) {
@@ -244,7 +267,7 @@ function chooseSize(size) {
 		const newCard = board.cards.shift();
 		board.hand[board.chosenCardIndex] = newCard;
 	} else {
-		board.hand[board.chosenCardIndex] = null;
+		removeCard(board.chosenCardIndex);
 	}
 	board.chosenCardIndex = -1;
 	board.chosenRowIndex = -1;
@@ -271,7 +294,7 @@ function replayOnRow(rowIndex) {
 		const newCard = board.cards.shift();
 		board.hand[board.chosenCardIndex] = newCard;
 	} else {
-		board.hand[board.chosenCardIndex] = null;
+		removeCard(board.chosenCardIndex);
 	}
 	board.chosenCardIndex = -1;
 	board.checkBonus(pion);
@@ -301,6 +324,8 @@ function mousePressed() {
 				}
 			});
 		}
+	} else { // game over
+		// cannot click anymore
 	}
 }
 function mouseReleased() {
@@ -319,7 +344,7 @@ function mouseReleased() {
 				const newCard = board.cards.shift();
 				board.hand[board.selectedCardIndex] = newCard;
 			} else {
-				board.hand[board.selectedCardIndex] = null;
+				removeCard(board.selectedCardIndex);
 			}
 		}
 	}
@@ -330,7 +355,7 @@ function mouseReleased() {
 			const newCard = board.cards.shift();
 			board.hand[board.selectedCardIndex] = newCard;
 		} else {
-			board.hand[board.selectedCardIndex] = null;
+			removeCard(board.selectedCardIndex);
 		}
 	}
 	board.selectedCardIndex = -1;
@@ -341,8 +366,13 @@ function mouseClicked() {
 		uiManager.addLogger(`X=${mouseX}, Y=${mouseY}`);
 	}
 	
-	toolManager.mouseClicked();
-	uiManager.mouseClicked();
+	if( rules ) {
+		rules = false;
+		rulesButton.enabled = true;
+	} else {
+		toolManager.mouseClicked();
+		uiManager.mouseClicked();
+	}
 	return false;
 }
 
