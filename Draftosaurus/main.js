@@ -49,13 +49,22 @@ const enclosDinosPositions = [
 	],
 ];
 
+let turn = 12;
+
 const enclosDinos = [
 	[],[],[],[],[],[],[]
 ];
 
 let enclosHighlighted = [];
 
-const dinos = [0,0,0,0,0,0,1,1,1,1,1,1,2,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,5,5,5,5];
+const dinos = [
+	0,0,0,0,0,0,
+	1,1,1,1,1,1,
+	2,2,2,2,2,2,
+	3,3,3,3,3,3,
+	4,4,4,4,4,4,
+	5,5,5,5,5,5
+];
 
 const defausse = [];
 
@@ -240,6 +249,13 @@ function drawGame() {
 			rect(enclosArea[0].X, enclosArea[0].Y, enclosArea[1].X-enclosArea[0].X, enclosArea[1].Y-enclosArea[0].Y);
 		});
 	}
+
+	// display turn left
+	stroke(0);
+	fill(250);
+	textSize(35);
+	textAlign(LEFT,CENTER);
+	text(`Turn left: ${turn}`, 58, 34);
 }
 
 function initGame() {
@@ -285,6 +301,15 @@ function draw() {
 	if (curState === GAME_PLAY_STATE) {
 		updateGame(elapsedTime);
 		drawGame();
+	}
+	if( curState === GAME_OVER_STATE ) {
+		drawGame();
+		// display points
+		stroke(0);
+		fill(250);
+		textSize(35);
+		textAlign(LEFT,CENTER);
+		text(`Points: ${point}`, 980, 570);
 	}
 
     uiManager.draw();
@@ -345,6 +370,32 @@ function removeDino(index) { // 0, 1 or 2
 	roleDiceButton.enabled = true;
 	chosenDinoIndex = -1;
 	diceFace = -1;
+	turn--;
+	if( turn == 0 ) {
+		curState = GAME_OVER_STATE;
+		computePoints();
+		roleDiceButton.visible = false;
+	}
+}
+
+const enclosPoints = [
+	[2,4,8,12,18,24],7,7,[1,3,6,10,15,21],5,7,1
+];
+
+let points = 0;
+
+function computePoints() {
+	// TODO
+	if( enclosDinos[0].length > 0 ) {
+		points = points + enclosPoints[0][enclosDinos[0].length-1]
+	}
+	if( enclosDinos[2].length == 3 ) {
+		points = points +  7;
+	}
+	if( enclosDinos[3].length > 0 ) {
+		points = points + enclosPoints[3][enclosDinos[3].length-1]
+	}
+	// TODO: 1 4 5
 }
 
 function addDinoInEnclos() {
