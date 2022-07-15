@@ -57,6 +57,8 @@ const enclosDinos = [
 
 let enclosHighlighted = [];
 
+let playerPoints = 0;
+
 const dinos = [
 	0,0,0,0,0,0,
 	1,1,1,1,1,1,
@@ -131,13 +133,19 @@ function findEnclosToHighlight() {
 	// according to diceFace, find enclos where player can put a dinosaurus
 	switch(diceFace) {
 		case 0: // foret
-			enclosHighlighted = [0,1,2,6];
+			enclosHighlighted = [0,2,6];
+			if( enclosDinos[1].length === 0 ) {
+				enclosHighlighted.push(1);
+			}
 			break;
 		case 1: // caillou
 			enclosHighlighted = [3,4,5,6];
 			break;
 		case 2: // toilettes
-			enclosHighlighted = [1,3,5,6];
+			enclosHighlighted = [3,5,6];
+			if( enclosDinos[1].length === 0 ) {
+				enclosHighlighted.push(1);
+			}
 			break;
 		case 3: //  cafeteria
 			enclosHighlighted = [0,2,4,6];
@@ -147,8 +155,11 @@ function findEnclosToHighlight() {
 			enclosHighlighted.push(6);
 			break;
 		case 5: // T-rex
-			enclosHighlighted = enclosDinos.map((e,i)=>e.includes(TRexIndex) ? -1 : i).filter(f=>f>=0);
+			enclosHighlighted = enclosDinos.map((e,i)=>e.includes(TRexIndex) && i !== 1 ? -1 : i).filter(f=>f>=0);
 			enclosHighlighted.push(6);
+			if( enclosDinos[1].length === 0 ) {
+				enclosHighlighted.push(1);
+			}
 			break;
 	}
 }
@@ -309,7 +320,7 @@ function draw() {
 		fill(250);
 		textSize(35);
 		textAlign(LEFT,CENTER);
-		text(`Points: ${point}`, 980, 570);
+		text(`Points: ${playerPoints}`, 980, 570);
 	}
 
     uiManager.draw();
@@ -382,20 +393,53 @@ const enclosPoints = [
 	[2,4,8,12,18,24],7,7,[1,3,6,10,15,21],5,7,1
 ];
 
-let points = 0;
-
 function computePoints() {
 	// TODO
 	if( enclosDinos[0].length > 0 ) {
-		points = points + enclosPoints[0][enclosDinos[0].length-1]
+		playerPoints = playerPoints + enclosPoints[0][enclosDinos[0].length-1]
 	}
 	if( enclosDinos[2].length == 3 ) {
-		points = points +  7;
+		playerPoints = playerPoints +  7;
 	}
 	if( enclosDinos[3].length > 0 ) {
-		points = points + enclosPoints[3][enclosDinos[3].length-1]
+		playerPoints = playerPoints + enclosPoints[3][enclosDinos[3].length-1]
 	}
-	// TODO: 1 4 5
+	playerPoints = playerPoints + enclosDinos[6].length;
+	if( enclosDinos[1].length == 1 ) {
+		// 1:
+		const kingIndex = enclosDinos[1][0];
+		let kingInZoo = 0;
+		enclosDinos.forEach(enclos=>{
+			kingInZoo = enclos.filter(d=>d===kingIndex).length;
+		});
+		const kingInDefausse = defausse.filter(d=>d===kingIndex).length;
+		if( kingInZoo >= kingInDefausse ) {
+			playerPoints = playerPoints + 7;
+		}
+	}
+	if( enclosDinos[5].length == 1 ) {
+		const solitaryIndex = enclosDinos[5][0];
+		let total = 0;
+		enclosDinos.forEach(enclos=>{
+			total = total + enclos.filter(d=>d===solitaryIndex).length;
+		});
+		if( total === 1 ) {
+			playerPoints = playerPoints + 7;
+		}
+	}
+	if( enclosDinos[4].length > 1 ) { // couple
+		const coupleEnclos = enclosDinos[4];
+		coupleEnclos.sort((a,b)=> a > b);
+		[0,1,2,3,4,5].forEach(dinoIndex=>{
+			playerPoints = playerPoints + Math.floor(coupleEnclos.filter(d=>d===dinoIndex).length/2)*5;
+		});
+	}
+	[0,1,2,3,4,5,6].forEach(enclosIndex=>{
+		if( enclosDinos[enclosIndex].includes(TRexIndex) ) {
+			playerPoints+=1;
+		}
+	});
+	console.log(JSON.stringify(enclosDinos, null, 4));
 }
 
 function addDinoInEnclos() {
