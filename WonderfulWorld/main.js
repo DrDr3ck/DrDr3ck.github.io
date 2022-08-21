@@ -63,11 +63,16 @@ console.log(cards.length);
 let hand = [];
 let storedHand = [];
 
+let turn = 0;
+
 let cube = null;
 
 const constructionCards = [];
 
 const empireCards = [];
+
+let empireCubes = 0;
+let empireCrystalium = 2; // TODO: should be 0
 
 let selectedCardIndex = -1;
 let defausseCard = null;
@@ -130,6 +135,7 @@ function startClicked() {
 	curState = GAME_H1_STATE;
 	uiManager.setUI([ speakerButton, musicButton ]);
 	uiManager.addLogger("Start game");
+	turn = 1.1;
 }
 
 const speakerButton = new BFloatingSwitchButton(windowWidth - 70 - 10 - 70, 70, '\uD83D\uDD0A', speakerClicked);
@@ -287,6 +293,12 @@ function drawGame() {
 			drawCard(c, handX+handDeltaX*i, handY);
 		}
 	});
+
+	push();
+	fill(250);
+	stroke(0);
+	text(`Turn: ${turn}`, 1400, 260);
+	pop();
 	
 	// en cours de construction
 	if( overConstructionZone ) {
@@ -315,6 +327,23 @@ function drawGame() {
 	// empire
 	spritesheet.drawScaledSprite('empires', 0, 10, 770, scale);
 	empireCards.forEach((c,i)=>drawCard(c, 125, 437-35*i));
+	if( empireCubes ) {
+		push();
+		fill(250);
+		stroke(0);
+		textSize(30);
+		text(empireCubes, 230, 890);
+		pop();
+	}
+	if( empireCrystalium ) {
+		push();
+		stroke(0);
+		textSize(30);
+		drawCube("crystalium", 200, 925);
+		stroke(250);
+		text(empireCrystalium, 230, 935);
+		pop();
+	}
 
 	// draw selected card if any
 	if( selectedCardIndex >= 0 ) {
@@ -486,7 +515,11 @@ function needCube(card, cube) {
 }
 
 function addCubeOnEmpire(cube) {
-	// TODO
+	empireCubes++;
+	if( empireCubes === 5 ) {
+		empireCubes = 0;
+		empireCrystalium++;
+	}
 }
 
 function nextProductionStep(step) {
@@ -525,6 +558,7 @@ function nextProduction() {
 	if( !productionStep ) {
 		curState = GAME_H1_STATE;
 		fillHand(true);
+		turn = floor(turn)+1.1;
 	} else {
 		productionCount = getProductionCube(productionStep);
 		if( productionCount > 0 ) {
@@ -616,6 +650,7 @@ function mouseClicked() {
 		if( hand.every(c=>c.type === "none") ) {
 			if( curState === GAME_H1_STATE ) {
 				curState = GAME_H2_STATE;
+				turn += 0.1;
 				fillHand(true);
 			} else {
 				curState = GAME_PROD_STATE;
