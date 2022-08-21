@@ -73,9 +73,13 @@ let selectedCardIndex = -1;
 let defausseCard = null;
 let overConstructionZone = false;
 let overConstructionCardIndex = -1;
+let overEmpireZone = false;
 let overRecycleZone = false;
 let overDefausseZone = false;
 let defausseMode = false;
+
+let productionStep = null;
+let productionCount = 0;
 
 let corner = {X:0,Y:0};
 const spriteSize = {width: 240, height: 365};
@@ -85,8 +89,9 @@ const description = { materiaux: [], energie: [], or: [], science: [], explorati
 
 const GAME_LOADING_STATE = 0;
 const GAME_START_STATE = 1;
-const GAME_PLAY_STATE = 2;
-const GAME_OVER_STATE = 3;
+const GAME_H1_STATE = 2;
+const GAME_H2_STATE = 3;
+const GAME_PROD_STATE = 4;
 let curState = GAME_LOADING_STATE;
 let toggleDebug = false;
 let lastTime = 0;
@@ -122,14 +127,14 @@ function speakerClicked() {
 }
 
 function startClicked() {
-	curState = GAME_PLAY_STATE;
+	curState = GAME_H1_STATE;
 	uiManager.setUI([ speakerButton, musicButton ]);
 	uiManager.addLogger("Start game");
 }
 
 const speakerButton = new BFloatingSwitchButton(windowWidth - 70 - 10 - 70, 70, '\uD83D\uDD0A', speakerClicked);
 const musicButton = new BFloatingSwitchButton(windowWidth - 70, 70, '\uD83C\uDFB6', musicClicked);
-const startButton = new BButton(80, windowHeight - 50, "START", startClicked);
+const startButton = new BButton(1035, 80, "START", startClicked);
 
 function initUI() {
     speakerButton.setTextSize(50);
@@ -183,16 +188,71 @@ function drawCard(card, X, Y) {
 		const cubesType = [];
 		Object.keys(cardDesc.construction).forEach(k=>{for(let i=0; i < cardDesc.construction[k]; i++) {cubesType.push(k);};});
 		cubesType.forEach((t,i)=>{
-			rect(X+5,Y+5+31.5*i,28,28);
+			if( ["financiers", "generaux"].includes(t) ) {
+				ellipse(X+5+14,Y+5+31.5*i+14,28,28);
+			} else {
+				rect(X+5,Y+5+31.5*i,28,28);
+			}
 		});
+		if( card.construction ) {
+			// draw cube already put in place
+			let cubePosition = 0;
+			["materiaux","energie","science","or","exploration","crystalium"].forEach(type=>{
+				drawCompletedCubes(card, type, X, Y, cubePosition);
+				if( card.construction[type] >= 0 ) {
+					cubePosition = cubePosition + card.construction[type];
+				}
+			});
+			["financiers","generaux"].forEach(type=>{
+				// TODO
+			});
+		}
 	}
+}
+
+function drawCompletedCubes(card, type, X, Y, position) {
+	if( card.construction[type] > 0 ) {
+		let curCompleted = card.construction[`${type}_completed`];
+		for( let i=0; i < card.construction[type]; i++ ) {
+			if( curCompleted > 0 ) {
+				drawCube(type, X+5+15, Y+5+15+31.5*position);
+			}
+			curCompleted--;
+			position++;
+		}
+	}
+}
+
+// return the number of cube produced by the empire
+function getProductionCube(type) {
+	if( type === "materiaux" ) {
+		return 2 + empireCards.map(c=>c.production[type]||0).reduce((a,b)=>a+b,0);
+	}
+	if( type === "energie" ) {
+		return 1 + empireCards.map(c=>c.production[type]||0).reduce((a,b)=>a+b,0);
+	}
+	if( type === "science" ) {
+		return 1 + empireCards.map(c=>c.production[type]||0).reduce((a,b)=>a+b,0);
+	}
+	return empireCards.map(c=>c.production[type]||0).reduce((a,b)=>a+b,0);
 }
 
 function drawCube(cube, X, Y) {
 	if( cube === "materiaux" ) {
 		fill(199,179,148);
+	} else if( cube === "energie" ) {
+		fill(18,17,19);
+	} else if( cube === "science" ) {
+		fill(148,176,83);
+	} else if( cube === "or" ) {
+		fill(241,220,6);
+	} else if( cube === "exploration" ) {
+		fill(116,140,173);
+	} else {
+		// crystalium
+		fill(198,67,45);
 	}
-	rect(X-15,Y-15,30,30,5);
+	rect(X-15,Y-15,28,28,5);
 }
 
 const handX = 350
@@ -218,6 +278,7 @@ function drawGame() {
 		stroke(250);
 		strokeWeight(3);
 		rect(windowWidth-cardWidth-5, windowHeight-cardHeight-5, cardWidth, cardHeight, 5);
+		strokeWeight(1);
 	}
 
 	// main
@@ -238,9 +299,13 @@ function drawGame() {
 		strokeWeight(1);
 	}
 	rect(350, 300, 1400, 360, 25);
+	strokeWeight(1);
 	if( overConstructionCardIndex >= 0 ) {
 		noFill();
 		stroke(250);
+		if( cube && !needCube(constructionCards[overConstructionCardIndex], cube) ) {
+			stroke(198,67,45);
+		}
 		strokeWeight(5);
 		rect(350+220*overConstructionCardIndex+10, 300+15, cardWidth, cardHeight, 5);
 		strokeWeight(1);
@@ -261,6 +326,19 @@ function drawGame() {
 	}
 }
 
+function getFullCard(card) {
+	const desc = description[card.type][card.index];
+	if( !desc ) {
+		console.log("no desc for this card", card.type, card.index);
+		return {...card};
+	}
+	const construction = {...desc.construction};
+	Object.keys(desc.construction).forEach(key=>{
+		construction[`${key}_completed`] = 0;
+	});
+	return {...card, construction, production: desc.production, recyclage: desc.recyclage };
+}
+
 // take 5 cards
 function fillHand(defausse=true) {
 	if( defausse ) {
@@ -268,7 +346,7 @@ function fillHand(defausse=true) {
 		hand = [];
 	}
 	for( let i = 0; i < 5; i++ ) {
-		hand.push( cards.pop() );  
+		hand.push( getFullCard(cards.pop()) );  
 	}
 }
 
@@ -317,7 +395,7 @@ function draw() {
 		text("It's a wonderful world", 300, 75);
 		spritesheet.drawSprite("cover", 0, (windowWidth-1200)/2, (windowHeight-800)/2);
 	}
-	if (curState === GAME_PLAY_STATE) {
+	if (curState !== GAME_START_STATE) {
 		updateGame(elapsedTime);
 		drawGame();
 	}
@@ -336,6 +414,7 @@ function mouseMoved() {
 	overRecycleZone = false;
 	overDefausseZone = false;
 	overConstructionCardIndex = -1;
+	overEmpireZone = false;
 	if( selectedCardIndex >= 0 ) {
 		if( mouseX >= 350 && mouseY >= 300 && mouseX <= 350+1400 && mouseY <= 300+360) {
 			overConstructionZone = true;
@@ -354,6 +433,10 @@ function mouseMoved() {
 				overConstructionCardIndex = i;
 			}
 		});
+		// 10, 770, 370, 230
+		if( mouseX >= 10 && mouseY >= 770 && mouseX <= 10+370 && mouseY <= 770+230) {
+			overEmpireZone = true;
+		}
 		// check if cube is over the Empire
 	}
 }
@@ -370,6 +453,89 @@ function addCardToHand(card) {
 	hand.push({...card});
 }
 
+function addCube(cardIndex, cube) {
+	const card = constructionCards[cardIndex];
+	const completed = `${cube}_completed`;
+	card.construction[completed] = card.construction[completed] + 1;
+	// check if card is fully built
+	let built = true;
+	Object.keys(card.construction).forEach(
+		c=>{
+			if( c.endsWith("completed") ) {
+				return;
+			}
+			if( card.construction[c] > card.construction[`${c}_completed`]) {
+				built = false;
+			}
+		}
+	);
+	if( built ) {
+		// store card on empire and remove it from construction zone
+		console.log("this card is fully built");
+		empireCards.push(card);
+		constructionCards.splice(cardIndex, 1);
+	}
+}
+
+function needCube(card, cube) {
+	const type = card.construction[cube];
+	if( type > 0 && type > card.construction[`${cube}_completed`] ) {
+		return true;
+	}
+	return false;
+}
+
+function addCubeOnEmpire(cube) {
+	// TODO
+}
+
+function nextProductionStep(step) {
+	if( step === "exploration" ) {
+		return null;
+	}
+	if( step === "or" ) {
+		return "exploration";
+	}
+	if( step === "science" ) {
+		return "or";
+	}
+	if( step === "energie" ) {
+		return "science";
+	}
+	if( step === "materiaux" ) {
+		return "energie";
+	}
+}
+
+function closeCurrentDialog() {
+	uiManager.setDialog(null);
+	nextProduction();
+}
+
+function popupDialog() {
+	const dialog = new Dialog(720, 580, 100, 200);
+	dialog.startX = 300 + 200;
+	dialog.startY = 700 - 150;
+	dialog.components.push(new BFloatingButton(14, 180, '\u2716', closeCurrentDialog));
+	uiManager.setDialog(dialog);
+}
+
+function nextProduction() {
+	productionStep = nextProductionStep(productionStep);
+	if( !productionStep ) {
+		curState = GAME_H1_STATE;
+		fillHand(true);
+	} else {
+		productionCount = getProductionCube(productionStep);
+		if( productionCount > 0 ) {
+			cube = productionStep;
+		} else {
+			// TODO: if no cube for this step ?
+			popupDialog();
+		}
+	}
+}
+
 function mouseClicked() {
 	if( toggleDebug ) {
 		uiManager.addLogger(`X=${mouseX}, Y=${mouseY}`);
@@ -377,7 +543,27 @@ function mouseClicked() {
 	if( cube ) {
 		// check if cube can be drop here...
 		if( overConstructionCardIndex >= 0 ) {
-			cube = null; // TODO
+			const curCard = constructionCards[overConstructionCardIndex];
+			if( needCube(curCard, cube) ) {
+				addCube(overConstructionCardIndex, cube);
+				cube = null;
+			}
+		}
+		if( overEmpireZone ) {
+			addCubeOnEmpire(cube);
+			cube = null;
+		}
+		if( !cube ) { // cube has been dropped
+			// check if we are in production stage
+			if( productionStep ) {
+				productionCount--;
+				if( productionCount > 0 ) {
+					cube = productionStep;
+				} else {
+					// next type of cube !
+					nextProduction();
+				}
+			}
 		}
 	} else if( selectedCardIndex === -1 ) {
 		hand.forEach((c,i)=>{
@@ -408,7 +594,7 @@ function mouseClicked() {
 			// TODO: get cube
 			const selectedCard = hand[selectedCardIndex];
 			selectedCard.type = "none";
-			cube = "materiaux";
+			cube = selectedCard.recyclage;
 		}
 		if( overDefausseZone ) {
 			const selectedCard = hand[selectedCardIndex];
@@ -426,9 +612,20 @@ function mouseClicked() {
 		}
 		selectedCardIndex = -1;
 	}
-	if( cube === null && selectedCardIndex === -1 ) {
+	if( cube === null && selectedCardIndex === -1 && curState !== GAME_PROD_STATE ) {
 		if( hand.every(c=>c.type === "none") ) {
-			fillHand(true);
+			if( curState === GAME_H1_STATE ) {
+				curState = GAME_H2_STATE;
+				fillHand(true);
+			} else {
+				curState = GAME_PROD_STATE;
+				productionStep = "materiaux";
+				productionCount = getProductionCube(productionStep);
+				if( productionCount > 0 ) {
+					cube = productionStep;
+				}
+				// TODO: if no cube for this step ?
+			}
 		}
 	}
 	toolManager.mouseClicked();
@@ -456,47 +653,85 @@ function addDescriptionCard(type, title, count, construction, production, recycl
 	description[type].push({title, count, construction, production, recyclage, bonus});
 }
 
-addDescriptionCard("materiaux", "Base Militaire", 6, {materiaux: 3, energie: 1}, {}, "materiaux");
-addDescriptionCard("materiaux", "Centrale Nucléaire", 5, {materiaux: 4, science: 1}, {}, "energie");
-addDescriptionCard("materiaux", "Place Financière", 5, {materiaux: 4, energie: 1}, {}, "or");
-addDescriptionCard("materiaux", "Centre de Recherche", 7, {materiaux: 3, energie: 1}, {}, "science");
+addDescriptionCard("materiaux", "Base Militaire", 6, {materiaux: 3, energie: 1}, {materiaux: 1, science: 1}, "materiaux");
+addDescriptionCard("materiaux", "Centrale Nucléaire", 5, {materiaux: 4, science: 1}, {energie: 3}, "energie");
+addDescriptionCard("materiaux", "Place Financière", 5, {materiaux: 4, energie: 1}, {or: 2}, "or");
+addDescriptionCard("materiaux", "Centre de Recherche", 7, {materiaux: 3, energie: 1}, {science: 2}, "science");
 addDescriptionCard("materiaux", "Réseau de Transport", 2, {materiaux: 3}, {}, "materiaux");
-addDescriptionCard("materiaux", "Plate-Forme Pétrolière", 5, {materiaux: 3, exploration: 1}, {}, "energie");
-addDescriptionCard("materiaux", "Usine de Recyclage", 7, {materiaux: 2}, {}, "materiaux");
-addDescriptionCard("materiaux", "Complexe Industriel", 6, {materiaux: 3, energie: 1}, {}, "or");
-addDescriptionCard("materiaux", "Eoliennes", 7, {materiaux: 2}, {}, "energie");
+addDescriptionCard("materiaux", "Plate-Forme Pétrolière", 5, {materiaux: 3, exploration: 1}, {energie: 1, or: 1}, "energie");
+addDescriptionCard("materiaux", "Usine de Recyclage", 7, {materiaux: 2}, {materiaux: 2}, "materiaux");
+addDescriptionCard("materiaux", "Complexe Industriel", 6, {materiaux: 3, energie: 1}, {materiaux: 1, or: 1}, "or");
+addDescriptionCard("materiaux", "Eoliennes", 7, {materiaux: 2}, {energie: 1}, "energie");
 
-addDescriptionCard("energie", "Escadrille de Soucoupes", 2, {energie: 3, science: 2}, {}, "science");
-addDescriptionCard("energie", "Sous-Marin", 3, {materiaux: 2, energie: 3}, {}, "materiaux");
-addDescriptionCard("energie", "Division de Chars", 7, {materiaux: 1, energie: 2}, {}, "materiaux");
-addDescriptionCard("energie", "Brise-Glace", 4, {energie: 3, science: 1}, {}, "exploration");
-addDescriptionCard("energie", "Zeppelin", 6, {energie: 2}, {}, "exploration");
-addDescriptionCard("energie", "Laboratoire Aéroporté", 3, {energie: 3}, {}, "science");
-addDescriptionCard("energie", "Juggernaut", 1, {materiaux: 3, energie: 3, crystalium: 1}, {}, "materiaux");
-addDescriptionCard("energie", "Porte-Avions", 1, {materiaux: 3, energie: 4}, {}, "materiaux");
-addDescriptionCard("energie", "Méga-Foreuse", 4, {materiaux: 1, energie: 2}, {}, "materiaux");
+addDescriptionCard("energie", "Escadrille de Soucoupes", 2, {energie: 3, science: 2}, {exploration: 3}, "science");
+addDescriptionCard("energie", "Sous-Marin", 3, {materiaux: 2, energie: 3}, {exploration: 2}, "materiaux");
+addDescriptionCard("energie", "Division de Chars", 7, {materiaux: 1, energie: 2}, {exploration: 1}, "materiaux");
+addDescriptionCard("energie", "Brise-Glace", 4, {energie: 3, science: 1}, {exploration: 2}, "exploration");
+addDescriptionCard("energie", "Zeppelin", 6, {energie: 2}, {exploration: 1}, "exploration");
+addDescriptionCard("energie", "Laboratoire Aéroporté", 3, {energie: 3}, {science: 1, exploration: 1}, "science");
+addDescriptionCard("energie", "Juggernaut", 1, {materiaux: 3, energie: 3, crystalium: 1}, {exploration: 2}, "materiaux");
+addDescriptionCard("energie", "Porte-Avions", 1, {materiaux: 3, energie: 4}, {exploration: "1xenergie"}, "materiaux");
+addDescriptionCard("energie", "Méga-Foreuse", 4, {materiaux: 1, energie: 2}, {materiaux: 1, exploration: 1}, "materiaux");
 
-addDescriptionCard("or", "Laboratoire Secret", 2, {materiaux: 2, or: 3}, {}, "science");
-addDescriptionCard("or", "Zone Portuaire", 2, {or: 5}, {}, "or");
-addDescriptionCard("or", "Ville Souterraine", 2, {materiaux: 3, or: 3}, {}, "energie");
-addDescriptionCard("or", "Agence d'Espionnage", 2, {energie: 2, or: 2}, {}, "exploration");
-addDescriptionCard("or", "Ville Sous-Marine", 2, {energie: 2, science: 1, or: 2}, {}, "exploration");
-addDescriptionCard("or", "Ville-Casino", 2, {energie: 3, or: 4}, {}, "or");
-addDescriptionCard("or", "Université", 1, {science: 1, or: 2}, {}, "science");
-addDescriptionCard("or", "Base Polaire", 1, {energie: 3, or: 4}, {}, "exploration");
+addDescriptionCard("or", "Laboratoire Secret", 2, {materiaux: 2, or: 3}, {science: 2}, "science");
+addDescriptionCard("or", "Zone Portuaire", 2, {or: 5}, {materiaux: 2, or: 2}, "or");
+addDescriptionCard("or", "Ville Souterraine", 2, {materiaux: 3, or: 3}, {materiaux: 2, energie: 2}, "energie");
+addDescriptionCard("or", "Agence d'Espionnage", 2, {energie: 2, or: 2}, {exploration: 2}, "exploration");
+addDescriptionCard("or", "Ville Sous-Marine", 2, {energie: 2, science: 1, or: 2}, {science: 1, exploration: 2}, "exploration");
+addDescriptionCard("or", "Ville-Casino", 2, {energie: 3, or: 4}, {or: 2}, "or");
+addDescriptionCard("or", "Université", 1, {science: 1, or: 2}, {science: "1xor"}, "science");
+addDescriptionCard("or", "Base Polaire", 1, {energie: 3, or: 4}, {exploration: 3}, "exploration");
 addDescriptionCard("or", "Base Lunaire", 1, {energie: 2, science: 2, or: 2, crystalium: 1}, {}, "exploration");
-addDescriptionCard("or", "Barrage Géant", 1, {materiaux: 3, or: 2}, {}, "energie");
+addDescriptionCard("or", "Barrage Géant", 1, {materiaux: 3, or: 2}, {energie: 4}, "energie");
 addDescriptionCard("or", "Exposition Universelle", 1, {or: 3, financier: 2}, {}, "or");
 addDescriptionCard("or", "Monument National", 1, {materiaux: 5, or: 3}, {}, "or");
 addDescriptionCard("or", "Société Secrète", 2, {or: 3, crystalium: 1}, {}, "or");
 addDescriptionCard("or", "Tour Géante", 1, {materiaux: 2, or: 3, financier: 1}, {}, "or");
 addDescriptionCard("or", "Canon Solaire", 1, {energie: 2, science: 1, or: 3}, {}, "energie");
-addDescriptionCard("or", "Centre de Propagande", 2, {or: 3}, {}, "or");
+addDescriptionCard("or", "Centre de Propagande", 2, {or: 3}, {or: "1xor"}, "or");
 addDescriptionCard("or", "Musée", 2, {or: 3}, {}, "exploration");
-addDescriptionCard("or", "Train Magnétique", 1, {energie: 1, science: 1, or: 3}, {}, "or");
+addDescriptionCard("or", "Train Magnétique", 1, {energie: 1, science: 1, or: 3}, {or: "1xmateriaux"}, "or");
 addDescriptionCard("or", "Ascenseur Spatial", 1, {energie: 3, science: 1, or: 2}, {}, "energie");
 addDescriptionCard("or", "Congrès Mondial", 1, {or: 6, financier: 2}, {}, "or");
 
-addDescriptionCard("science", "Clonage Humain", 1, {science: 2, or: 1}, {}, "or"); // 23
+addDescriptionCard("science", "Clonage Humain", 1, {science: 2, or: 1}, {or: 1}, "or");
+addDescriptionCard("science", "Téléportation", 1, {science: 8}, {}, "exploration");
+addDescriptionCard("science", "Animorphes", 1, {energie: 1, science: 2}, {materiaux: 1}, "energie");
+addDescriptionCard("science", "Super-Sonar", 1, {science: 4}, {exploration: "1xenergie"}, "exploration");
+addDescriptionCard("science", "Aquaculture", 1, {science: 4, or: 2}, {}, "science");
+addDescriptionCard("science", "Contrôle du Climat", 1, {science: 5}, {energie: 2, or: 1}, "energie");
+addDescriptionCard("science", "Super Calculateur", 1, {science: 4}, {science: 1}, "science");
+addDescriptionCard("science", "Neuroscience", 1, {science: 3}, {science: "1xscience"}, "science");
+addDescriptionCard("science", "Transmutation", 1, {science: 3, or: 2}, {or: 3}, "or");
+addDescriptionCard("science", "Cryogénisation", 1, {science: 7}, {}, "or");
+addDescriptionCard("science", "Automates de Contrôle", 1, {science: 4, or: 1}, {}, "or");
+addDescriptionCard("science", "Inverseur de Gravité", 1, {energie: 1, science: 4, crystalium: 1}, {}, "science");
+addDescriptionCard("science", "Réalité Virtuelle", 1, {science: 5}, {or: "1xscience"}, "or");
+addDescriptionCard("science", "Robots de Compagnie", 1, {science: 3}, {materiaux: "1xmateriaux"}, "materiaux");
+addDescriptionCard("science", "Greffes Bioniques", 1, {science: 5}, {materiaux: 2}, "materiaux");
+addDescriptionCard("science", "Générateur Quantique", 1, {science: 5}, {energie: 3}, "energie");
+addDescriptionCard("science", "Méga-Bombe", 1, {energie: 2, science: 2}, {}, "energie");
+addDescriptionCard("science", "Amélioration Génétique", 1, {science: 4}, {}, "science");
+addDescriptionCard("science", "Super-Soldats", 1, {science: 7}, {}, "exploration");
+addDescriptionCard("science", "Satellites", 1, {energie: 2, science: 4}, {exploration: 2}, "exploration");
+addDescriptionCard("science", "Technologie Inconnue", 1, {science: 7, crystalium: 1}, {}, "science");
+addDescriptionCard("science", "Voyage Temporel", 1, {science: 5, crystalium: 3}, {}, "exploration");
+addDescriptionCard("science", "Vaccin Universel", 1, {science: 3}, {}, "or");
 
-addDescriptionCard("exploration", "Ile d'Avalon", 1, {exploration: 5}, {}, "science"); // 17
+addDescriptionCard("exploration", "Ile d'Avalon", 1, {exploration: 5}, {science: 1}, "science");
+addDescriptionCard("exploration", "Dimension Parallèle", 1, {science:3, exploration: 4, generaux: 1}, {}, "exploration");
+addDescriptionCard("exploration", "Trésor de Barbe Noire", 1, {exploration: 3}, {or: 1, exploration: 1}, "or");
+addDescriptionCard("exploration", "Continent Perdu de Mu", 1, {exploration: 6}, {or: 1}, "or");
+addDescriptionCard("exploration", "Roswell", 1, {exploration: 6}, {science: 1}, "science");
+addDescriptionCard("exploration", "Tombeau d'Alexandre", 1, {exploration: 7}, {}, "or");
+addDescriptionCard("exploration", "Atlantide", 1, {exploration: 7, crystalium: 1}, {}, "or");
+addDescriptionCard("exploration", "Mines du Roi Salomon", 1, {exploration: 4}, {or: "1xmateriaux"}, "or");
+addDescriptionCard("exploration", "Cité d'Agartha", 1, {exploration: 4, crystalium: 1}, {exploration: 2}, "exploration");
+addDescriptionCard("exploration", "Fontaine de Jouvence", 1, {exploration: 7}, {}, "energie");
+addDescriptionCard("exploration", "Jardin des Hespérides", 1, {exploration: 5}, {}, "exploration");
+addDescriptionCard("exploration", "Cités d'Or", 1, {exploration: 4}, {or: 3}, "or");
+addDescriptionCard("exploration", "Centre de la Terre", 1, {exploration: 5, generaux: 2}, {}, "exploration");
+addDescriptionCard("exploration", "Trésor des Templiers", 1, {exploration: 5}, {or: 2}, "or");
+addDescriptionCard("exploration", "Arche d'Alliance", 1, {exploration: 4}, {}, "exploration");
+addDescriptionCard("exploration", "Anciens Astronautes", 1, {exploration: 6, generaux: 1}, {science: "1xexploration"}, "science");
+addDescriptionCard("exploration", "Triangle des Bermudes", 1, {exploration: 4}, {science: 1}, "science");
