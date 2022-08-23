@@ -16,6 +16,11 @@ const soutiens = [
 let financiers = 0;
 let generaux = 0;
 
+// TODO list
+// undo defausse
+// handle pions and crystalium
+// recycle construction cards
+
 const materiauxCards = [
 	0,0,0,0,0,0,
 	1,1,1,1,1,
@@ -205,6 +210,21 @@ function drawCard(card, X, Y) {
 				rect(X+5,Y+5+31.5*i,28,28);
 			}
 		});
+		// FOR DEBUG ONLY
+		if( cardDesc.bonus ) {
+			const bonus = Object.keys(cardDesc.bonus)[0];
+			const count = cardDesc.bonus[bonus];
+			if( bonus === "financiers" || bonus === "generaux" ) {
+				for( let i=0; i < count; i++ ) {
+					ellipse(X+5+14+30*i+90-(30*(count-1)/2),Y+5+250+14,28,28);
+				}
+			} else if( bonus === "crystalium" ) {
+				for( let i=0; i < count; i++ ) {
+					rect(X+5+30*i+90-(30*(count-1)/2),Y+5+250,28,28);
+				}
+			}
+		}
+		// END DEBUG
 		if( card.construction ) {
 			// draw cube already put in place
 			let cubePosition = 0;
@@ -245,6 +265,7 @@ function getProductionCube(type) {
 	if( type === "science" ) {
 		return 1 + empireCards.map(c=>c.production[type]||0).reduce((a,b)=>a+b,0);
 	}
+	// TODO: handle 1xor for instance
 	return empireCards.map(c=>c.production[type]||0).reduce((a,b)=>a+b,0);
 }
 
@@ -297,6 +318,7 @@ function drawGame() {
 		drawCard(defausseCard, windowWidth-cardWidth-5, windowHeight-cardHeight-5);
 	} else {
 		spritesheet.drawScaledSprite('verso', 0, windowWidth-cardWidth-5, windowHeight-cardHeight-5, 0.9);
+		text(cards.length, 1600,910);
 	}
 	if( overDefausseZone ) {
 		stroke(250);
@@ -396,7 +418,7 @@ function getFullCard(card) {
 	Object.keys(desc.construction).forEach(key=>{
 		construction[`${key}_completed`] = 0;
 	});
-	return {...card, construction, production: desc.production, recyclage: desc.recyclage };
+	return {...card, construction, production: desc.production, recyclage: desc.recyclage, bonus: desc.bonus };
 }
 
 // take 5 cards
@@ -529,10 +551,24 @@ function addCube(cardIndex, curCube) {
 	);
 	if( built ) {
 		// store card on empire and remove it from construction zone
-		console.log("this card is fully built");
+		if( card.bonus ) {
+			addBonus(card.bonus);
+		}
 		empireCards.push(card);
 		constructionCards.splice(cardIndex, 1);
 		overConstructionCardIndex = -1;
+	}
+}
+
+function addBonus(bonus) {
+	if( bonus.financiers ) {
+		financiers+=bonus.financiers;
+	}
+	if( bonus.generaux ) {
+		generaux+=bonus.generaux;
+	}
+	if( bonus.crystalium ) {
+		empireCrystalium+=bonus.crystalium;
 	}
 }
 
