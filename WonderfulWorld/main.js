@@ -60,6 +60,7 @@ const explorationCards = [
 ];
 
 const cards = [];
+const gameCards = [];
 materiauxCards.forEach(c=>cards.push({type: "materiaux", index: c}));
 energieCards.forEach(c=>cards.push({type: "energie", index: c}));
 orCards.forEach(c=>cards.push({type: "or", index: c}));
@@ -422,17 +423,26 @@ function getFullCard(card) {
 }
 
 // take 5 cards
-function fillHand(defausse=true) {
+function fillHand(defausse=false) {
+	hand = [];
 	if( defausse ) {
-		hand = [];
-	}
-	for( let i = 0; i < 5; i++ ) {
-		hand.push( getFullCard(cards.pop()) );  
+		for( let i = 0; i < 5; i++ ) {
+			hand.push( getFullCard(cards.pop()) );
+		}
+	} else if( gameCards.length >= 5 ) {
+		for( let i = 0; i < 5; i++ ) {
+			hand.push( gameCards.pop() );  
+		}
+	} else {
+		// end of game !! TODO
 	}
 }
 
 function initGame() {
 	shuffleArray(cards);
+	for( let i=0; i < 40; i++ ) {
+		gameCards.push(getFullCard(cards.pop()));
+	}
 	fillHand(false);
 }
 
@@ -503,7 +513,7 @@ function mouseMoved() {
 		if( mouseX >= 350 && mouseY >= 5 && mouseX <= 350+1100 && mouseY <= 5+280) {
 			overRecycleZone = true;
 		}
-		if( mouseX >= windowWidth-cardWidth-5 && mouseY >= windowHeight-cardHeight-5 && mouseX <= windowWidth-5 && mouseY <= windowHeight-5 ) {
+		if( cards.length >= 5 && mouseX >= windowWidth-cardWidth-5 && mouseY >= windowHeight-cardHeight-5 && mouseX <= windowWidth-5 && mouseY <= windowHeight-5 ) {
 			overDefausseZone = true;
 		}
 	} else if( cubes.length > 0 ) {
@@ -623,7 +633,7 @@ function nextProduction() {
 	productionStep = nextProductionStep(productionStep);
 	if( !productionStep ) {
 		curState = GAME_H1_STATE;
-		fillHand(true);
+		fillHand(false);
 		turn = floor(turn/10)*10+11;
 	} else {
 		productionCount = getProductionCube(productionStep);
@@ -711,7 +721,7 @@ function mouseClicked() {
 			if( curState === GAME_H1_STATE ) {
 				curState = GAME_H2_STATE;
 				turn += 1;
-				fillHand(true);
+				fillHand(false);
 			} else {
 				curState = GAME_PROD_STATE;
 				productionStep = "materiaux";
