@@ -255,19 +255,30 @@ function drawCompletedCubes(card, type, X, Y, position) {
 	}
 }
 
+function computeProduction(prod) {
+	if( !prod ) return 0;
+	if( Number.isInteger(prod) ) {
+		return prod;
+	}
+	if( prod.startsWith("1x") ) {
+		const type = prod.split('1x')[1];
+		return empireCards.filter(c=>c.type === type).length;
+	}
+	return prod;
+}
+
 // return the number of cube produced by the empire
 function getProductionCube(type) {
 	if( type === "materiaux" ) {
-		return 2 + empireCards.map(c=>c.production[type]||0).reduce((a,b)=>a+b,0);
+		return 2 + empireCards.map(c=>computeProduction(c.production[type])).reduce((a,b)=>a+b,0);
 	}
 	if( type === "energie" ) {
-		return 1 + empireCards.map(c=>c.production[type]||0).reduce((a,b)=>a+b,0);
+		return 1 + empireCards.map(c=>computeProduction(c.production[type])).reduce((a,b)=>a+b,0);
 	}
 	if( type === "science" ) {
-		return 1 + empireCards.map(c=>c.production[type]||0).reduce((a,b)=>a+b,0);
+		return 1 + empireCards.map(c=>computeProduction(c.production[type])).reduce((a,b)=>a+b,0);
 	}
-	// TODO: handle 1xor for instance
-	return empireCards.map(c=>c.production[type]||0).reduce((a,b)=>a+b,0);
+	return empireCards.map(c=>computeProduction(c.production[type])).reduce((a,b)=>a+b,0);
 }
 
 function drawCube(curCube, X, Y) {
@@ -757,7 +768,7 @@ function addDescriptionCard(type, title, count, construction, production, recycl
 	description[type].push({title, count, construction, production, recyclage, bonus});
 }
 
-addDescriptionCard("materiaux", "Base Militaire", 6, {materiaux: 3, energie: 1}, {materiaux: 1, science: 1}, "materiaux", {generaux: 1});
+addDescriptionCard("materiaux", "Base Militaire", 6, {materiaux: 3, energie: 1}, {materiaux: "1xmateriaux", science: 1}, "materiaux", {generaux: 1});
 addDescriptionCard("materiaux", "Centrale Nucléaire", 5, {materiaux: 4, science: 1}, {energie: 3}, "energie");
 addDescriptionCard("materiaux", "Place Financière", 5, {materiaux: 4, energie: 1}, {or: 2}, "or", {financiers: 1});
 addDescriptionCard("materiaux", "Centre de Recherche", 7, {materiaux: 3, energie: 1}, {science: 2}, "science");
