@@ -13,12 +13,12 @@ const soutiens = [
 	["financiers"], ["generaux"], ["financiers","generaux"], ["financiers"], ["generaux"]
 ];
 
-let financiers = 0;
-let generaux = 0;
+let financiers = 5;
+let generaux = 5;
 
 // TODO list
 // undo defausse
-// handle pions and crystalium
+// handle crystalium
 // recycle construction cards
 
 const materiauxCards = [
@@ -82,6 +82,7 @@ const empireCards = [];
 
 let empireCubes = 0;
 let empireCrystalium = 0;
+let selectedBody = null;
 
 let selectedCardIndex = -1;
 let defausseCard = null;
@@ -90,6 +91,9 @@ let overConstructionCardIndex = -1;
 let overEmpireZone = false;
 let overRecycleZone = false;
 let overDefausseZone = false;
+let overFinanciers = false;
+let overGeneraux = false;
+
 let defausseMode = false;
 
 let productionStep = null;
@@ -181,7 +185,7 @@ function setup() {
 	spritesheet.addSpriteSheet('science', './science.png', 240, 365);
 	spritesheet.addSpriteSheet('exploration', './exploration.png', 240, 365);
 
-	spritesheet.addSpriteSheet('pions', './pions.png', 152/2, 75);
+	spritesheet.addSpriteSheet('pions', './pions.png', 76, 75);
 
     lastTime = Date.now();
 }
@@ -236,8 +240,24 @@ function drawCard(card, X, Y) {
 				}
 			});
 			["financiers","generaux"].forEach(type=>{
-				// TODO
+				drawCompletedBodies(card, type, X, Y, cubePosition);
+				if( card.construction[type] >= 0 ) {
+					cubePosition = cubePosition + card.construction[type];
+				}
 			});
+		}
+	}
+}
+
+function drawCompletedBodies(card, type, X, Y, position) {
+	if( card.construction[type] > 0 ) {
+		let curCompleted = card.construction[`${type}_completed`];
+		for( let i=0; i < card.construction[type]; i++ ) {
+			if( curCompleted > 0 ) {
+				drawCardBody(type, X+5+15, Y+5+15+31.5*position);
+			}
+			curCompleted--;
+			position++;
 		}
 	}
 }
@@ -297,6 +317,19 @@ function drawCube(curCube, X, Y) {
 		fill(198,67,45);
 	}
 	rect(X-15,Y-15,28,28,5);
+}
+
+function drawCardBody(body, X, Y) {
+	if( body === "financiers" ) {
+		fill(139,186,218);
+	} else {
+		fill(207,91,75);
+	}
+	ellipse(X,Y,28,28);
+}
+
+function drawBody(body, X, Y) {
+	spritesheet.drawSprite('pions', body==="financiers" ? 1: 0, X-76/2, Y-75/2);
 }
 
 const handX = 350
@@ -370,6 +403,9 @@ function drawGame() {
 		if( cubes.length > 0 && !needCube(constructionCards[overConstructionCardIndex], cubes[0]) ) {
 			stroke(198,67,45);
 		}
+		if( selectedBody && !needCube(constructionCards[overConstructionCardIndex], selectedBody) ) {
+			stroke(198,67,45);
+		}
 		strokeWeight(5);
 		rect(350+220*overConstructionCardIndex+10, 300+15, cardWidth, cardHeight, 5);
 		strokeWeight(1);
@@ -383,12 +419,18 @@ function drawGame() {
 	stroke(0);
 	textSize(30);
 	if( financiers ) {
+		if( overFinanciers ) {
+			ellipse(25+76/2, 780+75/2, 76+4, 75+4);	
+		}	
 		spritesheet.drawSprite('pions', 1, 25, 780);
-		text(financiers, 25+30, 780+30);
+		text(selectedBody==="financiers" ? financiers-1 : financiers, 25+30, 780+30);
 	}
 	if( generaux ) {
+		if( overGeneraux ) {
+			ellipse(25+76/2, 870+75/2, 76+4, 75+4);	
+		}	
 		spritesheet.drawSprite('pions', 0, 25, 870);
-		text(generaux, 25+30, 870+30);
+		text(selectedBody==="generaux" ? generaux-1 : generaux, 25+30, 870+30);
 	}
 	pop();
 	empireCards.forEach((c,i)=>drawCard(c, 125, 437-35*i));
@@ -417,6 +459,10 @@ function drawGame() {
 
 	if( cubes.length > 0 ) {
 		drawCube(cubes[0], mouseX, mouseY);
+	}
+
+	if( selectedBody ) {
+		drawBody(selectedBody, mouseX, mouseY);
 	}
 }
 
@@ -517,6 +563,17 @@ function mouseMoved() {
 	overDefausseZone = false;
 	overConstructionCardIndex = -1;
 	overEmpireZone = false;
+	overFinanciers = false;
+	overGeneraux= false;
+	if( selectedBody ) {
+		// check if body is over a construction card
+		constructionCards.forEach((c,i)=>{
+			// 350+220*i+10, 300+15, cardWidth, cardHeight
+			if( mouseX >= 350+220*i+10 && mouseY >= 300+15 && mouseX <= 350+220*i+10+cardWidth && mouseY <= 300+15+cardHeight) {
+				overConstructionCardIndex = i;
+			}
+		});
+	}
 	if( selectedCardIndex >= 0 ) {
 		if( mouseX >= 350 && mouseY >= 300 && mouseX <= 350+1400 && mouseY <= 300+360) {
 			overConstructionZone = true;
@@ -538,6 +595,15 @@ function mouseMoved() {
 		// check if cube is over the Empire
 		if( mouseX >= 10 && mouseY >= 770 && mouseX <= 10+370 && mouseY <= 770+230) {
 			overEmpireZone = true;
+		}
+	} else {
+		// check if over financiers or generaux
+		// 63, 820|900
+		if( dist(mouseX, mouseY, 63, 820) < 35 ) {
+			overFinanciers = true;
+		}
+		if( dist(mouseX, mouseY, 63, 900) < 35 ) {
+			overGeneraux = true;
 		}
 	}
 }
@@ -662,7 +728,7 @@ function mouseClicked() {
 		uiManager.addLogger(`X=${mouseX}, Y=${mouseY}`);
 	}
 	if( cubes.length > 0 ) {
-		// check if cube can be drop here...
+		// check if cube can be dropped here...
 		if( overConstructionCardIndex >= 0 ) {
 			const curCard = constructionCards[overConstructionCardIndex];
 			if( needCube(curCard, cubes[0]) ) {
@@ -681,7 +747,30 @@ function mouseClicked() {
 				nextProduction();
 			}
 		}
+	} else if( selectedBody ) {
+		// check if body can be dropped here...
+		if( overConstructionCardIndex >= 0 ) {
+			const curCard = constructionCards[overConstructionCardIndex];
+			if( needCube(curCard, selectedBody) ) {
+				addCube(overConstructionCardIndex, selectedBody);
+				if( selectedBody === "financiers" ) {
+					financiers--;
+				} else {
+					generaux--;
+				}
+				selectedBody = null;
+			}
+		} else {
+			selectedBody = null;
+		}
 	} else if( selectedCardIndex === -1 ) {
+		if( overFinanciers ) {
+			selectedBody = "financiers";
+		} else if( overGeneraux ) {
+			selectedBody = "generaux";
+		} else {
+			selectedBody = null;
+		}
 		hand.forEach((c,i)=>{
 			if( c.type === "none" ) {
 				return;
@@ -798,16 +887,16 @@ addDescriptionCard("or", "Université", 1, {science: 1, or: 2}, {science: "1xor"
 addDescriptionCard("or", "Base Polaire", 1, {energie: 3, or: 4}, {exploration: 3}, "exploration", {generaux: 1});
 addDescriptionCard("or", "Base Lunaire", 1, {energie: 2, science: 2, or: 2, crystalium: 1}, {}, "exploration", {generaux: 2});
 addDescriptionCard("or", "Barrage Géant", 1, {materiaux: 3, or: 2}, {energie: 4}, "energie");
-addDescriptionCard("or", "Exposition Universelle", 1, {or: 3, financier: 2}, {}, "or");
+addDescriptionCard("or", "Exposition Universelle", 1, {or: 3, financiers: 2}, {}, "or");
 addDescriptionCard("or", "Monument National", 1, {materiaux: 5, or: 3}, {}, "or");
 addDescriptionCard("or", "Société Secrète", 2, {or: 3, crystalium: 1}, {}, "or");
-addDescriptionCard("or", "Tour Géante", 1, {materiaux: 2, or: 3, financier: 1}, {}, "or");
+addDescriptionCard("or", "Tour Géante", 1, {materiaux: 2, or: 3, financiers: 1}, {}, "or");
 addDescriptionCard("or", "Canon Solaire", 1, {energie: 2, science: 1, or: 3}, {}, "energie", {generaux: 1});
 addDescriptionCard("or", "Centre de Propagande", 2, {or: 3}, {or: "1xor"}, "or", {generaux: 1});
 addDescriptionCard("or", "Musée", 2, {or: 3}, {}, "exploration");
 addDescriptionCard("or", "Train Magnétique", 1, {energie: 1, science: 1, or: 3}, {or: "1xmateriaux"}, "or", {financiers: 2});
 addDescriptionCard("or", "Ascenseur Spatial", 1, {energie: 3, science: 1, or: 2}, {}, "energie", {financiers: 1});
-addDescriptionCard("or", "Congrès Mondial", 1, {or: 6, financier: 2}, {}, "or");
+addDescriptionCard("or", "Congrès Mondial", 1, {or: 6, financiers: 2}, {}, "or");
 
 addDescriptionCard("science", "Clonage Humain", 1, {science: 2, or: 1}, {or: 1}, "or", {financiers: 1});
 addDescriptionCard("science", "Téléportation", 1, {science: 8}, {}, "exploration", {crystalium: 2});
