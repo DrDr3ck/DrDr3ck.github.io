@@ -13,13 +13,16 @@ const soutiens = [
 	["financiers"], ["generaux"], ["financiers","generaux"], ["financiers"], ["generaux"]
 ];
 
-let financiers = 5;
-let generaux = 5;
+let financiers = 0;
+let generaux = 0;
 
 // TODO list
 // undo defausse
 // handle crystalium
 // recycle construction cards
+// points (end of game)
+// music ?
+// dialog when no cubes
 
 const materiauxCards = [
 	0,0,0,0,0,0,
@@ -93,6 +96,7 @@ let overRecycleZone = false;
 let overDefausseZone = false;
 let overFinanciers = false;
 let overGeneraux = false;
+let overCrystalium = false;
 
 let defausseMode = false;
 
@@ -110,6 +114,7 @@ const GAME_START_STATE = 1;
 const GAME_H1_STATE = 2;
 const GAME_H2_STATE = 3;
 const GAME_PROD_STATE = 4;
+const GAME_END = 5;
 let curState = GAME_LOADING_STATE;
 let toggleDebug = false;
 let lastTime = 0;
@@ -444,7 +449,8 @@ function drawGame() {
 	}
 	if( empireCrystalium ) {
 		push();
-		stroke(0);
+		strokeWeight(overCrystalium ? 3: 1);
+		stroke(overCrystalium ? 250 : 0);
 		textSize(30);
 		drawCube("crystalium", 200, 925);
 		stroke(250);
@@ -565,6 +571,7 @@ function mouseMoved() {
 	overEmpireZone = false;
 	overFinanciers = false;
 	overGeneraux= false;
+	overCrystalium = false;
 	if( selectedBody ) {
 		// check if body is over a construction card
 		constructionCards.forEach((c,i)=>{
@@ -597,6 +604,7 @@ function mouseMoved() {
 			overEmpireZone = true;
 		}
 	} else {
+		// on Empire:
 		// check if over financiers or generaux
 		// 63, 820|900
 		if( dist(mouseX, mouseY, 63, 820) < 35 ) {
@@ -604,6 +612,10 @@ function mouseMoved() {
 		}
 		if( dist(mouseX, mouseY, 63, 900) < 35 ) {
 			overGeneraux = true;
+		}
+		// check if over crystalium: 200, 925 (-15)
+		if( mouseX >= 200-15 && mouseY >= 925-15 && mouseX <= 200-15+30 && mouseY <= 925-15+30) {
+			overCrystalium = true;
 		}
 	}
 }
@@ -668,6 +680,10 @@ function needCube(card, curCube) {
 }
 
 function addCubeOnEmpire() {
+	if( cubes[0] === "crystalium" ) {
+		empireCrystalium++;
+		return;
+	}
 	empireCubes++;
 	if( empireCubes === 5 ) {
 		empireCubes = 0;
@@ -712,6 +728,9 @@ function nextProduction() {
 		curState = GAME_H1_STATE;
 		fillHand(false);
 		turn = floor(turn/10)*10+11;
+		if( turn > 4 ) {
+			curState = GAME_END;
+		}
 	} else {
 		productionCount = getProductionCube(productionStep);
 		if( productionCount > 0 ) {
@@ -727,7 +746,23 @@ function mouseClicked() {
 	if( toggleDebug ) {
 		uiManager.addLogger(`X=${mouseX}, Y=${mouseY}`);
 	}
-	if( cubes.length > 0 ) {
+	if( selectedBody ) {
+		// check if body can be dropped here...
+		if( overConstructionCardIndex >= 0 ) {
+			const curCard = constructionCards[overConstructionCardIndex];
+			if( needCube(curCard, selectedBody) ) {
+				addCube(overConstructionCardIndex, selectedBody);
+				if( selectedBody === "financiers" ) {
+					financiers--;
+				} else {
+					generaux--;
+				}
+				selectedBody = null;
+			}
+		} else {
+			selectedBody = null;
+		}
+	} else if( cubes.length > 0 ) {
 		// check if cube can be dropped here...
 		if( overConstructionCardIndex >= 0 ) {
 			const curCard = constructionCards[overConstructionCardIndex];
@@ -747,22 +782,6 @@ function mouseClicked() {
 				nextProduction();
 			}
 		}
-	} else if( selectedBody ) {
-		// check if body can be dropped here...
-		if( overConstructionCardIndex >= 0 ) {
-			const curCard = constructionCards[overConstructionCardIndex];
-			if( needCube(curCard, selectedBody) ) {
-				addCube(overConstructionCardIndex, selectedBody);
-				if( selectedBody === "financiers" ) {
-					financiers--;
-				} else {
-					generaux--;
-				}
-				selectedBody = null;
-			}
-		} else {
-			selectedBody = null;
-		}
 	} else if( selectedCardIndex === -1 ) {
 		if( overFinanciers ) {
 			selectedBody = "financiers";
@@ -770,6 +789,10 @@ function mouseClicked() {
 			selectedBody = "generaux";
 		} else {
 			selectedBody = null;
+		}
+		if( overCrystalium ) {
+			cubes.push("crystalium");
+			empireCrystalium--;
 		}
 		hand.forEach((c,i)=>{
 			if( c.type === "none" ) {
