@@ -23,6 +23,8 @@ let generaux = 0;
 // points (end of game)
 // music ?
 // dialog when no cubes
+// save state + reset
+// bonus on production step
 
 const materiauxCards = [
 	0,0,0,0,0,0,
@@ -102,10 +104,6 @@ let defausseMode = false;
 
 let productionStep = null;
 let productionCount = 0;
-
-let corner = {X:0,Y:0};
-const spriteSize = {width: 240, height: 365};
-let imageNb = 0;
 
 const description = { materiaux: [], energie: [], or: [], science: [], exploration: []};
 
@@ -709,26 +707,48 @@ function nextProductionStep(step) {
 	}
 }
 
-function closeCurrentDialog() {
-	uiManager.setDialog(null);
-	nextProduction();
+class CubeDialog extends Dialog {
+	constructor(x, y, w, h) {
+		super(x, y, w, h);
+
+		// close button
+		this.components.push(new BFloatingButton(w - 80, 80, '\u2716', () => {
+            uiManager.setDialog(null);
+			nextProduction();
+            delete this;
+        }));
+	}
+
+	doDraw() {
+		super.doDraw();
+		if (this.popupAnimation !== 0) {
+            return;
+        }
+		push();
+		stroke(0);
+		fill(250);
+		text(`No cube for ${productionStep}`, 10, 200);
+		drawCube(productionStep, 10+15, 80)
+		pop();
+	}
 }
 
 function popupDialog() {
-	const dialog = new Dialog(720, 580, 100, 200);
+	const dialog = new CubeDialog(720, 580, 800, 250);
 	dialog.startX = 300 + 200;
 	dialog.startY = 700 - 150;
-	dialog.components.push(new BFloatingButton(14, 180, '\u2716', closeCurrentDialog));
 	uiManager.setDialog(dialog);
 }
 
 function nextProduction() {
 	productionStep = nextProductionStep(productionStep);
 	if( !productionStep ) {
+		uiManager.addLogger("Leaving production step");
+		console.log("leaving production")
 		curState = GAME_H1_STATE;
 		fillHand(false);
 		turn = floor(turn/10)*10+11;
-		if( turn > 4 ) {
+		if( turn > 42 ) {
 			curState = GAME_END;
 		}
 	} else {
@@ -842,10 +862,14 @@ function mouseClicked() {
 	if( cubes.length === 0 && selectedCardIndex === -1 && curState !== GAME_PROD_STATE ) {
 		if( hand.every(c=>c.type === "none") ) {
 			if( curState === GAME_H1_STATE ) {
+				uiManager.addLogger("Leaving H1 step");
+				console.log("leaving H1")
 				curState = GAME_H2_STATE;
 				turn += 1;
 				fillHand(false);
 			} else {
+				uiManager.addLogger("Leaving H2 step");
+				console.log("leaving H2")
 				curState = GAME_PROD_STATE;
 				productionStep = "materiaux";
 				productionCount = getProductionCube(productionStep);
@@ -861,15 +885,6 @@ function mouseClicked() {
 }
 
 function keyPressed() {
-	if( key === "a" ) {
-		// to do
-		corner = {X: mouseX, Y: mouseY};
-	}
-	if( key === "c" ) {
-		// copy image
-		copy(corner.X, corner.Y, spriteSize.width, spriteSize.height, spriteSize.width*imageNb, 0, spriteSize.width, spriteSize.height);
-		imageNb = imageNb + 1;
-	}
 	if (key === "D") {
 		toggleDebug = !toggleDebug;
 	}
