@@ -386,6 +386,10 @@ function drawGame() {
 	fill(250);
 	stroke(0);
 	text(`Turn: ${turn/10}`, 1400, 260);
+	if( storedHand.length > 0 ) {
+		textSize(20);
+		text("Choose a card", 1400, 280);
+	}
 	pop();
 	
 	// en cours de construction
@@ -624,6 +628,7 @@ function storeHand() {
 
 function restoreHand() {
 	hand = storedHand.map(c=>{return {...c};});
+	storedHand = [];
 }
 
 function addCardToHand(card) {
