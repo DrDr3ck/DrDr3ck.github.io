@@ -29,6 +29,11 @@ const directions = [
 	[0,2,4],
 	[1,5],
 	[0,4,6],
+	[1,3,5,7],
+	[2,4,8],
+	[3,7],
+	[4,6,8],
+	[5,7],
 ];
 
 const board = [1,2,3,4,0,4,5,5,5];
@@ -79,6 +84,7 @@ function setup() {
     canvas.parent('canvas');
 
 	spritesheet.addSpriteSheet('electron', './electrons.png', 180, 180);
+	spritesheet.addSpriteSheet('card', './cards.png', 305, 305);
 
     frameRate(60);
 
@@ -89,12 +95,30 @@ function updateGame(elapsedTime) {
 
 }
 
+function checkCard(cardIndex) {
+	const curCard = cards[cardIndex];
+	let identic = true;
+	curCard.forEach((electron,index)=> {
+		if( electron ) {
+			if( electron !== board[index] ) {
+				identic = false;
+			}
+		}
+	});
+	return identic;
+}
+
 function clickElectron(electronIndex) {
 	const blankIndex = board.indexOf(0);
-	if( blankIndex >= 0 ) {
+	// check if blankIndex is in 'directions' list
+	if( directions[electronIndex].includes(blankIndex) ) {
 		board[blankIndex] = board[electronIndex];
 		board[electronIndex] = 0;
 	}
+}
+
+function drawCard(cardIndex) {
+	spritesheet.drawSprite('card', cardIndex, 840, 230);
 }
 
 function drawElectron(electron, X, Y) {
@@ -115,10 +139,15 @@ function drawGame() {
 			}
 		}
 	});
+
+	drawCard(0);
 }
 
 function initGame() {
-
+	shuffleArray(board);
+	if( checkCard(0) ) {
+		uiManager.addLogger('You win !!');
+	}
 }
 
 function drawLoading() {
@@ -189,6 +218,9 @@ function mouseClicked() {
 	if( overCell >= 0 ) {
 		// you clicked on an electron: move it to blank cell.
 		clickElectron(overCell);
+		if( checkCard(0) ) {
+			uiManager.addLogger('You win !!');
+		}
 	}
 
 	toolManager.mouseClicked();
@@ -201,3 +233,26 @@ function keyPressed() {
 		toggleDebug = !toggleDebug;
 	}
 }
+
+const generator = Math.random;
+const randomInt = (i) => {
+	return Math.floor(generator() * i);
+}
+
+/* Randomize array in-place using Durstenfeld shuffle algorithm */
+function shuffleArray(array) {
+	for (var i = array.length - 1; i > 0; i--) {
+		var j = randomInt(i + 1);
+		var temp = array[i];
+		array[i] = array[j];
+		array[j] = temp;
+	}
+}
+
+const cards = [
+	[
+		VERT,VIOLET,VIDE,
+		ROUGE,JAUNE,VIDE,
+		VIDE,VIDE,VIDE
+	],
+];
