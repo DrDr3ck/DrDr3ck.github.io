@@ -429,7 +429,7 @@ function computePoints() {
 	}
 	if( enclosDinos[4].length > 1 ) { // couple
 		const coupleEnclos = enclosDinos[4];
-		coupleEnclos.sort((a,b)=> a > b);
+		coupleEnclos.sort((a,b)=> a - b);
 		[0,1,2,3,4,5].forEach(dinoIndex=>{
 			playerPoints = playerPoints + Math.floor(coupleEnclos.filter(d=>d===dinoIndex).length/2)*5;
 		});

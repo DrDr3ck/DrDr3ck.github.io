@@ -327,7 +327,9 @@ class Board {
         for( let i=0; i < 4; i++ ) {
             this.curCards.push(this.cards.pop());
         }
-        this.curCards.sort((card1, card2)=>card1.index > card2.index);
+        this.curCards.sort(
+            (card1, card2)=>card1.index-card2.index
+        );
     }
 
     getSameTypedNeighboors(X,Y,type) {
@@ -395,7 +397,7 @@ class Board {
     }
 
     computeBrunoPoints() {
-        this.brunoTiles.sort((t1,t2)=>t1.type < t2.type);        
+        this.brunoTiles.sort((t1,t2)=>t2.type - t1.type);        
         const points = {
             water:{tiles: 0, coef: 0},
             grass:{tiles: 0, coef: 0},

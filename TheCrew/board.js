@@ -12,8 +12,8 @@ const CardColor = {
  * @returns ordered cards
  */
  function orderCards(cards) {
-	cards.sort((a,b) => a.value > b.value);
-	cards.sort((a,b) => a.color > b.color);
+	cards.sort((a,b) => a.value - b.value);
+	cards.sort((a,b) => a.color - b.color);
 	return cards;
 }
 
