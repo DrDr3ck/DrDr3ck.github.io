@@ -1,5 +1,5 @@
 const uiManager = new UIManager();
-const windowWidth = 1600;
+const windowWidth = 1800;
 const windowHeight = 1100;
 uiManager.loggerContainer = new LoggerContainer(1170, windowHeight-100, windowWidth-1170, 100);
 uiManager.loggerContainer.visible = true;
@@ -10,11 +10,14 @@ const soundManager = new SoundMgr();
 const spritesheet = new SpriteSheet();
 
 const CHOOSECARD = "Choose a card";
+const WAITCARD = "Waiting other player";
 const PLACECARD = "Place the card";
 const GAMEOVER = "End of game";
 let gameState = CHOOSECARD;
 
 let userName = "AAA";
+
+let playerIndex = 0;
 
 const cardX = 1100;
 
@@ -32,6 +35,8 @@ const tileSize = 150;
 let displayRules = false;
 
 let board = null;
+
+let overCardIndex = null;
 
 function preload() {
 	spritesheet.addSpriteSheet('back', './back.png', 300, tileSize);
@@ -55,8 +60,6 @@ function speakerClicked() {
 function startClicked() {
 	curState = GAME_PLAY_STATE;
 	uiManager.setUI([ speakerButton, rulesButton ]);
-	uiManager.addLogger("Start game");
-	board.startTurn();
 }
 
 const storageKeyUserName = 'DrDr3ck/KingDominoDuo/UserName';
@@ -73,6 +76,7 @@ const connectButton = new BButton(80, windowHeight - 50 - 200, "CONNECT", ()=>{
 	upArrow3.visible = false;
 	downArrow3.visible = false;
 	startButton.visible = true;
+	startButton.enabled = false;
 	socket.emit('setSocketId', {name: userName, id: socket.id});
 });
 const startButton = new BButton(80, windowHeight - 50 - 100, "START", startClicked);
@@ -172,6 +176,75 @@ function setup() {
 		userName = localUserName;
 	}
 
+	socket.on('getPlayerIndex', index => {
+		uiManager.addLogger(`Your player index is ${index}`);
+		playerIndex = index;
+		if( index === 1 ) {
+			startButton.enabled = true;
+			gameState = WAITCARD;
+		}
+	});
+
+	socket.on('allConnected', (curCards) => {
+		startButton.enabled = true;
+		board.setCards(curCards);
+		uiManager.addLogger(`ask board for ${playerIndex}`);
+		socket.emit('getBoard', {playerIndex: playerIndex});
+	});
+
+	socket.on('cards', (curCards) => {
+		board.setCards(curCards);
+		// which player should play ?
+		// should current player place a card ?
+		if( gameState === CHOOSECARD ) {
+			// is a card placable ?
+			for( let i=0; i < 4; i++ ) {
+				const curCard = curCards[i];
+				if( curCard.meeple === null && curCard.desc !== null ) {
+					gameState = PLACECARD;
+					board.curCardClickedIndex = i;
+					break;
+				}
+			}
+			if( gameState === CHOOSECARD ) {
+				// which meeple is the next one ?
+				for( let i=0; i < 4; i++ ) {
+					if( curCards[i].meeple !== null ) {
+						const curMeeple = curCards[i].meeple;
+						gameState = (curMeeple === playerIndex ) ? CHOOSECARD : WAITCARD;
+						break;
+					}
+				}
+			}
+		} else {
+			// check if other player must place a card
+			// is a card placable ?
+			gameState = CHOOSECARD;
+			for( let i=0; i < 4; i++ ) {
+				const curCard = curCards[i];
+				if( curCard.meeple === null && curCard.desc !== null ) {
+					gameState = WAITCARD;
+					break;
+				}
+			}
+			if( gameState === CHOOSECARD ) {
+				// which meeple is the next one ?
+				for( let i=0; i < 4; i++ ) {
+					if( curCards[i].meeple !== null ) {
+						const curMeeple = curCards[i].meeple;
+						gameState = (curMeeple === playerIndex ) ? CHOOSECARD : WAITCARD;
+						break;
+					}
+				}
+			}
+		}
+	});
+
+	socket.on('board', (tiles)=>{
+		uiManager.addLogger(`board of ${playerIndex}`);
+		board.tiles = tiles;
+	});
+
     frameRate(20);
 
     lastTime = Date.now();
@@ -184,32 +257,38 @@ function updateGame(elapsedTime) {
 function drawGame() {
 	board.curCards.forEach(
 		(card, i)=>{
-			if( card.index !== board.getCurCardIndex() ) {
+			if( card && card.index !== board.getCurCardIndex() ) {
 				const position = card.position;
 				card.position = 0;
-				card.draw(cardX,75+200*i);
+				card.draw(cardX+Math.floor(i/4)*tileSize*2.1,75+200*(i%4));
 				card.position = position;
-				if( i > 3-board.lastChosenCardIndex ) {
-					fill(51,51,51,151)
-					rect(cardX,75+200*i,300,tileSize);
+				if( overCardIndex === i ) {
+					push();
+					noFill();
+					stroke(0);
+					strokeWeight(5);
+					rect(cardX+Math.floor(i/4)*tileSize*2.1,75+200*(i%4),tileSize*2,tileSize);
+					pop();
 				}
 			}
 		}
 	);
 
+	// draw meeples
+	board.meeples.forEach((meeple,index)=>{
+		if( meeple !== null ) {
+			spritesheet.drawSprite("meeple", meeple, 1220+Math.floor(index/4)*200, 75+(index%4)*200);
+		}
+	});
+
+	if( gameState === WAITCARD ) {
+		fill(51,51,51,151)
+		noStroke();
+		rect(cardX,75,tileSize*5,tileSize*5);
+	}
+
 	// draw tiles
 	drawTiles();
-
-	if( board.curCardClickedIndex >= 0 ) {
-		spritesheet.drawSprite("meeple", 0, cardX+75, 75+200*board.curCardClickedIndex);
-	} else {
-		spritesheet.drawSprite("meeple", 0, 1420, 75);
-	}
-	if( board.brunoCardClickedIndex >= 0 ) {
-		spritesheet.drawSprite("meeple", 1, cardX+75, 75+200*board.brunoCardClickedIndex);
-	} else {
-		spritesheet.drawSprite("meeple", 1, 1420, 475);
-	}
 
 	if( gameState === PLACECARD ) {
 		// Draw card on top of cursor
@@ -221,10 +300,9 @@ function drawGame() {
 	fill(250);
 	textAlign(LEFT, BOTTOM);
 	textSize(25);
-	text(gameState, 1170, 175);
+	text(gameState, 1300, 880);
 
-	text(board.points, 1200, 375);
-	text(board.brunoPoints, 1200, 570);
+	text(board.points, 1200, 35);
 	pop();
 }
 
@@ -260,7 +338,7 @@ function drawTiles() {
 		for( let j=0; j < 7; j++ ) {
 			const tile = board.tiles[i][j];
 			if( tile.type === "chateau" ) {
-				spritesheet.drawSprite("players", 0, 25+j*tileSize, 25+i*tileSize);
+				spritesheet.drawSprite("players", playerIndex, 25+j*tileSize, 25+i*tileSize);
 			} else if( tile.type === "none" ) {
 				rect(25+j*tileSize, 25+i*tileSize,tileSize,tileSize);
 			} else {
@@ -316,7 +394,6 @@ function draw() {
 		textSize(25);
 		text(gameState, 1170, 175);
 		text(board.points, 1200, 375);
-		text(board.brunoPoints, 1200, 570);
 		spritesheet.drawSprite("meeple", 0, 1420, 75);
 		spritesheet.drawSprite("meeple", 1, 1420, 275);
 		spritesheet.drawSprite("meeple", 0, 1420, 475);
@@ -346,19 +423,19 @@ const between = (min, value, max) => {
 function cardClicked() {
 	const topX = cardX; 
 	let topY = 25;
-	if( between(topX, mouseX, topX+300) && between(topY, mouseY, topY+tileSize) ) {
+	if( between(topX, mouseX, topX+tileSize*2) && between(topY, mouseY, topY+tileSize) ) {
 		return 0;
 	}
 	topY += 200;
-	if( between(topX, mouseX, topX+300) && between(topY, mouseY, topY+tileSize) ) {
+	if( between(topX, mouseX, topX+tileSize*2) && between(topY, mouseY, topY+tileSize) ) {
 		return 1;
 	}
 	topY += 200;
-	if( between(topX, mouseX, topX+300) && between(topY, mouseY, topY+tileSize) ) {
+	if( between(topX, mouseX, topX+tileSize*2) && between(topY, mouseY, topY+tileSize) ) {
 		return 2;
 	}
 	topY += 200;
-	if( between(topX, mouseX, topX+300) && between(topY, mouseY, topY+tileSize) ) {
+	if( between(topX, mouseX, topX+tileSize*2) && between(topY, mouseY, topY+tileSize) ) {
 		return 3;
 	}
 	return -1;
@@ -401,13 +478,15 @@ function mouseClicked() {
 	uiManager.mouseClicked();
 
 	if( gameState === CHOOSECARD ) {
+		if( overCardIndex !== null && board.meeples[overCardIndex] === null ) {
+			socket.emit('chooseCard', {playerId: socket.id, cardIndex: overCardIndex});
+		}
+		/*
 		board.curCardClickedIndex = cardClicked();
 		if(
 			board.curCardClickedIndex >= 0 &&
-			board.curCardClickedIndex <= 3-board.lastChosenCardIndex &&
-			board.curCardClickedIndex !== board.brunoCardClickedIndex
+			board.curCardClickedIndex <= 3-board.lastChosenCardIndex
 		) {
-			board.brunoCardClickedIndex = board.curCardClickedIndex === 2 ? 3 : 2;
 			// check if card can be placed. if not, we loose the card for this turn
 			if( board.canPlaceCard() ) {
 				gameState = PLACECARD;
@@ -421,16 +500,51 @@ function mouseClicked() {
 		} else {
 			board.curCardClickedIndex = -1;
 		}
+		*/
 	} else if( gameState === PLACECARD ) {
 		const tilePosition = tileClicked();
 		if( tilePosition && board.tryPlaceCard(tilePosition) ) {
-			board.placeCardOnTile(tilePosition);
+			socket.emit('placeCard',
+				{
+					playerId: socket.id,
+					cardIndex: board.curCardClickedIndex,
+					position: {
+						X: tilePosition.X,
+						Y: tilePosition.Y,
+						orientation: board.getCurCard().position
+					}
+			});
+			board.curCardClickedIndex = -1;
 			soundManager.playSound('place_pawn');
-			nextTurn();
 		}
 	}
 
 	return false;
+}
+
+/*
+const topX = cardX; 
+	let topY = 25;
+	if( between(topX, mouseX, topX+tileSize*2) && between(topY, mouseY, topY+tileSize) ) {
+		return 0;
+	}
+*/
+
+function mouseMoved() {
+	overCardIndex = null;
+	if( gameState === CHOOSECARD ) {
+		board.curCards.forEach(
+			(card, i)=>{
+				const topX = cardX+Math.floor(i/4)*tileSize*2.1;
+				const topY = 75+200*(i%4);
+				if( i >= 4 && card && between(topX,mouseX,topX+tileSize*2) && between(topY, mouseY, topY+tileSize) ) {
+					if( board.meeples[i] === null ) {
+						overCardIndex = i;
+					}
+				}
+			}
+		);
+	}
 }
 
 function keyPressed() {
@@ -444,7 +558,8 @@ function keyPressed() {
 
 	if( board ) {
 		if (keyCode === UP_ARROW || keyCode === DOWN_ARROW || keyCode === LEFT_ARROW || keyCode === RIGHT_ARROW) {
-			board.moveBoard(keyCode);
+			socket.emit('moveBoard', {id: socket.id, move: keyCode});
+			//board.moveBoard(keyCode);
 		}
 	}
 }

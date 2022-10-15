@@ -77,16 +77,13 @@ class Board {
     constructor() {
         this.cards = [];
         this.curCards = [];
+        this.meeples = [];
         this.turn = 0;
         this.lastChosenCardIndex = 0;
         this.curCardClickedIndex = -1;
-        this.brunoCardClickedIndex = -1;
-        this.playerFirst = true;
 
         this.tiles = [];
 
-        this.brunoTiles = [];
-        this.brunoPoints = 0;
         this.points = 0;
     }
 
@@ -189,7 +186,7 @@ class Board {
         for( let i=0; i < 7; i++ ) {
             this.tiles.push([{type: "none", value: 0}, {type: "none", value: 0}, {type: "none", value: 0}, {type: "none", value: 0}, {type: "none", value: 0}, {type: "none", value: 0}, {type: "none", value: 0}]);
         }
-        this.tiles[3][3].type = "chateau";
+        //this.tiles[3][3].type = "chateau";
     }
 
     addCard(index, type1, value1, type2, value2) {
@@ -320,18 +317,30 @@ class Board {
         return types.some(t=>t==="chateau"||t===tile.type);
     }
 
-    startTurn() {
-        this.curCards = [];
-        // choose four cards
-        if( this.cards.length === 0 ) {
-            return;
-        }
-        for( let i=0; i < maxCards; i++ ) {
-            this.curCards.push(this.cards.pop());
-        }
-        this.curCards.sort(
-            (card1, card2)=>card1.index-card2.index
-        );
+    startTurn(curCardsDesc) {
+        this.curCards = []; //curCards;
+        this.meeples = [];
+        curCardsDesc.forEach(({desc,meeple})=>{
+            if( desc) {
+                this.curCards.push(new Card(desc.index, desc.tiles[0], desc.tiles[1]))
+            } else {
+                this.curCards.push(null);
+            }
+            this.meeples.push(meeple);
+        });
+    }
+
+    setCards(curCardsDesc) {
+        this.curCards = []; //curCards;
+        this.meeples = [];
+        curCardsDesc.forEach(({desc,meeple})=>{
+            if( desc) {
+                this.curCards.push(new Card(desc.index, desc.tiles[0], desc.tiles[1]))
+            } else {
+                this.curCards.push(null);
+            }
+            this.meeples.push(meeple);
+        });
     }
 
     getSameTypedNeighboors(X,Y,type) {
@@ -398,44 +407,12 @@ class Board {
         return total;
     }
 
-    computeBrunoPoints() {
-        this.brunoTiles.sort((t1,t2)=>t2.type - t1.type);        
-        const points = {
-            water:{tiles: 0, coef: 0},
-            grass:{tiles: 0, coef: 0},
-            swamp:{tiles: 0, coef: 0},
-            forest:{tiles: 0, coef: 0},
-            field:{tiles: 0, coef: 0},
-            mine:{tiles: 0, coef: 0},
-        };
-        this.brunoTiles.forEach(t=>{
-            points[t.type].tiles = points[t.type].tiles+1;
-            points[t.type].coef = points[t.type].coef+t.value;
-        });
-        let total = 0;
-        for( const point in points ) {
-            const p = points[point];
-            total = total+p.tiles*p.coef
-        }
-        return total;
-    }
-
     nextTurn() {
-        const brunoCard = this.curCards[this.brunoCardClickedIndex];
-        this.brunoTiles.push(brunoCard.tiles[0]);
-        this.brunoTiles.push(brunoCard.tiles[1]);
-
-        this.brunoPoints = this.computeBrunoPoints();
         this.points = this.computePoints();
         
         this.startTurn();
 
-        this.playerFirst = true; // always first: this.curCardClickedIndex < this.brunoCardClickedIndex;
         this.curCardClickedIndex = -1;
-        this.brunoCardClickedIndex = -1;
-        if( !this.playerFirst ) {
-            this.brunoCardClickedIndex = 2;
-        }
     }
 
     getCurCard() {
