@@ -178,71 +178,19 @@ function setup() {
 	socket.on('getPlayerIndex', index => {
 		uiManager.addLogger(`Your player index is ${index}`);
 		playerIndex = index;
-		if( index === 1 ) {
-			startButton.enabled = true;
-			gameState = WAITCARD;
-		}
 	});
 
-	socket.on('allConnected', (curCards) => {
+	socket.on('allConnected', () => {
 		startButton.enabled = true;
-		board.setCards(curCards);
-		uiManager.addLogger(`ask board for ${playerIndex}`);
-		socket.emit('getBoard', {playerIndex: playerIndex});
 	});
 
-	socket.on('cards', (curCards) => {
-		board.setCards(curCards);
-		// which player should play ?
-		// should current player place a card ?
-		if( gameState === CHOOSECARD ) {
-			// is a card placable ?
-			for( let i=0; i < 4; i++ ) {
-				const curCard = curCards[i];
-				if( curCard.meeple === null && curCard.desc !== null ) {
-					gameState = PLACECARD;
-					board.curCardClickedIndex = i;
-					break;
-				}
-			}
-			if( gameState === CHOOSECARD ) {
-				// which meeple is the next one ?
-				for( let i=0; i < 4; i++ ) {
-					if( curCards[i].meeple !== null ) {
-						const curMeeple = curCards[i].meeple;
-						gameState = (curMeeple === playerIndex ) ? CHOOSECARD : WAITCARD;
-						break;
-					}
-				}
-			}
-		} else {
-			// check if other player must place a card
-			// is a card placable ?
-			gameState = CHOOSECARD;
-			for( let i=0; i < 4; i++ ) {
-				const curCard = curCards[i];
-				if( curCard.meeple === null && curCard.desc !== null ) {
-					gameState = WAITCARD;
-					break;
-				}
-			}
-			if( gameState === CHOOSECARD ) {
-				// which meeple is the next one ?
-				for( let i=0; i < 4; i++ ) {
-					if( curCards[i].meeple !== null ) {
-						const curMeeple = curCards[i].meeple;
-						gameState = (curMeeple === playerIndex ) ? CHOOSECARD : WAITCARD;
-						break;
-					}
-				}
-			}
-		}
-	});
-
-	socket.on('board', (tiles)=>{
+	socket.on('boards', ({boards, cards, players})=>{
 		uiManager.addLogger(`board of ${playerIndex}`);
-		board.tiles = tiles;
+		board.tiles = boards[playerIndex].tiles;
+		board.curCardClickedIndex = players[playerIndex].curCardClickedIndex;
 		board.points = board.computePoints();
+		board.setCards(cards);
+		gameState = players[playerIndex].gameState;
 	});
 
     frameRate(20);
@@ -497,7 +445,7 @@ function mouseClicked() {
 
 function mouseMoved() {
 	overCardIndex = null;
-	if( gameState === CHOOSECARD ) {
+	if( board && gameState === CHOOSECARD ) {
 		board.curCards.forEach(
 			(card, i)=>{
 				const topX = cardX+Math.floor(i/4)*tileSize*2.1;
