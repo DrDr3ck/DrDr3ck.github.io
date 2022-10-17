@@ -407,14 +407,6 @@ class Board {
         return total;
     }
 
-    nextTurn() {
-        this.points = this.computePoints();
-        
-        this.startTurn();
-
-        this.curCardClickedIndex = -1;
-    }
-
     getCurCard() {
         if( this.curCardClickedIndex === -1 ) { return null; }
         return this.curCards[this.curCardClickedIndex];

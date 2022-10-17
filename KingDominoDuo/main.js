@@ -12,7 +12,6 @@ const spritesheet = new SpriteSheet();
 const CHOOSECARD = "Choose a card";
 const WAITCARD = "Waiting other player";
 const PLACECARD = "Place the card";
-const GAMEOVER = "End of game";
 let gameState = CHOOSECARD;
 
 let userName = "AAA";
@@ -243,6 +242,7 @@ function setup() {
 	socket.on('board', (tiles)=>{
 		uiManager.addLogger(`board of ${playerIndex}`);
 		board.tiles = tiles;
+		board.points = board.computePoints();
 	});
 
     frameRate(20);
@@ -293,7 +293,9 @@ function drawGame() {
 	if( gameState === PLACECARD ) {
 		// Draw card on top of cursor
 		const card = board.getCurCard();
-		card.draw(mouseX-75, mouseY-75, false);
+		if( card ) {
+		    card.draw(mouseX-75, mouseY-75, false);
+		}
 	}
 
 	push();
@@ -454,16 +456,6 @@ function tileClicked() {
 	return null;
 }
 
-function nextTurn() {
-	board.lastChosenCardIndex = board.curCardClickedIndex;
-	board.nextTurn();
-	gameState = CHOOSECARD;
-	if( board.curCards.length === 0 ) {
-		curState = GAME_OVER_STATE;
-		gameState = GAMEOVER;
-	}
-}
-
 function mouseClicked() {
 	if( displayRules ) {
 		displayRules = !displayRules;
@@ -480,27 +472,8 @@ function mouseClicked() {
 	if( gameState === CHOOSECARD ) {
 		if( overCardIndex !== null && board.meeples[overCardIndex] === null ) {
 			socket.emit('chooseCard', {playerId: socket.id, cardIndex: overCardIndex});
+			soundManager.playSound('place_tile');
 		}
-		/*
-		board.curCardClickedIndex = cardClicked();
-		if(
-			board.curCardClickedIndex >= 0 &&
-			board.curCardClickedIndex <= 3-board.lastChosenCardIndex
-		) {
-			// check if card can be placed. if not, we loose the card for this turn
-			if( board.canPlaceCard() ) {
-				gameState = PLACECARD;
-				soundManager.playSound('place_tile');
-			} else {
-				// cannot place this tile
-				uiManager.addLogger("Cannot place this card");
-				soundManager.playSound('cannot_place_tile');
-				nextTurn();
-			}
-		} else {
-			board.curCardClickedIndex = -1;
-		}
-		*/
 	} else if( gameState === PLACECARD ) {
 		const tilePosition = tileClicked();
 		if( tilePosition && board.tryPlaceCard(tilePosition) ) {
@@ -521,14 +494,6 @@ function mouseClicked() {
 
 	return false;
 }
-
-/*
-const topX = cardX; 
-	let topY = 25;
-	if( between(topX, mouseX, topX+tileSize*2) && between(topY, mouseY, topY+tileSize) ) {
-		return 0;
-	}
-*/
 
 function mouseMoved() {
 	overCardIndex = null;
@@ -558,7 +523,7 @@ function keyPressed() {
 
 	if( board ) {
 		if (keyCode === UP_ARROW || keyCode === DOWN_ARROW || keyCode === LEFT_ARROW || keyCode === RIGHT_ARROW) {
-			socket.emit('moveBoard', {id: socket.id, move: keyCode});
+			socket.emit('moveBoard', {playerId: socket.id, move: keyCode});
 			//board.moveBoard(keyCode);
 		}
 	}
