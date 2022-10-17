@@ -34,8 +34,10 @@ const tileSize = 150;
 let displayRules = false;
 
 let board = null;
+let opponentBoard = null;
 
 let overCardIndex = null;
+let overOpponentBoard = false;
 
 function preload() {
 	spritesheet.addSpriteSheet('back', './back.png', 300, tileSize);
@@ -187,6 +189,8 @@ function setup() {
 	socket.on('boards', ({boards, cards, players})=>{
 		uiManager.addLogger(`board of ${playerIndex}`);
 		board.tiles = boards[playerIndex].tiles;
+		opponentBoard.tiles = boards[1-playerIndex].tiles;
+		opponentBoard.points = opponentBoard.computePoints();
 		board.curCardClickedIndex = players[playerIndex].curCardClickedIndex;
 		board.points = board.computePoints();
 		board.setCards(cards);
@@ -236,7 +240,7 @@ function drawGame() {
 	}
 
 	// draw tiles
-	drawTiles();
+	drawTiles(overOpponentBoard ? opponentBoard : board);
 
 	if( gameState === PLACECARD ) {
 		// Draw card on top of cursor
@@ -246,13 +250,15 @@ function drawGame() {
 		}
 	}
 
+	spritesheet.drawSprite("meeple", 1-playerIndex, 1580, 940);
+
 	push();
 	fill(250);
 	textAlign(LEFT, BOTTOM);
 	textSize(25);
 	text(gameState, 1300, 880);
 
-	text(board.points, 1200, 35);
+	text(`${board.points} vs ${opponentBoard.points}`, 1200, 35);
 	pop();
 }
 
@@ -274,21 +280,22 @@ function drawLoading() {
 
         // init game
 		board = new Board();
+		opponentBoard = new Board();
         initGame();
 		textAlign(LEFT, BASELINE);
 		uiManager.addLogger('Game loaded');
 	}
 }
 
-function drawTiles() {
+function drawTiles(curBoard) {
 	push();
 	noFill();
 	stroke(0);
 	for( let i=0; i < 7; i++ ) {
 		for( let j=0; j < 7; j++ ) {
-			const tile = board.tiles[i][j];
+			const tile = curBoard.tiles[i][j];
 			if( tile.type === "chateau" ) {
-				spritesheet.drawSprite("players", playerIndex, 25+j*tileSize, 25+i*tileSize);
+				spritesheet.drawSprite("players", curBoard === board ? playerIndex : 1-playerIndex, 25+j*tileSize, 25+i*tileSize);
 			} else if( tile.type === "none" ) {
 				rect(25+j*tileSize, 25+i*tileSize,tileSize,tileSize);
 			} else {
@@ -337,7 +344,7 @@ function draw() {
 		drawGame();
 	}
 	if( curState === GAME_OVER_STATE ) {
-		drawTiles();
+		drawTiles(board);
 		push();
 		fill(250);
 		textAlign(LEFT, BOTTOM);
@@ -457,6 +464,10 @@ function mouseMoved() {
 				}
 			}
 		);
+	}
+	overOpponentBoard = false;
+	if( opponentBoard && between(1580,mouseX,1580+tileSize) && between(940,mouseY,940+tileSize) ) {
+		overOpponentBoard = true;
 	}
 }
 
