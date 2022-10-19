@@ -225,6 +225,7 @@ class Board {
 
     tryPlaceCard(tilePosition) {
         const card = this.getCurCard();
+        if( !card ) return false;
         if( card.position === 0 && tilePosition.X === 6 ) {
             // cannot place card out of the board
             return false;

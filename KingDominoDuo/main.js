@@ -12,6 +12,7 @@ const spritesheet = new SpriteSheet();
 const CHOOSECARD = "Choose a card";
 const WAITCARD = "Waiting other player";
 const PLACECARD = "Place the card";
+const ENDGAME = "End Of Game";
 let gameState = CHOOSECARD;
 
 let userName = "AAA";
