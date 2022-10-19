@@ -43,6 +43,7 @@ let overOpponentBoard = false;
 function preload() {
 	spritesheet.addSpriteSheet('back', './back.png', 300, tileSize);
 	spritesheet.addSpriteSheet('meeple', './meeple.png', tileSize, tileSize);
+	spritesheet.addSpriteSheet('trash', './icon_trash.png', 150, 150);
 	spritesheet.addSpriteSheet('rules', './rules.png', 418, 404);
 }
 
@@ -179,7 +180,6 @@ function setup() {
 	}
 
 	socket.on('getPlayerIndex', index => {
-		uiManager.addLogger(`Your player index is ${index}`);
 		playerIndex = index;
 	});
 
@@ -188,7 +188,6 @@ function setup() {
 	});
 
 	socket.on('boards', ({boards, cards, players})=>{
-		uiManager.addLogger(`board of ${playerIndex}`);
 		board.tiles = boards[playerIndex].tiles;
 		opponentBoard.tiles = boards[1-playerIndex].tiles;
 		opponentBoard.points = opponentBoard.computePoints();
@@ -243,7 +242,7 @@ function drawGame() {
 	// draw tiles
 	drawTiles(overOpponentBoard ? opponentBoard : board);
 
-	if( gameState === PLACECARD ) {
+	if( gameState === PLACECARD && uiManager.currentDialog === null) {
 		// Draw card on top of cursor
 		const card = board.getCurCard();
 		if( card ) {
@@ -258,6 +257,11 @@ function drawGame() {
 	textAlign(LEFT, BOTTOM);
 	textSize(25);
 	text(gameState, 1300, 880);
+
+	// display trash
+
+	spritesheet.drawSprite("trash", isOverTrash ? 1 : 0, 1300, 910);
+
 
 	text(`${board.points} vs ${opponentBoard.points}`, 1200, 35);
 	pop();
@@ -412,6 +416,37 @@ function tileClicked() {
 	return null;
 }
 
+class TrashDialog extends Dialog {
+	constructor(x, y, w, h) {
+		super(x, y, w, h);
+
+		// close button
+		this.components.push(new BFloatingButton(w - 80, 80, '\u2716', () => {
+            uiManager.setDialog(null);
+            delete this;
+        }));
+
+		// Yes button
+		this.components.push(new BButton(100,200,'YES',()=>{
+			// TODO: socket.emit('trash'...);
+			uiManager.setDialog(null);
+            delete this;
+		}));
+	}
+
+	doDraw() {
+		super.doDraw();
+		if (this.popupAnimation !== 0) {
+            return;
+        }
+		push();
+		stroke(0);
+		fill(250);
+		text("Are you sure ?", 25, 25);
+		pop();
+	}
+}
+
 function mouseClicked() {
 	if( displayRules ) {
 		displayRules = !displayRules;
@@ -431,20 +466,28 @@ function mouseClicked() {
 			soundManager.playSound('place_tile');
 		}
 	} else if( gameState === PLACECARD ) {
-		const tilePosition = tileClicked();
-		if( tilePosition && board.tryPlaceCard(tilePosition) ) {
-			socket.emit('placeCard',
-				{
-					playerId: socket.id,
-					cardIndex: board.curCardClickedIndex,
-					position: {
-						X: tilePosition.X,
-						Y: tilePosition.Y,
-						orientation: board.getCurCard().position
-					}
-			});
-			board.curCardClickedIndex = -1;
-			soundManager.playSound('place_pawn');
+		if( isOverTrash ) {
+			// dialog for trash - are you sure ?
+			const dialog = new TrashDialog(720, 580, 800, 250);
+			dialog.startX = 300 + 200;
+			dialog.startY = 700 - 150;
+			uiManager.setDialog(dialog);
+		} else if( uiManager.currentDialog === null ) {
+			const tilePosition = tileClicked();
+			if( tilePosition && board.tryPlaceCard(tilePosition) ) {
+				socket.emit('placeCard',
+					{
+						playerId: socket.id,
+						cardIndex: board.curCardClickedIndex,
+						position: {
+							X: tilePosition.X,
+							Y: tilePosition.Y,
+							orientation: board.getCurCard().position
+						}
+				});
+				board.curCardClickedIndex = -1;
+				soundManager.playSound('place_pawn');
+			}
 		}
 	}
 
@@ -452,6 +495,7 @@ function mouseClicked() {
 }
 
 function mouseMoved() {
+	isOverTrash = false;
 	overCardIndex = null;
 	if( board && gameState === CHOOSECARD ) {
 		board.curCards.forEach(
@@ -465,6 +509,12 @@ function mouseMoved() {
 				}
 			}
 		);
+	}
+	if( board && gameState === PLACECARD ) {
+		// 1300, 910
+		if( between(1300,mouseX,1300+tileSize) && between(910, mouseY, 910+tileSize) ) {
+			isOverTrash = true;
+		}
 	}
 	overOpponentBoard = false;
 	if( opponentBoard && between(1580,mouseX,1580+tileSize) && between(940,mouseY,940+tileSize) ) {
