@@ -237,7 +237,7 @@ function drawAllPlayers() {
 	for( var i = 0; i < maxPlayers; i++) {
 		if( thisPlayerId == i ) {
 			// display token at the bottom left
-			spritesheet.drawSprite('token', 0, 100 + 25, window_height-120 - 25);
+			spritesheet.drawSprite('token', 0, 100 + 25, 120 - 25);
 		} else {
 			// display token next to the avatar
 			spritesheet.drawSprite('token', 0, playerWidth*i-40 -25, 100 - 25);
