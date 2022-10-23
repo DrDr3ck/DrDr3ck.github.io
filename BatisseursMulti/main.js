@@ -19,6 +19,7 @@ let lastTime = 0;
 
 let overNewChantierIdx = -1;
 let overNewOuvrierIdx = -1;
+let overNextTurn = false;
 
 const scale = 0.55;
 
@@ -34,13 +35,6 @@ const deck = {
 	],
 	team: []
 };
-
-/*
-rect(5,360-5,680,300*scale+10,5);
-	rect(695,360-5,680,300*scale+10,5);
-	rect(5,600-60,680,300*scale+10,5);
-	rect(695,665-65-60,680,300*scale+10,5);
-*/
 
 const meepleSize = 150;
 
@@ -117,6 +111,10 @@ function updateGame(elapsedTime) {
 
 }
 
+const distance = (x1, y1, x2, y2) => {
+	return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2));
+}
+
 const between = (min, value, max) => {
 	return value >= min && value <= max;
 }
@@ -140,15 +138,17 @@ function emit(type, data) {
 		const chantier = deck.batiments[idx].chantier;
 		board.addChantier(chantier);
 		deck.batiments[idx].chantier = allChantiers.pop();
+		board.addAction(type,data);
 	}
 	if( type === "RecruterOuvrier" ) {
 		const idx = data.idx; // ouvrierIdx
 		const ouvrier = deck.ouvriers[idx].ouvrier;
 		board.addOuvrier(ouvrier);
 		deck.ouvriers[idx].ouvrier = allOuvriers.pop();
+		board.addAction(type,data);
 	}
 	if( type === "TravaillerOuvrier" ) {
-
+		board.addAction(type,data);
 	}
 	if( type === "PrendreEcus" ) {
 		board.takeEcus();
@@ -232,10 +232,13 @@ function drawGame() {
 			rect(card.X, card.Y, card.width, card.height);
 		}
 	});
-	pop();
 
 	// turn
 	spritesheet.drawSprite("next_turn", 0, 1450, 15);
+	if( overNextTurn ) {
+		ellipse(1450+70, 15+70, 130);
+	}
+	pop();
 
 	// actions
 	drawActionCounter();
@@ -311,6 +314,7 @@ function draw() {
 function mouseMoved() {
 	overNewChantierIdx = -1;
 	overNewOuvrierIdx = -1;
+	overNextTurn = false;
 
 	deck.batiments.forEach((card,index)=>{
 		if( inCard(card) ) {
@@ -322,6 +326,9 @@ function mouseMoved() {
 			overNewOuvrierIdx = index;
 		}
 	});
+	if( distance(mouseX, mouseY, 1450+70, 15+70) <= 70 ) {
+		overNextTurn = true;
+	}
 }
 
 function mouseClicked() {
@@ -336,6 +343,10 @@ function mouseClicked() {
 	// if over an ouvrier, take it: RecruterOuvrier
 	if( overNewOuvrierIdx !== -1 ) {
 		emit("RecruterOuvrier", {playerId: 0, idx: overNewOuvrierIdx});
+	}
+	// next turn
+	if( overNextTurn ) {
+		emit("PrendreEcus", {});
 	}
 
 	toolManager.mouseClicked();

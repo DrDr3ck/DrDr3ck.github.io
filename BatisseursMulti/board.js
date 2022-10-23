@@ -22,15 +22,19 @@ class Board {
     }
 
     takeEcus() {
-        if( this.actions.length === 1 ) {
+        if( this.actions.length === 2 ) {
             this.ecus += 1;
         }
-        if( this.actions.length === 2 ) {
+        if( this.actions.length === 1 ) {
             this.ecus += 3;
         }
-        if( this.actions.length === 3 ) {
+        if( this.actions.length === 0 ) {
             this.ecus += 6;
         }
+    }
+
+    addAction(type, data) {
+        this.actions.push({type, data});
     }
 }
 
