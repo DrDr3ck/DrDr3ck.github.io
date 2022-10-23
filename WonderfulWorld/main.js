@@ -755,6 +755,7 @@ function nextProduction() {
 		turn = floor(turn/10)*10+11;
 		if( turn > 42 ) {
 			curState = GAME_END;
+			// TODO: add button to end the game (still have time to add some bodies or crystalium...)
 		}
 	} else {
 		productionCount = getProductionCube(productionStep);
@@ -872,7 +873,7 @@ function mouseClicked() {
 				curState = GAME_H2_STATE;
 				turn += 1;
 				fillHand(false);
-			} else {
+			} else if( curState !== GAME_END ) {
 				uiManager.addLogger("Leaving H2 step");
 				console.log("leaving H2")
 				curState = GAME_PROD_STATE;
