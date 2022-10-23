@@ -23,6 +23,7 @@ let board = [];
 let players = [];
 
 let turn = 0;
+let curPlayerIndex = 0;
 
 class Player {
 	constructor(name, color, id, position) {
@@ -34,11 +35,17 @@ class Player {
 	}
 
 	clickAction(i) {
+		if( this.id !== players[curPlayerIndex].id ) {
+			uiManager.addLogger("Not the current player...")
+			return;
+		}
 		this.actions[i].enabled = false;
 		this.actions[i].img = spritesheet.getImage('avatars', this.id);
+		curPlayerIndex = (curPlayerIndex+1)%4;
 	}
 
 	resetActions() {
+		curPlayerIndex = 0;
 		for( let i=0; i < 4; i++ ) {
 			this.actions[i].enabled = true;
 			this.actions[i].img = spritesheet.getImage('actions', i);
@@ -58,8 +65,18 @@ class Player {
 		return actionButtons;
 	}
 
-	draw() {
-		spritesheet.drawSprite('avatars', this.id, this.position.x+(this.position.left?10:-10-134), this.position.y);
+	draw(playerIndex) {
+		const X = this.position.x+(this.position.left?10:-10-134);
+		const Y = this.position.y;
+		spritesheet.drawSprite('avatars', this.id, X, Y);
+		if( playerIndex === curPlayerIndex ) {
+			push();
+			noFill();
+			stroke(255,215,0);
+			strokeWeight(3);
+			rect(X,Y,134,134);
+			pop();
+		}
 	}
 }
 
@@ -109,7 +126,7 @@ function drawGame() {
 		stroke(0);
 		fill(p.color.r,p.color.g,p.color.b);
 		ellipse(X,Y,30,30);
-		p.draw();
+		p.draw(i);
 		rect(250+55*(i+turn), 780, 55, 90);
 		fill(250);
 		textAlign(LEFT, TOP);
@@ -162,7 +179,7 @@ function drawLoading() {
         // init game
         initGame();
 		textAlign(LEFT, BASELINE);
-		uiManager.addLogger('Game loaded');
+		uiManager.addLogger('Room 25 - solo');
 	}
 }
 
