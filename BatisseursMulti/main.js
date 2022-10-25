@@ -58,6 +58,7 @@ function musicClicked() {
 
 let socket;
 let playerIndex = 0;
+let currentPlayer = -1;
 
 const speakerStorageKey = 'DrDr3ck/GameEngine/Speaker';
 function speakerClicked() {
@@ -72,6 +73,7 @@ function startClicked() {
 	uiManager.addLogger("Start game");
 
 	boards.push( new Board() );
+	currentPlayer = 0; // TODO
 
 	for( let i=0; i < 6; i++ ) {
 		deck.batiments.push({chantier: allChantiers.pop(), X: 10+(325*scale+10)*i, Y: 10, width:325*scale, height: 300*scale});
@@ -176,6 +178,8 @@ function emit(type, data) {
 	}
 	if( type === "PrendreEcus" ) {
 		board.takeEcus();
+		currentPlayer = 1-currentPlayer; // TODO: next player :)
+		board.actions = [];
 	}
 }
 
@@ -230,7 +234,8 @@ function drawActionCounter() {
 
 	if( orangeActions > 3 && orangeActions > redActions ) {
 		fill(255,242,0);
-		text(-5*chantierCount, 1520, 260);
+		const cout = redActions>=3 ? chantierCount : chantierCount-3+redActions;
+		text(-5*cout, 1520, 260);
 	}
 	
 	// couronne
@@ -288,7 +293,7 @@ function drawMeeples() {
 	for( let i=0; i < 4; i++ ) {
 		spritesheet.drawScaledSprite("meeple", i, 1600, 400+i*meepleSize*0.8,0.8);
 	}
-	rect(1600, 400, meepleSize*0.8, meepleSize*0.8, 5);
+	rect(1600, 400+currentPlayer*meepleSize*0.8, meepleSize*0.8, meepleSize*0.8, 5);
 	pop();
 }
 
@@ -325,6 +330,16 @@ function drawGame() {
 	drawChantier();
 
 	drawMeeples();
+
+	if( playerIndex !== currentPlayer ) {
+		push();
+		fill(150);
+		stroke(0);
+		textSize(30);
+		textAlign(LEFT, TOP);
+		text("Wait for your turn", 1150, 10);
+		pop();
+	}
 
 	if( selectedTeamIdx !== -1 ) {
 		spritesheet.drawScaledSprite("ouvriers", board.team[selectedTeamIdx].index, mouseX-230*scale/2, mouseY-300*scale/3, scale)
@@ -391,6 +406,10 @@ function mouseMoved() {
 	overChantierIdx = -1;
 	overTeamIdx = -1;
 	overNextTurn = false;
+
+	if( playerIndex !== currentPlayer ) {
+		return;
+	}
 
 	const board = boards[playerIndex];
 
@@ -483,6 +502,9 @@ function keyPressed() {
 		if(key === "N") {
 			// next turn
 			boards[playerIndex].actions = [];
+		}
+		if(key == "C") {
+			currentPlayer = 1-currentPlayer;
 		}
 	}
 	// end debug

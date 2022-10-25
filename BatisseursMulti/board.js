@@ -1,7 +1,9 @@
 class Board {
     constructor() {
         this.chantiers = [null,null,null,null];
-        this.team = [allOuvriers.pop()];
+        const firstApprentiIdx = allOuvriers.findIndex(ouvrier=>ouvrier.name === "APPRENTI");
+        this.team = [allOuvriers.at(firstApprentiIdx)];
+        allOuvriers.splice(firstApprentiIdx,1);
         this.points = 0;
         this.ecus = 10;
 
