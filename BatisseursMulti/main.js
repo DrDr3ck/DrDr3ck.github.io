@@ -17,9 +17,13 @@ let curState = GAME_LOADING_STATE;
 let toggleDebug = false;
 let lastTime = 0;
 
-let overNewChantierIdx = -1;
+let overNewBatimentIdx = -1;
 let overNewOuvrierIdx = -1;
+let overChantierIdx = -1;
+let overTeamIdx = -1;
 let overNextTurn = false;
+
+let selectedTeamIdx = -1;
 
 const scale = 0.55;
 
@@ -35,11 +39,17 @@ const deck = {
 	],
 	team: []
 };
+for( let i =0; i < 10; i++ ) {
+	const X = 10+(230*scale+10)*i;
+	const Y = windowHeight-10-scale*300;
+	deck.team.push({X,Y,width:230*scale,height:300*scale});
+}
 
 const meepleSize = 150;
 
 function preload() {
 	spritesheet.addSpriteSheet('meeple', './meeple.png', meepleSize, meepleSize);
+	spritesheet.addSpriteSheet('cover', './big_cover.png', 934, 1023);
 }
 
 function musicClicked() {
@@ -100,6 +110,10 @@ function setup() {
 	spritesheet.addSpriteSheet('next_turn', './next_turn.png', 140, 140);
 	spritesheet.addSpriteSheet('couronne', './couronne.png', 80, 50);
 
+	soundManager.addSound('place_tile', './place_tile.mp3', 1.);
+	soundManager.addSound('take_tile', './take_tile.wav', 1.);
+	soundManager.addSound('cannot_place_tile', './cannot_place_tile.wav', 1.);
+
 	socket = io.connect('http://localhost:3000');
 
     frameRate(20);
@@ -134,7 +148,7 @@ function emit(type, data) {
 	const board = boards[playerIndex];
 	// socket.emit(type, data);
 	if( type === "OuvrirChantier" ) {
-		const idx = data.idx; // chantierIdx
+		const idx = data.idx; // batimentIdx
 		const chantier = deck.batiments[idx].chantier;
 		board.addChantier(chantier);
 		deck.batiments[idx].chantier = allChantiers.pop();
@@ -148,6 +162,10 @@ function emit(type, data) {
 		board.addAction(type,data);
 	}
 	if( type === "TravaillerOuvrier" ) {
+		const teamIdx = data.teamIdx; // ouvrierIdx
+		const chantierIdx = data.chantierIdx; // chantierIdx
+		// move ouvrier to chantier
+		board.moveOuvrier(teamIdx, chantierIdx);
 		board.addAction(type,data);
 	}
 	if( type === "PrendreEcus" ) {
@@ -162,7 +180,7 @@ function drawActionCounter() {
 	fill(255,242,0); // Jaune
 	fill(34,177,76); // Vert
 	const board = boards[playerIndex];
-	if( board.actions.length === 3 ) {
+	if( board.actions.length >= 3 ) {
 		fill(237,28,36); // Rouge
 	}
 	ellipse(1620, 200, 40);
@@ -178,17 +196,27 @@ function drawActionCounter() {
 }
 
 function drawTeam(team) {
-	team.forEach((ouvrier, i)=>
-		spritesheet.drawScaledSprite("ouvriers", ouvrier.index, 10+(230*scale+10)*i, windowHeight-10-scale*300, scale)
-	);
+	team.forEach((ouvrier, i)=> {
+		if( i === selectedTeamIdx ) return;
+		const X = 10+(230*scale+10)*i;
+		const Y = windowHeight-10-scale*300;
+		spritesheet.drawScaledSprite("ouvriers", ouvrier.index, deck.team[i].X, deck.team[i].Y, scale)
+		if( overTeamIdx === i ) {
+			rect(deck.team[i].X, deck.team[i].Y, deck.team[i].width, deck.team[i].height);
+		}
+	});
 }
 
 function drawChantier() {
 	push();
-	stroke(0);
 	strokeWeight(2);
 	fill(232,212,183);
-	deck.chantiers.forEach(card=>{
+	deck.chantiers.forEach((card,index)=>{
+		if( overChantierIdx === index ) {
+			stroke(0,162,232);
+		} else {
+			stroke(0);
+		}
 		rect(card.X,card.Y,card.width,card.height,card.radius);
 	});
 
@@ -198,6 +226,9 @@ function drawChantier() {
 			const chantier = board.chantiers[i];
 			const card = {X: deck.chantiers[i].X+5, Y: deck.chantiers[i].Y+5 };
 			spritesheet.drawScaledSprite("batiments", chantier.index, card.X, card.Y, scale);
+			chantier.ouvriers.forEach((ouvrier, index)=>{
+				spritesheet.drawScaledSprite("ouvriers", ouvrier.index, card.X+185+40*index, card.Y, scale);
+			});
 		}	
 	}
 
@@ -216,13 +247,14 @@ function drawMeeples() {
 }
 
 function drawGame() {
+	const board = boards[playerIndex];
 	push();
 	stroke(0,162,232);
 	strokeWeight(2);
 	noFill();
 	deck.batiments.forEach((card,index)=>{
 		spritesheet.drawScaledSprite("batiments", card.chantier.index, card.X, card.Y, scale);
-		if( overNewChantierIdx === index ) {
+		if( overNewBatimentIdx === index ) {
 			rect(card.X, card.Y, card.width, card.height);
 		}
 	});
@@ -232,6 +264,7 @@ function drawGame() {
 			rect(card.X, card.Y, card.width, card.height);
 		}
 	});
+	drawTeam(board.team);
 
 	// turn
 	spritesheet.drawSprite("next_turn", 0, 1450, 15);
@@ -247,15 +280,18 @@ function drawGame() {
 	textAlign(CENTER, CENTER);
 	spritesheet.drawSprite("ecu", 0, 1400, 250);
 	fill(180);
-	text(boards[playerIndex].ecus,1520,310);
+	text(board.ecus,1520,310);
 	spritesheet.drawScaledSprite("couronne", 0, 1600, 250, 2);
 	fill(20);
-	text(boards[playerIndex].points,1650,310);
+	text(board.points,1650,310);
 
-	drawTeam(boards[playerIndex].team);
 	drawChantier();
 
 	drawMeeples();
+
+	if( selectedTeamIdx !== -1 ) {
+		spritesheet.drawScaledSprite("ouvriers", board.team[selectedTeamIdx].index, mouseX-230*scale/2, mouseY-300*scale/3, scale)
+	}
 }
 
 function initGame() {
@@ -296,6 +332,7 @@ function draw() {
 
     // draw game
 	if( curState === GAME_START_STATE ) {
+		spritesheet.drawScaledSprite("cover", 0,600,10, 0.8);
 	}
 	if (curState === GAME_PLAY_STATE) {
 		updateGame(elapsedTime);
@@ -312,13 +349,17 @@ function draw() {
 }
 
 function mouseMoved() {
-	overNewChantierIdx = -1;
+	overNewBatimentIdx = -1;
 	overNewOuvrierIdx = -1;
+	overChantierIdx = -1;
+	overTeamIdx = -1;
 	overNextTurn = false;
+
+	const board = boards[playerIndex];
 
 	deck.batiments.forEach((card,index)=>{
 		if( inCard(card) ) {
-			overNewChantierIdx = index;
+			overNewBatimentIdx = index;
 		}
 	});
 	deck.ouvriers.forEach((card,index)=>{
@@ -326,6 +367,23 @@ function mouseMoved() {
 			overNewOuvrierIdx = index;
 		}
 	});
+	if( selectedTeamIdx !== -1 ) {
+		deck.chantiers.forEach((card,index)=>{
+			if( inCard(card) && board.chantiers[index] ) {
+				overChantierIdx = index;
+			}
+		});
+	}
+	if( board ) {
+		const team = board.team;
+		team.forEach((ouvrier,index)=>{
+			const card = deck.team[index];
+			if( inCard(card) && board.ecus >= ouvrier.ecus ) {
+				overTeamIdx = index;
+			}
+		});
+	}
+
 	if( distance(mouseX, mouseY, 1450+70, 15+70) <= 70 ) {
 		overNextTurn = true;
 	}
@@ -337,12 +395,30 @@ function mouseClicked() {
 	}
 
 	// if over a chantier, take it: OuvrirChantier
-	if( overNewChantierIdx !== -1 ) {
-		emit("OuvrirChantier", {playerId: 0, idx: overNewChantierIdx});
+	if( overNewBatimentIdx !== -1 ) {
+		emit("OuvrirChantier", {playerId: 0, idx: overNewBatimentIdx});
+		soundManager.playSound('take_tile');
 	}
 	// if over an ouvrier, take it: RecruterOuvrier
 	if( overNewOuvrierIdx !== -1 ) {
 		emit("RecruterOuvrier", {playerId: 0, idx: overNewOuvrierIdx});
+		soundManager.playSound('take_tile');
+	}
+	// if team over chantier, place it: "TravaillerOuvrier"
+	if( selectedTeamIdx !== -1 && overChantierIdx !== -1 ) {
+		emit("TravaillerOuvrier", {playerId: 0, teamIdx: selectedTeamIdx, chantierIdx: overChantierIdx});
+		selectedTeamIdx = -1;
+		overChantierIdx = -1;
+		soundManager.playSound('take_tile');
+	}
+	if( selectedTeamIdx !== -1 ) {
+		selectedTeamIdx = -1;
+		return;
+	}
+	// if over a team, drag it:
+	if( overTeamIdx !== -1 ) {
+		selectedTeamIdx = overTeamIdx;	
+		soundManager.playSound('place_tile');
 	}
 	// next turn
 	if( overNextTurn ) {
@@ -358,6 +434,17 @@ function keyPressed() {
 	if (key === "D") {
 		toggleDebug = !toggleDebug;
 	}
+
+	// debug
+	if( toggleDebug ) {
+		if (key === "+") {
+			boards[playerIndex].ecus += 1;
+		}
+		if (key === "-") {
+			boards[playerIndex].ecus -= 1;
+		}
+	}
+	// end debug
 
 	if( curState === GAME_START_STATE && key === 's' ) {
 		// Start

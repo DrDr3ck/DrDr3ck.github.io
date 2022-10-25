@@ -1,6 +1,6 @@
 class Board {
     constructor() {
-        this.chantiers = [];
+        this.chantiers = [null,null,null,null];
         this.team = [allOuvriers.pop()];
         this.points = 0;
         this.ecus = 10;
@@ -13,12 +13,30 @@ class Board {
     }
 
     addChantier(chantier) {
-        this.chantiers.push(chantier);
+        // find an empty slot
+        this.chantiers[this.chantiers.indexOf(null)] = chantier;
     }
 
-    workOuvrier(ouvrier, chantierName) {
-        const chantier = findChantier(chantierName);
+    moveOuvrier(teamIdx, chantierIdx) {
+        const chantier = this.chantiers[chantierIdx];
+        this.workOuvrier(this.team[teamIdx], chantier);
+        this.team.splice(teamIdx, 1);
+        // check if chantier is terminated
+        if( chantier.isTerminated() ) {
+            // TODO: check if chantier is a machine !!
+            // add points
+            this.points += chantier.points;
+            this.ecus += chantier.ecus;
+            // put ouvriers in team
+            chantier.ouvriers.forEach(ouvrier=>this.addOuvrier(ouvrier));
+            // close chantier
+            this.chantiers[chantierIdx] = null;
+        }
+    }
+
+    workOuvrier(ouvrier, chantier) {
         chantier.addOuvrier(ouvrier);
+        this.ecus -= ouvrier.ecus;
     }
 
     takeEcus() {
@@ -51,6 +69,29 @@ class Chantier {
     addOuvrier(ouvrier) {
         this.ouvriers.push(ouvrier);
         // check if Chantier is 'terminated'
+    }
+
+    isTerminated() {
+        const materiaux = {pierre:0, bois: 0, savoir: 0, tuile: 0};
+        this.ouvriers.forEach(ouvrier=>{
+            materiaux.pierre += ouvrier.materiaux.pierre || 0;
+            materiaux.bois += ouvrier.materiaux.bois || 0;
+            materiaux.savoir += ouvrier.materiaux.savoir || 0;
+            materiaux.tuile += ouvrier.materiaux.tuile || 0;
+        });
+        if( this.materiaux.pierre && this.materiaux.pierre > materiaux.pierre ) {
+            return false;
+        }
+        if( this.materiaux.bois && this.materiaux.bois > materiaux.bois ) {
+            return false;
+        }
+        if( this.materiaux.savoir && this.materiaux.savoir > materiaux.savoir ) {
+            return false;
+        }
+        if( this.materiaux.tuile && this.materiaux.tuile > materiaux.tuile ) {
+            return false;
+        }
+        return true;
     }
 }
 
