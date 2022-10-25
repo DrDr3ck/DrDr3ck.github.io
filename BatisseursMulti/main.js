@@ -32,14 +32,16 @@ const deck = {
 	batiments: [],
 	ouvriers: [],
 	chantiers: [
-		{X:5,Y:355,width:680,height:300*scale+10,radius:5},
-		{X:695,Y:355,width:680,height:300*scale+10,radius:5},
-		{X:5,Y:540,width:680,height:300*scale+10,radius:5},
-		{X:695,Y:540,width:680,height:300*scale+10,radius:5}
+		{X:5,Y:355,width:520,height:300*scale+10,radius:5},
+		{X:535,Y:355,width:520,height:300*scale+10,radius:5},
+		{X:1065,Y:355,width:520,height:300*scale+10,radius:5},
+		{X:5,Y:540,width:520,height:300*scale+10,radius:5},
+		{X:535,Y:540,width:520,height:300*scale+10,radius:5},
+		{X:1065,Y:540,width:520,height:300*scale+10,radius:5},
 	],
 	team: []
 };
-for( let i =0; i < 10; i++ ) {
+for( let i =0; i < 13; i++ ) {
 	const X = 10+(230*scale+10)*i;
 	const Y = windowHeight-10-scale*300;
 	deck.team.push({X,Y,width:230*scale,height:300*scale});
@@ -151,8 +153,13 @@ function emit(type, data) {
 	// socket.emit(type, data);
 	if( type === "OuvrirChantier" ) {
 		const idx = data.idx; // batimentIdx
-		const chantier = deck.batiments[idx].chantier;
-		board.addChantier(chantier);
+		const batiment = deck.batiments[idx].chantier;
+		board.addChantier(batiment);
+		uiManager.addLogger(`name: ${batiment.name}`);
+		uiManager.addLogger(`pierre: ${batiment.materiaux.pierre||0}`);
+		uiManager.addLogger(`bois: ${batiment.materiaux.bois||0}`);
+		uiManager.addLogger(`savoir: ${batiment.materiaux.savoir||0}`);
+		uiManager.addLogger(`tuile: ${batiment.materiaux.tuile||0}`);
 		deck.batiments[idx].chantier = allChantiers.pop();
 		board.addAction(type,data);
 	}
@@ -160,6 +167,11 @@ function emit(type, data) {
 		const idx = data.idx; // ouvrierIdx
 		const ouvrier = deck.ouvriers[idx].ouvrier;
 		board.addOuvrier(ouvrier);
+		uiManager.addLogger(`name: ${ouvrier.name}`);
+		uiManager.addLogger(`pierre: ${ouvrier.materiaux.pierre}`);
+		uiManager.addLogger(`bois: ${ouvrier.materiaux.bois}`);
+		uiManager.addLogger(`savoir: ${ouvrier.materiaux.savoir}`);
+		uiManager.addLogger(`tuile: ${ouvrier.materiaux.tuile}`);
 		deck.ouvriers[idx].ouvrier = allOuvriers.pop();
 		board.addAction(type,data);
 	}
@@ -175,6 +187,7 @@ function emit(type, data) {
 			board.addAction("action",{});
 		}
 		board.addAction(type,data);
+		// TODO: should remove actions related to this chantier if terminated ?
 	}
 	if( type === "PrendreEcus" ) {
 		board.takeEcus();
@@ -272,7 +285,7 @@ function drawChantier() {
 	});
 
 	const board = boards[playerIndex];
-	for( let i=0; i < 4; i++ ) {
+	for( let i=0; i < 6; i++ ) {
 		if( board.chantiers[i] ) {
 			const chantier = board.chantiers[i];
 			const card = {X: deck.chantiers[i].X+5, Y: deck.chantiers[i].Y+5 };
@@ -469,6 +482,7 @@ function mouseClicked() {
 	}
 	if( selectedTeamIdx !== -1 ) {
 		selectedTeamIdx = -1;
+		soundManager.playSound('take_tile');
 		return;
 	}
 	// if over a team, drag it:

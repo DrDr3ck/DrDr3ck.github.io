@@ -1,6 +1,6 @@
 class Board {
     constructor() {
-        this.chantiers = [null,null,null,null];
+        this.chantiers = [null,null,null,null,null,null];
         const firstApprentiIdx = allOuvriers.findIndex(ouvrier=>ouvrier.name === "APPRENTI");
         this.team = [allOuvriers.at(firstApprentiIdx)];
         allOuvriers.splice(firstApprentiIdx,1);
@@ -190,7 +190,7 @@ addOuvrier("MAITRE", {pierre: 0, bois: 0, savoir: 3, tuile: 2}, 5);
 addOuvrier("MAITRE", {pierre: 0, bois: 0, savoir: 2, tuile: 3}, 5);
 
 // 6 ecus
-addChantier("La hutte de paille", {pierre: 1, tuile: 1}, 6, 1);
+addChantier("La hutte de paille", {pierre: 1, tuile: 2}, 6, 1);
 addChantier("Le lavoir", {bois: 1, tuile: 2}, 6, 1);
 addChantier("La cabane perchée", {bois: 2, savoir: 1}, 6, 1);
 addChantier("Le pont couvert", {bois: 1, savoir: 2}, 6, 1);
