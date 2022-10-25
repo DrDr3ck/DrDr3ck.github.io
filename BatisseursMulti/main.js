@@ -166,6 +166,12 @@ function emit(type, data) {
 		const chantierIdx = data.chantierIdx; // chantierIdx
 		// move ouvrier to chantier
 		board.moveOuvrier(teamIdx, chantierIdx);
+		// action double ?
+		if( board.actions.findIndex(action=>
+			action.type === "TravaillerOuvrier" && action.data.chantierIdx === chantierIdx
+		) >= 0 ) {
+			board.addAction("action",{});
+		}
 		board.addAction(type,data);
 	}
 	if( type === "PrendreEcus" ) {
@@ -177,21 +183,61 @@ function drawActionCounter() {
 	push();
 	stroke(0);
 	strokeWeight(3);
+	fill(237,28,36); // Rouge
 	fill(255,242,0); // Jaune
 	fill(34,177,76); // Vert
 	const board = boards[playerIndex];
-	if( board.actions.length >= 3 ) {
-		fill(237,28,36); // Rouge
+	const redActions = board.actions.length;
+	let chantierCount = 1;
+	if( overChantierIdx !== -1 ) {
+		// check if an action is done on the same chantier
+		chantierCount = board.actions.filter(action=>
+			action.type === "TravaillerOuvrier" && action.data.chantierIdx === overChantierIdx
+		).length+1;
 	}
-	ellipse(1620, 200, 40);
-	if( board.actions.length === 2 ) {
+	const orangeActions = redActions + (overNewBatimentIdx !== -1 || overNewOuvrierIdx !== -1 || overChantierIdx !== -1 ? chantierCount : 0);
+
+	if( redActions > 0 ) {
 		fill(237,28,36);
-	}
-	ellipse(1520, 200, 40);
-	if( board.actions.length === 1 ) {
-		fill(237,28,36);
+	} else if( orangeActions > 0 ) {
+		fill(255,242,0);
+	} else {
+		fill(34,177,76);
 	}
 	ellipse(1420, 200, 40);
+	if( redActions > 1 ) {
+		fill(237,28,36);
+	} else if( orangeActions > 1 ) {
+		fill(255,242,0);
+	} else {
+		fill(34,177,76);
+	}
+	ellipse(1520, 200, 40);
+	if( redActions > 2 ) {
+		fill(237,28,36);
+	} else if( orangeActions > 2 ) {
+		fill(255,242,0);
+	} else {
+		fill(34,177,76);
+	}
+	ellipse(1620, 200, 40);
+
+	// ecu
+	textAlign(CENTER, CENTER);
+	spritesheet.drawSprite("ecu", 0, 1400, 250);
+	fill(180);
+	text(board.ecus,1520,310);
+
+	if( orangeActions > 3 && orangeActions > redActions ) {
+		fill(255,242,0);
+		text(-5*chantierCount, 1520, 260);
+	}
+	
+	// couronne
+	spritesheet.drawScaledSprite("couronne", 0, 1600, 250, 2);
+	fill(20);
+	text(board.points,1650,310);
+
 	pop();
 }
 
@@ -275,15 +321,6 @@ function drawGame() {
 
 	// actions
 	drawActionCounter();
-
-	// ecu et couronne
-	textAlign(CENTER, CENTER);
-	spritesheet.drawSprite("ecu", 0, 1400, 250);
-	fill(180);
-	text(board.ecus,1520,310);
-	spritesheet.drawScaledSprite("couronne", 0, 1600, 250, 2);
-	fill(20);
-	text(board.points,1650,310);
 
 	drawChantier();
 
@@ -442,6 +479,10 @@ function keyPressed() {
 		}
 		if (key === "-") {
 			boards[playerIndex].ecus -= 1;
+		}
+		if(key === "N") {
+			// next turn
+			boards[playerIndex].actions = [];
 		}
 	}
 	// end debug
