@@ -17,6 +17,8 @@ let gameState = CHOOSECARD;
 const BLUE = 0;
 const RED = 1;
 
+let userName = "AAA";
+
 const colors = [
  {r:127,g:167,b:202},
  {r:236,g:155,b:95}
@@ -72,7 +74,6 @@ const tilesPosition = [
 ];
 
 // TODO: server
-const cards = [1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4];
 let board = null;
 let playerIndex = 0; // BLUE or RED
 
@@ -87,7 +88,7 @@ const cardsPosition = [
 	]
 ]
 
-const curCards = [
+let curCards = [
 	[],[] // #0 for player BLUE and #1 for player RED
 ];
 
@@ -105,6 +106,7 @@ function musicClicked() {
 }
 
 const speakerStorageKey = 'DrDr3ck/Aton/Speaker';
+const storageKeyUserName = 'DrDr3ck/Aton/UserName';
 
 function speakerClicked() {
 	speakerButton.checked = !speakerButton.checked;
@@ -122,7 +124,69 @@ function startClicked() {
 
 const speakerButton = new BFloatingSwitchButton(windowWidth - 70 - 10 - 70, 70, '\uD83D\uDD0A', speakerClicked);
 const musicButton = new BFloatingSwitchButton(windowWidth - 70, 70, '\uD83C\uDFB6', musicClicked);
+const connectButton = new BButton(80, windowHeight - 50 - 200, "CONNECT", ()=>{
+	localStorage.setItem(storageKeyUserName, userName);
+	connectButton.visible = false;
+	upArrow1.visible = false;
+	downArrow1.visible = false;
+	upArrow2.visible = false;
+	downArrow2.visible = false;
+	upArrow3.visible = false;
+	downArrow3.visible = false;
+	startButton.visible = true;
+	startButton.enabled = false;
+	socket.emit('setSocketId', {name: userName, id: socket.id});
+});
 const startButton = new BButton(680, windowHeight - 50 - 200, "START", startClicked);
+
+const upArrow1 = new BFloatingButton(80, 180, '\u2191', ()=>{
+	if( userName[0] === 'A' ) {
+		userName = `Z${userName.substring(1)}`;
+	} else {
+		const v = userName.charCodeAt(0);
+		userName = `${String.fromCharCode(v-1)}${userName.substring(1)}`;
+	}
+});
+const downArrow1 = new BFloatingButton(80, 380, '\u2193', ()=>{
+	if( userName[0] === 'Z' ) {
+		userName = `A${userName.substring(1)}`;
+	} else {
+		const v = userName.charCodeAt(0);
+		userName = `${String.fromCharCode(v+1)}${userName.substring(1)}`;
+	}
+});
+const upArrow2 = new BFloatingButton(80+120, 180, '\u2191', ()=>{
+	if( userName[1] === 'A' ) {
+		userName = `${userName.substring(0, 1)}Z${userName.substring(2)}`;
+	} else {
+		const v = userName.charCodeAt(1);
+		userName = `${userName.substring(0, 1)}${String.fromCharCode(v-1)}${userName.substring(2)}`;
+	}
+});
+const downArrow2 = new BFloatingButton(80+120, 380, '\u2193', ()=>{
+	if( userName[1] === 'Z' ) {
+		userName = `${userName.substring(0, 1)}A${userName.substring(2)}`;
+	} else {
+		const v = userName.charCodeAt(1);
+		userName = `${userName.substring(0, 1)}${String.fromCharCode(v+1)}${userName.substring(2)}`;
+	}
+});
+const upArrow3 = new BFloatingButton(80+120*2, 180, '\u2191', ()=>{
+	if( userName[2] === 'A' ) {
+		userName = `${userName.substring(0, 2)}Z}`;
+	} else {
+		const v = userName.charCodeAt(2);
+		userName = `${userName.substring(0, 2)}${String.fromCharCode(v-1)}`;
+	}
+});
+const downArrow3 = new BFloatingButton(80+120*2, 380, '\u2193', ()=>{
+	if( userName[2] === 'Z' ) {
+		userName = `${userName.substring(0, 2)}A`;
+	} else {
+		const v = userName.charCodeAt(2);
+		userName = `${userName.substring(0, 2)}${String.fromCharCode(v+1)}`;
+	}
+});
 
 const rulesButton = new BFloatingButton(windowWidth - 70, 70, '?', ()=>{
 	// display/hide rules
@@ -144,9 +208,12 @@ function initUI() {
 		speakerButton.checked = false;
 		soundManager.mute(true);
 	}
-	const menu = [ speakerButton, startButton, rulesButton ];
+	const menu = [ speakerButton, connectButton, startButton, rulesButton, upArrow1, downArrow1, upArrow2, downArrow2, upArrow3, downArrow3 ];
 	uiManager.setUI(menu);
+	startButton.visible = false;
 }
+
+let socket;
 
 function setup() {
     initUI();
@@ -156,6 +223,26 @@ function setup() {
 	spritesheet.addSpriteSheet('cards', './cards.png', 260, 165);
 	spritesheet.addSpriteSheet('verso', './verso.png', 260, 165);
 	spritesheet.addSpriteSheet('board', './board.jpg', 799, 796);
+
+	// Start the socket connection
+	socket = io.connect('http://localhost:3000');
+
+	const localUserName = localStorage.getItem(storageKeyUserName);
+	if( localUserName ) {
+		userName = localUserName;
+	}
+
+	socket.on('getPlayerIndex', index => {
+		playerIndex = index;
+	});
+
+	socket.on('allConnected', () => {
+		startButton.enabled = true;
+	});
+
+	socket.on('boards', ({boards, cards, players})=>{
+		curCards = cards;
+	});
 
     frameRate(20);
 
@@ -180,11 +267,11 @@ const cardIndex = (type, value) => {
 	}
 	if( type === RED ) {
 		switch(value) {
-			case 1:
+			case 4:
 				return 1; 
-			case 2:
-				return 3;
 			case 3:
+				return 3;
+			case 2:
 				return 5;
 		}
 		return 7;
@@ -193,7 +280,7 @@ const cardIndex = (type, value) => {
 
 function drawCard(color, index, position) {
 	const cardPosition = position ? position : cardsPosition[color][index];
-	if( curCards[color][index].visible ) {
+	if( curCards[color][index].visible || color === playerIndex ) {
 		if( (color === playerIndex && index !== selectedCardIdx) || position ) {
 			spritesheet.drawSprite("cards", cardIndex(color,curCards[color][index].value), cardPosition.X, cardPosition.Y);
 		}
@@ -248,7 +335,7 @@ function drawGame() {
 	drawPoints();
 
 	if( selectedCardIdx !== -1 ) {
-		drawCard(playerIndex, selectedCardIdx, {X: mouseX, Y: mouseY, width: 260, height: 165});
+		drawCard(playerIndex, selectedCardIdx, {X: mouseX-130, Y: mouseY-80, width: 260, height: 165});
 	}
 	pop();
 
@@ -269,18 +356,6 @@ function drawGame() {
 }
 
 function initGame() {
-	// shuffle cards
-	shuffleArray(cards);
-
-	// TODO: server
-	curCards[0].push({value: cards.pop(), visible: true});
-	curCards[0].push({value: cards.pop(), visible: true});
-	curCards[0].push({value: cards.pop(), visible: true});
-	curCards[0].push({value: cards.pop(), visible: true});
-	curCards[1].push({value: cards.pop(), visible: false});
-	curCards[1].push({value: cards.pop(), visible: false});
-	curCards[1].push({value: cards.pop(), visible: false});
-	curCards[1].push({value: cards.pop(), visible: false});
 }
 
 function drawLoading() {
@@ -318,7 +393,14 @@ function draw() {
 
     // draw game
 	if( curState === GAME_START_STATE ) {
-		spritesheet.drawSprite("cover", 0, 90, 100);
+		spritesheet.drawSprite("cover", 0, 650, 100);
+		fill(255);
+		stroke(0);
+		textSize(60);
+		textAlign(CENTER, CENTER);
+		text(userName[0], 115, 245);
+		text(userName[1], 115+120, 245);
+		text(userName[2], 115+120*2, 245);
 	}
 	if (curState === GAME_PLAY_STATE) {
 		updateGame(elapsedTime);
