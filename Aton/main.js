@@ -119,6 +119,7 @@ let curCards = [
 let overCardIdx = -1;
 let selectedCardIdx = -1;
 let overNextTurn = false;
+let overTileIdx = null;
 
 function preload() {
 	spritesheet.addSpriteSheet('cover', './cover.jpg', 450, 635);
@@ -269,7 +270,7 @@ function setup() {
 		gameState = players[playerIndex].gameState;
 		removeCounter = players[playerIndex].remove;
 		addCounter = players[playerIndex].add;
-		if( messages.length > 0 ) {
+		if( messages && messages.length > 0 ) {
 			messages.forEach(m=>uiManager.addLogger(m));
 		}
 	});
@@ -344,6 +345,25 @@ function drawPoints() {
 	pop();
 }
 
+function drawTemple(temple, position, color) {
+	temple.tiles.forEach((tile, index)=>{
+		if( tile.counter === color ) {
+			ellipse(position[index].X, position[index].Y, tileWidth);
+		}
+	});
+}
+
+function drawBoard(board) {
+	push();
+	strokeWeight(1);
+	stroke(0);
+	fill(colors[BLUE].r, colors[BLUE].g, colors[BLUE].b);
+	board.temples.forEach((temple,index)=>drawTemple(temple, tilesPosition[index], BLUE));
+	fill(colors[RED].r, colors[RED].g, colors[RED].b);
+	board.temples.forEach((temple,index)=>drawTemple(temple, tilesPosition[index], RED));
+	pop();
+}
+
 function drawGame() {
 	spritesheet.drawSprite("board", 0, 300, 2);
 
@@ -373,6 +393,15 @@ function drawGame() {
 		if( overNextTurn ) {
 			ellipse(60+70*0.75, 790+70*0.75, 130*.75);
 		}
+	}
+
+	if( curBoard ) {
+		drawBoard(curBoard);
+	}	
+
+	if( overTileIdx ) {
+		const tile = tilesPosition[overTileIdx.temple][overTileIdx.tile];
+		ellipse(tile.X, tile.Y, tileWidth);
 	}
 
 	drawPoints();
@@ -474,6 +503,12 @@ function emit(type, data) {
 	if( type === ORDERCARDS ) {
 		socket.emit('orderCards', data);
 	}
+	if( type === REMOVECOUNTER ) {
+		socket.emit('removeCounter', data);
+	}
+	if( type === ADDCOUNTER ) {
+		socket.emit('addCounter', data);
+	}
 }
 
 const between = (min, value, max) => {
@@ -543,11 +578,6 @@ function mouseMoved() {
 				const curCard = curCards[playerIndex][selectedCardIdx];
 				curCards[playerIndex].splice(selectedCardIdx, 1);
 				curCards[playerIndex].splice(index, 0, curCard);
-				/*
-				
-				curCards[playerIndex][selectedCardIdx] = curCards[playerIndex][index];
-				curCards[playerIndex][index] = curCard;
-				*/
 				selectedCardIdx = index;
 			}
 		});
@@ -559,6 +589,17 @@ function mouseMoved() {
 		}
 		if( playerIndex === RED && distance(mouseX, mouseY, windowWidth-130*.75-60+70*0.75, 790+70*0.75) <= 70*.75 ) {
 			overNextTurn = true;
+		}
+	}
+	overTileIdx = null;
+	if( gameState === REMOVECOUNTER || gameState === ADDCOUNTER ) {
+		const maxTemple = curCards[playerIndex][2].value;
+		for( let i=0; i < maxTemple; i++ ) {
+			tilesPosition[i].forEach((tilePosition,index)=>{
+				if( distance(mouseX, mouseY, tilePosition.X, tilePosition.Y, tileWidth) < tileWidth/2 ) {
+					overTileIdx = {temple: i, tile: index};
+				}
+			});
 		}
 	}
 }
@@ -585,6 +626,9 @@ function mouseClicked() {
 		emit(ORDERCARDS, {playerId: socket.id, cards: curCards[playerIndex]});
 		overNextTurn = false;
 		gameState = WAIT;
+	}
+	if( overTileIdx ) {
+		emit(gameState, {playerId: socket.id, temple: overTileIdx.temple, tile: overTileIdx.tile})
 	}
 	toolManager.mouseClicked();
 	uiManager.mouseClicked();
