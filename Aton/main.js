@@ -1,7 +1,7 @@
 const uiManager = new UIManager();
 const windowWidth = 1400;
 const windowHeight = 900;
-uiManager.loggerContainer = new LoggerContainer(1170, windowHeight-100, windowWidth-1170, 100);
+uiManager.loggerContainer = new LoggerContainer(830, windowHeight-100, windowWidth-1170, 100);
 uiManager.loggerContainer.visible = true;
 
 const toolManager = new ToolManager();
@@ -9,10 +9,14 @@ const jobManager = new JobManager();
 const soundManager = new SoundMgr();
 const spritesheet = new SpriteSheet();
 
-const CHOOSECARD = "Choose a card";
-const PLACECARD = "Place the card";
+const ORDERCARDS = "Order cards";
+const WAIT = "Wait Opponent";
+const REMOVECOUNTER = "Remove counter(s)";
+const ADDCOUNTER = "Add counter(s)";
 const GAMEOVER = "End of game";
-let gameState = CHOOSECARD;
+let gameState = ORDERCARDS;
+let removeCounter = 0;
+let addCounter = 0;
 
 const BLUE = 0;
 const RED = 1;
@@ -34,6 +38,24 @@ let toggleDebug = false;
 let lastTime = 0;
 
 let displayRules = false;
+
+/////////////////////////////////////
+// BOARD
+
+class Board {
+	constructor() {
+        this.temples = [];
+		this.dead = [];
+		this.score = [0,0];
+	}
+
+	reset(b) {
+		this.temples = b.temples;
+		this.dead = b.dead;
+		this.score = b.score;
+	}
+}
+/////////////////////////////////////
 
 const tileWidth = 35;
 const tilesPosition = [
@@ -74,7 +96,7 @@ const tilesPosition = [
 ];
 
 // TODO: server
-let board = null;
+let curBoard = new Board();
 let playerIndex = 0; // BLUE or RED
 
 const cardsPosition = [
@@ -83,8 +105,10 @@ const cardsPosition = [
 		{X:10, Y:45+190+190, width: 260, height:165}, {X:10, Y:45+190+190+190, width: 260, height:165}
 	],
 	[
-		{X:1130, Y:45, width: 260, height:165}, {X:1130, Y:45+190, width: 260, height:165},
-		{X:1130, Y:45+190+190, width: 260, height:165}, {X:1130, Y:45+190+190+190, width: 260, height:165}
+		{X:1130, Y:45+190+190+190, width: 260, height:165},
+		{X:1130, Y:45+190+190, width: 260, height:165},
+		{X:1130, Y:45+190, width: 260, height:165},
+		{X:1130, Y:45, width: 260, height:165}
 	]
 ]
 
@@ -94,8 +118,7 @@ let curCards = [
 
 let overCardIdx = -1;
 let selectedCardIdx = -1;
-
-const points = [0,0];
+let overNextTurn = false;
 
 function preload() {
 	spritesheet.addSpriteSheet('cover', './cover.jpg', 450, 635);
@@ -119,7 +142,6 @@ function startClicked() {
 	curState = GAME_PLAY_STATE;
 	uiManager.setUI([ speakerButton, rulesButton ]);
 	uiManager.addLogger("Start game");
-	//board.startTurn();
 }
 
 const speakerButton = new BFloatingSwitchButton(windowWidth - 70 - 10 - 70, 70, '\uD83D\uDD0A', speakerClicked);
@@ -223,6 +245,7 @@ function setup() {
 	spritesheet.addSpriteSheet('cards', './cards.png', 260, 165);
 	spritesheet.addSpriteSheet('verso', './verso.png', 260, 165);
 	spritesheet.addSpriteSheet('board', './board.jpg', 799, 796);
+	spritesheet.addSpriteSheet('next_turn', './next_turn.png', 140, 140);
 
 	// Start the socket connection
 	socket = io.connect('http://localhost:3000');
@@ -240,8 +263,15 @@ function setup() {
 		startButton.enabled = true;
 	});
 
-	socket.on('boards', ({boards, cards, players})=>{
+	socket.on('boards', ({board, cards, players, messages})=>{
+		curBoard.reset(board);
 		curCards = cards;
+		gameState = players[playerIndex].gameState;
+		removeCounter = players[playerIndex].remove;
+		addCounter = players[playerIndex].add;
+		if( messages.length > 0 ) {
+			messages.forEach(m=>uiManager.addLogger(m));
+		}
 	});
 
     frameRate(20);
@@ -281,7 +311,7 @@ const cardIndex = (type, value) => {
 function drawCard(color, index, position) {
 	const cardPosition = position ? position : cardsPosition[color][index];
 	if( curCards[color][index].visible || color === playerIndex ) {
-		if( (color === playerIndex && index !== selectedCardIdx) || position ) {
+		if( index !== selectedCardIdx || position ) {
 			spritesheet.drawSprite("cards", cardIndex(color,curCards[color][index].value), cardPosition.X, cardPosition.Y);
 		}
 	} else {
@@ -296,6 +326,7 @@ function drawPoints() {
 	push();
 	strokeWeight(1);
 	stroke(0);
+	const points = curBoard?.score || [0,0];
 	fill(colors[BLUE].r, colors[BLUE].g, colors[BLUE].b);
 	const bluePointTile = tilesPosition[5][points[BLUE]];
 	if( points[0] === points[1] ) {
@@ -306,9 +337,9 @@ function drawPoints() {
 	fill(colors[RED].r, colors[RED].g, colors[RED].b);
 	const redPointTile = tilesPosition[5][points[RED]];
 	if( points[0] === points[1] ) {
-		arc(bluePointTile.X, bluePointTile.Y, tileWidth/2, tileWidth/2, 0, PI, CHORD);
+		arc(redPointTile.X, redPointTile.Y, tileWidth/2, tileWidth/2, 0, PI, CHORD);
 	} else {
-		ellipse(bluePointTile.X, bluePointTile.Y, tileWidth/2);
+		ellipse(redPointTile.X, redPointTile.Y, tileWidth/2);
 	}
 	pop();
 }
@@ -321,16 +352,28 @@ function drawGame() {
 	strokeWeight(3);
 	stroke(0);
 	// RED
-	drawCard(RED, 0);
-	drawCard(RED, 1);
-	drawCard(RED, 2);
 	drawCard(RED, 3);
+	drawCard(RED, 2);
+	drawCard(RED, 1);
+	drawCard(RED, 0);
+	if( gameState === ORDERCARDS && playerIndex === RED ) {
+		spritesheet.drawScaledSprite("next_turn", 0, windowWidth-130*.75-60, 790, 0.75);
+		if( overNextTurn ) {
+			ellipse(windowWidth-130*.75-60+70*0.75, 790+70*0.75, 130*.75);
+		}
+	}
 
 	// BLUE
 	drawCard(BLUE, 0);
 	drawCard(BLUE, 1);
 	drawCard(BLUE, 2);
 	drawCard(BLUE, 3);
+	if( gameState === ORDERCARDS && playerIndex === BLUE ) {
+		spritesheet.drawScaledSprite("next_turn", 0, 60, 790, 0.75);
+		if( overNextTurn ) {
+			ellipse(60+70*0.75, 790+70*0.75, 130*.75);
+		}
+	}
 
 	drawPoints();
 
@@ -338,6 +381,9 @@ function drawGame() {
 		drawCard(playerIndex, selectedCardIdx, {X: mouseX-130, Y: mouseY-80, width: 260, height: 165});
 	}
 	pop();
+
+	textSize(25);
+	text(gameState, 300,810);
 
 	// DEBUG: tile position
 	/*
@@ -371,7 +417,6 @@ function drawLoading() {
 		curState = GAME_START_STATE;
 
         // init game
-		//board = new Board();
         initGame();
 		textAlign(LEFT, BASELINE);
 		uiManager.addLogger('Game loaded');
@@ -426,10 +471,17 @@ function draw() {
 }
 
 function emit(type, data) {
+	if( type === ORDERCARDS ) {
+		socket.emit('orderCards', data);
+	}
 }
 
 const between = (min, value, max) => {
 	return value >= min && value <= max;
+}
+
+const distance = (x1, y1, x2, y2) => {
+	return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2));
 }
 
 const inRectangle = (topLeft, bottomRight) => {
@@ -477,11 +529,13 @@ function tileClicked() {
 function mouseMoved() {
 	overCardIdx = -1;
 	if( selectedCardIdx === -1 ) {
-		cardsPosition[playerIndex].forEach((card,index)=>{
-			if( mouseOverCard(card) ) {
-				overCardIdx = index;
-			}
-		});
+		if( gameState === ORDERCARDS ) {
+			cardsPosition[playerIndex].forEach((card,index)=>{
+				if( mouseOverCard(card) ) {
+					overCardIdx = index;
+				}
+			});
+		}
 	} else {
 		cardsPosition[playerIndex].forEach((card,index)=>{
 			if( index !== selectedCardIdx && mouseOverCard(card) ) {
@@ -497,6 +551,15 @@ function mouseMoved() {
 				selectedCardIdx = index;
 			}
 		});
+	}
+	overNextTurn = false;
+	if( gameState === ORDERCARDS ) {
+		if( playerIndex === BLUE && distance(mouseX, mouseY, 60+70*0.75, 790+70*0.75) <= 70*.75 ) {
+			overNextTurn = true;
+		}
+		if( playerIndex === RED && distance(mouseX, mouseY, windowWidth-130*.75-60+70*0.75, 790+70*0.75) <= 70*.75 ) {
+			overNextTurn = true;
+		}
 	}
 }
 
@@ -514,44 +577,17 @@ function mouseClicked() {
 	if( selectedCardIdx !== -1 ) {
 		selectedCardIdx = -1;
 	}
-	if( overCardIdx !== -1 ) {
+	if( gameState === ORDERCARDS && overCardIdx !== -1 ) {
 		selectedCardIdx = overCardIdx;
 		overCardIdx = -1;
 	}
+	if( overNextTurn && selectedCardIdx === -1 && gameState === ORDERCARDS ) {
+		emit(ORDERCARDS, {playerId: socket.id, cards: curCards[playerIndex]});
+		overNextTurn = false;
+		gameState = WAIT;
+	}
 	toolManager.mouseClicked();
 	uiManager.mouseClicked();
-
-	/*
-	if( gameState === CHOOSECARD ) {
-		board.curCardClickedIndex = cardClicked();
-		if(
-			board.curCardClickedIndex >= 0 &&
-			board.curCardClickedIndex <= 3-board.lastChosenCardIndex &&
-			board.curCardClickedIndex !== board.brunoCardClickedIndex
-		) {
-			board.brunoCardClickedIndex = board.curCardClickedIndex === 2 ? 3 : 2;
-			// check if card can be placed. if not, we loose the card for this turn
-			if( board.canPlaceCard() ) {
-				gameState = PLACECARD;
-				soundManager.playSound('place_tile');
-			} else {
-				// cannot place this tile
-				uiManager.addLogger("Cannot place this card");
-				soundManager.playSound('cannot_place_tile');
-				nextTurn();
-			}
-		} else {
-			board.curCardClickedIndex = -1;
-		}
-	} else if( gameState === PLACECARD ) {
-		const tilePosition = tileClicked();
-		if( tilePosition && board.tryPlaceCard(tilePosition) ) {
-			board.placeCardOnTile(tilePosition);
-			soundManager.playSound('place_pawn');
-			nextTurn();
-		}
-	}
-	*/
 
 	return false;
 }
