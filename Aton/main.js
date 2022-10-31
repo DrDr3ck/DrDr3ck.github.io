@@ -249,12 +249,19 @@ function setup() {
 	spritesheet.addSpriteSheet('next_turn', './next_turn.png', 140, 140);
 
 	// Start the socket connection
+	//socket = io.connect('drdr3ck.ddns.net:3000');
+	//socket = io.connect('90.101.175.214:3000');
 	socket = io.connect('http://localhost:3000');
+	//socket = io.connect('90.101.175.214');
 
 	const localUserName = localStorage.getItem(storageKeyUserName);
 	if( localUserName ) {
 		userName = localUserName;
 	}
+
+	socket.on("error", (err) => {
+		console.log(`connect_error due to ${err.message}`);
+	  });
 
 	socket.on('getPlayerIndex', index => {
 		playerIndex = index;
@@ -345,6 +352,14 @@ function drawPoints() {
 	pop();
 }
 
+function drawDead() {
+	curBoard.dead.forEach((color, index)=>{
+		const position = tilesPosition[4][index];
+		fill(colors[color].r, colors[color].g, colors[color].b);
+		ellipse(position.X, position.Y, tileWidth);
+	});
+}
+
 function drawTemple(temple, position, color) {
 	temple.tiles.forEach((tile, index)=>{
 		if( tile.counter === color ) {
@@ -361,6 +376,7 @@ function drawBoard(board) {
 	board.temples.forEach((temple,index)=>drawTemple(temple, tilesPosition[index], BLUE));
 	fill(colors[RED].r, colors[RED].g, colors[RED].b);
 	board.temples.forEach((temple,index)=>drawTemple(temple, tilesPosition[index], RED));
+	drawDead();
 	pop();
 }
 
@@ -402,6 +418,22 @@ function drawGame() {
 	if( overTileIdx ) {
 		const tile = tilesPosition[overTileIdx.temple][overTileIdx.tile];
 		ellipse(tile.X, tile.Y, tileWidth);
+	}
+
+	if( gameState === REMOVECOUNTER || gameState === ADDCOUNTER ) {
+		push();
+		const maxTemple = curCards[playerIndex][2].value;
+		if( maxTemple < 4 ) {
+			noStroke();
+			fill(128,128,128,128);
+			rect(718,384,953-718,655-384);
+		}
+		if( maxTemple < 3 ) {
+			noStroke();
+			fill(128,128,128,128);
+			rect(450,384,685-450,655-384);
+		}
+		pop();
 	}
 
 	drawPoints();
@@ -594,9 +626,11 @@ function mouseMoved() {
 	overTileIdx = null;
 	if( gameState === REMOVECOUNTER || gameState === ADDCOUNTER ) {
 		const maxTemple = curCards[playerIndex][2].value;
+		const color = gameState === REMOVECOUNTER && curCards[playerIndex][1].value > 2 ? 1-playerIndex : playerIndex;
 		for( let i=0; i < maxTemple; i++ ) {
 			tilesPosition[i].forEach((tilePosition,index)=>{
-				if( distance(mouseX, mouseY, tilePosition.X, tilePosition.Y, tileWidth) < tileWidth/2 ) {
+				const tileColor = curBoard.temples[i].tiles[index].counter;
+				if( ((gameState === REMOVECOUNTER && tileColor === color) || (gameState === ADDCOUNTER && !tileColor)) && distance(mouseX, mouseY, tilePosition.X, tilePosition.Y, tileWidth) < tileWidth/2 ) {
 					overTileIdx = {temple: i, tile: index};
 				}
 			});
