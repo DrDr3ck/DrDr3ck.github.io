@@ -30,8 +30,8 @@ const RED = 1;
 let userName = "AAA";
 
 const colors = [
- {r:127,g:167,b:202},
- {r:236,g:155,b:95}
+ {r:13,g:81,b:135},
+ {r:168,g:30,b:35}
 ];
 
 const GAME_LOADING_STATE = 0;
@@ -256,8 +256,10 @@ function setup() {
 
 	// Start the socket connection
 	if( ip ) {
+		console.log(`connect with ${ip}:${port}`)
 		socket = io.connect(`${ip}:${port}`);
 	} else {
+		console.log("localhost:3000");
 		socket = io.connect("http://localhost:3000");
 	}
 	
@@ -441,6 +443,11 @@ function drawGame() {
 			fill(128,128,128,128);
 			rect(450,384,685-450,655-384);
 		}
+		if( maxTemple < 2 ) {
+			noStroke();
+			fill(128,128,128,128);
+			rect(720,78,955-720,350-78);
+		}
 		pop();
 	}
 
@@ -623,7 +630,7 @@ function mouseMoved() {
 		for( let i=0; i < maxTemple; i++ ) {
 			tilesPosition[i].forEach((tilePosition,index)=>{
 				const tileColor = curBoard.temples[i].tiles[index].counter;
-				if( ((gameState === REMOVECOUNTER && tileColor === color) || (gameState === ADDCOUNTER && !tileColor)) && distance(mouseX, mouseY, tilePosition.X, tilePosition.Y, tileWidth) < tileWidth/2 ) {
+				if( ((gameState === REMOVECOUNTER && tileColor === color) || (gameState === ADDCOUNTER && tileColor===null)) && distance(mouseX, mouseY, tilePosition.X, tilePosition.Y, tileWidth) < tileWidth/2 ) {
 					overTileIdx = {temple: i, tile: index};
 				}
 			});
@@ -655,7 +662,8 @@ function mouseClicked() {
 		gameState = WAIT;
 	}
 	if( overTileIdx ) {
-		emit(gameState, {playerId: socket.id, temple: overTileIdx.temple, tile: overTileIdx.tile})
+		emit(gameState, {playerId: socket.id, temple: overTileIdx.temple, tile: overTileIdx.tile});
+		overTileIdx = null;
 	}
 	toolManager.mouseClicked();
 	uiManager.mouseClicked();
