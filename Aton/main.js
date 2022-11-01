@@ -18,6 +18,12 @@ let gameState = ORDERCARDS;
 let removeCounter = 0;
 let addCounter = 0;
 
+const queryString = window.location.search;
+const urlParams = new URLSearchParams(queryString);
+const ip = urlParams.get('ip');
+const port = urlParams.get('port') || "3000";
+console.log(ip, port);
+
 const BLUE = 0;
 const RED = 1;
 
@@ -249,10 +255,12 @@ function setup() {
 	spritesheet.addSpriteSheet('next_turn', './next_turn.png', 140, 140);
 
 	// Start the socket connection
-	//socket = io.connect('drdr3ck.ddns.net:3000');
-	//socket = io.connect('90.101.175.214:3000');
-	socket = io.connect('http://localhost:3000');
-	//socket = io.connect('90.101.175.214');
+	if( ip ) {
+		socket = io.connect(`${ip}:${port}`);
+	} else {
+		socket = io.connect("http://localhost:3000");
+	}
+	
 
 	const localUserName = localStorage.getItem(storageKeyUserName);
 	if( localUserName ) {
@@ -445,21 +453,6 @@ function drawGame() {
 
 	textSize(25);
 	text(gameState, 300,810);
-
-	// DEBUG: tile position
-	/*
-	fill(colors[BLUE].r, colors[BLUE].g, colors[BLUE].b);
-	strokeWeight(1);
-	stroke(0);
-	tilesPosition[0].forEach(tile=>ellipse(tile.X, tile.Y, tileWidth));
-	tilesPosition[1].forEach(tile=>ellipse(tile.X, tile.Y, tileWidth));
-	tilesPosition[2].forEach(tile=>ellipse(tile.X, tile.Y, tileWidth));
-	tilesPosition[3].forEach(tile=>ellipse(tile.X, tile.Y, tileWidth));
-	tilesPosition[4].forEach(tile=>ellipse(tile.X, tile.Y, tileWidth));
-	tilesPosition[5].forEach(tile=>arc(tile.X, tile.Y, tileWidth/2, tileWidth/2, PI, 2*PI, CHORD));
-	fill(colors[RED].r, colors[RED].g, colors[RED].b);
-	tilesPosition[5].forEach(tile=>arc(tile.X, tile.Y, tileWidth/2, tileWidth/2, 0, PI, CHORD));
-	*/
 }
 
 function initGame() {
