@@ -64,6 +64,10 @@ class Board {
 /////////////////////////////////////
 
 const tileWidth = 35;
+const scorePosition = [
+	{X:485,Y:110}, {X:750,Y:110}, {X:485,Y:420}, {X:750,Y:420}, // temple
+	{X:535,Y:740}, {X:790,Y:740}, {X:915,Y:740} // black and bonuses
+ ];
 const tilesPosition = [
 	[
 		{X:483,Y:173}, {X:541,Y:173}, {X:597,Y:173}, {X:652,Y:173},
@@ -253,6 +257,8 @@ function setup() {
 	spritesheet.addSpriteSheet('verso', './verso.png', 260, 165);
 	spritesheet.addSpriteSheet('board', './board.jpg', 799, 796);
 	spritesheet.addSpriteSheet('next_turn', './next_turn.png', 140, 140);
+	spritesheet.addSpriteSheet('black_tile', './black_tile.png', 49, 51);
+	spritesheet.addSpriteSheet('bonus_tile', './bonus_tile.png', 49, 51);
 
 	// Start the socket connection
 	if( ip ) {
@@ -338,6 +344,31 @@ function drawCard(color, index, position) {
 	if( index === overCardIdx && color === playerIndex ) {
 		rect(cardPosition.X, cardPosition.Y, cardPosition.width, cardPosition.height, 20);
 	}
+}
+
+function drawScore() {
+	push();
+	textSize(30);
+	textAlign(CENTER, CENTER);
+	const scores = [{none: 0},{red: 5},{blue: 3},{blue: 6}, {red: 8}, {blue:4}, {red:6}];
+	spritesheet.drawScaledSprite('black_tile',0,510,710,1.2);
+	spritesheet.drawScaledSprite('bonus_tile',0,830,710,1.2);
+	stroke(0);
+	scores.forEach((score,index)=>{
+		fill(217,185,138);
+		ellipse(scorePosition[index].X, scorePosition[index].Y,35);
+		if( score.blue ) {
+			fill(colors[BLUE].r, colors[BLUE].g, colors[BLUE].b);
+			text(score.blue, scorePosition[index].X, scorePosition[index].Y);
+		} else if( score.red ) {
+			fill(colors[RED].r, colors[RED].g, colors[RED].b);
+			text(score.red, scorePosition[index].X, scorePosition[index].Y);
+		} else { // none
+			fill(180);
+			text("0", scorePosition[index].X, scorePosition[index].Y);
+		}
+	});
+	pop();
 }
 
 function drawPoints() {
@@ -452,6 +483,8 @@ function drawGame() {
 	}
 
 	drawPoints();
+
+	drawScore();
 
 	if( selectedCardIdx !== -1 ) {
 		drawCard(playerIndex, selectedCardIdx, {X: mouseX-130, Y: mouseY-80, width: 260, height: 165});
