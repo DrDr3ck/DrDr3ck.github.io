@@ -17,6 +17,8 @@ const jobManager = new JobManager();
 const soundManager = new SoundMgr();
 const spritesheet = new SpriteSheet();
 
+const storageKeyCartographer = 'DrDr3ck/Cartographer/Solo';
+
 const GAME_LOADING_STATE = 0;
 const GAME_START_STATE = 1;
 const GAME_PLAY_STATE = 2;
@@ -32,6 +34,8 @@ const piecesMax = 14;
 let season = Season.Printemps;
 let seasonTime = SeasonTime[season];
 let curTime = 0;
+let useTemple = false;
+let templesPosition = [];
 
 const queryString = window.location.search;
 const urlParams = new URLSearchParams(queryString);
@@ -111,9 +115,6 @@ let points = [
     {decret1: 0, decret2: 0, pieces: 0, monsters: 0, total: 0},
     {decret1: 0, decret2: 0, pieces: 0, monsters: 0, total: 0}
 ];
-
-let useTemple = false;
-let templesPosition = [];
 
 /**
  * Creates a board of type A or B
@@ -234,6 +235,48 @@ function nextClicked() {
         pointsClicked();
     }
     nextCard();
+
+    saveState();
+}
+
+function loadState(state) {
+    seed = state.seed;
+    turn = state.turn;
+    seasonTime = state.seasonTime;
+    season = state.season;
+    curTime = state.curTime;
+    boardIndex = state.boardIndex;
+    pieces = state.pieces;
+    cards = state.cards;
+    board = state.board;
+    points = state.points;
+    curSeasonCards = state.curSeasonCards;
+    useTemple = state.useTemple;
+    gameState= state.gameState;
+    titre = state.titre;
+    curSelectedShape = state.curSelectedShape;
+    curSelectedType = state.curSelectedType;
+    undoButton.enabled = state.undoButton;
+    nextButton.enabled = state.nextButton;
+}
+
+function saveState() {
+    // save state in global session ?
+    const data = {
+        seed: seed,
+        turn: turn,
+        points,
+        seasonTime, season, curTime,
+        boardIndex, pieces,
+        cards, curSeasonCards,
+        useTemple, templesPosition,
+        gameState, titre,
+        board,
+        curSelectedShape, curSelectedType,
+        undoButton: undoButton.enabled,
+        nextButton: nextButton.enabled
+    };
+    localStorage.setItem(storageKeyCartographer, JSON.stringify(data));
 }
 
 function nextCard() {
@@ -242,7 +285,10 @@ function nextCard() {
         return;
     }
     useTemple = false;
-    let curCard = cards.shift();
+    resetCard(cards.shift());
+}
+
+function resetCard(curCard) {
 	curSeasonCards.push(curCard);
     if( curCard === 11 ) {
         useTemple = true;
@@ -436,6 +482,7 @@ class PointsDialog extends Dialog {
             nextCard();
         }
         closeCurrentDialog();
+        saveState();
         delete this;
     }
 
@@ -671,6 +718,11 @@ function drawLoading() {
         copy2SeedButton.visible = false;
         if( document.location.toString().includes("seed=") ) {
             startClicked(boardIndex);
+            const storage = localStorage.getItem(storageKeyCartographer);
+            state = JSON.parse(storage)
+            if( state && state.seed === seed ) {
+                loadState(state);
+            }
         }
 	}
 }
