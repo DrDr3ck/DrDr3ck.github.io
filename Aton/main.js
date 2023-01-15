@@ -12,8 +12,14 @@ const spritesheet = new SpriteSheet();
 const ORDERCARDS = "Order cards";
 const WAIT = "Wait Opponent";
 const REMOVECOUNTER = "Remove counter(s)";
+const REMOVETEMPLE1 = "Remove counter in temple 1";
+const REMOVETEMPLE2 = "Remove counter in temple 2";
+const REMOVETEMPLE3 = "Remove counter in temple 3";
+const REMOVETEMPLE4 = "Remove counter in temple 4";
 const ADDCOUNTER = "Add counter(s)";
+const KINGDOM = "Kingdom of death";
 const GAMEOVER = "End of game";
+
 let gameState = ORDERCARDS;
 let removeCounter = 0;
 let addCounter = 0;
@@ -433,7 +439,7 @@ function drawGame() {
 	drawCard(RED, 2);
 	drawCard(RED, 1);
 	drawCard(RED, 0);
-	if( gameState === ORDERCARDS && playerIndex === RED ) {
+	if( (gameState === ORDERCARDS || gameState === KINGDOM) && playerIndex === RED ) {
 		spritesheet.drawScaledSprite("next_turn", 0, windowWidth-130*.75-60, 790, 0.75);
 		if( overNextTurn ) {
 			ellipse(windowWidth-130*.75-60+70*0.75, 790+70*0.75, 130*.75);
@@ -445,7 +451,7 @@ function drawGame() {
 	drawCard(BLUE, 1);
 	drawCard(BLUE, 2);
 	drawCard(BLUE, 3);
-	if( gameState === ORDERCARDS && playerIndex === BLUE ) {
+	if( (gameState === ORDERCARDS || gameState === KINGDOM) && playerIndex === BLUE ) {
 		spritesheet.drawScaledSprite("next_turn", 0, 60, 790, 0.75);
 		if( overNextTurn ) {
 			ellipse(60+70*0.75, 790+70*0.75, 130*.75);
@@ -479,6 +485,37 @@ function drawGame() {
 			fill(128,128,128,128);
 			rect(720,78,955-720,350-78);
 		}
+		pop();
+	}
+
+	if( gameState === REMOVETEMPLE1 || gameState === REMOVETEMPLE2 || gameState === REMOVETEMPLE3 || gameState === REMOVETEMPLE4 ) {
+		push();
+		const temple = 0; // TODO
+		[0,1,2,3].forEach(templeIndex=>{
+			if( templeIndex === temple ) {
+				return;
+			}
+			if( templeIndex === 0 ) {
+				noStroke();
+				fill(128,128,128,128);
+				rect(450,78,685-450,350-78);
+			}
+			if( templeIndex === 1 ) {
+				noStroke();
+				fill(128,128,128,128);
+				rect(720,78,955-720,350-78);
+			}
+			if( templeIndex === 2 ) {
+				noStroke();
+				fill(128,128,128,128);
+				rect(450,384,685-450,655-384);
+			}
+			if( templeIndex === 3 ) {
+				noStroke();
+				fill(128,128,128,128);
+				rect(718,384,953-718,655-384);
+			}
+		});
 		pop();
 	}
 
@@ -668,6 +705,9 @@ function mouseMoved() {
 				}
 			});
 		}
+	}
+	if( gameState === REMOVETEMPLE1 ) {
+		// check if player can remove a 'counter' from temple 1
 	}
 }
 
