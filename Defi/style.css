@@ -1,0 +1,11 @@
+body {
+    margin-top: 25px;
+    padding: 0;
+    background-color: rgb(80,80,80);
+}
+
+#canvas {
+    display: flex;
+    /* This centers our sketch horizontally. */
+    justify-content: center;
+}
