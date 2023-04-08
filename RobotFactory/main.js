@@ -37,7 +37,7 @@ const defaultMine = {
 }
 
 const defaultFactory = {
-	type: "factory",
+	type: "factory#1",
 	curTime: 0,
 	settings: {
 		neededResource: [{type: "iron", count: 5}],
@@ -58,9 +58,14 @@ const resources = {
 	iron: 0, coal: 0, copper: 0, robot: 0
 };
 
+let money = 0;
+
 const defaultSeller = {
 	type: "sell",
+	curTime: 0,
 	settings: {
+		neededResource: [{type: "robot", count: 1}],
+		maxTime: 1000,
 		priceRatio: 1
 	},
 	position: {
@@ -121,41 +126,83 @@ function setup() {
     lastTime = Date.now();
 }
 
-function updateGame(elapsedTime) {
-	if( defaultMine.settings.countResource === defaultMine.settings.maxResource ) {
-		defaultMine.curTime = 0;
+function updateMine(mine, elapsedTime) {
+	if( mine.settings.countResource === mine.settings.maxResource ) {
+		mine.curTime = 0;
 	} else {
-		defaultMine.curTime += elapsedTime;
-		if( defaultMine.curTime > defaultMine.settings.maxTime ) {
-			defaultMine.curTime -= defaultMine.settings.maxTime;
-			if( defaultMine.settings.countResource < defaultMine.settings.maxResource ) {
+		mine.curTime += elapsedTime;
+		if( mine.curTime > mine.settings.maxTime ) {
+			mine.curTime -= mine.settings.maxTime;
+			if( mine.settings.countResource < mine.settings.maxResource ) {
 				const delta = Math.min(
-					defaultMine.settings.countResource+defaultMine.settings.createResource,
-					defaultMine.settings.maxResource
-				) - defaultMine.settings.countResource;
-				defaultMine.settings.countResource += delta;
-				//resources[defaultMine.settings.typeResource] += delta;
+					mine.settings.countResource+mine.settings.createResource,
+					mine.settings.maxResource
+				) - mine.settings.countResource;
+				mine.settings.countResource += delta;
 			}
 		}
 	}
+}
 
+function updateFactory(factory, elapsedTime) {
 	// check if default factory is working...
-	if( defaultFactory.curTime > 0 ) {
-		defaultFactory.curTime += elapsedTime;
-		if( defaultFactory.curTime > defaultFactory.settings.maxTime ) {
-			defaultFactory.curTime = 0;
-			// TODO: get item
+	if( factory.curTime > 0 ) {
+		factory.curTime += elapsedTime;
+		if( factory.curTime > factory.settings.maxTime ) {
+			factory.curTime = 0;
+			if( factory.settings.countResource < factory.settings.maxResource ) {
+				const delta = Math.min(
+					factory.settings.countResource+factory.settings.createResource,
+					factory.settings.maxResource
+				) - factory.settings.countResource;
+				factory.settings.countResource += delta;
+			}
 		}
 	} else {
 		// check if default factory can work
-		const curNeeded = resources[defaultFactory.settings.neededResource[0].type];
-		const maxNeeded = defaultFactory.settings.neededResource[0].count;
+		const curNeeded = resources[factory.settings.neededResource[0].type];
+		const maxNeeded = factory.settings.neededResource[0].count;
 		if( curNeeded >= maxNeeded ) {
 			// remove resource
-			resources[defaultFactory.settings.neededResource[0].type] -= maxNeeded;
-			defaultFactory.curTime = 1;
+			resources[factory.settings.neededResource[0].type] -= maxNeeded;
+			factory.curTime = 1;
 		}
 	}
+}
+
+function updateSeller(seller, elapsedTime) {
+	if( seller.curTime > 0 ) {
+		seller.curTime += elapsedTime;
+		if( seller.curTime > seller.settings.maxTime ) {
+			seller.curTime = 0;
+			money += 100; // TODO
+		}
+	} else {
+		// check if default seller can sell something
+		const curNeeded = resources[seller.settings.neededResource[0].type];
+		const maxNeeded = seller.settings.neededResource[0].count;
+		if( curNeeded >= maxNeeded ) {
+			// remove resource
+			resources[seller.settings.neededResource[0].type] -= maxNeeded;
+			seller.curTime = 1;
+		}
+	}
+}
+
+function updateGame(elapsedTime) {
+	updateMine(defaultMine, elapsedTime);
+
+	updateFactory(defaultFactory, elapsedTime);
+
+	updateSeller(defaultSeller, elapsedTime);
+}
+
+function displayMoney(x,y) {
+	fill(0);
+	noStroke();
+	textSize(25);
+	textAlign(CENTER, CENTER);
+	text(`Money: ${money}k`,x,y);
 }
 
 function displayTime(x,y,ratio) {
@@ -218,6 +265,8 @@ function drawGame() {
 	displayComponent(defaultMine);
 	displayComponent(defaultFactory);
 	displayComponent(defaultSeller);
+
+	displayMoney(700,750);
 }
 
 function initGame() {
