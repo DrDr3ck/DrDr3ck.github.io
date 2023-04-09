@@ -48,7 +48,8 @@ const shelterColor = {
 	food: {r:41,g:216,b:6},
 }
 
-let overRoomPosition = null;
+let overRoom = null;
+let overRobot = null;
 
 const shelter = {
 	floors: [
@@ -122,8 +123,8 @@ function setup() {
     lastTime = Date.now();
 }
 
-function displayRobot(x,y,index) {
-	spritesheet.drawScaledSprite("farm_robot", 0, x+30*index, y, 1);
+function displayRobot(x,y,robot,index) {
+	spritesheet.drawScaledSprite("farm_robot", 0, x+30*index, y, robot.name === overRobot ? 0.9 : 1);
 }
 
 function displayTime(x,y,ratio) {
@@ -170,7 +171,7 @@ function displayRoom(room, level) {
 	const yRoom = 100+level*height;
 	const size = room.size;
 	
-	if( overRoomPosition && overRoomPosition.position === room.position && overRoomPosition.level === level ) {
+	if( overRoom && overRoom.position === room.position && overRoom.level === level ) {
 		strokeWeight(3);
 	} else {
 		strokeWeight(1);
@@ -184,7 +185,7 @@ function displayRoom(room, level) {
 		displayTime(xRoom-30+width*size,yRoom+30,room.curTime/room.maxTime);
 	}
 	if( room.robots ) {
-		room.robots.forEach((_robot,index)=>displayRobot(xRoom+5, yRoom+height-50, index));
+		room.robots.forEach((robot,index)=>displayRobot(xRoom+5, yRoom+height-50, robot, index));
 	}
 }
 
@@ -288,18 +289,37 @@ function draw() {
 function isOverRoomPosition(x,y,room,level) {
 	const xRoom = 500+room.position*width;
 	const yRoom = 100+level*height;
-	if( mouseX > xRoom && mouseX < xRoom+width*room.size && mouseY > yRoom && mouseY < yRoom+height ) {
+	if( x > xRoom && x < xRoom+width*room.size && y > yRoom && y < yRoom+height ) {
+		return true;
+	}
+	return false;
+}
+
+function isOverRobot(x,y,roomPosition,roomLevel,robotIndex) {
+	const xRoom = 500+roomPosition*width;
+	const yRoom = 100+roomLevel*height;
+	const xRobot = xRoom+5+robotIndex*30;
+	const yRobot = yRoom+height-50;
+	if( x > xRobot && x < xRobot+32 && y > yRobot && y < yRobot+48 ) {
 		return true;
 	}
 	return false;
 }
 
 function mouseMoved() {
-	overRoomPosition = null;
+	overRoom = null;
+	overRobot = null;
 	shelter.floors.forEach(floor=>{
 		floor.rooms.forEach(room=>{
 			if( isOverRoomPosition(mouseX, mouseY, room, floor.level) ) {
-				overRoomPosition = {level: floor.level, position: room.position}
+				overRoom = {level: floor.level, position: room.position}
+			}
+			if( room.robots ) {
+				room.robots.forEach((robot,index)=>{
+					if( isOverRobot(mouseX, mouseY, room.position, floor.level, index)) {
+						overRobot = robot.name;
+					}
+				});
 			}
 		});
 	});
