@@ -28,6 +28,10 @@ let curDate = {
 
 let stock = [
 	{ 
+		type: "power", 
+		value: 10
+	},
+	{ 
 		type: "food",
 		value: 10
 	},
@@ -36,6 +40,35 @@ let stock = [
 		value: 5
 	}
 ];
+
+const shelterColor = {
+	stairs: {r:254,g:72,b:6},
+	power: {r:43,g:73,b:64},
+	water: {r:119,g:224,b:254},
+	food: {r:41,g:216,b:6},
+}
+
+let overRoomPosition = null;
+
+const shelter = {
+	floors: [
+		{
+			level: 0,
+			rooms: [
+				{type: "stairs", position: "0", size: 1, robots: [{name: "R1"}, {name: "R2"}]},
+				{type: "power", position: "1", size: 2, curTime:0, maxTime: 10000, robots: []}
+			]
+		},
+		{
+			level: 1,
+			rooms: [
+				{type: "water", position: "-2", size: 2, curTime:0, maxTime: 10000, robots: []},
+				{type: "stairs", position: "0", size: 1, robots: [{name: "R3"}, {name: "R4"}]},
+				{type: "food", position: "1", size: 2, curTime:0, maxTime: 10000, robots: []}
+			]
+		}
+	]
+}
 
 /*****************************/
 
@@ -46,7 +79,7 @@ function musicClicked() {
 	// TODO
 }
 
-const speakerStorageKey = 'DrDr3ck/GameEngine/Speaker';
+const speakerStorageKey = 'DrDr3ck/Survival/Speaker';
 function speakerClicked() {
 	speakerButton.checked = !speakerButton.checked;
 	soundManager.mute(!speakerButton.checked);
@@ -82,15 +115,30 @@ function setup() {
 	canvas = createCanvas(windowWidth, windowHeight);
     canvas.parent('canvas');
 
+	spritesheet.addSpriteSheet('farm_robot', './farm_robot.png', 32, 48);
+
     frameRate(60);
 
     lastTime = Date.now();
 }
 
+function displayRobot(x,y,index) {
+	spritesheet.drawScaledSprite("farm_robot", 0, x+30*index, y, 1);
+}
+
+function displayTime(x,y,ratio) {
+	const radius = 30;
+	stroke(0);
+	fill(22,80,22);
+	circle(x,y,radius);
+	fill(44,160,44);
+	arc(x,y,radius,radius, -HALF_PI, PI*2*ratio-HALF_PI);
+}
+
 function displayDate() {
 	stroke(0);
 	fill(0);
-	rect(5,5,130+10*Math.floor(Math.log10(curDate.day)),30);
+	rect(5,5,130+10*Math.floor(Math.log10(curDate.day)),30,5);
 	fill(220,8,18);
 	textSize(20);
 	textAlign(LEFT, TOP);
@@ -100,16 +148,52 @@ function displayDate() {
 function displayStock() {
 	const food = stock.filter(s=>s.type==="food")[0].value || 0;
 	const water = stock.filter(s=>s.type==="water")[0].value || 0;
+	const power = stock.filter(s=>s.type==="power")[0].value || 0;
 	noStroke();
 	fill(0);
-	rect(300-5,750-5,80+10*Math.floor(Math.log10(food)),30);
-	rect(400-5,750-5,85+10*Math.floor(Math.log10(water)),30);
+	rect(450-5,5,80+10*Math.floor(Math.log10(food)),30,5);
+	rect(600-5,5,85+10*Math.floor(Math.log10(water)),30,5);
+	rect(750-5,5,90+10*Math.floor(Math.log10(power)),30,5);
 	stroke(0);
 	fill(22,168,194);
 	textSize(20);
 	textAlign(LEFT, TOP);
-	text(`Food: ${food}`,300,750);
-	text(`Water: ${water}`,400,750);
+	text(`Food: ${food}`,450,10);
+	text(`Water: ${water}`,600,10);
+	text(`Power: ${power}`,750,10);
+}
+
+const width = 75;
+const height = 150;
+function displayRoom(room, level) {
+	const xRoom = 500+room.position*width;
+	const yRoom = 100+level*height;
+	const size = room.size;
+	
+	if( overRoomPosition && overRoomPosition.position === room.position && overRoomPosition.level === level ) {
+		strokeWeight(3);
+	} else {
+		strokeWeight(1);
+	}
+
+	fill(shelterColor[room.type].r,shelterColor[room.type].g,shelterColor[room.type].b);
+	rect(xRoom,yRoom,width*size,height);
+
+	strokeWeight(1);
+	if( room.maxTime ) {
+		displayTime(xRoom-30+width*size,yRoom+30,room.curTime/room.maxTime);
+	}
+	if( room.robots ) {
+		room.robots.forEach((_robot,index)=>displayRobot(xRoom+5, yRoom+height-50, index));
+	}
+}
+
+function displayFloor(floor) {
+	floor.rooms.forEach(room=>displayRoom(room,floor.level));
+}
+
+function displayShelter() {
+	shelter.floors.forEach(floor=>displayFloor(floor));
 }
 
 function updateGame(elapsedTime) {
@@ -127,9 +211,23 @@ function updateGame(elapsedTime) {
 		curDate.hour -= 24;
 		curDate.day += 1;
 	}
+
+	// update each room
+	shelter.floors.forEach(floor=>{
+		floor.rooms.forEach(room=>{
+			if( room.curTime && room.curTime < room.maxTime ) {
+				room.curTime += elapsedTime;
+				if( room.curTime > room.maxTime ) {
+					// room ready for 'action'
+					room.curTime = room.maxTime;
+				}
+			}
+		});
+	});
 }
 
 function drawGame() {
+	displayShelter();
 	displayDate();
 	displayStock();
 }
@@ -185,6 +283,26 @@ function draw() {
     jobManager.draw();
     
     lastTime = currentTime;
+}
+
+function isOverRoomPosition(x,y,room,level) {
+	const xRoom = 500+room.position*width;
+	const yRoom = 100+level*height;
+	if( mouseX > xRoom && mouseX < xRoom+width*room.size && mouseY > yRoom && mouseY < yRoom+height ) {
+		return true;
+	}
+	return false;
+}
+
+function mouseMoved() {
+	overRoomPosition = null;
+	shelter.floors.forEach(floor=>{
+		floor.rooms.forEach(room=>{
+			if( isOverRoomPosition(mouseX, mouseY, room, floor.level) ) {
+				overRoomPosition = {level: floor.level, position: room.position}
+			}
+		});
+	});
 }
 
 function mouseClicked() {
