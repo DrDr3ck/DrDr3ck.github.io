@@ -18,6 +18,10 @@
     <br>
     <a href="./Farm">Farm</a>
     <br>
+    <a href="./Survival/">Survival</a>
+    <br>
+    <a href="./RobotFactory/">RobotFactory</a>
+    <br>
     <a href="./TowerDefense">Tower Defense</a>
     <br>
     <a href="./Nomad">Nomad</a>
