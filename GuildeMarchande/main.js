@@ -17,6 +17,8 @@ let curState = GAME_LOADING_STATE;
 let toggleDebug = true;
 let lastTime = 0;
 
+// TODO: seed
+
 function preload() {
 	spritesheet.addSpriteSheet('cover', './cover.png', 630, 460);
 	spritesheet.addSpriteSheet('avenia', './avenia.png', 1680, 1405);
@@ -50,6 +52,34 @@ const startButton = new BButton(140, windowHeight - 120, "AVENIA", startClicked)
 
 const board = [];
 
+/* Randomize array in-place using Durstenfeld shuffle algorithm */
+const shuffleArray = (array) => {
+    for (var i = array.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i+1))
+        var temp = array[i];
+        array[i] = array[j];
+        array[j] = temp;
+    }
+}
+
+const goalArray = [0,1,2,3,4,5];
+shuffleArray(goalArray);
+
+const ageCards = [0,1,2,3,4,5];
+shuffleArray(ageCards);
+
+let ageExploration = [{type: "cube", x:9, y:6}];
+
+function addCube(x,y) {
+	ageExploration.push({type: "cube", x: x, y: y});
+}
+function transformCubeToVillage(x,y) {
+	const index = ageExploration.findIndex(cell=>cell.x === x && cell.y===y);
+	if( index >= 0 ) {
+		ageExploration[index].type = "village";
+	}
+}
+
 function initUI() {
     speakerButton.setTextSize(50);
 	musicButton.setTextSize(50);
@@ -74,6 +104,12 @@ function setup() {
 	initBoard();
 
     lastTime = Date.now();
+
+	//debug
+	addCube(8,7);
+	addCube(7,7);
+	addCube(7,8);
+	transformCubeToVillage(7,8);
 }
 
 function updateGame(elapsedTime) {
@@ -129,8 +165,50 @@ function debugDrawBoard() {
 	textSize(12);
 	board.forEach((column,x)=>column.forEach((cell,y)=>debugDrawCase(cell.center.x, cell.center.y, cell.type, x, y)));
 
+	// couvrir les cartes explorations deja jouées
+	spritesheet.drawScaledSprite("exploration_cards", 0, 1180, 90-25, 0.325);
+
 	//fill(200,200,200,75);
 	//rect(1395,87,1517-1395,160-87);
+}
+
+function displayCube(x,y) {
+	stroke(0);
+	fill(250,100,100);
+	const cell = board[x][y];
+	console.log("display cube", cell);
+	rect(cell.center.x+boardx-10, cell.center.y+boardy-10, 20, 20);
+}
+
+function displayVillage(x,y) {
+	strokeWeight(1);
+	stroke(0);
+	fill(250,100,100);
+	const cell = board[x][y];
+	console.log("display cube", cell);
+	beginShape();
+	const X = cell.center.x+boardx;
+	const Y = cell.center.y+boardy+10;
+	vertex(X-20,Y);
+	vertex(X-20,Y-20);
+	vertex(X+20,Y-20);
+	vertex(X+20,Y);
+	vertex(X+10,Y);
+	vertex(X+10,Y-5);
+	vertex(X-10,Y-5);
+	vertex(X-10,Y);
+	vertex(X-20,Y);
+	endShape();
+}
+
+function displayAgeExploration() {
+	ageExploration.forEach(cell=> {
+		if( cell.type === "cube") {
+			displayCube(cell.x, cell.y)
+		} else if( cell.type === "village") {
+			displayVillage(cell.x, cell.y)
+		}
+	});
 }
 
 
@@ -139,11 +217,10 @@ function drawGame() {
 	spritesheet.drawScaledSprite("exploration", 0, 1150, boardy, 0.65);
 	if( toggleDebug ) {
 	    debugDrawBoard();
+	} else {
+		displayAgeExploration();
 	}
-	spritesheet.drawScaledSprite("exploration_cards", 1, 1150, 440-25, 1);
-
-	// couvrir les cartes explorations deja jouées
-	spritesheet.drawScaledSprite("exploration_cards", 0, 1180, 90-25, 0.325);
+	spritesheet.drawScaledSprite("exploration_cards", ageCards[0], 1150, 440-25, 1);
 
 	// afficher cards specialites
 	spritesheet.drawScaledSprite("speciality_cards", 0, 10-100, 120-25, 0.5);
@@ -151,9 +228,9 @@ function drawGame() {
 	spritesheet.drawScaledSprite("speciality_cards", 0, 10-100, 640-25, 0.5);
 
 	// goals
-	spritesheet.drawScaledSprite("goals", 0, 1435, 440-25, 0.5);
-	spritesheet.drawScaledSprite("goals", 2, 1435, 630-25, 0.5);
-	spritesheet.drawScaledSprite("goals", 4, 1435, 820-25, 0.5);
+	spritesheet.drawScaledSprite("goals", goalArray[0], 1435, 440-25, 0.5);
+	spritesheet.drawScaledSprite("goals", goalArray[1], 1435, 630-25, 0.5);
+	spritesheet.drawScaledSprite("goals", goalArray[2], 1435, 820-25, 0.5);
 
 	// points de victoire
 	spritesheet.drawSprite("PV", 0, 1300, 850);
@@ -201,7 +278,7 @@ function draw() {
 
     // draw game
 	if( curState === GAME_START_STATE ) {
-		spritesheet.drawScaledSprite("cover", 0, 125, 0, 1.75);
+		spritesheet.drawScaledSprite("cover", 0, (windowWidth-630*1.5)/2, 50, 1.5);
 	}
 	if (curState === GAME_PLAY_STATE) {
 		updateGame(elapsedTime);
