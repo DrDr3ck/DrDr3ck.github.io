@@ -68,10 +68,15 @@ shuffleArray(goalArray);
 const ageCards = [0,1,2,3,4,5];
 shuffleArray(ageCards);
 
-let ageExploration = [{type: "cube", x:9, y:6}];
+let ageExploration = [{type: "village", x:9, y:6}];
 
 function addCube(x,y) {
-	ageExploration.push({type: "cube", x: x, y: y});
+	const cell = board[x][y];
+	if( cell.type === "tower" ) {
+		ageExploration.push({type: "tower", x: x, y: y}); 
+	} else {
+		ageExploration.push({type: "cube", x: x, y: y});
+	}
 }
 function transformCubeToVillage(x,y) {
 	const index = ageExploration.findIndex(cell=>cell.x === x && cell.y===y);
@@ -109,6 +114,7 @@ function setup() {
 	addCube(8,7);
 	addCube(7,7);
 	addCube(7,8);
+	addCube(2,2); // tower
 	transformCubeToVillage(7,8);
 }
 
@@ -190,15 +196,25 @@ function displayVillage(x,y) {
 	const X = cell.center.x+boardx;
 	const Y = cell.center.y+boardy+10;
 	vertex(X-20,Y);
-	vertex(X-20,Y-20);
-	vertex(X+20,Y-20);
+	vertex(X-20,Y-15);
+	vertex(X-15,Y-20);
+	vertex(X+15,Y-20);
+	vertex(X+20,Y-15);
 	vertex(X+20,Y);
-	vertex(X+10,Y);
-	vertex(X+10,Y-5);
+	vertex(X,Y);
+	vertex(X,Y-5);
 	vertex(X-10,Y-5);
 	vertex(X-10,Y);
 	vertex(X-20,Y);
 	endShape();
+}
+
+function displayTower(x, y) {
+	strokeWeight(1);
+	stroke(0);
+	fill(160,160,180);
+	const cell = board[x][y];
+	rect(cell.center.x+boardx-10, cell.center.y+boardy-25,20,50);
 }
 
 function displayAgeExploration() {
@@ -207,6 +223,8 @@ function displayAgeExploration() {
 			displayCube(cell.x, cell.y)
 		} else if( cell.type === "village") {
 			displayVillage(cell.x, cell.y)
+		} else if( cell.type === "tower") {
+			displayTower(cell.x, cell.y)
 		}
 	});
 }
