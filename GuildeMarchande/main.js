@@ -14,10 +14,17 @@ const GAME_START_STATE = 1;
 const GAME_PLAY_STATE = 2;
 const GAME_OVER_STATE = 3;
 let curState = GAME_LOADING_STATE;
-let toggleDebug = true;
+const EXPLORATION_STATE = "exploration"; // click on the exploration card to reveal it.
+const CUBE_STATE = "cube"; // poser des cubes
+const SPECIALIZED_STATE = "specialites"; // choisir une carte specialité parmi 2
+let playState = EXPLORATION_STATE;
+let toggleDebug = false;
 let lastTime = 0;
 
 let overCell = null;
+let overExploration = false;
+let overSpecialization = -1; // 0 or 1
+let age = 1; // 1 to 4
 
 // TODO: seed
 
@@ -28,6 +35,7 @@ function preload() {
 	spritesheet.addSpriteSheet('exploration_cards', './exploration_cards.png', 260, 400);
 	spritesheet.addSpriteSheet('speciality_cards', './speciality_cards.png', 260, 400);
 	spritesheet.addSpriteSheet('tresor_cards', './tresor_cards.png', 400, 260);
+	spritesheet.addSpriteSheet('comptoirs', './comptoirs.png', 100, 100);
 	spritesheet.addSpriteSheet('goals', './goals.png', 520, 370);
 	spritesheet.addSpriteSheet('PV', './PV.png', 136, 141);
 }
@@ -49,9 +57,15 @@ function startClicked() {
 	uiManager.addLogger("Start game");
 }
 
+function validateClicked() {
+	// TODO: passer à la carte exploration suivante
+}
+
 const speakerButton = new BFloatingSwitchButton(windowWidth - 70 - 10 - 70, 70, '\uD83D\uDD0A', speakerClicked);
 const musicButton = new BFloatingSwitchButton(windowWidth - 70, 70, '\uD83C\uDFB6', musicClicked);
 const startButton = new BButton(140, windowHeight - 120, "AVENIA", startClicked);
+
+const validateButton = new BButton(530, windowHeight - 5, "Valider", validateClicked);
 
 const board = [];
 
@@ -70,16 +84,27 @@ shuffleArray(goalArray);
 
 const ageCards = [0,1,2,3,4,5];
 shuffleArray(ageCards);
+ageCards.unshift(9);
+
+const specialityArray = [1,2,3,4,20,24,25]; // [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28];
+shuffleArray(specialityArray);
+
+const specialityCards = []; // 3 cards
 
 let ageExploration = [{type: "village", x:9, y:6}];
 
 function addCube(x,y) {
+	// check if cube not already added
+	if( ageExploration.findIndex(cell=>cell.x===x && cell.y===y) >= 0 ) {
+		return false;
+	}
 	const cell = board[x][y];
 	if( cell.type === "tower" ) {
 		ageExploration.push({type: "tower", x: x, y: y}); 
 	} else {
 		ageExploration.push({type: "cube", x: x, y: y});
 	}
+	return true;
 }
 function transformCubeToVillage(x,y) {
 	const index = ageExploration.findIndex(cell=>cell.x === x && cell.y===y);
@@ -114,11 +139,12 @@ function setup() {
     lastTime = Date.now();
 
 	//debug
+	/*
 	addCube(8,7);
 	addCube(7,7);
 	addCube(7,8);
 	addCube(2,2); // tower
-	transformCubeToVillage(7,8);
+	transformCubeToVillage(7,8);*/
 }
 
 function updateGame(elapsedTime) {
@@ -162,6 +188,18 @@ function debugDrawCase(x,y,type, row, column) {
 	text(`${row}/${column}`, x+boardx-12, y+boardy);
 }
 
+function drawComptoir(x,y) {
+	const cell = board[x][y];
+	const type = cell.type;
+	let typeIndex = 0; 
+	if( type === "mountain" ) {
+		typeIndex = 1;
+	} else if( type === "grassland" ) {
+		typeIndex = 2;
+	}
+	spritesheet.drawScaledSprite("comptoirs", typeIndex, cell.center.x+boardx-27, cell.center.y+boardy-27, 0.56);
+}
+
 function debugDrawBoard() {
 	stroke(0);
 	strokeWeight(1);
@@ -170,6 +208,11 @@ function debugDrawBoard() {
 
 	// couvrir les cartes explorations deja jouées
 	spritesheet.drawScaledSprite("exploration_cards", 0, 1180, 90-25, 0.325);
+
+	// teste comptoir
+	drawComptoir(12,2);
+	drawComptoir(12,5);
+	drawComptoir(11,12);
 }
 
 function displayCube(x,y) {
@@ -235,16 +278,53 @@ function drawGame() {
 	if( overCell ) {
 		const cell = board[overCell.x][overCell.y];
 		noFill();
-		strokeWeight(2);
+		strokeWeight(4);
 		stroke(250);
 		ellipse(cell.center.x+boardx,cell.center.y+boardy,45); // 45 de rayon
 	}
-	spritesheet.drawScaledSprite("exploration_cards", 9/*ageCards[0]*/, 1210, 440-25, 0.65);
+	spritesheet.drawScaledSprite("exploration_cards", ageCards[0], 1210, 440-25, 0.65);
+	noFill();
+	strokeWeight(4);
+	stroke(250);
+	rect(1210, 415, 1378-1210, 674-415, 15);
+	if( overExploration ) {	
+		stroke(25);
+		rect(1210, 415, 1378-1210, 674-415, 15);
+	}
+	if( playState === SPECIALIZED_STATE ) {
+		// afficher 2 cartes tirées du tableau
+		noFill();
+		strokeWeight(4);
+		stroke(250); //stroke(184,150,109);
+		spritesheet.drawScaledSprite("speciality_cards", specialityArray[0], 325, 330, 0.8);
+		rect(325, 330, 530-325, 650-330, 15);
+		spritesheet.drawScaledSprite("speciality_cards", specialityArray[1], 625, 330, 0.8);
+		rect(625, 330, 830-625, 650-330, 15);
+		stroke(25);
+		if( overSpecialization === 0 ) {
+			rect(325, 330, 530-325, 650-330, 15);
+		}
+		if( overSpecialization === 1 ) {
+			rect(625, 330, 830-625, 650-330, 15);
+		}
+	}
 
 	// afficher cards specialites
-	spritesheet.drawScaledSprite("speciality_cards", 1, 10, 120-25, 0.5);
-	spritesheet.drawScaledSprite("speciality_cards", 0, 10-100, 380-25, 0.5);
-	spritesheet.drawScaledSprite("speciality_cards", 0, 10-100, 640-25, 0.5);
+	if( specialityCards.length <= 0 ) {
+		spritesheet.drawScaledSprite("speciality_cards", 0, 5-115, 120-25, 0.6);
+	} else {
+		spritesheet.drawScaledSprite("speciality_cards", specialityCards[0], 5, 120-25, 0.6);
+	}
+	if( specialityCards.length <= 1 ) {
+		spritesheet.drawScaledSprite("speciality_cards", 0, -110, 380-25, 0.6);
+	} else {
+		spritesheet.drawScaledSprite("speciality_cards", specialityCards[1], 5, 380-25, 0.6);
+	}
+	if( specialityCards.length <= 2 ) {
+		spritesheet.drawScaledSprite("speciality_cards", 0, -110, 640-25, 0.6);
+	} else {
+		spritesheet.drawScaledSprite("speciality_cards", specialityCards[2], 5, 640-25, 0.6);
+	}
 
 	// goals
 	spritesheet.drawScaledSprite("goals", goalArray[0], 1435, 440-25, 0.5);
@@ -256,10 +336,19 @@ function drawGame() {
 	noStroke();
 	fill(250);
 	textSize(25);
-	text("0 x ", 1300, 700);
+	text("0 x", 1300, 700);
 	// tresor
 	spritesheet.drawScaledSprite("tresor_cards", 9, 1150, 820, 0.65);
-	text("0 x ", 1090, 960);
+	text("0 x", 1090, 960);
+
+	// explication
+	if( playState === EXPLORATION_STATE ) {
+		text("Cliquez sur la carte d'exploration", 270, 980);
+	} else if( playState === CUBE_STATE ) {
+		text("Posez des cubes", 270, 980);
+	} else if( playState === SPECIALIZED_STATE ) {
+		text("Choisissez une carte spécialité", 270, 980);
+	}
 }
 
 function initGame() {
@@ -316,12 +405,62 @@ function draw() {
     lastTime = currentTime;
 }
 
+// player clicks on exploration card to reveal it.
+// change playState to 'cube'
+// check if it is the end of current age
+function newExplorationCard() {
+	ageCards.shift();
+	playState = CUBE_STATE;
+	if( ageCards.length > 0 ) {
+		if( ageCards[0] === 0 ) {
+			// add 1 mountain
+		} else if( ageCards[0] === 1 ) {
+			// add 2 sand
+		} else if( ageCards[0] === 2 ) {
+			// add 2 grassland
+		} else if( ageCards[0] === 3 ) {
+			// add 2 consecutive cells
+		} else if( ageCards[0] === 4 ) {
+			// add 3 aligned sea cells
+		} else if( ageCards[0] === 5 ) { // I
+			if( age === 1 ) {
+				// player needs to choose a specialized card between two
+				playState = SPECIALIZED_STATE;
+			}
+		}
+	}
+	if( playState === CUBE_STATE ) {
+		validateButton.enabled = false;
+		uiManager.setUI([ validateButton, speakerButton, musicButton ]);
+	}
+}
+
 function mouseClicked() {
 	if( toggleDebug ) {
 		uiManager.addLogger(`X=${mouseX}, Y=${mouseY}`);
 	}
 	toolManager.mouseClicked();
 	uiManager.mouseClicked();
+	// le joueur clique sur la carte d'exploration pour en découvrir une nouvelle
+	if( playState === EXPLORATION_STATE && overExploration ) {
+		newExplorationCard();
+		overExploration = false;
+	}
+	if( playState === CUBE_STATE && overCell ) {
+		// TODO: check if we can put a cube on this cell
+		addCube(overCell.x, overCell.y);
+	}
+	if( playState === SPECIALIZED_STATE && overSpecialization !== -1 ) {
+		// 1. put specialized card in the current Age
+		specialityCards.push(specialityArray[overSpecialization]);
+		// 2. remove the 2 cards from the list of specialized cards
+		specialityArray.shift();
+		specialityArray.shift();
+		// 3. change state to CUBE_STATE
+		playState = CUBE_STATE;
+		validateButton.enabled = false;
+		uiManager.setUI([ validateButton, speakerButton, musicButton ]);
+	}
 	return false;
 }
 
@@ -338,14 +477,41 @@ function isOverCell(X,Y) {
 	return distance(X,Y,mouseX,mouseY) < 25;
 }
 
+function isOverExplorationCard() {
+	if( playState !== EXPLORATION_STATE ) {
+		return false;
+	}
+	if( mouseX > 1210 && mouseY > 415 && mouseX < 1378 && mouseY < 674 ) {
+		return true;
+	}
+	return false;
+}
+
+function isOverSpecializedCard() {
+	if( mouseX > 325 && mouseY > 330 && mouseX < 530 && mouseY < 650 ) {
+		return 0;
+	}
+	if( mouseX > 625 && mouseY > 330 && mouseX < 830 && mouseY < 650 ) {
+		return 1;
+	}
+	return -1;
+}
+
 function mouseMoved() {
+	overExploration = isOverExplorationCard();
 	overCell = null;
-	board.forEach((column,x)=>column.forEach((cell,y)=>{
-		if( cell.type && isOverCell(cell.center.x+boardx, cell.center.y+boardy) ) {
-			overCell = {x: x, y: y};
-			return;
-		}
-	}));
+	if( playState === CUBE_STATE ) {
+		board.forEach((column,x)=>column.forEach((cell,y)=>{
+			if( cell.type && isOverCell(cell.center.x+boardx, cell.center.y+boardy) ) {
+				overCell = {x: x, y: y};
+				return;
+			}
+		}));
+	}
+	overSpecialization = -1;
+	if( playState === SPECIALIZED_STATE ) {
+		overSpecialization = isOverSpecializedCard();
+	}
 }
 
 function initBoard() {
