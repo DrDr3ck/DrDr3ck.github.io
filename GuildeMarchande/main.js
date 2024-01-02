@@ -1,7 +1,7 @@
 const uiManager = new UIManager();
 const windowWidth = 1700;
 const windowHeight = 1000;
-uiManager.loggerContainer = new LoggerContainer(windowWidth-550, windowHeight-100, 240, 100);
+uiManager.loggerContainer = new LoggerContainer(1150, 700, 240, 100);
 uiManager.loggerContainer.visible = true;
 
 const toolManager = new ToolManager();
@@ -17,6 +17,8 @@ let curState = GAME_LOADING_STATE;
 let toggleDebug = true;
 let lastTime = 0;
 
+let overCell = null;
+
 // TODO: seed
 
 function preload() {
@@ -25,6 +27,7 @@ function preload() {
 	spritesheet.addSpriteSheet('exploration', './exploration.png', 840, 588);
 	spritesheet.addSpriteSheet('exploration_cards', './exploration_cards.png', 260, 400);
 	spritesheet.addSpriteSheet('speciality_cards', './speciality_cards.png', 260, 400);
+	spritesheet.addSpriteSheet('tresor_cards', './tresor_cards.png', 400, 260);
 	spritesheet.addSpriteSheet('goals', './goals.png', 520, 370);
 	spritesheet.addSpriteSheet('PV', './PV.png', 136, 141);
 }
@@ -161,21 +164,12 @@ function debugDrawCase(x,y,type, row, column) {
 
 function debugDrawBoard() {
 	stroke(0);
-	/*
-	debugDrawCase(206,119);
-	debugDrawCase(395,225);
-	debugDrawCase(443,199);
-	debugDrawCase(488,172);
-	debugDrawCase(675,121);
-	*/
+	strokeWeight(1);
 	textSize(12);
 	board.forEach((column,x)=>column.forEach((cell,y)=>debugDrawCase(cell.center.x, cell.center.y, cell.type, x, y)));
 
 	// couvrir les cartes explorations deja jouées
 	spritesheet.drawScaledSprite("exploration_cards", 0, 1180, 90-25, 0.325);
-
-	//fill(200,200,200,75);
-	//rect(1395,87,1517-1395,160-87);
 }
 
 function displayCube(x,y) {
@@ -238,10 +232,17 @@ function drawGame() {
 	} else {
 		displayAgeExploration();
 	}
-	spritesheet.drawScaledSprite("exploration_cards", ageCards[0], 1150, 440-25, 1);
+	if( overCell ) {
+		const cell = board[overCell.x][overCell.y];
+		noFill();
+		strokeWeight(2);
+		stroke(250);
+		ellipse(cell.center.x+boardx,cell.center.y+boardy,45); // 45 de rayon
+	}
+	spritesheet.drawScaledSprite("exploration_cards", 9/*ageCards[0]*/, 1210, 440-25, 0.65);
 
 	// afficher cards specialites
-	spritesheet.drawScaledSprite("speciality_cards", 0, 10-100, 120-25, 0.5);
+	spritesheet.drawScaledSprite("speciality_cards", 1, 10, 120-25, 0.5);
 	spritesheet.drawScaledSprite("speciality_cards", 0, 10-100, 380-25, 0.5);
 	spritesheet.drawScaledSprite("speciality_cards", 0, 10-100, 640-25, 0.5);
 
@@ -251,11 +252,14 @@ function drawGame() {
 	spritesheet.drawScaledSprite("goals", goalArray[2], 1435, 820-25, 0.5);
 
 	// points de victoire
-	spritesheet.drawSprite("PV", 0, 1300, 850);
+	spritesheet.drawSprite("PV", 0, 1300, 680);
 	noStroke();
 	fill(250);
 	textSize(25);
-	text("0 x ", 1300, 870);
+	text("0 x ", 1300, 700);
+	// tresor
+	spritesheet.drawScaledSprite("tresor_cards", 9, 1150, 820, 0.65);
+	text("0 x ", 1090, 960);
 }
 
 function initGame() {
@@ -325,6 +329,23 @@ function keyPressed() {
 	if (key === "D") {
 		toggleDebug = !toggleDebug;
 	}
+}
+
+function isOverCell(X,Y) {
+	const distance = (x1, y1, x2, y2) => {
+		return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2));
+	}
+	return distance(X,Y,mouseX,mouseY) < 25;
+}
+
+function mouseMoved() {
+	overCell = null;
+	board.forEach((column,x)=>column.forEach((cell,y)=>{
+		if( cell.type && isOverCell(cell.center.x+boardx, cell.center.y+boardy) ) {
+			overCell = {x: x, y: y};
+			return;
+		}
+	}));
 }
 
 function initBoard() {
