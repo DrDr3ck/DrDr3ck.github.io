@@ -1,7 +1,7 @@
 const uiManager = new UIManager();
-const windowWidth = 1600;
+const windowWidth = 1700;
 const windowHeight = 1000;
-uiManager.loggerContainer = new LoggerContainer(windowWidth-300, windowHeight-100, 240, 100);
+uiManager.loggerContainer = new LoggerContainer(windowWidth-550, windowHeight-100, 240, 100);
 uiManager.loggerContainer.visible = true;
 
 const toolManager = new ToolManager();
@@ -14,12 +14,17 @@ const GAME_START_STATE = 1;
 const GAME_PLAY_STATE = 2;
 const GAME_OVER_STATE = 3;
 let curState = GAME_LOADING_STATE;
-let toggleDebug = false;
+let toggleDebug = true;
 let lastTime = 0;
 
 function preload() {
 	spritesheet.addSpriteSheet('cover', './cover.png', 630, 460);
 	spritesheet.addSpriteSheet('avenia', './avenia.png', 1680, 1405);
+	spritesheet.addSpriteSheet('exploration', './exploration.png', 840, 588);
+	spritesheet.addSpriteSheet('exploration_cards', './exploration_cards.png', 260, 400);
+	spritesheet.addSpriteSheet('speciality_cards', './speciality_cards.png', 260, 400);
+	spritesheet.addSpriteSheet('goals', './goals.png', 520, 370);
+	spritesheet.addSpriteSheet('PV', './PV.png', 136, 141);
 }
 
 function musicClicked() {
@@ -41,7 +46,9 @@ function startClicked() {
 
 const speakerButton = new BFloatingSwitchButton(windowWidth - 70 - 10 - 70, 70, '\uD83D\uDD0A', speakerClicked);
 const musicButton = new BFloatingSwitchButton(windowWidth - 70, 70, '\uD83C\uDFB6', musicClicked);
-const startButton = new BButton(140, windowHeight - 120, "START", startClicked);
+const startButton = new BButton(140, windowHeight - 120, "AVENIA", startClicked);
+
+const board = [];
 
 function initUI() {
     speakerButton.setTextSize(50);
@@ -62,7 +69,9 @@ function setup() {
 	canvas = createCanvas(windowWidth, windowHeight);
     canvas.parent('canvas');
 
-    frameRate(60);
+    frameRate(10);
+
+	initBoard();
 
     lastTime = Date.now();
 }
@@ -71,9 +80,10 @@ function updateGame(elapsedTime) {
 
 }
 
-function debugDrawCase(x,y) {
-	const dx = 0;//100;
-	const dy = 0;//50;
+const boardx = 50;
+const boardy = 25;
+
+function debugDrawCase(x,y,type, row, column) {
 	/*
 	beginShape();
 	vertex(x+dx, y+31+24+dy);
@@ -84,23 +94,73 @@ function debugDrawCase(x,y) {
 	vertex(x+33+dx, y+31+24+dy);
 	endShape(CLOSE);
 	*/
-	ellipse(x+16+dx,y+30+dy,45);
+	noFill();
+	if( type === "mountain") {
+		fill(216,166,112);
+	} else if( type === "sea") {
+		fill(176,171,138);
+	} else if( type === "sand") {
+		fill(227,202,144);
+	} else if( type === "grassland") {
+		fill(176,161,87);
+	} else if( type === "tower") {
+		fill(224,201,188);
+	} else if( type === "capital") {
+		fill(200,200,200);
+	} else {
+		return;
+	}
+	stroke(1);
+	ellipse(x+boardx,y+boardy,45); // 45 de rayon
+	noStroke();
+	fill(0);
+	text(`${row}/${column}`, x+boardx-12, y+boardy);
 }
 
 function debugDrawBoard() {
-	noFill();
 	stroke(0);
+	/*
 	debugDrawCase(206,119);
 	debugDrawCase(395,225);
 	debugDrawCase(443,199);
 	debugDrawCase(488,172);
 	debugDrawCase(675,121);
+	*/
+	textSize(12);
+	board.forEach((column,x)=>column.forEach((cell,y)=>debugDrawCase(cell.center.x, cell.center.y, cell.type, x, y)));
+
+	//fill(200,200,200,75);
+	//rect(1395,87,1517-1395,160-87);
 }
 
 
 function drawGame() {
-	spritesheet.drawScaledSprite("avenia", 0, 0, 0, 0.65);
-	debugDrawBoard();
+	spritesheet.drawScaledSprite("avenia", 0, boardx, boardy, 0.65);
+	spritesheet.drawScaledSprite("exploration", 0, 1150, boardy, 0.65);
+	if( toggleDebug ) {
+	    debugDrawBoard();
+	}
+	spritesheet.drawScaledSprite("exploration_cards", 1, 1150, 440-25, 1);
+
+	// couvrir les cartes explorations deja jouées
+	spritesheet.drawScaledSprite("exploration_cards", 0, 1180, 90-25, 0.325);
+
+	// afficher cards specialites
+	spritesheet.drawScaledSprite("speciality_cards", 0, 10-100, 120-25, 0.5);
+	spritesheet.drawScaledSprite("speciality_cards", 0, 10-100, 380-25, 0.5);
+	spritesheet.drawScaledSprite("speciality_cards", 0, 10-100, 640-25, 0.5);
+
+	// goals
+	spritesheet.drawScaledSprite("goals", 0, 1435, 440-25, 0.5);
+	spritesheet.drawScaledSprite("goals", 2, 1435, 630-25, 0.5);
+	spritesheet.drawScaledSprite("goals", 4, 1435, 820-25, 0.5);
+
+	// points de victoire
+	spritesheet.drawSprite("PV", 0, 1300, 850);
+	noStroke();
+	fill(250);
+	textSize(25);
+	text("0 x ", 1300, 870);
 }
 
 function initGame() {
@@ -170,4 +230,168 @@ function keyPressed() {
 	if (key === "D") {
 		toggleDebug = !toggleDebug;
 	}
+}
+
+function initBoard() {
+	let dx = 179-46.5*2;
+	let dy = 169-54*2;
+	for( let i=0; i < 20; i++) {
+		const column = [];
+		for( let j=0; j<15; j++ ) {
+			column.push({center: {x: dx, y: dy+54*j+(i%2)*24}, type: i===0||i===19||j===0||j===14||j===13 ? null : "sea"})
+		}
+		dx+=46.5;
+		dy+=0.2;
+		board.push(column);
+	}
+	board[1][1].type = null;
+	board[1][2].type = null;
+	board[1][3].type = null;
+	board[1][4].type = null;
+	board[1][5].type = null;
+	board[2][1].type = null;
+	board[4][1].type = null;
+	board[6][1].type = null;
+	board[8][1].type = null;
+	board[12][1].type = null;
+	board[14][1].type = null;
+	board[16][1].type = null;
+	board[18][1].type = null;
+	board[1][10].type = null;
+	board[1][11].type = null;
+	board[1][12].type = null;
+	board[2][11].type = null;
+	board[2][12].type = null;
+	board[3][12].type = null;
+	board[4][12].type = null;
+	board[5][12].type = null;
+	board[6][12].type = null;
+	board[15][12].type = null;
+	board[16][12].type = null;
+	board[17][11].type = null;
+	board[17][12].type = null;
+	board[18][11].type = null;
+	board[18][12].type = null;
+	board[2][2].type = "tower";
+	board[18][1].type = "tower";
+	board[3][11].type = "tower";
+	board[14][12].type = "tower";
+	board[9][6].type = "capital";
+	board[2][6].type = "grassland";
+	board[2][7].type = "grassland";
+	board[2][8].type = "grassland";
+	board[3][7].type = "grassland";
+	board[3][3].type = "grassland";
+	board[4][4].type = "grassland";
+	board[5][3].type = "grassland";
+	board[6][3].type = "grassland";
+	board[7][2].type = "grassland";
+	board[9][1].type = "grassland";
+	board[10][2].type = "grassland";
+	board[11][2].type = "grassland";
+	board[12][3].type = "grassland";
+	board[8][8].type = "grassland";
+	board[9][7].type = "grassland";
+	board[10][8].type = "grassland";
+	board[2][10].type = "grassland";
+	board[3][10].type = "grassland";
+	board[4][11].type = "grassland";
+	board[5][11].type = "grassland";
+	board[6][11].type = "grassland";
+	board[12][5].type = "grassland";
+	board[12][6].type = "grassland";
+	board[12][7].type = "grassland";
+	board[13][5].type = "grassland";
+	board[17][1].type = "grassland";
+	board[18][2].type = "grassland";
+	board[18][3].type = "grassland";
+	board[18][4].type = "grassland";
+	board[16][9].type = "grassland";
+	board[17][6].type = "grassland";
+	board[17][7].type = "grassland";
+	board[17][8].type = "grassland";
+	board[18][7].type = "grassland";
+	board[18][8].type = "grassland";
+	board[11][10].type = "grassland";
+	board[12][10].type = "grassland";
+	board[12][11].type = "grassland";
+	board[13][9].type = "grassland";
+	board[13][10].type = "grassland";
+	board[14][10].type = "grassland";
+	board[9][11].type = "sand";
+	board[9][12].type = "sand";
+	board[10][12].type = "sand";
+	board[10][13].type = "sand";
+	board[10][5].type = "sand";
+	board[10][6].type = "sand";
+	board[11][5].type = "sand";
+	board[15][5].type = "sand";
+	board[16][5].type = "sand";
+	board[16][6].type = "sand";
+	board[17][5].type = "sand";
+	board[18][6].type = "sand";
+	board[15][9].type = "sand";
+	board[15][10].type = "sand";
+	board[16][10].type = "sand";
+	board[17][9].type = "sand";
+	board[8][10].type = "sand";
+	board[9][8].type = "sand";
+	board[9][9].type = "sand";
+	board[7][4].type = "sand";
+	board[8][4].type = "sand";
+	board[9][3].type = "sand";
+	board[2][9].type = "sand";
+	board[3][8].type = "sand";
+	board[3][9].type = "sand";
+	board[4][8].type = "sand";
+	board[5][7].type = "sand";
+	board[11][7].type = "sand";
+	board[11][8].type = "sand";
+	board[12][8].type = "sand";
+	board[10][1].type = "sand";
+	board[11][1].type = "sand";
+	board[12][2].type = "sand";
+	board[13][1].type = "sand";
+	board[13][2].type = "sand";
+	board[15][3].type = "sand";
+	board[16][3].type = "sand";
+	board[17][2].type = "sand";
+	board[7][4].type = "sand";
+	board[1][6].type = "mountain";
+	board[1][7].type = "mountain";
+	board[1][8].type = "mountain";
+	board[1][9].type = "mountain";
+	board[3][1].type = "mountain";
+	board[3][2].type = "mountain";
+	board[4][2].type = "mountain";
+	board[4][3].type = "mountain";
+	board[5][2].type = "mountain";
+	board[4][10].type = "mountain";
+	board[5][9].type = "mountain";
+	board[5][10].type = "mountain";
+	board[6][5].type = "mountain";
+	board[6][6].type = "mountain";
+	board[7][7].type = "mountain";
+	board[7][8].type = "mountain";
+	board[8][7].type = "mountain";
+	board[10][7].type = "mountain";
+	board[11][6].type = "mountain";
+	board[11][11].type = "mountain";
+	board[11][12].type = "mountain";
+	board[12][12].type = "mountain";
+	board[13][12].type = "mountain";
+	board[13][6].type = "mountain";
+	board[13][7].type = "mountain";
+	board[14][2].type = "mountain";
+	board[15][1].type = "mountain";
+	board[15][2].type = "mountain";
+	board[16][2].type = "mountain";
+	board[14][9].type = "mountain";
+	board[15][8].type = "mountain";
+	board[16][7].type = "mountain";
+	board[16][8].type = "mountain";
+	board[16][11].type = "mountain";
+	board[17][10].type = "mountain";
+	board[18][10].type = "mountain";
+	board[18][9].type = "mountain";
 }
