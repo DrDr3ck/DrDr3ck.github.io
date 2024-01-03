@@ -37,9 +37,17 @@ let overExploration = false;
 let overSpecialization = -1; // 0 or 1
 let overSpecializedCard = -1; // 0, 1 or 2
 let age = 1; // 1 to 4
+let PV = 0;
 
 let cubes = [];
 let constraint = "none";
+
+const queryString = window.location.search;
+const urlParams = new URLSearchParams(queryString);
+let seed = urlParams.get("seed");
+if (!seed) {
+	seed = "Avenia"; //getRandomName().replaceAll(' ', '_');
+}
 
 // TODO: seed
 
@@ -85,6 +93,19 @@ function startClicked() {
 
 function validateClicked() {
 	// TODO: verifier si les conditions sont bonnes ?
+	// TODO: compter les points
+	cubes.forEach((cube) => {
+		const cell = board[cube.position.x][cube.position.y];
+		if (!cell.bonus) {
+			return;
+		}
+		if (cell.bonus.type === "piece") {
+			PV += cell.bonus.nb;
+		}
+		if (cell.bonus.type === "tresor") {
+			// TODO: piocher un tresor
+		}
+	});
 	// nettoyer cubes et constraint
 	cubes = [];
 	constraint = "none";
@@ -126,27 +147,50 @@ const validateButton = new BButton(
 );
 const undoButton = new BButton(530, 80, "Undo", undoClicked);
 
+class Randomizer {
+	constructor(seed) {
+		console.log("seed", seed);
+		if (seed) {
+			this.generator = new Math.seedrandom(seed.toString());
+		} else {
+			this.generator = Math.random;
+		}
+	}
+
+	/* Randomize array in-place using Durstenfeld shuffle algorithm */
+	shuffleArray(array) {
+		for (var i = array.length - 1; i > 0; i--) {
+			var j = this.randomInt(i + 1);
+			var temp = array[i];
+			array[i] = array[j];
+			array[j] = temp;
+		}
+	}
+
+	randomInt(i) {
+		return Math.floor(this.generator() * i);
+	}
+}
+
+const randomizer = new Randomizer(seed);
+
 const board = [];
 
-/* Randomize array in-place using Durstenfeld shuffle algorithm */
-const shuffleArray = (array) => {
-	for (var i = array.length - 1; i > 0; i--) {
-		var j = Math.floor(Math.random() * (i + 1));
-		var temp = array[i];
-		array[i] = array[j];
-		array[j] = temp;
-	}
-};
-
 const goalArray = [0, 1, 2, 3, 4, 5];
-shuffleArray(goalArray);
+randomizer.shuffleArray(goalArray);
 
 const ageCards = [0, 1, 2, 3, 4, 5];
-shuffleArray(ageCards);
+randomizer.shuffleArray(ageCards);
 ageCards.unshift(9);
 
 const specialityArray = [1, 2, 3, 4, 20, 24, 25]; // [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28];
-shuffleArray(specialityArray);
+randomizer.shuffleArray(specialityArray);
+
+const tresorArray = [
+	0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2,
+	3, 3, 5, 5, 6, 6, 7, 7, 8, 8, 8, 8, 8, 8,
+];
+randomizer.shuffleArray(tresorArray);
 
 const specialityCards = []; // 3 cards
 
@@ -185,7 +229,11 @@ function addCube(x, y) {
 	// check if cube can be pushed
 	// TODO: constraint
 	const cubeIndex = cubes.findIndex(
-		(c) => (c.type === CARD.JOKER || c.type === cell.type) && c.position.x === 0
+		(c) =>
+			(c.type === CARD.JOKER ||
+				c.type === cell.type ||
+				cell.type === CARD.TOWER) &&
+			c.position.x === 0
 	);
 	if (cubeIndex === -1) {
 		// pas de cube dispo pour ce type
@@ -252,17 +300,7 @@ function updateGame(elapsedTime) {}
 const boardx = 50;
 const boardy = 25;
 
-function debugDrawCase(x, y, type, row, column) {
-	/*
-	beginShape();
-	vertex(x+dx, y+31+24+dy);
-	vertex(x-15+dx, y+31+dy);
-	vertex(x+dx, y+dy);
-	vertex(x+33+dx, y+dy);
-	vertex(x+33+15+dx, y+31+dy);
-	vertex(x+33+dx, y+31+24+dy);
-	endShape(CLOSE);
-	*/
+function debugDrawCase(x, y, type, row, column, bonus) {
 	noFill();
 	if (type === CARD.MOUNTAIN) {
 		fill(216, 166, 112);
@@ -279,13 +317,15 @@ function debugDrawCase(x, y, type, row, column) {
 	} else {
 		return;
 	}
+	// if (!bonus) return;
 	stroke(1);
-	ellipse(x + boardx, y + boardy, 45); // 45 de rayon
+	ellipse(x + boardx, y + boardy, 25); // 45 de rayon
 	noStroke();
 	fill(0);
 	text(`${row}/${column}`, x + boardx - 12, y + boardy);
-
-	drawCoffre(2, 5);
+	if (bonus) {
+		text(bonus.type, x + boardx - 12, y + boardy + 12);
+	}
 }
 
 function drawCoffre(x, y) {
@@ -319,17 +359,20 @@ function debugDrawBoard() {
 	textSize(12);
 	board.forEach((column, x) =>
 		column.forEach((cell, y) =>
-			debugDrawCase(cell.center.x, cell.center.y, cell.type, x, y)
+			debugDrawCase(cell.center.x, cell.center.y, cell.type, x, y, cell.bonus)
 		)
 	);
+	// drawCoffre(2, 5);
 
 	// couvrir les cartes explorations deja jouées
 	spritesheet.drawScaledSprite("exploration_cards", 0, 1180, 90 - 25, 0.325);
 
 	// teste comptoir
+	/*
 	drawComptoir(12, 2);
 	drawComptoir(12, 5);
 	drawComptoir(11, 12);
+	*/
 }
 
 function drawCube(x, y, alternative = false) {
@@ -540,7 +583,7 @@ function drawGame() {
 	noStroke();
 	fill(250);
 	textSize(25);
-	text("0 x", 1300, 700);
+	text(`${PV} x`, 1300, 700);
 	// tresor
 	spritesheet.drawScaledSprite("tresor_cards", 9, 1150, 820, 0.65);
 	text("0 x", 1090, 960);
@@ -573,6 +616,10 @@ function drawLoading() {
 		initGame();
 		textAlign(LEFT, BASELINE);
 		uiManager.addLogger("Game loaded");
+
+		if (document.location.toString().includes("seed=")) {
+			startClicked();
+		}
 	}
 }
 
@@ -641,21 +688,21 @@ function newExplorationCard() {
 			for (let i = 0; i < 7; i++) {
 				ageCards.push(i);
 			}
-			shuffleArray(ageCards);
+			randomizer.shuffleArray(ageCards);
 			ageCards.unshift(9);
 			exploredCards = [7, 8];
 		} else if (age === 3) {
 			for (let i = 0; i < 8; i++) {
 				ageCards.push(i);
 			}
-			shuffleArray(ageCards);
+			randomizer.shuffleArray(ageCards);
 			ageCards.unshift(9);
 			exploredCards = [8];
 		} else if (age === 4) {
 			for (let i = 0; i < 9; i++) {
 				ageCards.push(i);
 			}
-			shuffleArray(ageCards);
+			randomizer.shuffleArray(ageCards);
 			ageCards.unshift(9);
 			exploredCards = [];
 		} else if (age === 5) {
@@ -717,7 +764,6 @@ function newExplorationCard() {
 		}
 	}
 	if (playState === CUBE_STATE) {
-		uiManager.addLogger("playState");
 		addValidateButton();
 	}
 }
@@ -802,7 +848,7 @@ function keyPressed() {
 	if (key === "D") {
 		toggleDebug = !toggleDebug;
 	}
-	if (key === "t") {
+	if (key === "t" && cubes.length > 0) {
 		uiManager.addLogger(`Contrainte: ${constraint}`);
 		cubes.forEach((cube) => uiManager.addLogger(`Cube: ${cube.type}`));
 		console.log("cubes:", JSON.stringify(cubes, null, 4));
@@ -902,6 +948,62 @@ function initBoard() {
 		dy += 0.2;
 		board.push(column);
 	}
+	board[3][1].bonus = { type: "piece", nb: 2 };
+	board[3][2].bonus = { type: "piece", nb: 2 };
+	board[1][7].bonus = { type: "piece", nb: 2 };
+	board[1][8].bonus = { type: "piece", nb: 2 };
+	board[3][7].bonus = { type: "piece", nb: 2 };
+	board[5][10].bonus = { type: "piece", nb: 2 };
+	board[9][1].bonus = { type: "piece", nb: 2 };
+	board[10][1].bonus = { type: "piece", nb: 2 };
+	board[15][1].bonus = { type: "piece", nb: 2 };
+	board[18][2].bonus = { type: "piece", nb: 2 };
+	board[9][12].bonus = { type: "piece", nb: 2 };
+	board[13][12].bonus = { type: "piece", nb: 2 };
+	board[16][10].bonus = { type: "piece", nb: 2 };
+	board[17][10].bonus = { type: "piece", nb: 2 };
+	board[2][9].bonus = { type: "piece", nb: 1 };
+	board[3][10].bonus = { type: "piece", nb: 1 };
+	board[4][11].bonus = { type: "piece", nb: 1 };
+	board[6][3].bonus = { type: "piece", nb: 1 };
+	board[6][6].bonus = { type: "piece", nb: 1 };
+	board[8][7].bonus = { type: "piece", nb: 1 };
+	board[9][7].bonus = { type: "piece", nb: 1 };
+	board[11][5].bonus = { type: "piece", nb: 1 };
+	board[11][7].bonus = { type: "piece", nb: 1 };
+	board[12][10].bonus = { type: "piece", nb: 1 };
+	board[12][12].bonus = { type: "piece", nb: 1 };
+	board[13][10].bonus = { type: "piece", nb: 1 };
+	board[14][2].bonus = { type: "piece", nb: 1 };
+	board[15][2].bonus = { type: "piece", nb: 1 };
+	board[15][8].bonus = { type: "piece", nb: 1 };
+	board[16][5].bonus = { type: "piece", nb: 1 };
+	board[16][8].bonus = { type: "piece", nb: 1 };
+	board[16][11].bonus = { type: "piece", nb: 1 };
+	board[18][3].bonus = { type: "piece", nb: 1 };
+	board[18][6].bonus = { type: "piece", nb: 1 };
+	board[18][7].bonus = { type: "piece", nb: 1 };
+	board[18][10].bonus = { type: "piece", nb: 1 };
+	board[5][1].bonus = { type: "tresor" };
+	board[2][5].bonus = { type: "tresor" };
+	board[6][4].bonus = { type: "tresor" };
+	board[8][2].bonus = { type: "tresor" };
+	board[6][9].bonus = { type: "tresor" };
+	board[7][12].bonus = { type: "tresor" };
+	board[15][7].bonus = { type: "tresor" };
+	board[15][11].bonus = { type: "tresor" };
+	board[14][3].bonus = { type: "tresor" };
+	board[18][5].bonus = { type: "tresor" };
+	board[5][3].bonus = { type: "comptoir", nb: 3 };
+	board[1][6].bonus = { type: "comptoir", nb: 3 };
+	board[8][4].bonus = { type: "comptoir", nb: 3 };
+	board[12][2].bonus = { type: "comptoir", nb: 3 };
+	board[12][5].bonus = { type: "comptoir", nb: 2 };
+	board[5][11].bonus = { type: "comptoir", nb: 3 };
+	board[17][2].bonus = { type: "comptoir", nb: 3 };
+	board[17][7].bonus = { type: "comptoir", nb: 3 };
+	board[9][8].bonus = { type: "comptoir", nb: 2 };
+	board[11][12].bonus = { type: "comptoir", nb: 4 };
 	board[1][1].type = null;
 	board[1][2].type = null;
 	board[1][3].type = null;
