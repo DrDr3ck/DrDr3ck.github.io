@@ -21,10 +21,15 @@ let playState = EXPLORATION_STATE;
 let toggleDebug = false;
 let lastTime = 0;
 
+const CARD = { MOUNTAIN: "mountain", SAND: "sand", GRASSLAND: "grassland", SEA: "sea", JOKER: "joker", CAPITAL: "capital", TOWER: "tower"};
+
 let overCell = null;
 let overExploration = false;
 let overSpecialization = -1; // 0 or 1
 let age = 1; // 1 to 4
+
+let cubes = [];
+let constraint = "none";
 
 // TODO: seed
 
@@ -58,7 +63,13 @@ function startClicked() {
 }
 
 function validateClicked() {
-	// TODO: passer à la carte exploration suivante
+	// TODO: verifier si les conditions sont bonnes ?
+	// nettoyer cubes et constraint
+	cubes = [];
+	constraint = "none";
+	// passer à la carte exploration suivante
+	playState = EXPLORATION_STATE;
+	uiManager.setUI([ speakerButton, musicButton ]);
 }
 
 const speakerButton = new BFloatingSwitchButton(windowWidth - 70 - 10 - 70, 70, '\uD83D\uDD0A', speakerClicked);
@@ -93,16 +104,31 @@ const specialityCards = []; // 3 cards
 
 let ageExploration = [{type: "village", x:9, y:6}];
 
+let exploredCards = [6,7,8];
+
 function addCube(x,y) {
 	// check if cube not already added
 	if( ageExploration.findIndex(cell=>cell.x===x && cell.y===y) >= 0 ) {
 		return false;
 	}
 	const cell = board[x][y];
-	if( cell.type === "tower" ) {
-		ageExploration.push({type: "tower", x: x, y: y}); 
+	// check if cube can be pushed
+	// TODO: constraint
+	const cubeIndex = cubes.findIndex(c=>(c.type === CARD.JOKER || c.type === cell.type) && c.position.x === 0);
+	if( cubeIndex === -1 ) {
+		// pas de cube dispo pour ce type
+		return false;
+	}
+	if( cell.type === CARD.TOWER ) {
+		ageExploration.push({type: CARD.TOWER, x: x, y: y});
 	} else {
 		ageExploration.push({type: "cube", x: x, y: y});
+	}
+	cubes[cubeIndex].position.x = x;
+	cubes[cubeIndex].position.y = y;
+	// check if all cubes have been put on board
+	if( cubes.every(cube=>cube.position.x !== 0) ) {
+		validateButton.enabled = true;
 	}
 	return true;
 }
@@ -166,17 +192,17 @@ function debugDrawCase(x,y,type, row, column) {
 	endShape(CLOSE);
 	*/
 	noFill();
-	if( type === "mountain") {
+	if( type === CARD.MOUNTAIN) {
 		fill(216,166,112);
-	} else if( type === "sea") {
+	} else if( type === CARD.SEA) {
 		fill(176,171,138);
-	} else if( type === "sand") {
+	} else if( type === CARD.SAND) {
 		fill(227,202,144);
-	} else if( type === "grassland") {
+	} else if( type === CARD.GRASSLAND) {
 		fill(176,161,87);
-	} else if( type === "tower") {
+	} else if( type === CARD.TOWER) {
 		fill(224,201,188);
-	} else if( type === "capital") {
+	} else if( type === CARD.CAPITAL) {
 		fill(200,200,200);
 	} else {
 		return;
@@ -192,9 +218,9 @@ function drawComptoir(x,y) {
 	const cell = board[x][y];
 	const type = cell.type;
 	let typeIndex = 0; 
-	if( type === "mountain" ) {
+	if( type === CARD.MOUNTAIN ) {
 		typeIndex = 1;
-	} else if( type === "grassland" ) {
+	} else if( type === CARD.GRASSLAND ) {
 		typeIndex = 2;
 	}
 	spritesheet.drawScaledSprite("comptoirs", typeIndex, cell.center.x+boardx-27, cell.center.y+boardy-27, 0.56);
@@ -215,20 +241,21 @@ function debugDrawBoard() {
 	drawComptoir(11,12);
 }
 
-function displayCube(x,y) {
+function drawCube(x,y,alternative=false) {
 	stroke(0);
 	fill(250,100,100);
+	if(alternative) {
+		fill(250,150,150);
+	} 
 	const cell = board[x][y];
-	console.log("display cube", cell);
 	rect(cell.center.x+boardx-10, cell.center.y+boardy-10, 20, 20);
 }
 
-function displayVillage(x,y) {
+function drawVillage(x,y) {
 	strokeWeight(1);
 	stroke(0);
 	fill(250,100,100);
 	const cell = board[x][y];
-	console.log("display cube", cell);
 	beginShape();
 	const X = cell.center.x+boardx;
 	const Y = cell.center.y+boardy+10;
@@ -246,7 +273,7 @@ function displayVillage(x,y) {
 	endShape();
 }
 
-function displayTower(x, y) {
+function drawTower(x, y) {
 	strokeWeight(1);
 	stroke(0);
 	fill(160,160,180);
@@ -257,15 +284,46 @@ function displayTower(x, y) {
 function displayAgeExploration() {
 	ageExploration.forEach(cell=> {
 		if( cell.type === "cube") {
-			displayCube(cell.x, cell.y)
+			drawCube(cell.x, cell.y)
 		} else if( cell.type === "village") {
-			displayVillage(cell.x, cell.y)
-		} else if( cell.type === "tower") {
-			displayTower(cell.x, cell.y)
+			drawVillage(cell.x, cell.y)
+		} else if( cell.type === CARD.TOWER) {
+			drawTower(cell.x, cell.y)
 		}
 	});
+	cubes.forEach(cube=> drawCube(cube.position.x, cube.position.y, true));
 }
 
+function drawExploredCards() {
+	// couvrir les cartes explorations deja jouées
+	if( exploredCards.includes(0) ) {
+		spritesheet.drawScaledSprite("exploration_cards", 0, 1180, 90-25, 0.325);
+	}
+	if( exploredCards.includes(1) ) {
+		spritesheet.drawScaledSprite("exploration_cards", 1, 1280, 90-25, 0.325);
+	}
+	if( exploredCards.includes(2) ) {
+		spritesheet.drawScaledSprite("exploration_cards", 2, 1380, 90-25, 0.325);
+	}
+	if( exploredCards.includes(3) ) {
+		spritesheet.drawScaledSprite("exploration_cards", 3, 1480, 90-25, 0.325);
+	}
+	if( exploredCards.includes(4) ) {
+		spritesheet.drawScaledSprite("exploration_cards", 4, 1580, 90-25, 0.325);
+	}
+	if( exploredCards.includes(5) ) {
+		spritesheet.drawScaledSprite("exploration_cards", 5, 1225, 238, 0.325);
+	}
+	if( exploredCards.includes(6) ) {
+		spritesheet.drawScaledSprite("exploration_cards", 6, 1328, 238, 0.325);
+	}
+	if( exploredCards.includes(7) ) {
+		spritesheet.drawScaledSprite("exploration_cards", 7, 1433, 238, 0.325);
+	}
+	if( exploredCards.includes(8) ) {
+		spritesheet.drawScaledSprite("exploration_cards", 8, 1537, 238, 0.325);
+	}
+}
 
 function drawGame() {
 	spritesheet.drawScaledSprite("avenia", 0, boardx, boardy, 0.65);
@@ -274,6 +332,7 @@ function drawGame() {
 	    debugDrawBoard();
 	} else {
 		displayAgeExploration();
+		drawExploredCards();
 	}
 	if( overCell ) {
 		const cell = board[overCell.x][overCell.y];
@@ -285,7 +344,11 @@ function drawGame() {
 	spritesheet.drawScaledSprite("exploration_cards", ageCards[0], 1210, 440-25, 0.65);
 	noFill();
 	strokeWeight(4);
-	stroke(250);
+	if( playState === EXPLORATION_STATE ) {
+		stroke(250,50,50);
+	} else {
+		stroke(250);
+	}
 	rect(1210, 415, 1378-1210, 674-415, 15);
 	if( overExploration ) {	
 		stroke(25);
@@ -343,7 +406,7 @@ function drawGame() {
 
 	// explication
 	if( playState === EXPLORATION_STATE ) {
-		text("Cliquez sur la carte d'exploration", 270, 980);
+		text("Cliquez sur la carte d'exploration (bord rouge)", 270, 980);
 	} else if( playState === CUBE_STATE ) {
 		text("Posez des cubes", 270, 980);
 	} else if( playState === SPECIALIZED_STATE ) {
@@ -405,23 +468,48 @@ function draw() {
     lastTime = currentTime;
 }
 
+function addCube2Play(type, nb) {
+	for( let i=0; i < nb; i++ ) {
+		cubes.push({type: type, position: {x:0, y:0}});
+	}
+}
+
+function setConstraint(value) {
+	constraint = value;
+}
+
 // player clicks on exploration card to reveal it.
 // change playState to 'cube'
 // check if it is the end of current age
 function newExplorationCard() {
+	cubes = [];
+	if( ageCards[0] !== 9 ) {
+		// put card on exploration board
+		exploredCards.push(ageCards[0]);
+	}
 	ageCards.shift();
 	playState = CUBE_STATE;
 	if( ageCards.length > 0 ) {
 		if( ageCards[0] === 0 ) {
 			// add 1 mountain
+			addCube2Play(CARD.MOUNTAIN, 1);
+			setConstraint("none");
 		} else if( ageCards[0] === 1 ) {
 			// add 2 sand
+			addCube2Play(CARD.SAND, 2);
+			setConstraint("none");
 		} else if( ageCards[0] === 2 ) {
 			// add 2 grassland
+			addCube2Play(CARD.GRASSLAND, 2);
+			setConstraint("none");
 		} else if( ageCards[0] === 3 ) {
 			// add 2 consecutive cells
+			addCube2Play(CARD.JOKER, 2);
+			setConstraint("consecutive");
 		} else if( ageCards[0] === 4 ) {
 			// add 3 aligned sea cells
+			addCube2Play(CARD.SEA, 3);
+			setConstraint("aligned");
 		} else if( ageCards[0] === 5 ) { // I
 			if( age === 1 ) {
 				// player needs to choose a specialized card between two
@@ -429,9 +517,22 @@ function newExplorationCard() {
 			}
 		}
 	}
+	console.log("playState", playState);
 	if( playState === CUBE_STATE ) {
+		uiManager.addLogger("playState");
 		validateButton.enabled = false;
 		uiManager.setUI([ validateButton, speakerButton, musicButton ]);
+	}
+}
+
+function prepareCube2Play(specialityCardIndex) {
+	setConstraint("none");
+	// [1,2,3,4,20,24,25]
+	if( specialityCardIndex === 1 ) {
+		addCube2Play(CARD.SEA, 2);
+		addCube2Play(CARD.SAND, 1);
+		addCube2Play(CARD.GRASSLAND, 1);
+		addCube2Play(CARD.MOUNTAIN, 1);
 	}
 }
 
@@ -447,7 +548,7 @@ function mouseClicked() {
 		overExploration = false;
 	}
 	if( playState === CUBE_STATE && overCell ) {
-		// TODO: check if we can put a cube on this cell
+		// check also if we can put a cube on this cell
 		addCube(overCell.x, overCell.y);
 	}
 	if( playState === SPECIALIZED_STATE && overSpecialization !== -1 ) {
@@ -458,6 +559,8 @@ function mouseClicked() {
 		specialityArray.shift();
 		// 3. change state to CUBE_STATE
 		playState = CUBE_STATE;
+		// 4. add cube to play
+		prepareCube2Play(specialityCards[specialityCards.length-1]);
 		validateButton.enabled = false;
 		uiManager.setUI([ validateButton, speakerButton, musicButton ]);
 	}
@@ -467,6 +570,11 @@ function mouseClicked() {
 function keyPressed() {
 	if (key === "D") {
 		toggleDebug = !toggleDebug;
+	}
+	if( key === "t" ) {
+		uiManager.addLogger(`Contrainte: ${constraint}`);
+		cubes.forEach(cube=>uiManager.addLogger(`Cube: ${cube.type}`));
+		console.log("cubes:", JSON.stringify(cubes, null, 4));
 	}
 }
 
@@ -520,7 +628,7 @@ function initBoard() {
 	for( let i=0; i < 20; i++) {
 		const column = [];
 		for( let j=0; j<15; j++ ) {
-			column.push({center: {x: dx, y: dy+54*j+(i%2)*24}, type: i===0||i===19||j===0||j===14||j===13 ? null : "sea"})
+			column.push({center: {x: dx, y: dy+54*j+(i%2)*24}, type: i===0||i===19||j===0||j===14||j===13 ? null : CARD.SEA})
 		}
 		dx+=46.5;
 		dy+=0.2;
@@ -554,126 +662,126 @@ function initBoard() {
 	board[17][12].type = null;
 	board[18][11].type = null;
 	board[18][12].type = null;
-	board[2][2].type = "tower";
-	board[18][1].type = "tower";
-	board[3][11].type = "tower";
-	board[14][12].type = "tower";
-	board[9][6].type = "capital";
-	board[2][6].type = "grassland";
-	board[2][7].type = "grassland";
-	board[2][8].type = "grassland";
-	board[3][7].type = "grassland";
-	board[3][3].type = "grassland";
-	board[4][4].type = "grassland";
-	board[5][3].type = "grassland";
-	board[6][3].type = "grassland";
-	board[7][2].type = "grassland";
-	board[9][1].type = "grassland";
-	board[10][2].type = "grassland";
-	board[11][2].type = "grassland";
-	board[12][3].type = "grassland";
-	board[8][8].type = "grassland";
-	board[9][7].type = "grassland";
-	board[10][8].type = "grassland";
-	board[2][10].type = "grassland";
-	board[3][10].type = "grassland";
-	board[4][11].type = "grassland";
-	board[5][11].type = "grassland";
-	board[6][11].type = "grassland";
-	board[12][5].type = "grassland";
-	board[12][6].type = "grassland";
-	board[12][7].type = "grassland";
-	board[13][5].type = "grassland";
-	board[17][1].type = "grassland";
-	board[18][2].type = "grassland";
-	board[18][3].type = "grassland";
-	board[18][4].type = "grassland";
-	board[16][9].type = "grassland";
-	board[17][6].type = "grassland";
-	board[17][7].type = "grassland";
-	board[17][8].type = "grassland";
-	board[18][7].type = "grassland";
-	board[18][8].type = "grassland";
-	board[11][10].type = "grassland";
-	board[12][10].type = "grassland";
-	board[12][11].type = "grassland";
-	board[13][9].type = "grassland";
-	board[13][10].type = "grassland";
-	board[14][10].type = "grassland";
-	board[9][11].type = "sand";
-	board[9][12].type = "sand";
-	board[10][12].type = "sand";
-	board[10][13].type = "sand";
-	board[10][5].type = "sand";
-	board[10][6].type = "sand";
-	board[11][5].type = "sand";
-	board[15][5].type = "sand";
-	board[16][5].type = "sand";
-	board[16][6].type = "sand";
-	board[17][5].type = "sand";
-	board[18][6].type = "sand";
-	board[15][9].type = "sand";
-	board[15][10].type = "sand";
-	board[16][10].type = "sand";
-	board[17][9].type = "sand";
-	board[8][10].type = "sand";
-	board[9][8].type = "sand";
-	board[9][9].type = "sand";
-	board[7][4].type = "sand";
-	board[8][4].type = "sand";
-	board[9][3].type = "sand";
-	board[2][9].type = "sand";
-	board[3][8].type = "sand";
-	board[3][9].type = "sand";
-	board[4][8].type = "sand";
-	board[5][7].type = "sand";
-	board[11][7].type = "sand";
-	board[11][8].type = "sand";
-	board[12][8].type = "sand";
-	board[10][1].type = "sand";
-	board[11][1].type = "sand";
-	board[12][2].type = "sand";
-	board[13][1].type = "sand";
-	board[13][2].type = "sand";
-	board[15][3].type = "sand";
-	board[16][3].type = "sand";
-	board[17][2].type = "sand";
-	board[7][4].type = "sand";
-	board[1][6].type = "mountain";
-	board[1][7].type = "mountain";
-	board[1][8].type = "mountain";
-	board[1][9].type = "mountain";
-	board[3][1].type = "mountain";
-	board[3][2].type = "mountain";
-	board[4][2].type = "mountain";
-	board[4][3].type = "mountain";
-	board[5][2].type = "mountain";
-	board[4][10].type = "mountain";
-	board[5][9].type = "mountain";
-	board[5][10].type = "mountain";
-	board[6][5].type = "mountain";
-	board[6][6].type = "mountain";
-	board[7][7].type = "mountain";
-	board[7][8].type = "mountain";
-	board[8][7].type = "mountain";
-	board[10][7].type = "mountain";
-	board[11][6].type = "mountain";
-	board[11][11].type = "mountain";
-	board[11][12].type = "mountain";
-	board[12][12].type = "mountain";
-	board[13][12].type = "mountain";
-	board[13][6].type = "mountain";
-	board[13][7].type = "mountain";
-	board[14][2].type = "mountain";
-	board[15][1].type = "mountain";
-	board[15][2].type = "mountain";
-	board[16][2].type = "mountain";
-	board[14][9].type = "mountain";
-	board[15][8].type = "mountain";
-	board[16][7].type = "mountain";
-	board[16][8].type = "mountain";
-	board[16][11].type = "mountain";
-	board[17][10].type = "mountain";
-	board[18][10].type = "mountain";
-	board[18][9].type = "mountain";
+	board[2][2].type = CARD.TOWER;
+	board[18][1].type = CARD.TOWER;
+	board[3][11].type = CARD.TOWER;
+	board[14][12].type = CARD.TOWER;
+	board[9][6].type = CARD.CAPITAL;
+	board[2][6].type = CARD.GRASSLAND;
+	board[2][7].type = CARD.GRASSLAND;
+	board[2][8].type = CARD.GRASSLAND;
+	board[3][7].type = CARD.GRASSLAND;
+	board[3][3].type = CARD.GRASSLAND;
+	board[4][4].type = CARD.GRASSLAND;
+	board[5][3].type = CARD.GRASSLAND;
+	board[6][3].type = CARD.GRASSLAND;
+	board[7][2].type = CARD.GRASSLAND;
+	board[9][1].type = CARD.GRASSLAND;
+	board[10][2].type = CARD.GRASSLAND;
+	board[11][2].type = CARD.GRASSLAND;
+	board[12][3].type = CARD.GRASSLAND;
+	board[8][8].type = CARD.GRASSLAND;
+	board[9][7].type = CARD.GRASSLAND;
+	board[10][8].type = CARD.GRASSLAND;
+	board[2][10].type = CARD.GRASSLAND;
+	board[3][10].type = CARD.GRASSLAND;
+	board[4][11].type = CARD.GRASSLAND;
+	board[5][11].type = CARD.GRASSLAND;
+	board[6][11].type = CARD.GRASSLAND;
+	board[12][5].type = CARD.GRASSLAND;
+	board[12][6].type = CARD.GRASSLAND;
+	board[12][7].type = CARD.GRASSLAND;
+	board[13][5].type = CARD.GRASSLAND;
+	board[17][1].type = CARD.GRASSLAND;
+	board[18][2].type = CARD.GRASSLAND;
+	board[18][3].type = CARD.GRASSLAND;
+	board[18][4].type = CARD.GRASSLAND;
+	board[16][9].type = CARD.GRASSLAND;
+	board[17][6].type = CARD.GRASSLAND;
+	board[17][7].type = CARD.GRASSLAND;
+	board[17][8].type = CARD.GRASSLAND;
+	board[18][7].type = CARD.GRASSLAND;
+	board[18][8].type = CARD.GRASSLAND;
+	board[11][10].type = CARD.GRASSLAND;
+	board[12][10].type = CARD.GRASSLAND;
+	board[12][11].type = CARD.GRASSLAND;
+	board[13][9].type = CARD.GRASSLAND;
+	board[13][10].type = CARD.GRASSLAND;
+	board[14][10].type = CARD.GRASSLAND;
+	board[9][11].type = CARD.SAND;
+	board[9][12].type = CARD.SAND;
+	board[10][12].type = CARD.SAND;
+	board[10][13].type = CARD.SAND;
+	board[10][5].type = CARD.SAND;
+	board[10][6].type = CARD.SAND;
+	board[11][5].type = CARD.SAND;
+	board[15][5].type = CARD.SAND;
+	board[16][5].type = CARD.SAND;
+	board[16][6].type = CARD.SAND;
+	board[17][5].type = CARD.SAND;
+	board[18][6].type = CARD.SAND;
+	board[15][9].type = CARD.SAND;
+	board[15][10].type = CARD.SAND;
+	board[16][10].type = CARD.SAND;
+	board[17][9].type = CARD.SAND;
+	board[8][10].type = CARD.SAND;
+	board[9][8].type = CARD.SAND;
+	board[9][9].type = CARD.SAND;
+	board[7][4].type = CARD.SAND;
+	board[8][4].type = CARD.SAND;
+	board[9][3].type = CARD.SAND;
+	board[2][9].type = CARD.SAND;
+	board[3][8].type = CARD.SAND;
+	board[3][9].type = CARD.SAND;
+	board[4][8].type = CARD.SAND;
+	board[5][7].type = CARD.SAND;
+	board[11][7].type = CARD.SAND;
+	board[11][8].type = CARD.SAND;
+	board[12][8].type = CARD.SAND;
+	board[10][1].type = CARD.SAND;
+	board[11][1].type = CARD.SAND;
+	board[12][2].type = CARD.SAND;
+	board[13][1].type = CARD.SAND;
+	board[13][2].type = CARD.SAND;
+	board[15][3].type = CARD.SAND;
+	board[16][3].type = CARD.SAND;
+	board[17][2].type = CARD.SAND;
+	board[7][4].type = CARD.SAND;
+	board[1][6].type = CARD.MOUNTAIN;
+	board[1][7].type = CARD.MOUNTAIN;
+	board[1][8].type = CARD.MOUNTAIN;
+	board[1][9].type = CARD.MOUNTAIN;
+	board[3][1].type = CARD.MOUNTAIN;
+	board[3][2].type = CARD.MOUNTAIN;
+	board[4][2].type = CARD.MOUNTAIN;
+	board[4][3].type = CARD.MOUNTAIN;
+	board[5][2].type = CARD.MOUNTAIN;
+	board[4][10].type = CARD.MOUNTAIN;
+	board[5][9].type = CARD.MOUNTAIN;
+	board[5][10].type = CARD.MOUNTAIN;
+	board[6][5].type = CARD.MOUNTAIN;
+	board[6][6].type = CARD.MOUNTAIN;
+	board[7][7].type = CARD.MOUNTAIN;
+	board[7][8].type = CARD.MOUNTAIN;
+	board[8][7].type = CARD.MOUNTAIN;
+	board[10][7].type = CARD.MOUNTAIN;
+	board[11][6].type = CARD.MOUNTAIN;
+	board[11][11].type = CARD.MOUNTAIN;
+	board[11][12].type = CARD.MOUNTAIN;
+	board[12][12].type = CARD.MOUNTAIN;
+	board[13][12].type = CARD.MOUNTAIN;
+	board[13][6].type = CARD.MOUNTAIN;
+	board[13][7].type = CARD.MOUNTAIN;
+	board[14][2].type = CARD.MOUNTAIN;
+	board[15][1].type = CARD.MOUNTAIN;
+	board[15][2].type = CARD.MOUNTAIN;
+	board[16][2].type = CARD.MOUNTAIN;
+	board[14][9].type = CARD.MOUNTAIN;
+	board[15][8].type = CARD.MOUNTAIN;
+	board[16][7].type = CARD.MOUNTAIN;
+	board[16][8].type = CARD.MOUNTAIN;
+	board[16][11].type = CARD.MOUNTAIN;
+	board[17][10].type = CARD.MOUNTAIN;
+	board[18][10].type = CARD.MOUNTAIN;
+	board[18][9].type = CARD.MOUNTAIN;
 }
