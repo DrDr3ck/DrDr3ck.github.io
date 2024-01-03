@@ -16,7 +16,8 @@ const GAME_OVER_STATE = 3;
 let curState = GAME_LOADING_STATE;
 const EXPLORATION_STATE = "exploration"; // click on the exploration card to reveal it.
 const CUBE_STATE = "cube"; // poser des cubes
-const SPECIALIZED_STATE = "specialites"; // choisir une carte specialité parmi 2
+const SPECIALIZED_STATE = "specialites"; // choisir une carte spécialité parmi 2
+const SPECIALIZED_CARD_STATE = "quelle specialite ?"; // choisir une des 3 cartes spécialités
 let playState = EXPLORATION_STATE;
 let toggleDebug = false;
 let lastTime = 0;
@@ -26,6 +27,7 @@ const CARD = { MOUNTAIN: "mountain", SAND: "sand", GRASSLAND: "grassland", SEA: 
 let overCell = null;
 let overExploration = false;
 let overSpecialization = -1; // 0 or 1
+let overSpecializedCard = -1; // 0, 1 or 2
 let age = 1; // 1 to 4
 
 let cubes = [];
@@ -42,6 +44,7 @@ function preload() {
 	spritesheet.addSpriteSheet('tresor_cards', './tresor_cards.png', 400, 260);
 	spritesheet.addSpriteSheet('comptoirs', './comptoirs.png', 100, 100);
 	spritesheet.addSpriteSheet('goals', './goals.png', 520, 370);
+	spritesheet.addSpriteSheet('coffre_pion', './coffre_pion.png', 80, 90);
 	spritesheet.addSpriteSheet('PV', './PV.png', 136, 141);
 }
 
@@ -72,11 +75,18 @@ function validateClicked() {
 	uiManager.setUI([ speakerButton, musicButton ]);
 }
 
+function undoClicked() {
+	for( let i=0; i < cubes.length; i++) {
+		undoCube(i);
+	}
+}
+
 const speakerButton = new BFloatingSwitchButton(windowWidth - 70 - 10 - 70, 70, '\uD83D\uDD0A', speakerClicked);
 const musicButton = new BFloatingSwitchButton(windowWidth - 70, 70, '\uD83C\uDFB6', musicClicked);
 const startButton = new BButton(140, windowHeight - 120, "AVENIA", startClicked);
 
 const validateButton = new BButton(530, windowHeight - 5, "Valider", validateClicked);
+const undoButton = new BButton(530, 80, "Undo", undoClicked);
 
 const board = [];
 
@@ -106,7 +116,27 @@ let ageExploration = [{type: "village", x:9, y:6}];
 
 let exploredCards = [6,7,8];
 
+function removeCubes() {
+	ageExploration = ageExploration.filter(cell => cell.type !== "cube");
+}
+
+function undoCube(cubeIndex) {
+	const x = cubes[cubeIndex].position.x;
+	const y = cubes[cubeIndex].position.y;
+	cubes[cubeIndex].position.x = 0;
+	cubes[cubeIndex].position.y = 0;
+	ageExploration = ageExploration.filter(cell=>cell.x!==x || cell.y!==y);
+	validateButton.enabled = false;
+}
+
 function addCube(x,y) {
+	/* check if cube can be undo
+	const undoCubeIndex = cubes.findIndex(cube=>cube.position.x === x && cube.position.y === y);
+	if( undoCubeIndex >= 0 ) {
+		// undo cube
+		undoCube(undoCubeIndex);
+		return;
+	}*/
 	// check if cube not already added
 	if( ageExploration.findIndex(cell=>cell.x===x && cell.y===y) >= 0 ) {
 		return false;
@@ -212,6 +242,15 @@ function debugDrawCase(x,y,type, row, column) {
 	noStroke();
 	fill(0);
 	text(`${row}/${column}`, x+boardx-12, y+boardy);
+
+	drawCoffre(2,5);
+}
+
+function drawCoffre(x,y) {
+	const cell = board[x][y];
+	const X = cell.center.x+boardx-25;
+	const Y = cell.center.y+boardy-25;
+	spritesheet.drawScaledSprite("coffre_pion", 0, X, Y, 0.65);
 }
 
 function drawComptoir(x,y) {
@@ -354,21 +393,35 @@ function drawGame() {
 		stroke(25);
 		rect(1210, 415, 1378-1210, 674-415, 15);
 	}
+	if( playState === SPECIALIZED_CARD_STATE ) {
+		noFill();
+		strokeWeight(4);
+		stroke(25);
+		if( overSpecializedCard === 0 ) {
+			rect(5,95,160-5,333-95,15);
+		}
+		if( overSpecializedCard === 1 ) {
+			rect(5,355,160-5,593-355,15);
+		}
+		if( overSpecializedCard === 2 ) {
+			rect(5,615,160-5,849-615,15);
+		}
+	}
 	if( playState === SPECIALIZED_STATE ) {
 		// afficher 2 cartes tirées du tableau
 		noFill();
 		strokeWeight(4);
 		stroke(250); //stroke(184,150,109);
-		spritesheet.drawScaledSprite("speciality_cards", specialityArray[0], 325, 330, 0.8);
-		rect(325, 330, 530-325, 650-330, 15);
-		spritesheet.drawScaledSprite("speciality_cards", specialityArray[1], 625, 330, 0.8);
-		rect(625, 330, 830-625, 650-330, 15);
+		spritesheet.drawScaledSprite("speciality_cards", specialityArray[0], 997, 100, 0.8);
+		rect(997, 100, 205, 320, 15);
+		spritesheet.drawScaledSprite("speciality_cards", specialityArray[1], 997, 467, 0.8);
+		rect(997, 467, 205, 320, 15);
 		stroke(25);
 		if( overSpecialization === 0 ) {
-			rect(325, 330, 530-325, 650-330, 15);
+			rect(997, 100, 205, 320, 15);
 		}
 		if( overSpecialization === 1 ) {
-			rect(625, 330, 830-625, 650-330, 15);
+			rect(997, 467, 205, 320, 15);
 		}
 	}
 
@@ -488,6 +541,38 @@ function newExplorationCard() {
 		exploredCards.push(ageCards[0]);
 	}
 	ageCards.shift();
+	if( ageCards.length === 0 ) {
+		uiManager.addLogger("Nouvel age");
+		// new Age
+		age+=1;
+		if( age === 2 ) {
+			for(let i=0; i < 7; i++ ) {
+				ageCards.push(i);
+			}
+			shuffleArray(ageCards);
+			ageCards.unshift(9);
+			exploredCards = [7,8];
+		} else if( age === 3 ) {
+			for(let i=0; i < 8; i++ ) {
+				ageCards.push(i);
+			}
+			shuffleArray(ageCards);
+			ageCards.unshift(9);
+			exploredCards = [8];
+		} else if( age === 4 ) {
+			for(let i=0; i < 9; i++ ) {
+				ageCards.push(i);
+			}
+			shuffleArray(ageCards);
+			ageCards.unshift(9);
+			exploredCards = [];
+		} else if( age === 5 ) {
+			// TODO: end of game
+		}
+		// remove all cubes
+		removeCubes();
+		return;
+	}
 	playState = CUBE_STATE;
 	if( ageCards.length > 0 ) {
 		if( ageCards[0] === 0 ) {
@@ -514,15 +599,37 @@ function newExplorationCard() {
 			if( age === 1 ) {
 				// player needs to choose a specialized card between two
 				playState = SPECIALIZED_STATE;
+			} else {
+				prepareCube2Play(specialityCards[0]);
 			}
+		} else if( ageCards[0] === 6 ) { // II
+			if( age === 2 ) {
+				// player needs to choose a specialized card between two
+				playState = SPECIALIZED_STATE;
+			} else {
+				prepareCube2Play(specialityCards[1]);
+			}
+		} else if( ageCards[0] === 7 ) { // III
+			if( age === 3 ) {
+				// player needs to choose a specialized card between two
+				playState = SPECIALIZED_STATE;
+			} else {
+				prepareCube2Play(specialityCards[2]);
+			}
+		} else if( ageCards[0] === 8 ) { // I/II/III
+			playState = SPECIALIZED_CARD_STATE;
 		}
 	}
-	console.log("playState", playState);
 	if( playState === CUBE_STATE ) {
 		uiManager.addLogger("playState");
-		validateButton.enabled = false;
-		uiManager.setUI([ validateButton, speakerButton, musicButton ]);
+		addValidateButton();
 	}
+}
+
+function addValidateButton() {
+	validateButton.enabled = false;
+	undoButton.enabled = true;
+	uiManager.setUI([ validateButton, undoButton, speakerButton, musicButton ]);
 }
 
 function prepareCube2Play(specialityCardIndex) {
@@ -533,6 +640,29 @@ function prepareCube2Play(specialityCardIndex) {
 		addCube2Play(CARD.SAND, 1);
 		addCube2Play(CARD.GRASSLAND, 1);
 		addCube2Play(CARD.MOUNTAIN, 1);
+	}
+	if( specialityCardIndex === 2 ) {
+		addCube2Play(CARD.GRASSLAND, 3);
+		addCube2Play(CARD.MOUNTAIN, 2);
+	}
+	if( specialityCardIndex === 3 ) {
+		addCube2Play(CARD.SAND, 3);
+		addCube2Play(CARD.MOUNTAIN, 2);
+	}
+	if( specialityCardIndex === 4 ) {
+		addCube2Play(CARD.SEA, 1);
+		addCube2Play(CARD.MOUNTAIN, 3);
+	}
+	if( specialityCardIndex === 20 ) {
+		addCube2Play(CARD.SEA, 5);
+	}
+	if( specialityCardIndex === 24 ) {
+		addCube2Play(CARD.SEA, 1);
+		addCube2Play(CARD.SAND, 4);
+	}
+	if( specialityCardIndex === 25 ) {
+		addCube2Play(CARD.SEA, 1);
+		addCube2Play(CARD.GRASSLAND, 4);
 	}
 }
 
@@ -561,8 +691,13 @@ function mouseClicked() {
 		playState = CUBE_STATE;
 		// 4. add cube to play
 		prepareCube2Play(specialityCards[specialityCards.length-1]);
-		validateButton.enabled = false;
-		uiManager.setUI([ validateButton, speakerButton, musicButton ]);
+		addValidateButton();
+	}
+	if( playState === SPECIALIZED_CARD_STATE && overSpecializedCard !== -1 ) {
+		// play specialized card
+		playState = CUBE_STATE;
+		prepareCube2Play(specialityCards[overSpecializedCard]);
+		addValidateButton();
 	}
 	return false;
 }
@@ -595,12 +730,25 @@ function isOverExplorationCard() {
 	return false;
 }
 
-function isOverSpecializedCard() {
-	if( mouseX > 325 && mouseY > 330 && mouseX < 530 && mouseY < 650 ) {
+function isOverSpecializedChoice() {
+	if( mouseX > 997 && mouseY > 100 && mouseX < 997+205 && mouseY < 100+320 ) {
 		return 0;
 	}
-	if( mouseX > 625 && mouseY > 330 && mouseX < 830 && mouseY < 650 ) {
+	if( mouseX > 997 && mouseY > 467 && mouseX < 997+205 && mouseY < 467+320 ) {
 		return 1;
+	}
+	return -1;
+}
+
+function isOverSpecializedCard() {
+	if( mouseX > 5 && mouseY > 95 && mouseX < 160  && mouseY < 333) {
+		return 0;
+	}
+	if( mouseX > 5 && mouseY > 355 && mouseX < 160  && mouseY < 593) {
+		return 1;
+	}
+	if( mouseX > 5 && mouseY > 615 && mouseX < 160  && mouseY < 849) {
+		return 2;
 	}
 	return -1;
 }
@@ -618,7 +766,10 @@ function mouseMoved() {
 	}
 	overSpecialization = -1;
 	if( playState === SPECIALIZED_STATE ) {
-		overSpecialization = isOverSpecializedCard();
+		overSpecialization = isOverSpecializedChoice();
+	}
+	if( playState === SPECIALIZED_CARD_STATE ) {
+		overSpecializedCard = isOverSpecializedCard();
 	}
 }
 
