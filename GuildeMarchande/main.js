@@ -116,6 +116,7 @@ function validateClicked() {
 		if (cell.bonus.type === "tresor") {
 			// piocher un tresor
 			tresors.push(tresorArray.shift());
+			ruines.push({ x: cube.position.x, y: cube.position.y });
 		}
 	});
 	// nettoyer cubes et constraint
@@ -209,6 +210,8 @@ const tresors = [];
 
 const regions = [];
 
+const ruines = [];
+
 const specialityCards = []; // 3 cards
 
 let ageExploration = [{ type: CARD.VILLAGE, x: 9, y: 6 }];
@@ -240,6 +243,10 @@ function addCube(x, y) {
 	}*/
 	// check if cube not already added
 	if (ageExploration.findIndex((cell) => cell.x === x && cell.y === y) >= 0) {
+		return false;
+	}
+	// check if cube is a known ruin
+	if (ruines.some((cell) => cell.x === x && cell.y === y)) {
 		return false;
 	}
 	const cell = board[x][y];
@@ -427,7 +434,7 @@ function drawVillage(x, y, alternative = false) {
 function drawTower(x, y, alternative = false) {
 	strokeWeight(1);
 	stroke(0);
-	fill(160, 160, 180);
+	fill(250, 100, 100);
 	if (alternative) {
 		fill(250, 150, 150);
 	}
@@ -495,6 +502,8 @@ function drawGame() {
 	if (toggleDebug) {
 		debugDrawBoard();
 	} else {
+		// ruines
+		ruines.forEach((ruine) => drawCoffre(ruine.x, ruine.y));
 		displayAgeExploration();
 		drawExploredCards();
 	}
@@ -613,7 +622,7 @@ function drawGame() {
 	noStroke();
 	fill(250);
 	textSize(25);
-	text(`${PV} x`, 1300, 700);
+	text(`${PV} x`, 1280, 700);
 	// tresor
 	spritesheet.drawScaledSprite("tresor_cards", 9, 1150, 820, 0.65);
 	text(`${tresors.length} x`, 1090, 960);
