@@ -97,6 +97,10 @@ function validateClicked() {
 	// TODO: verifier si les conditions sont bonnes ?
 	// TODO: compter les points
 	cubes.forEach((cube) => {
+		if (cube.type === "village") {
+			transformCubeToVillage(cube.position.x, cube.position.y);
+			PV += age;
+		}
 		const cell = board[cube.position.x][cube.position.y];
 		if (!cell.bonus) {
 			return;
@@ -120,6 +124,7 @@ function undoClicked() {
 	for (let i = 0; i < cubes.length; i++) {
 		undoCube(i);
 	}
+	cubes = cubes.filter((cube) => cube.type !== "village");
 }
 
 const speakerButton = new BFloatingSwitchButton(
@@ -256,6 +261,7 @@ function addCube(x, y) {
 	}
 	return true;
 }
+
 function transformCubeToVillage(x, y) {
 	const index = ageExploration.findIndex(
 		(cell) => cell.x === x && cell.y === y
@@ -385,10 +391,13 @@ function drawCube(x, y, alternative = false) {
 	rect(cell.center.x + boardx - 10, cell.center.y + boardy - 10, 20, 20);
 }
 
-function drawVillage(x, y) {
+function drawVillage(x, y, alternative = false) {
 	strokeWeight(1);
 	stroke(0);
 	fill(250, 100, 100);
+	if (alternative) {
+		fill(250, 150, 150);
+	}
 	const cell = board[x][y];
 	beginShape();
 	const X = cell.center.x + boardx;
@@ -425,7 +434,14 @@ function displayAgeExploration() {
 			drawTower(cell.x, cell.y);
 		}
 	});
-	cubes.forEach((cube) => drawCube(cube.position.x, cube.position.y, true));
+	cubes.forEach((cube) => {
+		if (cube.type === "village") {
+			drawVillage(cube.position.x, cube.position.y, true);
+		} else if (cube.type === "tower") {
+		} else {
+			drawCube(cube.position.x, cube.position.y, true);
+		}
+	});
 }
 
 function drawExploredCards() {
@@ -598,6 +614,7 @@ function drawGame() {
 	} else if (playState === SPECIALIZED_STATE) {
 		text("Choisissez une carte spécialité", 200, 980);
 	}
+	text(`Age ${age}`, 10, 980);
 }
 
 function initGame() {}
@@ -851,7 +868,7 @@ function mouseClicked() {
 				if (isFull) {
 					console.log("is full");
 					// 3. check if region already contains a village
-					const hasVillage = region.cells.every((cell) => {
+					const hasVillage = region.cells.some((cell) => {
 						const cellIndex = ageExploration.findIndex(
 							(exploration) =>
 								cell.x === exploration.x && cell.y === exploration.y
@@ -877,7 +894,7 @@ function mouseClicked() {
 		// TODO: check if this cell can be transformed as a village
 		// (is overCell in the region?)
 		// and do it
-		transformCubeToVillage(overCell.x, overCell.y);
+		cubes.push({ type: "village", position: { x: overCell.x, y: overCell.y } });
 		playState = CUBE_STATE;
 		// check if all cubes have been put on board
 		if (cubes.every((cube) => cube.position.x !== 0)) {
@@ -911,7 +928,11 @@ function keyPressed() {
 	}
 	if (key === "t" && cubes.length > 0) {
 		uiManager.addLogger(`Contrainte: ${constraint}`);
-		cubes.forEach((cube) => uiManager.addLogger(`Cube: ${cube.type}`));
+		cubes.forEach((cube) => {
+			if (cube.position.x === 0) {
+				uiManager.addLogger(`Cube: ${cube.type}`);
+			}
+		});
 		console.log("cubes:", JSON.stringify(cubes, null, 4));
 	}
 }
