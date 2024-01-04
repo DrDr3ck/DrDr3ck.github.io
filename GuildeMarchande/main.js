@@ -31,6 +31,7 @@ const CARD = {
 	JOKER: "joker",
 	CAPITAL: "capital",
 	TOWER: "tower",
+	VILLAGE: "village",
 };
 
 let overCell = null;
@@ -41,17 +42,18 @@ let age = 1; // 1 to 4
 let PV = 0;
 let villageRegion = null;
 
+const towerPV = [6, 8, 10, 14];
+
 let cubes = [];
 let constraint = "none";
 
 const queryString = window.location.search;
 const urlParams = new URLSearchParams(queryString);
 let seed = urlParams.get("seed");
+// TODO: seed
 if (!seed) {
 	seed = "Avenia"; //getRandomName().replaceAll(' ', '_');
 }
-
-// TODO: seed
 
 function preload() {
 	spritesheet.addSpriteSheet("cover", "./cover.png", 630, 460);
@@ -95,13 +97,16 @@ function startClicked() {
 
 function validateClicked() {
 	// TODO: verifier si les conditions sont bonnes ?
-	// TODO: compter les points
+	// TODO: compter les points (comptoirs)
 	cubes.forEach((cube) => {
-		if (cube.type === "village") {
+		if (cube.type === CARD.VILLAGE) {
 			transformCubeToVillage(cube.position.x, cube.position.y);
 			PV += age;
 		}
 		const cell = board[cube.position.x][cube.position.y];
+		if (cell.type === CARD.TOWER) {
+			PV += towerPV.shift();
+		}
 		if (!cell.bonus) {
 			return;
 		}
@@ -109,7 +114,8 @@ function validateClicked() {
 			PV += cell.bonus.nb;
 		}
 		if (cell.bonus.type === "tresor") {
-			// TODO: piocher un tresor
+			// piocher un tresor
+			tresors.push(tresorArray.shift());
 		}
 	});
 	// nettoyer cubes et constraint
@@ -124,7 +130,7 @@ function undoClicked() {
 	for (let i = 0; i < cubes.length; i++) {
 		undoCube(i);
 	}
-	cubes = cubes.filter((cube) => cube.type !== "village");
+	cubes = cubes.filter((cube) => cube.type !== CARD.VILLAGE);
 }
 
 const speakerButton = new BFloatingSwitchButton(
@@ -199,11 +205,13 @@ const tresorArray = [
 ];
 randomizer.shuffleArray(tresorArray);
 
+const tresors = [];
+
 const regions = [];
 
 const specialityCards = []; // 3 cards
 
-let ageExploration = [{ type: "village", x: 9, y: 6 }];
+let ageExploration = [{ type: CARD.VILLAGE, x: 9, y: 6 }];
 
 let exploredCards = [6, 7, 8];
 
@@ -267,7 +275,7 @@ function transformCubeToVillage(x, y) {
 		(cell) => cell.x === x && cell.y === y
 	);
 	if (index >= 0) {
-		ageExploration[index].type = "village";
+		ageExploration[index].type = CARD.VILLAGE;
 	}
 }
 
@@ -416,10 +424,13 @@ function drawVillage(x, y, alternative = false) {
 	endShape();
 }
 
-function drawTower(x, y) {
+function drawTower(x, y, alternative = false) {
 	strokeWeight(1);
 	stroke(0);
 	fill(160, 160, 180);
+	if (alternative) {
+		fill(250, 150, 150);
+	}
 	const cell = board[x][y];
 	rect(cell.center.x + boardx - 10, cell.center.y + boardy - 25, 20, 50);
 }
@@ -428,18 +439,21 @@ function displayAgeExploration() {
 	ageExploration.forEach((cell) => {
 		if (cell.type === "cube") {
 			drawCube(cell.x, cell.y);
-		} else if (cell.type === "village") {
+		} else if (cell.type === CARD.VILLAGE) {
 			drawVillage(cell.x, cell.y);
 		} else if (cell.type === CARD.TOWER) {
 			drawTower(cell.x, cell.y);
 		}
 	});
 	cubes.forEach((cube) => {
-		if (cube.type === "village") {
+		const bcell = board[cube.position.x][cube.position.y];
+		if (cube.type === CARD.VILLAGE) {
 			drawVillage(cube.position.x, cube.position.y, true);
-		} else if (cube.type === "tower") {
 		} else {
 			drawCube(cube.position.x, cube.position.y, true);
+		}
+		if (bcell.type === CARD.TOWER) {
+			drawTower(cube.position.x, cube.position.y, true);
 		}
 	});
 }
@@ -602,7 +616,7 @@ function drawGame() {
 	text(`${PV} x`, 1300, 700);
 	// tresor
 	spritesheet.drawScaledSprite("tresor_cards", 9, 1150, 820, 0.65);
-	text("0 x", 1090, 960);
+	text(`${tresors.length} x`, 1090, 960);
 
 	// explication
 	if (playState === EXPLORATION_STATE) {
@@ -854,7 +868,7 @@ function mouseClicked() {
 	if (playState === CUBE_STATE && overCell) {
 		// check also if we can put a cube on this cell
 		if (addCube(overCell.x, overCell.y)) {
-			// TODO: check if player needs to place a village
+			// check if player needs to place a village
 			// 1. find region
 			const region = findRegion(overCell.x, overCell.y);
 			if (region) {
@@ -875,7 +889,7 @@ function mouseClicked() {
 						);
 						if (
 							cellIndex >= 0 &&
-							ageExploration[cellIndex].type === "village"
+							ageExploration[cellIndex].type === CARD.VILLAGE
 						) {
 							return true;
 						}
@@ -891,10 +905,11 @@ function mouseClicked() {
 			}
 		}
 	} else if (playState === VILLAGE_STATE && overCell) {
-		// TODO: check if this cell can be transformed as a village
-		// (is overCell in the region?)
-		// and do it
-		cubes.push({ type: "village", position: { x: overCell.x, y: overCell.y } });
+		// add new village
+		cubes.push({
+			type: CARD.VILLAGE,
+			position: { x: overCell.x, y: overCell.y },
+		});
 		playState = CUBE_STATE;
 		// check if all cubes have been put on board
 		if (cubes.every((cube) => cube.position.x !== 0)) {
@@ -1005,11 +1020,11 @@ function mouseMoved() {
 	}
 	if (playState === VILLAGE_STATE && villageRegion) {
 		villageRegion.cells.forEach((cell) => {
-			if (cell.bonus) {
+			const bcell = board[cell.x][cell.y];
+			if (bcell.bonus) {
 				// cannot place village on a bonus cell
 				return;
 			}
-			const bcell = board[cell.x][cell.y];
 			if (isOverCell(bcell.center.x + boardx, bcell.center.y + boardy)) {
 				overCell = { x: cell.x, y: cell.y };
 				return;
