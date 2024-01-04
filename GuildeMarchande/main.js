@@ -16,6 +16,7 @@ const GAME_OVER_STATE = 3;
 let curState = GAME_LOADING_STATE;
 const EXPLORATION_STATE = "exploration"; // click on the exploration card to reveal it.
 const CUBE_STATE = "cube"; // poser des cubes
+const VILLAGE_STATE = "village"; // transformer un cube en village
 const SPECIALIZED_STATE = "specialites"; // choisir une carte spécialité parmi 2
 const SPECIALIZED_CARD_STATE = "quelle specialite ?"; // choisir une des 3 cartes spécialités
 let playState = EXPLORATION_STATE;
@@ -38,6 +39,7 @@ let overSpecialization = -1; // 0 or 1
 let overSpecializedCard = -1; // 0, 1 or 2
 let age = 1; // 1 to 4
 let PV = 0;
+let villageRegion = null;
 
 let cubes = [];
 let constraint = "none";
@@ -140,7 +142,7 @@ const startButton = new BButton(
 );
 
 const validateButton = new BButton(
-	530,
+	630,
 	windowHeight - 5,
 	"Valider",
 	validateClicked
@@ -191,6 +193,8 @@ const tresorArray = [
 	3, 3, 5, 5, 6, 6, 7, 7, 8, 8, 8, 8, 8, 8,
 ];
 randomizer.shuffleArray(tresorArray);
+
+const regions = [];
 
 const specialityCards = []; // 3 cards
 
@@ -283,16 +287,12 @@ function setup() {
 	frameRate(10);
 
 	initBoard();
+	computeRegions();
 
 	lastTime = Date.now();
 
 	//debug
-	/*
-	addCube(8,7);
-	addCube(7,7);
-	addCube(7,8);
-	addCube(2,2); // tower
-	transformCubeToVillage(7,8);*/
+	/*transformCubeToVillage(7,8);*/
 }
 
 function updateGame(elapsedTime) {}
@@ -590,11 +590,13 @@ function drawGame() {
 
 	// explication
 	if (playState === EXPLORATION_STATE) {
-		text("Cliquez sur la carte d'exploration (bord rouge)", 270, 980);
+		text("Cliquez sur la carte d'exploration (bord rouge)", 200, 980);
 	} else if (playState === CUBE_STATE) {
-		text("Posez des cubes", 270, 980);
+		text("Posez des cubes", 200, 980);
+	} else if (playState === VILLAGE_STATE) {
+		text("Placez un village dans la région", 200, 980);
 	} else if (playState === SPECIALIZED_STATE) {
-		text("Choisissez une carte spécialité", 270, 980);
+		text("Choisissez une carte spécialité", 200, 980);
 	}
 }
 
@@ -808,6 +810,19 @@ function prepareCube2Play(specialityCardIndex) {
 	}
 }
 
+function findRegion(x, y) {
+	const regionIndex = regions.findIndex((region) => {
+		if (region.cells.some((cell) => cell.x === x && cell.y === y)) {
+			return true;
+		}
+		return false;
+	});
+	if (regionIndex >= 0) {
+		return regions[regionIndex];
+	}
+	return null;
+}
+
 function mouseClicked() {
 	if (toggleDebug) {
 		uiManager.addLogger(`X=${mouseX}, Y=${mouseY}`);
@@ -821,7 +836,53 @@ function mouseClicked() {
 	}
 	if (playState === CUBE_STATE && overCell) {
 		// check also if we can put a cube on this cell
-		addCube(overCell.x, overCell.y);
+		if (addCube(overCell.x, overCell.y)) {
+			// TODO: check if player needs to place a village
+			// 1. find region
+			const region = findRegion(overCell.x, overCell.y);
+			if (region) {
+				// 2. check if region is full
+				const isFull = region.cells.every((cell) =>
+					ageExploration.some(
+						(exploration) =>
+							cell.x === exploration.x && cell.y === exploration.y
+					)
+				);
+				if (isFull) {
+					console.log("is full");
+					// 3. check if region already contains a village
+					const hasVillage = region.cells.every((cell) => {
+						const cellIndex = ageExploration.findIndex(
+							(exploration) =>
+								cell.x === exploration.x && cell.y === exploration.y
+						);
+						if (
+							cellIndex >= 0 &&
+							ageExploration[cellIndex].type === "village"
+						) {
+							return true;
+						}
+						return false;
+					});
+					if (!hasVillage) {
+						// 4. change state
+						playState = VILLAGE_STATE;
+						validateButton.enabled = false;
+						villageRegion = region;
+					}
+				}
+			}
+		}
+	} else if (playState === VILLAGE_STATE && overCell) {
+		// TODO: check if this cell can be transformed as a village
+		// (is overCell in the region?)
+		// and do it
+		transformCubeToVillage(overCell.x, overCell.y);
+		playState = CUBE_STATE;
+		// check if all cubes have been put on board
+		if (cubes.every((cube) => cube.position.x !== 0)) {
+			validateButton.enabled = true;
+		}
 	}
 	if (playState === SPECIALIZED_STATE && overSpecialization !== -1) {
 		// 1. put specialized card in the current Age
@@ -921,12 +982,100 @@ function mouseMoved() {
 			})
 		);
 	}
+	if (playState === VILLAGE_STATE && villageRegion) {
+		villageRegion.cells.forEach((cell) => {
+			if (cell.bonus) {
+				// cannot place village on a bonus cell
+				return;
+			}
+			const bcell = board[cell.x][cell.y];
+			if (isOverCell(bcell.center.x + boardx, bcell.center.y + boardy)) {
+				overCell = { x: cell.x, y: cell.y };
+				return;
+			}
+		});
+	}
 	overSpecialization = -1;
 	if (playState === SPECIALIZED_STATE) {
 		overSpecialization = isOverSpecializedChoice();
 	}
 	if (playState === SPECIALIZED_CARD_STATE) {
 		overSpecializedCard = isOverSpecializedCard();
+	}
+}
+
+function computeRegions() {
+	console.log("computeRegions");
+	// create an 2D array of cells:
+	// true if cell is still free and not associated to a region
+	const freeCells = [];
+	for (let i = 0; i < 20; i++) {
+		const columns = [];
+		for (let j = 0; j < 15; j++) {
+			columns.push(true);
+		}
+		freeCells.push(columns);
+	}
+	const getRing = (x, y) => {
+		const cells = [
+			{ x: x, y: y - 1 },
+			{ x: x, y: y + 1 },
+		];
+		if (x % 2 === 0) {
+			cells.push({ x: x - 1, y: y - 1 });
+			cells.push({ x: x - 1, y: y });
+			cells.push({ x: x + 1, y: y - 1 });
+			cells.push({ x: x + 1, y: y });
+		} else {
+			cells.push({ x: x - 1, y: y });
+			cells.push({ x: x - 1, y: y + 1 });
+			cells.push({ x: x + 1, y: y });
+			cells.push({ x: x + 1, y: y + 1 });
+		}
+		return cells;
+	};
+	const getRegion = (x, y, type) => {
+		const cells = [{ x: x, y: y }];
+		freeCells[x][y] = false;
+		let curIndex = 0;
+		while (curIndex < cells.length) {
+			const ring = getRing(cells[curIndex].x, cells[curIndex].y);
+			ring.forEach((cell) => {
+				// check if cell is free
+				if (!freeCells[cell.x][cell.y]) {
+					return;
+				}
+				// check if cell has same type
+				const bcell = board[cell.x][cell.y];
+				if (bcell.type !== type) {
+					return;
+				}
+				// add cell and mark it
+				cells.push({ x: cell.x, y: cell.y });
+				freeCells[cell.x][cell.y] = false;
+			});
+			curIndex += 1;
+		}
+		return cells;
+	};
+	for (let i = 0; i < 20; i++) {
+		for (let j = 0; j < 15; j++) {
+			const cell = board[i][j];
+			if (
+				cell.type === null ||
+				[CARD.SEA, CARD.TOWER, CARD.CAPITAL].includes(cell.type)
+			) {
+				continue;
+			}
+			if (!freeCells[i][j]) {
+				// cell already associated to a region
+				continue;
+			}
+			// new region
+			const region = { type: cell.type, cells: getRegion(i, j, cell.type) };
+			console.log("region", region);
+			regions.push(region);
+		}
 	}
 }
 
