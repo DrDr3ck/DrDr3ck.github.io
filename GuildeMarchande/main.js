@@ -41,6 +41,7 @@ let overSpecialization = -1; // 0 or 1
 let overSpecializedCard = -1; // 0, 1 or 2
 let age = 1; // 1 to 4
 let PV = 0;
+let PVTreasure = 0;
 let villageRegion = null;
 
 const towerPV = [6, 8, 10, 14];
@@ -98,7 +99,8 @@ function startClicked() {
 
 function validateClicked() {
 	// TODO: verifier si les conditions sont bonnes ?
-	// TODO: compter les points (comptoirs)
+	// TODO: compter les points (comptoirs) remark: mettre les cubes tresors avant
+	// TODO: verifier si un objectif est atteint
 	let treasureCubes = 0;
 	cubes.forEach((cube) => {
 		if (cube.type === CARD.VILLAGE) {
@@ -143,6 +145,41 @@ function validateClicked() {
 			cubes.push({ type: "joker", position: { x: 0, y: 0 } });
 		}
 	}
+	// compter les points de tresors
+	countPVTreasure();
+}
+
+function countPVTreasure() {
+	let amphore = 0;
+	PVTreasure = 0;
+	console.log("ageExploration:", ageExploration);
+	tresors.forEach((t) => {
+		if (t === 1) {
+			// amphore
+			amphore += 1;
+		} else if (t === 2) {
+			// 2 pieces
+			PVTreasure += 2;
+		} else if (t === 3) {
+			// mountain village
+			const villages = ageExploration.filter(
+				(exploration) => exploration.type === CARD.VILLAGE
+			);
+			villages.forEach((village) => {
+				const cell = board[village.x][village.y];
+				if (cell.type === CARD.MOUNTAIN) {
+					PVTreasure += 1;
+				}
+			});
+		} else if (t === 8) {
+			// tower
+			PVTreasure += ageExploration.filter(
+				(exploration) => exploration.type === CARD.TOWER
+			).length;
+		}
+	});
+	amphorePV = [0, 1, 4, 9, 16, 20, 24, 28, 32, 36, 40];
+	PVTreasure += amphorePV[amphore];
 }
 
 function undoClicked() {
@@ -181,7 +218,6 @@ const undoButton = new BButton(530, 80, "Undo", undoClicked);
 
 class Randomizer {
 	constructor(seed) {
-		console.log("seed", seed);
 		if (seed) {
 			this.generator = new Math.seedrandom(seed.toString());
 		} else {
@@ -515,7 +551,6 @@ function drawExploredCards() {
 }
 
 function drawTreasure() {
-	console.log("tresors", tresors);
 	if (tresors.length === 0) {
 		stroke(0);
 		fill(176, 171, 138);
@@ -571,24 +606,26 @@ function drawGame() {
 		stroke(250);
 		ellipse(cell.center.x + boardx, cell.center.y + boardy, 45); // 45 de rayon
 	}
-	spritesheet.drawScaledSprite(
-		"exploration_cards",
-		ageCards[0],
-		1150,
-		440 - 25,
-		0.65
-	);
-	noFill();
-	strokeWeight(4);
-	if (playState === EXPLORATION_STATE) {
-		stroke(250, 50, 50);
-	} else {
-		stroke(250);
-	}
-	rect(1150, 415, 1320 - 1150, 674 - 415, 15);
-	if (overExploration) {
-		stroke(25);
+	if (ageCards.length !== 0) {
+		spritesheet.drawScaledSprite(
+			"exploration_cards",
+			ageCards[0],
+			1150,
+			440 - 25,
+			0.65
+		);
+		noFill();
+		strokeWeight(4);
+		if (playState === EXPLORATION_STATE) {
+			stroke(250, 50, 50);
+		} else {
+			stroke(250);
+		}
 		rect(1150, 415, 1320 - 1150, 674 - 415, 15);
+		if (overExploration) {
+			stroke(25);
+			rect(1150, 415, 1320 - 1150, 674 - 415, 15);
+		}
 	}
 	if (overTreasure) {
 		drawTreasure();
@@ -683,6 +720,7 @@ function drawGame() {
 	fill(250);
 	textSize(25);
 	text(`x ${PV}`, 1360, 640);
+	text(`+ ${PVTreasure}`, 1360 - 2, 670);
 	// tresor
 	spritesheet.drawScaledSprite("tresor_cards", 9, 1150, 820, 0.65);
 	fill(0);
@@ -699,7 +737,11 @@ function drawGame() {
 	} else if (playState === SPECIALIZED_STATE) {
 		text("Choisissez une carte spécialité", 200, 980);
 	}
-	text(`Age ${age}`, 10, 980);
+	if (age < 5) {
+		text(`Age ${age}`, 10, 980);
+	} else {
+		text("Fin du jeu", 10, 980);
+	}
 }
 
 function initGame() {}
@@ -785,9 +827,11 @@ function newExplorationCard() {
 	}
 	ageCards.shift();
 	if (ageCards.length === 0) {
-		uiManager.addLogger("Nouvel age");
 		// new Age
 		age += 1;
+		if (age < 5) {
+			uiManager.addLogger("Nouvel age");
+		}
 		if (age === 2) {
 			for (let i = 0; i < 7; i++) {
 				ageCards.push(i);
@@ -810,7 +854,7 @@ function newExplorationCard() {
 			ageCards.unshift(9);
 			exploredCards = [];
 		} else if (age === 5) {
-			// TODO: end of game
+			// TODO: end of game - add points from treasure !
 		}
 		// remove all cubes
 		removeCubes();
@@ -951,7 +995,6 @@ function mouseClicked() {
 					)
 				);
 				if (isFull) {
-					console.log("is full");
 					// 3. check if region already contains a village
 					const hasVillage = region.cells.some((cell) => {
 						const cellIndex = ageExploration.findIndex(
@@ -1019,7 +1062,6 @@ function keyPressed() {
 				uiManager.addLogger(`Cube: ${cube.type}`);
 			}
 		});
-		console.log("cubes:", JSON.stringify(cubes, null, 4));
 	}
 }
 
@@ -1117,7 +1159,6 @@ function mouseMoved() {
 }
 
 function computeRegions() {
-	console.log("computeRegions");
 	// create an 2D array of cells:
 	// true if cell is still free and not associated to a region
 	const freeCells = [];
@@ -1185,7 +1226,6 @@ function computeRegions() {
 			}
 			// new region
 			const region = { type: cell.type, cells: getRegion(i, j, cell.type) };
-			console.log("region", region);
 			regions.push(region);
 		}
 	}
