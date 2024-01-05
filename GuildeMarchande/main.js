@@ -36,6 +36,7 @@ const CARD = {
 
 let overCell = null;
 let overExploration = false;
+let overTreasure = false;
 let overSpecialization = -1; // 0 or 1
 let overSpecializedCard = -1; // 0, 1 or 2
 let age = 1; // 1 to 4
@@ -92,12 +93,13 @@ function speakerClicked() {
 function startClicked() {
 	curState = GAME_PLAY_STATE;
 	uiManager.setUI([speakerButton, musicButton]);
-	uiManager.addLogger("Start game");
+	uiManager.addLogger("A vous de jouer!");
 }
 
 function validateClicked() {
 	// TODO: verifier si les conditions sont bonnes ?
 	// TODO: compter les points (comptoirs)
+	let treasureCubes = 0;
 	cubes.forEach((cube) => {
 		if (cube.type === CARD.VILLAGE) {
 			transformCubeToVillage(cube.position.x, cube.position.y);
@@ -115,7 +117,11 @@ function validateClicked() {
 		}
 		if (cell.bonus.type === "tresor") {
 			// piocher un tresor
-			tresors.push(tresorArray.shift());
+			const treasureIndex = tresorArray.shift();
+			tresors.push(treasureIndex);
+			if (treasureIndex === 0) {
+				treasureCubes += 1;
+			}
 			ruines.push({ x: cube.position.x, y: cube.position.y });
 		}
 	});
@@ -123,8 +129,20 @@ function validateClicked() {
 	cubes = [];
 	constraint = "none";
 	// passer à la carte exploration suivante
-	playState = EXPLORATION_STATE;
-	uiManager.setUI([speakerButton, musicButton]);
+	validateButton.enabled = false;
+	if (treasureCubes === 0) {
+		playState = EXPLORATION_STATE;
+		uiManager.setUI([speakerButton, musicButton]);
+	} else {
+		if (treasureCubes === 1) {
+			uiManager.addLogger("Vous avez un cube trésors à placer");
+		} else {
+			uiManager.addLogger("Vous avez des cubes trésors à placer");
+		}
+		for (let i = 0; i < treasureCubes; i++) {
+			cubes.push({ type: "joker", position: { x: 0, y: 0 } });
+		}
+	}
 }
 
 function undoClicked() {
@@ -496,6 +514,45 @@ function drawExploredCards() {
 	}
 }
 
+function drawTreasure() {
+	console.log("tresors", tresors);
+	if (tresors.length === 0) {
+		stroke(0);
+		fill(176, 171, 138);
+		rect(525, 340, 930 - 525, 440 - 340, 15);
+		noStroke();
+		fill(250);
+		textSize(25);
+		text("Pas de trésor pour le moment", 570, 400);
+	} else {
+		stroke(0);
+		fill(176, 171, 138);
+		rect(235, 65, 1065 - 235, 900 - 65, 15);
+		spritesheet.drawScaledSprite("tresor_cards", 0, 270, 100, 0.65);
+		spritesheet.drawScaledSprite("tresor_cards", 1, 780, 100, 0.65);
+		spritesheet.drawScaledSprite("tresor_cards", 2, 270, 300, 0.65);
+		spritesheet.drawScaledSprite("tresor_cards", 3, 780, 300, 0.65);
+		spritesheet.drawScaledSprite("tresor_cards", 5, 270, 500, 0.65);
+		spritesheet.drawScaledSprite("tresor_cards", 6, 780, 500, 0.65);
+		spritesheet.drawScaledSprite("tresor_cards", 7, 270, 700, 0.65);
+		spritesheet.drawScaledSprite("tresor_cards", 8, 780, 700, 0.65);
+		noStroke();
+		fill(250);
+		textSize(25);
+		const countTreasure = (index) => {
+			return tresors.filter((t) => t === index).length;
+		};
+		text(`x ${countTreasure(0)}`, 550, 180); // 0
+		text(`${countTreasure(1)} x`, 700, 180); // 1
+		text(`x ${countTreasure(2)}`, 550, 380); // 2
+		text(`${countTreasure(3)} x`, 700, 380); // 3
+		text(`x ${countTreasure(5)}`, 550, 580); // 5
+		text(`${countTreasure(6)} x`, 700, 580); // 6
+		text(`x ${countTreasure(7)}`, 550, 780); // 7
+		text(`${countTreasure(8)} x`, 700, 780); // 8
+	}
+}
+
 function drawGame() {
 	spritesheet.drawScaledSprite("avenia", 0, boardx, boardy, 0.65);
 	spritesheet.drawScaledSprite("exploration", 0, 1150, boardy, 0.65);
@@ -517,7 +574,7 @@ function drawGame() {
 	spritesheet.drawScaledSprite(
 		"exploration_cards",
 		ageCards[0],
-		1210,
+		1150,
 		440 - 25,
 		0.65
 	);
@@ -528,10 +585,13 @@ function drawGame() {
 	} else {
 		stroke(250);
 	}
-	rect(1210, 415, 1378 - 1210, 674 - 415, 15);
+	rect(1150, 415, 1320 - 1150, 674 - 415, 15);
 	if (overExploration) {
 		stroke(25);
-		rect(1210, 415, 1378 - 1210, 674 - 415, 15);
+		rect(1150, 415, 1320 - 1150, 674 - 415, 15);
+	}
+	if (overTreasure) {
+		drawTreasure();
 	}
 	if (playState === SPECIALIZED_CARD_STATE) {
 		noFill();
@@ -618,16 +678,18 @@ function drawGame() {
 	spritesheet.drawScaledSprite("goals", goalArray[2], 1435, 820 - 25, 0.5);
 
 	// points de victoire
-	spritesheet.drawSprite("PV", 0, 1300, 680);
+	spritesheet.drawScaledSprite("PV", 0, 1330, 510, 0.8);
 	noStroke();
 	fill(250);
 	textSize(25);
-	text(`${PV} x`, 1280, 700);
+	text(`x ${PV}`, 1360, 640);
 	// tresor
 	spritesheet.drawScaledSprite("tresor_cards", 9, 1150, 820, 0.65);
-	text(`${tresors.length} x`, 1090, 960);
+	fill(0);
+	text(`x ${tresors.length}`, 1345, 945);
 
 	// explication
+	fill(250);
 	if (playState === EXPLORATION_STATE) {
 		text("Cliquez sur la carte d'exploration (bord rouge)", 200, 980);
 	} else if (playState === CUBE_STATE) {
@@ -657,7 +719,7 @@ function drawLoading() {
 		// init game
 		initGame();
 		textAlign(LEFT, BASELINE);
-		uiManager.addLogger("Game loaded");
+		uiManager.addLogger("Bienvenue");
 
 		if (document.location.toString().includes("seed=")) {
 			startClicked();
@@ -972,7 +1034,7 @@ function isOverExplorationCard() {
 	if (playState !== EXPLORATION_STATE) {
 		return false;
 	}
-	if (mouseX > 1210 && mouseY > 415 && mouseX < 1378 && mouseY < 674) {
+	if (mouseX > 1150 && mouseY > 415 && mouseX < 1320 && mouseY < 674) {
 		return true;
 	}
 	return false;
@@ -1011,8 +1073,13 @@ function isOverSpecializedCard() {
 	return -1;
 }
 
+function isOverTreasure() {
+	return mouseX > 1150 && mouseY > 820 && mouseX < 1400 && mouseY < 980;
+}
+
 function mouseMoved() {
 	overExploration = isOverExplorationCard();
+	overTreasure = isOverTreasure();
 	overCell = null;
 	if (playState === CUBE_STATE) {
 		board.forEach((column, x) =>
