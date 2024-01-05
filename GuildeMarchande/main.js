@@ -118,13 +118,21 @@ function validateClicked() {
 			PV += cell.bonus.nb;
 		}
 		if (cell.bonus.type === "tresor") {
-			// piocher un tresor
-			const treasureIndex = tresorArray.shift();
-			tresors.push(treasureIndex);
-			if (treasureIndex === 0) {
-				treasureCubes += 1;
+			// check if cube is a known ruin
+			// otherwise, pick a treasure card
+			if (
+				!ruines.some(
+					(rcell) => rcell.x === cube.position.x && rcell.y === cube.position.y
+				)
+			) {
+				// piocher un tresor
+				const treasureIndex = tresorArray.shift();
+				tresors.push(treasureIndex);
+				if (treasureIndex === 0) {
+					treasureCubes += 1;
+				}
+				ruines.push({ x: cube.position.x, y: cube.position.y });
 			}
-			ruines.push({ x: cube.position.x, y: cube.position.y });
 		}
 	});
 	// nettoyer cubes et constraint
@@ -171,6 +179,34 @@ function countPVTreasure() {
 					PVTreasure += 1;
 				}
 			});
+		} else if (t === 5) {
+			// sand village
+			const villages = ageExploration.filter(
+				(exploration) => exploration.type === CARD.VILLAGE
+			);
+			villages.forEach((village) => {
+				const cell = board[village.x][village.y];
+				if (cell.type === CARD.SAND) {
+					PVTreasure += 1;
+				}
+			});
+		} else if (t === 6) {
+			// grassland village
+			const villages = ageExploration.filter(
+				(exploration) => exploration.type === CARD.VILLAGE
+			);
+			villages.forEach((village) => {
+				const cell = board[village.x][village.y];
+				if (cell.type === CARD.GRASSLAND) {
+					PVTreasure += 1;
+				}
+			});
+		} else if (t === 7) {
+			// villages
+			const villages = ageExploration.filter(
+				(exploration) => exploration.type === CARD.VILLAGE
+			);
+			PVTreasure += Math.floor(villages.length / 2);
 		} else if (t === 8) {
 			// tower
 			PVTreasure += ageExploration.filter(
@@ -297,10 +333,6 @@ function addCube(x, y) {
 	}*/
 	// check if cube not already added
 	if (ageExploration.findIndex((cell) => cell.x === x && cell.y === y) >= 0) {
-		return false;
-	}
-	// check if cube is a known ruin
-	if (ruines.some((cell) => cell.x === x && cell.y === y)) {
 		return false;
 	}
 	const cell = board[x][y];
@@ -630,20 +662,6 @@ function drawGame() {
 	if (overTreasure) {
 		drawTreasure();
 	}
-	if (playState === SPECIALIZED_CARD_STATE) {
-		noFill();
-		strokeWeight(4);
-		stroke(25);
-		if (overSpecializedCard === 0) {
-			rect(5, 95, 160 - 5, 333 - 95, 15);
-		}
-		if (overSpecializedCard === 1) {
-			rect(5, 355, 160 - 5, 593 - 355, 15);
-		}
-		if (overSpecializedCard === 2) {
-			rect(5, 615, 160 - 5, 849 - 615, 15);
-		}
-	}
 	if (playState === SPECIALIZED_STATE) {
 		// afficher 2 cartes tirées du tableau
 		noFill();
@@ -707,6 +725,22 @@ function drawGame() {
 			640 - 25,
 			0.6
 		);
+	}
+
+	// choose a specialized card (I/II/III)
+	if (playState === SPECIALIZED_CARD_STATE) {
+		noFill();
+		strokeWeight(4);
+		stroke(25);
+		if (overSpecializedCard === 0) {
+			rect(5, 95, 160 - 5, 333 - 95, 15);
+		}
+		if (overSpecializedCard === 1) {
+			rect(5, 355, 160 - 5, 593 - 355, 15);
+		}
+		if (overSpecializedCard === 2) {
+			rect(5, 615, 160 - 5, 849 - 615, 15);
+		}
 	}
 
 	// goals
