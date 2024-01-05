@@ -37,6 +37,7 @@ const CARD = {
 let overCell = null;
 let overExploration = false;
 let overTreasure = false;
+let overHelpButton = false;
 let overSpecialization = -1; // 0 or 1
 let overSpecializedCard = -1; // 0, 1 or 2
 let age = 1; // 1 to 4
@@ -58,7 +59,7 @@ if (!seed) {
 }
 
 function preload() {
-	spritesheet.addSpriteSheet("cover", "./cover.png", 630, 460);
+	spritesheet.addSpriteSheet("cover", "./cover.png", 686, 503);
 	spritesheet.addSpriteSheet("avenia", "./avenia.png", 1680, 1405);
 	spritesheet.addSpriteSheet("exploration", "./exploration.png", 840, 588);
 	spritesheet.addSpriteSheet(
@@ -78,6 +79,7 @@ function preload() {
 	spritesheet.addSpriteSheet("goals", "./goals.png", 520, 370);
 	spritesheet.addSpriteSheet("coffre_pion", "./coffre_pion.png", 80, 90);
 	spritesheet.addSpriteSheet("PV", "./PV.png", 136, 141);
+	spritesheet.addSpriteSheet("solo_rules", "./solo_rules.png", 550, 700);
 }
 
 function musicClicked() {
@@ -93,7 +95,7 @@ function speakerClicked() {
 
 function startClicked() {
 	curState = GAME_PLAY_STATE;
-	uiManager.setUI([speakerButton, musicButton]);
+	uiManager.setUI([speakerButton, musicButton, ruleButton]);
 	uiManager.addLogger("A vous de jouer!");
 }
 
@@ -142,7 +144,7 @@ function validateClicked() {
 	validateButton.enabled = false;
 	if (treasureCubes === 0) {
 		playState = EXPLORATION_STATE;
-		uiManager.setUI([speakerButton, musicButton]);
+		uiManager.setUI([speakerButton, musicButton, ruleButton]);
 	} else {
 		if (treasureCubes === 1) {
 			uiManager.addLogger("Vous avez un cube trésors à placer");
@@ -152,9 +154,23 @@ function validateClicked() {
 		for (let i = 0; i < treasureCubes; i++) {
 			cubes.push({ type: "joker", position: { x: 0, y: 0 } });
 		}
+		return;
 	}
+	checkGoals();
 	// compter les points de tresors
 	countPVTreasure();
+}
+
+function getVillages() {
+	return ageExploration.filter(
+		(exploration) => exploration.type === CARD.VILLAGE
+	);
+}
+
+function getTowers() {
+	return ageExploration.filter(
+		(exploration) => exploration.type === CARD.TOWER
+	);
 }
 
 function countPVTreasure() {
@@ -170,9 +186,7 @@ function countPVTreasure() {
 			PVTreasure += 2;
 		} else if (t === 3) {
 			// mountain village
-			const villages = ageExploration.filter(
-				(exploration) => exploration.type === CARD.VILLAGE
-			);
+			const villages = getVillages();
 			villages.forEach((village) => {
 				const cell = board[village.x][village.y];
 				if (cell.type === CARD.MOUNTAIN) {
@@ -181,9 +195,7 @@ function countPVTreasure() {
 			});
 		} else if (t === 5) {
 			// sand village
-			const villages = ageExploration.filter(
-				(exploration) => exploration.type === CARD.VILLAGE
-			);
+			const villages = getVillages();
 			villages.forEach((village) => {
 				const cell = board[village.x][village.y];
 				if (cell.type === CARD.SAND) {
@@ -192,9 +204,7 @@ function countPVTreasure() {
 			});
 		} else if (t === 6) {
 			// grassland village
-			const villages = ageExploration.filter(
-				(exploration) => exploration.type === CARD.VILLAGE
-			);
+			const villages = getVillages();
 			villages.forEach((village) => {
 				const cell = board[village.x][village.y];
 				if (cell.type === CARD.GRASSLAND) {
@@ -236,6 +246,14 @@ const musicButton = new BFloatingSwitchButton(
 	70,
 	"\uD83C\uDFB6",
 	musicClicked
+);
+const ruleButton = new BFloatingSwitchButton(
+	windowWidth - 70 - 20 - 140,
+	70,
+	"\u003F",
+	() => {
+		// ruleButton.checked = !ruleButton.checked;
+	}
 );
 const startButton = new BButton(
 	140,
@@ -280,8 +298,9 @@ const randomizer = new Randomizer(seed);
 
 const board = [];
 
-const goalArray = [0, 1, 2, 3, 4, 5];
+let goalArray = [0, 1, 2, 3, 4, 5];
 randomizer.shuffleArray(goalArray);
+goalArray = goalArray.splice(-3); // remove 3 last goals
 
 const ageCards = [0, 1, 2, 3, 4, 5];
 randomizer.shuffleArray(ageCards);
@@ -302,9 +321,11 @@ const regions = [];
 
 const ruines = [];
 
+const boarderRuins = [];
+
 const specialityCards = []; // 3 cards
 
-let ageExploration = [{ type: CARD.VILLAGE, x: 9, y: 6 }];
+let ageExploration = [{ type: CARD.CAPITAL, x: 9, y: 6 }];
 
 let exploredCards = [6, 7, 8];
 
@@ -375,14 +396,16 @@ function transformCubeToVillage(x, y) {
 function initUI() {
 	speakerButton.setTextSize(50);
 	musicButton.setTextSize(50);
+	ruleButton.setTextSize(50);
 	musicButton.enabled = false;
 	musicButton.checked = false;
+	ruleButton.checked = false;
 	const isSpeakerOn = localStorage.getItem(speakerStorageKey);
 	if (isSpeakerOn === "off") {
 		speakerButton.checked = false;
 		soundManager.mute(true);
 	}
-	const menu = [speakerButton, startButton, musicButton];
+	const menu = [speakerButton, startButton, musicButton, ruleButton];
 	uiManager.setUI(menu);
 }
 
@@ -397,9 +420,6 @@ function setup() {
 	computeRegions();
 
 	lastTime = Date.now();
-
-	//debug
-	/*transformCubeToVillage(7,8);*/
 }
 
 function updateGame(elapsedTime) {}
@@ -424,7 +444,6 @@ function debugDrawCase(x, y, type, row, column, bonus) {
 	} else {
 		return;
 	}
-	// if (!bonus) return;
 	stroke(1);
 	ellipse(x + boardx, y + boardy, 25); // 45 de rayon
 	noStroke();
@@ -469,11 +488,6 @@ function debugDrawBoard() {
 			debugDrawCase(cell.center.x, cell.center.y, cell.type, x, y, cell.bonus)
 		)
 	);
-	// drawCoffre(2, 5);
-
-	// couvrir les cartes explorations deja jouées
-	spritesheet.drawScaledSprite("exploration_cards", 0, 1180, 90 - 25, 0.325);
-
 	// teste comptoir
 	/*
 	drawComptoir(12, 2);
@@ -490,6 +504,13 @@ function drawCube(x, y, alternative = false) {
 	}
 	const cell = board[x][y];
 	rect(cell.center.x + boardx - 10, cell.center.y + boardy - 10, 20, 20);
+}
+
+function drawGoalCube(column, row) {
+	stroke(0);
+	strokeWeight(1);
+	fill(250, 100, 100);
+	rect(1520 + 1000 * column, 530 + 190 * row, 20, 20);
 }
 
 function drawVillage(x, y, alternative = false) {
@@ -532,7 +553,7 @@ function displayAgeExploration() {
 	ageExploration.forEach((cell) => {
 		if (cell.type === "cube") {
 			drawCube(cell.x, cell.y);
-		} else if (cell.type === CARD.VILLAGE) {
+		} else if (cell.type === CARD.VILLAGE || cell.type === CARD.CAPITAL) {
 			drawVillage(cell.x, cell.y);
 		} else if (cell.type === CARD.TOWER) {
 			drawTower(cell.x, cell.y);
@@ -620,6 +641,89 @@ function drawTreasure() {
 	}
 }
 
+let goals = [0, 0, 0, 0, 0, 0];
+
+function drawGoals() {
+	goalArray.forEach((goal, index) => {
+		if (goals[goal] === 0) {
+			return;
+		} else if (goals[goal] === 10) {
+			drawGoalCube(0, index);
+		} else if (goals[goal] === 5) {
+			drawGoalCube(1, index);
+		}
+	});
+}
+
+/**
+ * Player reaches a goal
+ * @param index index of reached goal
+ */
+function reachGoal(index) {
+	// check if goal is in list of goal of current game
+	if (!goalArray.includes(index)) {
+		return;
+	}
+	// add point accordingly
+	if (goals[index] === 0) {
+		// TODO: to check with solo mode
+		goals[index] = 10;
+		PV += 10;
+	}
+}
+
+function getBorderRuins() {
+	return ruines.some((ruin) => {
+		const ring = getRing(ruin.x, ruin.y);
+		const border = ring.some((cell) => !cell.type);
+		return border;
+	});
+}
+
+/**
+ * Checks if goals are reached
+ */
+function checkGoals() {
+	// explorer 3 cases ruines le long du bord de la mappe
+	if (getBorderRuins().length >= 3) {
+		reachGoal(0);
+	}
+	// decouvrez un village dans une region 5+
+	const villages = getVillages();
+	if (
+		villages.some((village) => {
+			const region = findRegion(village.x, village.y);
+			return region.cells.length >= 5;
+		})
+	) {
+		reachGoal(1);
+	}
+	// TODO: placez 2 comptoirs sur des villes 3+
+	// decouvrez villages sur les 3 types
+	const types = [false, false, false];
+	villages.forEach((village) => {
+		const bcell = board[village.x][village.y];
+		if (bcell.type === CARD.MOUNTAIN) {
+			types[0] = true;
+		} else if (bcell.type === CARD.SAND) {
+			types[1] = true;
+		} else if (bcell.type === CARD.GRASSLAND) {
+			types[2] = true;
+		}
+	});
+	if (types.every((t) => t)) {
+		reachGoal(3);
+	}
+	// placez 2 tours
+	if (getTowers().length >= 2) {
+		reachGoal(4);
+	}
+	// decouvrez 5 villages
+	if (villages.length >= 5) {
+		reachGoal(5);
+	}
+}
+
 function drawGame() {
 	spritesheet.drawScaledSprite("avenia", 0, boardx, boardy, 0.65);
 	spritesheet.drawScaledSprite("exploration", 0, 1150, boardy, 0.65);
@@ -627,10 +731,10 @@ function drawGame() {
 		debugDrawBoard();
 	} else {
 		// ruines
-		ruines.forEach((ruine) => drawCoffre(ruine.x, ruine.y));
+		ruines.forEach((ruin) => drawCoffre(ruin.x, ruin.y));
 		displayAgeExploration();
-		drawExploredCards();
 	}
+	drawExploredCards();
 	if (overCell) {
 		const cell = board[overCell.x][overCell.y];
 		noFill();
@@ -747,6 +851,7 @@ function drawGame() {
 	spritesheet.drawScaledSprite("goals", goalArray[0], 1435, 440 - 25, 0.5);
 	spritesheet.drawScaledSprite("goals", goalArray[1], 1435, 630 - 25, 0.5);
 	spritesheet.drawScaledSprite("goals", goalArray[2], 1435, 820 - 25, 0.5);
+	drawGoals();
 
 	// points de victoire
 	spritesheet.drawScaledSprite("PV", 0, 1330, 510, 0.8);
@@ -775,6 +880,15 @@ function drawGame() {
 		text(`Age ${age}`, 10, 980);
 	} else {
 		text("Fin du jeu", 10, 980);
+	}
+
+	if (overHelpButton) {
+		spritesheet.drawSprite(
+			"solo_rules",
+			0,
+			(windowWidth - 550) / 2,
+			(windowHeight - 700) / 2
+		);
 	}
 }
 
@@ -953,7 +1067,13 @@ function newExplorationCard() {
 function addValidateButton() {
 	validateButton.enabled = false;
 	undoButton.enabled = true;
-	uiManager.setUI([validateButton, undoButton, speakerButton, musicButton]);
+	uiManager.setUI([
+		validateButton,
+		undoButton,
+		speakerButton,
+		musicButton,
+		ruleButton,
+	]);
 }
 
 function prepareCube2Play(specialityCardIndex) {
@@ -1099,10 +1219,11 @@ function keyPressed() {
 	}
 }
 
+const distance = (x1, y1, x2, y2) => {
+	return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2));
+};
+
 function isOverCell(X, Y) {
-	const distance = (x1, y1, x2, y2) => {
-		return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2));
-	};
 	return distance(X, Y, mouseX, mouseY) < 25;
 }
 
@@ -1157,6 +1278,7 @@ function mouseMoved() {
 	overExploration = isOverExplorationCard();
 	overTreasure = isOverTreasure();
 	overCell = null;
+	overHelpButton = distance(1500, 40, mouseX, mouseY) < 25;
 	if (playState === CUBE_STATE) {
 		board.forEach((column, x) =>
 			column.forEach((cell, y) => {
@@ -1192,6 +1314,25 @@ function mouseMoved() {
 	}
 }
 
+function getRing(x, y) {
+	const cells = [
+		{ x: x, y: y - 1 },
+		{ x: x, y: y + 1 },
+	];
+	if (x % 2 === 0) {
+		cells.push({ x: x - 1, y: y - 1 });
+		cells.push({ x: x - 1, y: y });
+		cells.push({ x: x + 1, y: y - 1 });
+		cells.push({ x: x + 1, y: y });
+	} else {
+		cells.push({ x: x - 1, y: y });
+		cells.push({ x: x - 1, y: y + 1 });
+		cells.push({ x: x + 1, y: y });
+		cells.push({ x: x + 1, y: y + 1 });
+	}
+	return cells;
+}
+
 function computeRegions() {
 	// create an 2D array of cells:
 	// true if cell is still free and not associated to a region
@@ -1203,24 +1344,6 @@ function computeRegions() {
 		}
 		freeCells.push(columns);
 	}
-	const getRing = (x, y) => {
-		const cells = [
-			{ x: x, y: y - 1 },
-			{ x: x, y: y + 1 },
-		];
-		if (x % 2 === 0) {
-			cells.push({ x: x - 1, y: y - 1 });
-			cells.push({ x: x - 1, y: y });
-			cells.push({ x: x + 1, y: y - 1 });
-			cells.push({ x: x + 1, y: y });
-		} else {
-			cells.push({ x: x - 1, y: y });
-			cells.push({ x: x - 1, y: y + 1 });
-			cells.push({ x: x + 1, y: y });
-			cells.push({ x: x + 1, y: y + 1 });
-		}
-		return cells;
-	};
 	const getRegion = (x, y, type) => {
 		const cells = [{ x: x, y: y }];
 		freeCells[x][y] = false;
