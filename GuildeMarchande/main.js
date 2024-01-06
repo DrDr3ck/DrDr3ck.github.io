@@ -83,6 +83,7 @@ function preload() {
 	spritesheet.addSpriteSheet("PV", "./PV.png", 136, 141);
 	spritesheet.addSpriteSheet("solo_rules", "./solo_rules.png", 550, 700);
 	spritesheet.addSpriteSheet("solo_pions", "./solo_pions.png", 72, 72);
+	spritesheet.addSpriteSheet("scores", "./scores.png", 126, 80);
 }
 
 function musicClicked() {
@@ -103,10 +104,69 @@ function startClicked() {
 	soundManager.playSound("new_age");
 }
 
+const findExplorationCell = (cell) => {
+	const index = ageExploration.findIndex(
+		(explo) => explo.x === cell.x && explo.y === cell.y
+	);
+	return ageExploration[index];
+};
+
+function checkCubes() {
+	const isCellInExploration = (rcell) => {
+		return ageExploration.some(
+			(exploration) => exploration.x === rcell.x && exploration.y === rcell.y
+		);
+	};
+	let isolatedCube = false;
+	cubes.forEach((cube) => {
+		const getRegion = (cell) => {
+			const exploration = findExplorationCell(cell);
+			const allCells = [{ x: exploration.x, y: exploration.y, type: "cube" }];
+			let allCellsIndex = 0;
+			const isCellInPath = (rcell) => {
+				return allCells.some(
+					(pcell) => pcell.x === rcell.x && pcell.y === rcell.y
+				);
+			};
+			while (allCellsIndex < allCells.length) {
+				const cell = allCells[allCellsIndex];
+				const ring = getRing(cell.x, cell.y);
+				ring.forEach((rcell) => {
+					if (isCellInExploration(rcell) && !isCellInPath(rcell)) {
+						const curExploration = findExplorationCell(rcell);
+						allCells.push({
+							x: rcell.x,
+							y: rcell.y,
+							type: curExploration.type,
+						});
+					}
+				});
+				allCellsIndex++;
+			}
+			return allCells;
+		};
+		if (cube.type === CARD.VILLAGE) {
+			return;
+		}
+		const region = getRegion({ x: cube.position.x, y: cube.position.y });
+		console.log("region:", region);
+		if (
+			!region.some(
+				(reg) => reg.type === CARD.CAPITAL || reg.type === CARD.VILLAGE
+			)
+		) {
+			isolatedCube = true;
+		}
+	});
+	return !isolatedCube;
+}
+
 function validateClicked() {
 	// TODO: verifier si les conditions sont bonnes ?
-	// TODO: compter les points (comptoirs) remark: mettre les cubes tresors avant
-	// TODO: verifier si un objectif est atteint
+	if (!checkCubes()) {
+		uiManager.addLogger("Un cube est isolé");
+		return;
+	}
 	let treasureCubes = 0;
 	cubes.forEach((cube) => {
 		if (cube.type === CARD.VILLAGE) {
@@ -227,7 +287,6 @@ function getConnectedTrades() {
 			});
 			pathIndex++;
 		}
-		console.log("path:", path);
 		trades.forEach((otherTrade) => {
 			if (curTrade.x === otherTrade.x && curTrade.y === otherTrade.y) {
 				// Same trade
@@ -351,7 +410,7 @@ const validateButton = new BButton(
 	"Valider",
 	validateClicked
 );
-const undoButton = new BButton(530, 80, "Undo", undoClicked);
+const undoButton = new BButton(530, 80, "Annuler", undoClicked);
 
 class Randomizer {
 	constructor(seed) {
@@ -831,7 +890,7 @@ function blockGoal() {
 }
 
 function getBorderRuins() {
-	return ruins.some((ruin) => {
+	return ruins.filter((ruin) => {
 		const ring = getRing(ruin.x, ruin.y);
 		const border = ring.some((cell) => !cell.type);
 		return border;
@@ -1056,25 +1115,28 @@ function drawGame() {
 
 	// explication
 	fill(250);
-	if (playState === EXPLORATION_STATE) {
-		text("Cliquez sur la carte d'exploration (bord rouge)", 200, 980);
-	} else if (playState === CUBE_STATE) {
-		text("Posez des cubes", 200, 980);
-	} else if (playState === VILLAGE_STATE) {
-		text("Placez un village dans la région", 200, 980);
-	} else if (playState === SPECIALIZED_STATE) {
-		text("Choisissez une carte spécialité", 200, 980);
-	} else if (playState === TRADE_STATE) {
-		text(
-			"Cliquez sur une ville pour la transformer en comptoir commercial",
-			200,
-			980
-		);
+	if (age <= 4) {
+		if (playState === EXPLORATION_STATE) {
+			text("Cliquez sur la carte d'exploration (bord rouge)", 200, 980);
+		} else if (playState === CUBE_STATE) {
+			text("Posez des cubes", 200, 980);
+		} else if (playState === VILLAGE_STATE) {
+			text("Placez un village dans la région", 200, 980);
+		} else if (playState === SPECIALIZED_STATE) {
+			text("Choisissez une carte spécialité", 200, 980);
+		} else if (playState === TRADE_STATE) {
+			text(
+				"Cliquez sur une ville pour la transformer en comptoir commercial",
+				200,
+				980
+			);
+		}
 	}
 	if (age < 5) {
 		text(`Age ${age}`, 10, 980);
 	} else {
-		text("Fin du jeu", 10, 980);
+		text(`Fin du jeu: ${PV + PVTreasure} PV`, 10, 980);
+		drawScore();
 	}
 
 	if (overHelpButton) {
@@ -1085,6 +1147,28 @@ function drawGame() {
 			(windowHeight - 700) / 2
 		);
 	}
+}
+
+function drawScore() {
+	const score = PV + PVTreasure;
+	noFill();
+	strokeWeight(5);
+	stroke(50, 205, 50);
+	if (score < 90) {
+		stroke(205, 50, 50);
+	}
+	spritesheet.drawSprite("scores", 0, 786, 80);
+	rect(786, 80, 126, 80, 5);
+	if (score < 120) {
+		stroke(205, 50, 50);
+	}
+	spritesheet.drawSprite("scores", 1, 786, 380);
+	rect(786, 380, 126, 80, 5);
+	if (score < 150) {
+		stroke(205, 50, 50);
+	}
+	spritesheet.drawSprite("scores", 2, 786, 680);
+	rect(786, 680, 126, 80, 5);
 }
 
 function initGame() {}
