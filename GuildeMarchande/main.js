@@ -99,6 +99,7 @@ function startClicked() {
 	curState = GAME_PLAY_STATE;
 	uiManager.setUI([speakerButton, musicButton, ruleButton]);
 	uiManager.addLogger("A vous de jouer!");
+	soundManager.playSound("new_age");
 }
 
 function validateClicked() {
@@ -109,16 +110,19 @@ function validateClicked() {
 	cubes.forEach((cube) => {
 		if (cube.type === CARD.VILLAGE) {
 			transformCubeToVillage(cube.position.x, cube.position.y);
+			uiManager.addLogger(`village: + ${age} PV`);
 			PV += age;
 		}
 		const cell = board[cube.position.x][cube.position.y];
 		if (cell.type === CARD.TOWER) {
+			uiManager.addLogger(`tower: + ${towerPV[0]} PV`);
 			PV += towerPV.shift();
 		}
 		if (!cell.bonus) {
 			return;
 		}
 		if (cell.bonus.type === "piece") {
+			uiManager.addLogger(`piece: + ${cell.bonus.nb} PV`);
 			PV += cell.bonus.nb;
 		}
 		if (cell.bonus.type === "tresor") {
@@ -156,6 +160,7 @@ function validateClicked() {
 		for (let i = 0; i < treasureCubes; i++) {
 			cubes.push({ type: "joker", position: { x: 0, y: 0 } });
 		}
+		soundManager.playSound("new_cube");
 		return;
 	}
 	// tester les comptoirs
@@ -166,6 +171,8 @@ function validateClicked() {
 	checkGoals();
 	// compter les points de tresors
 	countPVTreasure();
+
+	soundManager.playSound("validate");
 }
 
 /**
@@ -493,6 +500,12 @@ function setup() {
 	canvas = createCanvas(windowWidth, windowHeight);
 	canvas.parent("canvas");
 
+	soundManager.addSound("take_card", "./take_card.mp3", 1);
+	soundManager.addSound("place_cube", "./place_cube.wav", 1);
+	soundManager.addSound("validate", "./validate.wav", 1);
+	soundManager.addSound("new_cube", "./new_cube.wav", 1);
+	soundManager.addSound("new_age", "./new_age.wav", 0.25);
+
 	frameRate(10);
 
 	initBoard();
@@ -741,6 +754,7 @@ function reachGoal(index) {
 	if (goals[index] === 0) {
 		// TODO: to check with solo mode
 		goals[index] = 10;
+		uiManager.addLogger(`goal: + ${10} PV`);
 		PV += 10;
 	}
 }
@@ -771,7 +785,17 @@ function checkGoals() {
 	) {
 		reachGoal(1);
 	}
-	// TODO: placez 2 comptoirs sur des villes 3+
+	// placez 2 comptoirs sur des villes 3+
+	let trades3 = 0;
+	knownTrades.forEach((cell) => {
+		const bcell = board[cell.x][cell.y];
+		if (bcell.bonus.nb >= 3) {
+			trades3 += 1;
+		}
+	});
+	if (trades3 >= 2) {
+		reachGoal(2);
+	}
 	// decouvrez villages sur les 3 types
 	const types = [false, false, false];
 	villages.forEach((village) => {
@@ -1039,6 +1063,14 @@ function draw() {
 			50,
 			1.5
 		);
+		if (overHelpButton) {
+			spritesheet.drawSprite(
+				"solo_rules",
+				0,
+				(windowWidth - 550) / 2,
+				(windowHeight - 700) / 2
+			);
+		}
 	}
 	if (curState === GAME_PLAY_STATE) {
 		updateGame(elapsedTime);
@@ -1079,6 +1111,7 @@ function newExplorationCard() {
 		age += 1;
 		if (age < 5) {
 			uiManager.addLogger("Nouvel age");
+			soundManager.playSound("new_age");
 		}
 		if (age === 2) {
 			for (let i = 0; i < 7; i++) {
@@ -1231,12 +1264,14 @@ function mouseClicked() {
 	uiManager.mouseClicked();
 	// le joueur clique sur la carte d'exploration pour en découvrir une nouvelle
 	if (playState === EXPLORATION_STATE && overExploration) {
+		soundManager.playSound("take_card");
 		newExplorationCard();
 		overExploration = false;
 	}
 	if (playState === CUBE_STATE && overCell) {
 		// check also if we can put a cube on this cell
 		if (addCube(overCell.x, overCell.y)) {
+			soundManager.playSound("place_cube");
 			// check if player needs to place a village
 			// 1. find region
 			const region = findRegion(overCell.x, overCell.y);
@@ -1268,6 +1303,7 @@ function mouseClicked() {
 						playState = VILLAGE_STATE;
 						validateButton.enabled = false;
 						villageRegion = region;
+						soundManager.playSound("new_cube");
 					}
 				}
 			}
@@ -1278,6 +1314,7 @@ function mouseClicked() {
 			type: CARD.VILLAGE,
 			position: { x: overCell.x, y: overCell.y },
 		});
+		soundManager.playSound("place_cube");
 		playState = CUBE_STATE;
 		// check if all cubes have been put on board
 		if (cubes.every((cube) => cube.position.x !== 0)) {
@@ -1304,7 +1341,7 @@ function mouseClicked() {
 				bestPV = PVTrade;
 			}
 		});
-		uiManager.addLogger(`+ ${bestPV} points`);
+		uiManager.addLogger(`trade: + ${bestPV} PV`);
 		PV += bestPV;
 		validateClicked();
 	}
