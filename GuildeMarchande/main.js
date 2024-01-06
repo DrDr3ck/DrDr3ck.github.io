@@ -19,6 +19,7 @@ const CUBE_STATE = "cube"; // poser des cubes
 const VILLAGE_STATE = "village"; // transformer un cube en village
 const SPECIALIZED_STATE = "specialites"; // choisir une carte spécialité parmi 2
 const SPECIALIZED_CARD_STATE = "quelle specialite ?"; // choisir une des 3 cartes spécialités
+const TRADE_STATE = "comptoir commercial";
 let playState = EXPLORATION_STATE;
 let toggleDebug = false;
 let lastTime = 0;
@@ -35,6 +36,7 @@ const CARD = {
 };
 
 let overCell = null;
+let overTrade = null;
 let overExploration = false;
 let overTreasure = false;
 let overHelpButton = false;
@@ -123,7 +125,7 @@ function validateClicked() {
 			// check if cube is a known ruin
 			// otherwise, pick a treasure card
 			if (
-				!ruines.some(
+				!ruins.some(
 					(rcell) => rcell.x === cube.position.x && rcell.y === cube.position.y
 				)
 			) {
@@ -133,7 +135,7 @@ function validateClicked() {
 				if (treasureIndex === 0) {
 					treasureCubes += 1;
 				}
-				ruines.push({ x: cube.position.x, y: cube.position.y });
+				ruins.push({ x: cube.position.x, y: cube.position.y });
 			}
 		}
 	});
@@ -156,9 +158,82 @@ function validateClicked() {
 		}
 		return;
 	}
+	// tester les comptoirs
+	connectedTrades = getConnectedTrades();
+	if (connectedTrades.length >= 1) {
+		playState = TRADE_STATE;
+	}
 	checkGoals();
 	// compter les points de tresors
 	countPVTreasure();
+}
+
+/**
+ * Checks if at least two trades are connected
+ * @returns list of connected trades
+ */
+function getConnectedTrades() {
+	const allTrades = [];
+	const isKnownTrade = (cell) => {
+		return knownTrades.findIndex((t) => t.x === cell.x && t.y === cell.y) >= 0;
+	};
+	const isTrade = (cell) => {
+		const bcell = board[cell.x][cell.y];
+		return bcell.bonus && bcell.bonus.type === "trade";
+	};
+	const trades = ageExploration.filter((cell) => {
+		if (isKnownTrade(cell)) {
+			// this trade has already been used
+			return false;
+		}
+		if (isTrade(cell)) {
+			return true;
+		}
+		return false;
+	});
+	if (trades.length < 2) {
+		return [];
+	}
+	const isCellInExploration = (rcell) => {
+		return ageExploration.some(
+			(exploration) => exploration.x === rcell.x && exploration.y === rcell.y
+		);
+	};
+	// check if trades[0] is connected to trades[1]
+	trades.forEach((curTrade) => {
+		const path = [{ x: curTrade.x, y: curTrade.y }];
+		const isCellInPath = (rcell) => {
+			return path.some((pcell) => pcell.x === rcell.x && pcell.y === rcell.y);
+		};
+		let pathIndex = 0;
+		while (pathIndex < path.length) {
+			const cell = path[pathIndex];
+			const ring = getRing(cell.x, cell.y);
+			ring.forEach((rcell) => {
+				if (isCellInExploration(rcell) && !isCellInPath(rcell)) {
+					path.push({ x: rcell.x, y: rcell.y });
+					if (isTrade(rcell) && !isKnownTrade(rcell)) {
+						pathIndex = 1000;
+					}
+				}
+			});
+			pathIndex++;
+		}
+		console.log("path:", path);
+		trades.forEach((otherTrade) => {
+			if (curTrade.x === otherTrade.x && curTrade.y === otherTrade.y) {
+				// Same trade
+				return;
+			}
+			if (
+				path.length > 1 &&
+				path.some((cell) => cell.x === otherTrade.x && cell.y === otherTrade.y)
+			) {
+				allTrades.push([curTrade, otherTrade]);
+			}
+		});
+	});
+	return allTrades;
 }
 
 function getVillages() {
@@ -319,7 +394,11 @@ const tresors = [];
 
 const regions = [];
 
-const ruines = [];
+const ruins = [];
+
+const knownTrades = [];
+
+let connectedTrades = [];
 
 const boarderRuins = [];
 
@@ -461,7 +540,7 @@ function drawCoffre(x, y) {
 	spritesheet.drawScaledSprite("coffre_pion", 0, X, Y, 0.65);
 }
 
-function drawComptoir(x, y) {
+function drawTrade(x, y) {
 	const cell = board[x][y];
 	const type = cell.type;
 	let typeIndex = 0;
@@ -488,12 +567,6 @@ function debugDrawBoard() {
 			debugDrawCase(cell.center.x, cell.center.y, cell.type, x, y, cell.bonus)
 		)
 	);
-	// teste comptoir
-	/*
-	drawComptoir(12, 2);
-	drawComptoir(12, 5);
-	drawComptoir(11, 12);
-	*/
 }
 
 function drawCube(x, y, alternative = false) {
@@ -673,7 +746,7 @@ function reachGoal(index) {
 }
 
 function getBorderRuins() {
-	return ruines.some((ruin) => {
+	return ruins.some((ruin) => {
 		const ring = getRing(ruin.x, ruin.y);
 		const border = ring.some((cell) => !cell.type);
 		return border;
@@ -731,7 +804,9 @@ function drawGame() {
 		debugDrawBoard();
 	} else {
 		// ruines
-		ruines.forEach((ruin) => drawCoffre(ruin.x, ruin.y));
+		ruins.forEach((ruin) => drawCoffre(ruin.x, ruin.y));
+		// comptoir commercial
+		knownTrades.forEach((trade) => drawTrade(trade.x, trade.y));
 		displayAgeExploration();
 	}
 	drawExploredCards();
@@ -847,6 +922,25 @@ function drawGame() {
 		}
 	}
 
+	if (playState === TRADE_STATE) {
+		connectedTrades.forEach((trades) => {
+			trades.forEach((trade) => {
+				const cell = board[trade.x][trade.y];
+				noFill();
+				strokeWeight(4);
+				stroke(250, 100, 100);
+				ellipse(cell.center.x + boardx, cell.center.y + boardy, 40);
+			});
+		});
+		if (overTrade) {
+			const cell = board[overTrade.x][overTrade.y];
+			noFill();
+			strokeWeight(4);
+			stroke(250);
+			ellipse(cell.center.x + boardx, cell.center.y + boardy, 45);
+		}
+	}
+
 	// goals
 	spritesheet.drawScaledSprite("goals", goalArray[0], 1435, 440 - 25, 0.5);
 	spritesheet.drawScaledSprite("goals", goalArray[1], 1435, 630 - 25, 0.5);
@@ -875,6 +969,12 @@ function drawGame() {
 		text("Placez un village dans la région", 200, 980);
 	} else if (playState === SPECIALIZED_STATE) {
 		text("Choisissez une carte spécialité", 200, 980);
+	} else if (playState === TRADE_STATE) {
+		text(
+			"Cliquez sur une ville pour la transformer en comptoir commercial",
+			200,
+			980
+		);
 	}
 	if (age < 5) {
 		text(`Age ${age}`, 10, 980);
@@ -1184,6 +1284,30 @@ function mouseClicked() {
 			validateButton.enabled = true;
 		}
 	}
+	if (playState === TRADE_STATE && overTrade) {
+		// transform town as trade
+		knownTrades.push(overTrade);
+		// find which trades is the best
+		let bestPV = 0;
+		connectedTrades.forEach((trades) => {
+			if (
+				!trades.some(
+					(trade) => trade.x === overTrade.x && trade.y === overTrade.y
+				)
+			) {
+				return;
+			}
+			const bTrade1 = board[trades[0].x][trades[0].y];
+			const bTrade2 = board[trades[1].x][trades[1].y];
+			const PVTrade = bTrade1.bonus.nb * bTrade2.bonus.nb;
+			if (PVTrade > bestPV) {
+				bestPV = PVTrade;
+			}
+		});
+		uiManager.addLogger(`+ ${bestPV} points`);
+		PV += bestPV;
+		validateClicked();
+	}
 	if (playState === SPECIALIZED_STATE && overSpecialization !== -1) {
 		// 1. put specialized card in the current Age
 		specialityCards.push(specialityArray[overSpecialization]);
@@ -1278,6 +1402,7 @@ function mouseMoved() {
 	overExploration = isOverExplorationCard();
 	overTreasure = isOverTreasure();
 	overCell = null;
+	overTrade = null;
 	overHelpButton = distance(1500, 40, mouseX, mouseY) < 25;
 	if (playState === CUBE_STATE) {
 		board.forEach((column, x) =>
@@ -1303,6 +1428,17 @@ function mouseMoved() {
 				overCell = { x: cell.x, y: cell.y };
 				return;
 			}
+		});
+	}
+	if (playState === TRADE_STATE) {
+		connectedTrades.forEach((trades) => {
+			trades.forEach((cell) => {
+				const bcell = board[cell.x][cell.y];
+				if (isOverCell(bcell.center.x + boardx, bcell.center.y + boardy)) {
+					overTrade = { x: cell.x, y: cell.y };
+					return;
+				}
+			});
 		});
 	}
 	overSpecialization = -1;
@@ -1452,16 +1588,16 @@ function initBoard() {
 	board[15][11].bonus = { type: "tresor" };
 	board[14][3].bonus = { type: "tresor" };
 	board[18][5].bonus = { type: "tresor" };
-	board[5][3].bonus = { type: "comptoir", nb: 3 };
-	board[1][6].bonus = { type: "comptoir", nb: 3 };
-	board[8][4].bonus = { type: "comptoir", nb: 3 };
-	board[12][2].bonus = { type: "comptoir", nb: 3 };
-	board[12][5].bonus = { type: "comptoir", nb: 2 };
-	board[5][11].bonus = { type: "comptoir", nb: 3 };
-	board[17][2].bonus = { type: "comptoir", nb: 3 };
-	board[17][7].bonus = { type: "comptoir", nb: 3 };
-	board[9][8].bonus = { type: "comptoir", nb: 2 };
-	board[11][12].bonus = { type: "comptoir", nb: 4 };
+	board[5][3].bonus = { type: "trade", nb: 3 };
+	board[1][6].bonus = { type: "trade", nb: 3 };
+	board[8][4].bonus = { type: "trade", nb: 3 };
+	board[12][2].bonus = { type: "trade", nb: 3 };
+	board[12][5].bonus = { type: "trade", nb: 2 };
+	board[5][11].bonus = { type: "trade", nb: 3 };
+	board[17][2].bonus = { type: "trade", nb: 3 };
+	board[17][7].bonus = { type: "trade", nb: 3 };
+	board[9][8].bonus = { type: "trade", nb: 2 };
+	board[11][12].bonus = { type: "trade", nb: 4 };
 	board[1][1].type = null;
 	board[1][2].type = null;
 	board[1][3].type = null;
