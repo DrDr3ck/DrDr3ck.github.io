@@ -82,6 +82,7 @@ function preload() {
 	spritesheet.addSpriteSheet("coffre_pion", "./coffre_pion.png", 80, 90);
 	spritesheet.addSpriteSheet("PV", "./PV.png", 136, 141);
 	spritesheet.addSpriteSheet("solo_rules", "./solo_rules.png", 550, 700);
+	spritesheet.addSpriteSheet("solo_pions", "./solo_pions.png", 72, 72);
 }
 
 function musicClicked() {
@@ -596,7 +597,21 @@ function drawGoalCube(column, row) {
 	stroke(0);
 	strokeWeight(1);
 	fill(250, 100, 100);
-	rect(1520 + 1000 * column, 530 + 190 * row, 20, 20);
+	rect(1520 + 100 * column, 530 + 190 * row, 20, 20);
+}
+
+function drawGoalPion(column, row) {
+	if (row === 0 && column === 0) {
+		spritesheet.drawScaledSprite("solo_pions", 0, 1500, 510, 1);
+	} else if (row === 0 && column === 1) {
+		spritesheet.drawScaledSprite("solo_pions", 1, 1605, 510, 1);
+	} else if (row === 1 && column === 0) {
+		spritesheet.drawScaledSprite("solo_pions", 2, 1500, 700, 1);
+	} else if (row === 1 && column === 1) {
+		spritesheet.drawScaledSprite("solo_pions", 3, 1605, 700, 1);
+	} else if (row === 2 && column === 0) {
+		spritesheet.drawScaledSprite("solo_pions", 4, 1500, 890, 1);
+	}
 }
 
 function drawVillage(x, y, alternative = false) {
@@ -729,7 +744,21 @@ function drawTreasure() {
 
 let goals = [0, 0, 0, 0, 0, 0];
 
+let blockGoalIndex = -1;
+
 function drawGoals() {
+	if (blockGoalIndex >= 0) {
+		drawGoalPion(0, 0);
+	}
+	if (blockGoalIndex >= 1) {
+		drawGoalPion(1, 0);
+		drawGoalPion(0, 1);
+	}
+	if (blockGoalIndex >= 2) {
+		drawGoalPion(1, 1);
+		drawGoalPion(0, 2);
+	}
+
 	goalArray.forEach((goal, index) => {
 		if (goals[goal] === 0) {
 			return;
@@ -737,6 +766,8 @@ function drawGoals() {
 			drawGoalCube(0, index);
 		} else if (goals[goal] === 5) {
 			drawGoalCube(1, index);
+		} else if (goals[goal] === 1) {
+			drawGoalCube(1.2, index - 0.5);
 		}
 	});
 }
@@ -752,10 +783,50 @@ function reachGoal(index) {
 	}
 	// add point accordingly
 	if (goals[index] === 0) {
-		// TODO: to check with solo mode
+		// check with solo mode
 		goals[index] = 10;
 		uiManager.addLogger(`goal: + ${10} PV`);
 		PV += 10;
+	} else if (goals[index] === -10) {
+		goals[index] = 5;
+		uiManager.addLogger(`goal: + ${5} PV`);
+		PV += 5;
+	} else if (goals[index] === -5) {
+		goals[index] = 1;
+		uiManager.addLogger(`goal: + ${0} PV`);
+	}
+}
+
+function blockGoal() {
+	if (age === 2) {
+		const index = goalArray[0];
+		// block first goal
+		if (goals[index] === 0) {
+			goals[index] = -10;
+			blockGoalIndex = 0;
+		}
+	}
+	if (age === 3) {
+		let index = goalArray[0];
+		if (goals[index] === -10) {
+			goals[index] = -5;
+		}
+		index = goalArray[1];
+		if (goals[index] === 0) {
+			goals[index] = -10;
+		}
+		blockGoalIndex = 1;
+	}
+	if (age === 4) {
+		let index = goalArray[1];
+		if (goals[index] === -10) {
+			goals[index] = -5;
+		}
+		index = goalArray[2];
+		if (goals[index] === 0) {
+			goals[index] = -10;
+		}
+		blockGoalIndex = 2;
 	}
 }
 
@@ -1176,6 +1247,7 @@ function newExplorationCard() {
 			if (age === 2) {
 				// player needs to choose a specialized card between two
 				playState = SPECIALIZED_STATE;
+				blockGoal();
 			} else {
 				prepareCube2Play(specialityCards[1]);
 			}
@@ -1184,12 +1256,14 @@ function newExplorationCard() {
 			if (age === 3) {
 				// player needs to choose a specialized card between two
 				playState = SPECIALIZED_STATE;
+				blockGoal();
 			} else {
 				prepareCube2Play(specialityCards[2]);
 			}
 		} else if (ageCards[0] === 8) {
 			// I/II/III
 			playState = SPECIALIZED_CARD_STATE;
+			blockGoal();
 		}
 	}
 	if (playState === CUBE_STATE) {
