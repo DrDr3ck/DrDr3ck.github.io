@@ -130,18 +130,18 @@ function setTresorBonus(bonus) {
 	tresorBonus = bonus;
 }
 
+const sameCells = (c1, c2) => {
+	return c1.x === c2.x && c1.y === c2.y;
+};
+
 const findExplorationCell = (cell) => {
-	const index = ageExploration.findIndex(
-		(explo) => explo.x === cell.x && explo.y === cell.y
-	);
+	const index = ageExploration.findIndex((explo) => sameCells(explo, cell));
 	return ageExploration[index];
 };
 
 function checkCubes() {
 	const isCellInExploration = (rcell) => {
-		return ageExploration.some(
-			(exploration) => exploration.x === rcell.x && exploration.y === rcell.y
-		);
+		return ageExploration.some((exploration) => sameCells(exploration, rcell));
 	};
 	let isolatedCube = false;
 	cubes.forEach((cube) => {
@@ -150,9 +150,7 @@ function checkCubes() {
 			const allCells = [{ x: exploration.x, y: exploration.y, type: "cube" }];
 			let allCellsIndex = 0;
 			const isCellInPath = (rcell) => {
-				return allCells.some(
-					(pcell) => pcell.x === rcell.x && pcell.y === rcell.y
-				);
+				return allCells.some((pcell) => sameCells(pcell, rcell));
 			};
 			while (allCellsIndex < allCells.length) {
 				const cell = allCells[allCellsIndex];
@@ -247,8 +245,7 @@ function checkCenteredCubes(centeredCubes) {
 	const firstCell = centeredCubes.shift();
 	const cells = getRing(firstCell.x, firstCell.y);
 	return centeredCubes.every(
-		(cube) =>
-			cells.findIndex((cell) => cell.x === cube.x && cell.y === cube.y) >= 0
+		(cube) => cells.findIndex((cell) => sameCells(cell, cube)) >= 0
 	);
 }
 
@@ -294,8 +291,7 @@ function checkAlignedCubes(alignedCubes) {
 			return false;
 		}
 		return alignedCubes.every(
-			(cube) =>
-				cells.findIndex((cell) => cell.x === cube.x && cell.y === cube.y) >= 0
+			(cube) => cells.findIndex((cell) => sameCells(cell, cube)) >= 0
 		);
 	}
 	// case 3: aligned South-East
@@ -310,8 +306,7 @@ function checkAlignedCubes(alignedCubes) {
 			return false;
 		}
 		return alignedCubes.every(
-			(cube) =>
-				cells.findIndex((cell) => cell.x === cube.x && cell.y === cube.y) >= 0
+			(cube) => cells.findIndex((cell) => sameCells(cell, cube)) >= 0
 		);
 	}
 	// strange case...
@@ -347,7 +342,7 @@ function validateClicked() {
 		if (cell.bonus.type === "tresor") {
 			// check if cube is a known ruin
 			// otherwise, pick a treasure card
-			if (!ruins.some((rcell) => rcell.x === cube.x && rcell.y === cube.y)) {
+			if (!ruins.some((rcell) => sameCells(rcell, cube))) {
 				// piocher un tresor
 				for (let t = 0; t < tresorBonus; t++) {
 					const treasureIndex = tresorArray.shift();
@@ -401,7 +396,7 @@ function validateClicked() {
 function getConnectedTrades() {
 	const allTrades = [];
 	const isKnownTrade = (cell) => {
-		return knownTrades.findIndex((t) => t.x === cell.x && t.y === cell.y) >= 0;
+		return knownTrades.findIndex((t) => sameCells(t, cell)) >= 0;
 	};
 	const isTrade = (cell) => {
 		const bcell = board[cell.x][cell.y];
@@ -421,15 +416,13 @@ function getConnectedTrades() {
 		return [];
 	}
 	const isCellInExploration = (rcell) => {
-		return ageExploration.some(
-			(exploration) => exploration.x === rcell.x && exploration.y === rcell.y
-		);
+		return ageExploration.some((exploration) => sameCells(exploration, rcell));
 	};
 	// check if trades[0] is connected to trades[1]
 	trades.forEach((curTrade) => {
 		const path = [{ x: curTrade.x, y: curTrade.y }];
 		const isCellInPath = (rcell) => {
-			return path.some((pcell) => pcell.x === rcell.x && pcell.y === rcell.y);
+			return path.some((pcell) => sameCells(pcell, rcell));
 		};
 		let pathIndex = 0;
 		while (pathIndex < path.length) {
@@ -446,14 +439,11 @@ function getConnectedTrades() {
 			pathIndex++;
 		}
 		trades.forEach((otherTrade) => {
-			if (curTrade.x === otherTrade.x && curTrade.y === otherTrade.y) {
+			if (sameCells(curTrade, otherTrade)) {
 				// Same trade
 				return;
 			}
-			if (
-				path.length > 1 &&
-				path.some((cell) => cell.x === otherTrade.x && cell.y === otherTrade.y)
-			) {
+			if (path.length > 1 && path.some((cell) => sameCells(cell, otherTrade))) {
 				allTrades.push([curTrade, otherTrade]);
 			}
 		});
@@ -662,9 +652,21 @@ function undoCube(cubeIndex) {
 	validateButton.enabled = false;
 }
 
+function checkType(cell, type, withTower = false) {
+	if (type === CARD.JOKER) {
+		return true;
+	}
+	if (withTower && cell.type === CARD.TOWER) {
+		return true;
+	}
+	return cell.type === type;
+}
+
 function addCube(x, y) {
 	// check if cube not already added
-	if (ageExploration.findIndex((cell) => cell.x === x && cell.y === y) >= 0) {
+	if (
+		ageExploration.findIndex((cell) => sameCells(cell, { x: x, y: y })) >= 0
+	) {
 		return false;
 	}
 	const cell = board[x][y];
@@ -675,18 +677,22 @@ function addCube(x, y) {
 		[CONSTRAINT.CENTERED, CONSTRAINT.ALIGNED].includes(constraint)
 	) {
 		// first cube
-		if (cell.type !== cubes[0].type && cubes[0].type !== CARD.JOKER) {
+		if (!checkType(cell, cubes[0].type)) {
+			return false;
+		}
+		// check that first cube is next to an existing cube
+		const ring = getRing(x, y);
+		if (
+			!ring.some(
+				(r) => ageExploration.findIndex((explo) => sameCells(explo, r)) >= 0
+			)
+		) {
 			return false;
 		}
 	}
-	console.log("cubes", cubes);
 	// TODO: if aligned/centered and first cube, should explore type of first playable cube
 	const cubeIndex = cubes.findIndex(
-		(c) =>
-			(c.type === CARD.JOKER ||
-				c.type === cell.type ||
-				cell.type === CARD.TOWER) &&
-			c.x === 0
+		(c) => checkType(cell, c.type) && c.x === 0
 	);
 	if (cubeIndex === -1) {
 		// pas de cube dispo pour ce type
@@ -707,8 +713,8 @@ function addCube(x, y) {
 }
 
 function transformCubeToVillage(x, y) {
-	const index = ageExploration.findIndex(
-		(cell) => cell.x === x && cell.y === y
+	const index = ageExploration.findIndex((cell) =>
+		sameCells(cell, { x: x, y: y })
 	);
 	if (index >= 0) {
 		ageExploration[index].type = CARD.VILLAGE;
@@ -1622,7 +1628,7 @@ function prepareCube2Play(specialityCardIndex) {
 
 function findRegion(x, y) {
 	const regionIndex = regions.findIndex((region) => {
-		if (region.cells.some((cell) => cell.x === x && cell.y === y)) {
+		if (region.cells.some((cell) => sameCells(cell, { x: x, y: y }))) {
 			return true;
 		}
 		return false;
@@ -1655,17 +1661,13 @@ function mouseClicked() {
 			if (region) {
 				// 2. check if region is full
 				const isFull = region.cells.every((cell) =>
-					ageExploration.some(
-						(exploration) =>
-							cell.x === exploration.x && cell.y === exploration.y
-					)
+					ageExploration.some((exploration) => sameCells(cell, exploration))
 				);
 				if (isFull) {
 					// 3. check if region already contains a village
 					const hasVillage = region.cells.some((cell) => {
-						const cellIndex = ageExploration.findIndex(
-							(exploration) =>
-								cell.x === exploration.x && cell.y === exploration.y
+						const cellIndex = ageExploration.findIndex((exploration) =>
+							sameCells(cell, exploration)
 						);
 						if (
 							cellIndex >= 0 &&
@@ -1705,11 +1707,7 @@ function mouseClicked() {
 		// find which trades is the best
 		let bestPV = 0;
 		connectedTrades.forEach((trades) => {
-			if (
-				!trades.some(
-					(trade) => trade.x === overTrade.x && trade.y === overTrade.y
-				)
-			) {
+			if (!trades.some((trade) => sameCells(trade, overTrade))) {
 				return;
 			}
 			const bTrade1 = board[trades[0].x][trades[0].y];
