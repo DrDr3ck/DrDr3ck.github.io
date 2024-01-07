@@ -187,6 +187,13 @@ function checkCubes() {
 	if (constraint === CONSTRAINT.FREE) {
 		return "ok";
 	} else if (constraint === CONSTRAINT.CONSECUTIVE) {
+		if (
+			checkConsecutiveCubes(cubes.filter((cube) => cube.type !== CARD.VILLAGE))
+		) {
+			return "ok";
+		} else {
+			return "Le chemin est interrompu";
+		}
 	} else if (constraint === CONSTRAINT.ALIGNED) {
 		if (checkAlignedCubes(cubes.filter((cube) => cube.type !== CARD.VILLAGE))) {
 			return "ok";
@@ -247,6 +254,28 @@ function checkCenteredCubes(centeredCubes) {
 	return centeredCubes.every(
 		(cube) => cells.findIndex((cell) => sameCells(cell, cube)) >= 0
 	);
+}
+
+function checkConsecutiveCubes(consecutiveCubes) {
+	const path = [consecutiveCubes[0]];
+	const isCellInPath = (rcell) => {
+		return path.some((pcell) => sameCells(pcell, rcell));
+	};
+	const isCellInCubes = (rcell) => {
+		return consecutiveCubes.some((pcell) => sameCells(pcell, rcell));
+	};
+	let pathIndex = 0;
+	while (pathIndex < path.length) {
+		const cell = path[pathIndex];
+		const ring = getRing(cell.x, cell.y);
+		ring.forEach((rcell) => {
+			if (isCellInCubes(rcell) && !isCellInPath(rcell)) {
+				path.push({ x: rcell.x, y: rcell.y });
+			}
+		});
+		pathIndex++;
+	}
+	return path.length === consecutiveCubes.length;
 }
 
 function checkAlignedCubes(alignedCubes) {
@@ -612,7 +641,10 @@ const ageCards = [0, 1, 2, 3, 4, 5];
 randomizer.shuffleArray(ageCards);
 ageCards.unshift(9);
 
-const specialityArray = [1, 2, 3, 4, 5, 9, 13, 18, 20, 21, 23, 24, 25, 26, 27]; // [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28];
+const specialityArray = [
+	1, 2, 3, 4, 5, 9, 13, 14, 15, 18, 19, 20, 21, 23, 24, 25, 26, 27,
+];
+// [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28];
 randomizer.shuffleArray(specialityArray);
 
 const tresorArray = [
@@ -652,14 +684,14 @@ function undoCube(cubeIndex) {
 	validateButton.enabled = false;
 }
 
-function checkType(cell, type, withTower = false) {
-	if (type === CARD.JOKER) {
+function checkType(cell, types, withTower = false) {
+	if (types[0] === CARD.JOKER) {
 		return true;
 	}
 	if (withTower && cell.type === CARD.TOWER) {
 		return true;
 	}
-	return cell.type === type;
+	return types.includes(cell.type);
 }
 
 function addCube(x, y) {
@@ -677,7 +709,7 @@ function addCube(x, y) {
 		[CONSTRAINT.CENTERED, CONSTRAINT.ALIGNED].includes(constraint)
 	) {
 		// first cube
-		if (!checkType(cell, cubes[0].type)) {
+		if (!checkType(cell, cubes[0].type.split("|"))) {
 			return false;
 		}
 		// check that first cube is next to an existing cube
@@ -691,7 +723,7 @@ function addCube(x, y) {
 		}
 	}
 	const cubeIndex = cubes.findIndex(
-		(c) => checkType(cell, c.type, true) && c.x === 0
+		(c) => checkType(cell, c.type.split("|"), true) && c.x === 0
 	);
 	if (cubeIndex === -1) {
 		// pas de cube dispo pour ce type
@@ -1589,9 +1621,21 @@ function prepareCube2Play(specialityCardIndex) {
 		addCube2Play(CARD.MOUNTAIN, 1);
 		addCube2Play(CARD.JOKER, 5);
 	}
+	if (specialityCardIndex === 14) {
+		setConstraint(CONSTRAINT.CONSECUTIVE);
+		addCube2Play(`${CARD.GRASSLAND}|${CARD.SEA}`, 5);
+	}
+	if (specialityCardIndex === 15) {
+		setConstraint(CONSTRAINT.CONSECUTIVE);
+		addCube2Play(`${CARD.SAND}|${CARD.SEA}`, 5);
+	}
 	if (specialityCardIndex === 18) {
 		addCube2Play(CARD.SEA, 4);
 		setTresorBonus(2);
+	}
+	if (specialityCardIndex === 19) {
+		setConstraint(CONSTRAINT.CONSECUTIVE);
+		addCube2Play(`${CARD.MOUNTAIN}|${CARD.SEA}`, 4);
 	}
 	if (specialityCardIndex === 20) {
 		addCube2Play(CARD.SEA, 5);
@@ -2240,6 +2284,14 @@ function test() {
 	];
 	expectLength(getBorderRuins(), 2, "error in getBorderRuins");
 
+	const cell = board[17][6];
+	expect(checkType(cell, [CARD.GRASSLAND]), "error in checkType 1");
+	expect(!checkType(cell, [CARD.SAND]), "error in checkType 2");
+	expect(checkType(cell, [CARD.SAND, CARD.GRASSLAND]), "error in checkType 3");
+	const tower = board[18][1];
+	expect(checkType(tower, [CARD.SEA], true), "error in checkType 4");
+	expect(!checkType(tower, [CARD.SEA]), "error in checkType 5");
+
 	expectLength(
 		getAllCells("NE", { x: 9, y: 10 }, { x: 14, y: 8 }),
 		6,
@@ -2283,6 +2335,28 @@ function test() {
 			{ x: 11, y: 4 },
 		]),
 		"error in checkAlignedCubes 5"
+	);
+
+	expect(
+		!checkConsecutiveCubes([
+			{ x: 12, y: 5 },
+			{ x: 12, y: 6 },
+			{ x: 13, y: 5 },
+			{ x: 14, y: 7 },
+			{ x: 14, y: 8 },
+		]),
+		"error in checkConsecutiveCubes 1"
+	);
+
+	expect(
+		checkConsecutiveCubes([
+			{ x: 12, y: 5 },
+			{ x: 12, y: 6 },
+			{ x: 13, y: 5 },
+			{ x: 14, y: 6 },
+			{ x: 15, y: 6 },
+		]),
+		"error in checkConsecutiveCubes 2"
 	);
 
 	expect(
