@@ -195,6 +195,14 @@ function checkCubes() {
 		} else {
 			return "Des cubes ne sont pas bien alignés";
 		}
+	} else if (constraint === CONSTRAINT.CENTERED) {
+		if (
+			checkCenteredCubes(cubes.filter((cube) => cube.type !== CARD.VILLAGE))
+		) {
+			return "ok";
+		} else {
+			return "Des cubes ne sont pas adjacents";
+		}
 	}
 	return "ok";
 }
@@ -233,6 +241,15 @@ function getAllCells(direction, firstCell, lastCell) {
 		cells.push(lastCell);
 	}
 	return cells;
+}
+
+function checkCenteredCubes(centeredCubes) {
+	const firstCell = centeredCubes.shift();
+	const cells = getRing(firstCell.x, firstCell.y);
+	return centeredCubes.every(
+		(cube) =>
+			cells.findIndex((cell) => cell.x === cube.x && cell.y === cube.y) >= 0
+	);
 }
 
 function checkAlignedCubes(alignedCubes) {
@@ -343,6 +360,7 @@ function validateClicked() {
 			}
 		}
 	});
+	setTresorBonus(1);
 	setPieceBonus(1);
 	// nettoyer cubes et constraint
 	cubes = [];
@@ -604,7 +622,7 @@ const ageCards = [0, 1, 2, 3, 4, 5];
 randomizer.shuffleArray(ageCards);
 ageCards.unshift(9);
 
-const specialityArray = [1, 2, 3, 4, 5, 9, 18, 20, 24, 25, 26]; // [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28];
+const specialityArray = [1, 2, 3, 4, 5, 9, 13, 18, 20, 21, 23, 24, 25, 26, 27]; // [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28];
 randomizer.shuffleArray(specialityArray);
 
 const tresorArray = [
@@ -652,7 +670,17 @@ function addCube(x, y) {
 	const cell = board[x][y];
 	// check if cube can be pushed
 	// TODO: constraint
-	// TODO: if aligned and first cube, should explore type of first playable cube
+	if (
+		cubes.filter((c) => c.x !== 0 && c.y !== 0).length === 0 &&
+		[CONSTRAINT.CENTERED, CONSTRAINT.ALIGNED].includes(constraint)
+	) {
+		// first cube
+		if (cell.type !== cubes[0].type && cubes[0].type !== CARD.JOKER) {
+			return false;
+		}
+	}
+	console.log("cubes", cubes);
+	// TODO: if aligned/centered and first cube, should explore type of first playable cube
 	const cubeIndex = cubes.findIndex(
 		(c) =>
 			(c.type === CARD.JOKER ||
@@ -1049,7 +1077,10 @@ function blockGoal() {
 function getBorderRuins() {
 	return ruins.filter((ruin) => {
 		const ring = getRing(ruin.x, ruin.y);
-		const border = ring.some((cell) => !cell.type);
+		const border = ring.some((cell) => {
+			const bcell = board[cell.x][cell.y];
+			return !bcell.type;
+		});
 		return border;
 	});
 }
@@ -1522,7 +1553,6 @@ function addValidateButton() {
 
 function prepareCube2Play(specialityCardIndex) {
 	setConstraint(CONSTRAINT.FREE);
-	// [1,2,3,4,20,24,25]
 	if (specialityCardIndex === 1) {
 		addCube2Play(CARD.SEA, 2);
 		addCube2Play(CARD.SAND, 1);
@@ -1549,12 +1579,27 @@ function prepareCube2Play(specialityCardIndex) {
 		setPieceBonus(3);
 		addCube2Play(CARD.SEA, 4);
 	}
+	if (specialityCardIndex === 13) {
+		setConstraint(CONSTRAINT.CENTERED);
+		addCube2Play(CARD.MOUNTAIN, 1);
+		addCube2Play(CARD.JOKER, 5);
+	}
 	if (specialityCardIndex === 18) {
 		addCube2Play(CARD.SEA, 4);
 		setTresorBonus(2);
 	}
 	if (specialityCardIndex === 20) {
 		addCube2Play(CARD.SEA, 5);
+	}
+	if (specialityCardIndex === 21) {
+		setConstraint(CONSTRAINT.CENTERED);
+		addCube2Play(CARD.GRASSLAND, 1);
+		addCube2Play(CARD.JOKER, 5);
+	}
+	if (specialityCardIndex === 23) {
+		setConstraint(CONSTRAINT.CENTERED);
+		addCube2Play(CARD.SEA, 1);
+		addCube2Play(CARD.JOKER, 5);
 	}
 	if (specialityCardIndex === 24) {
 		addCube2Play(CARD.SEA, 1);
@@ -1567,6 +1612,11 @@ function prepareCube2Play(specialityCardIndex) {
 	if (specialityCardIndex === 26) {
 		setPieceBonus(3);
 		addCube2Play(CARD.GRASSLAND, 4);
+	}
+	if (specialityCardIndex === 27) {
+		setConstraint(CONSTRAINT.CENTERED);
+		addCube2Play(CARD.SAND, 1);
+		addCube2Play(CARD.JOKER, 5);
 	}
 }
 
@@ -2185,6 +2235,14 @@ function test() {
 	age = 2;
 	blockGoal();
 
+	// ruins
+	ruins = [
+		{ x: 18, y: 5 },
+		{ x: 14, y: 3 },
+		{ x: 8, y: 2 },
+	];
+	expectLength(getBorderRuins(), 2, "error in getBorderRuins");
+
 	expectLength(
 		getAllCells("NE", { x: 9, y: 10 }, { x: 14, y: 8 }),
 		6,
@@ -2228,6 +2286,25 @@ function test() {
 			{ x: 11, y: 4 },
 		]),
 		"error in checkAlignedCubes 5"
+	);
+
+	expect(
+		checkCenteredCubes([
+			{ x: 12, y: 5 },
+			{ x: 11, y: 4 },
+			{ x: 12, y: 4 },
+			{ x: 13, y: 4 },
+			{ x: 13, y: 5 },
+		]),
+		"error in checkCenteredCubes 1"
+	);
+
+	expect(
+		!checkCenteredCubes([
+			{ x: 12, y: 5 },
+			{ x: 13, y: 6 },
+		]),
+		"error in checkCenteredCubes 2"
 	);
 }
 
