@@ -670,8 +670,8 @@ function addCube(x, y) {
 		return false;
 	}
 	const cell = board[x][y];
-	// check if cube can be pushed
 	// TODO: constraint
+	// if aligned/centered and first cube, should explore type of first playable cube
 	if (
 		cubes.filter((c) => c.x !== 0 && c.y !== 0).length === 0 &&
 		[CONSTRAINT.CENTERED, CONSTRAINT.ALIGNED].includes(constraint)
@@ -690,9 +690,8 @@ function addCube(x, y) {
 			return false;
 		}
 	}
-	// TODO: if aligned/centered and first cube, should explore type of first playable cube
 	const cubeIndex = cubes.findIndex(
-		(c) => checkType(cell, c.type) && c.x === 0
+		(c) => checkType(cell, c.type, true) && c.x === 0
 	);
 	if (cubeIndex === -1) {
 		// pas de cube dispo pour ce type
