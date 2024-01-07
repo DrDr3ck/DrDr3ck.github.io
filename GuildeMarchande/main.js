@@ -35,6 +35,8 @@ const CARD = {
 	VILLAGE: "village",
 };
 
+let map = "avenia";
+
 const CONSTRAINT = {
 	FREE: "none",
 	CONSECUTIVE: "consecutive",
@@ -76,6 +78,7 @@ if (!seed) {
 function preload() {
 	spritesheet.addSpriteSheet("cover", "./cover.png", 686, 503);
 	spritesheet.addSpriteSheet("avenia", "./avenia.png", 1680, 1405);
+	spritesheet.addSpriteSheet("aghon", "./aghon.png", 1680, 1405);
 	spritesheet.addSpriteSheet("exploration", "./exploration.png", 840, 588);
 	spritesheet.addSpriteSheet(
 		"exploration_cards",
@@ -110,8 +113,28 @@ function speakerClicked() {
 	localStorage.setItem(speakerStorageKey, speakerButton.checked ? "on" : "off");
 }
 
+function startAveniaClicked() {
+	map = "avenia";
+	startClicked();
+}
+
+function startAghonClicked() {
+	map = "aghon";
+	startClicked();
+}
+
+function startCnidariaClicked() {
+	map = "cnidaria";
+	startClicked();
+}
+
+function startKazanClicked() {
+	map = "kazan";
+	startClicked();
+}
+
 function startClicked() {
-	initBoard();
+	initBoard(map);
 	computeRegions();
 	cubes = [];
 	initGoalsAndTreasures();
@@ -578,24 +601,29 @@ const aveniaButton = new BButton(
 	140,
 	windowHeight - 120,
 	"AVENIA",
-	startClicked
+	startAveniaClicked
 );
 
 const aghonButton = new BButton(
 	1070,
 	windowHeight - 120,
 	"AGHON",
-	startClicked
+	startAghonClicked
 );
 
 const cnidariaButton = new BButton(
 	140,
 	windowHeight - 30,
 	"CNIDARIA",
-	startClicked
+	startCnidariaClicked
 );
 
-const kazanButton = new BButton(1070, windowHeight - 30, "KAZAN", startClicked);
+const kazanButton = new BButton(
+	1070,
+	windowHeight - 30,
+	"KAZAN",
+	startKazanClicked
+);
 
 const validateButton = new BButton(
 	630,
@@ -1177,7 +1205,7 @@ function checkGoals() {
 }
 
 function drawGame() {
-	spritesheet.drawScaledSprite("avenia", 0, boardx, boardy, 0.65);
+	spritesheet.drawScaledSprite(map, 0, boardx, boardy, 0.65);
 	spritesheet.drawScaledSprite("exploration", 0, 1150, boardy, 0.65);
 	if (toggleDebug) {
 		debugDrawBoard();
@@ -1416,7 +1444,12 @@ function drawLoading() {
 		textAlign(LEFT, BASELINE);
 		uiManager.addLogger("Bienvenue");
 
-		if (document.location.toString().includes("seed=")) {
+		if (
+			document.location.toString().includes("seed=") &&
+			document.location.toString().includes("map=")
+		) {
+			// TODO - get map
+			map = "avenia";
 			startClicked();
 		}
 	}
