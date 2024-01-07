@@ -35,6 +35,13 @@ const CARD = {
 	VILLAGE: "village",
 };
 
+const CONSTRAINT = {
+	FREE: "none",
+	CONSECUTIVE: "consecutive",
+	ALIGNED: "aligned",
+	CENTERED: "centered",
+};
+
 let overCell = null;
 let overTrade = null;
 let overExploration = false;
@@ -50,10 +57,13 @@ let villageRegion = null;
 let goals = [0, 0, 0, 0, 0, 0];
 let blockGoalIndex = -1;
 
+let pieceBonus = 1;
+let tresorBonus = 1;
+
 const towerPV = [6, 8, 10, 14];
 
 let cubes = [];
-let constraint = "none";
+let constraint = CONSTRAINT.FREE;
 
 const queryString = window.location.search;
 const urlParams = new URLSearchParams(queryString);
@@ -112,6 +122,14 @@ function startClicked() {
 	soundManager.playSound("new_age");
 }
 
+function setPieceBonus(bonus) {
+	pieceBonus = bonus;
+}
+
+function setTresorBonus(bonus) {
+	tresorBonus = bonus;
+}
+
 const findExplorationCell = (cell) => {
 	const index = ageExploration.findIndex(
 		(explo) => explo.x === cell.x && explo.y === cell.y
@@ -157,7 +175,6 @@ function checkCubes() {
 			return;
 		}
 		const region = getRegion({ x: cube.x, y: cube.y });
-		console.log("region:", region);
 		if (
 			!region.some(
 				(reg) => reg.type === CARD.CAPITAL || reg.type === CARD.VILLAGE
@@ -166,13 +183,129 @@ function checkCubes() {
 			isolatedCube = true;
 		}
 	});
-	return !isolatedCube;
+	if (isolatedCube) {
+		return "Un cube est isolé";
+	}
+	if (constraint === CONSTRAINT.FREE) {
+		return "ok";
+	} else if (constraint === CONSTRAINT.CONSECUTIVE) {
+	} else if (constraint === CONSTRAINT.ALIGNED) {
+		if (checkAlignedCubes(cubes.filter((cube) => cube.type !== CARD.VILLAGE))) {
+			return "ok";
+		} else {
+			return "Des cubes ne sont pas bien alignés";
+		}
+	}
+	return "ok";
+}
+
+function nextCell(cell, direction) {
+	let next = null;
+	if (direction === "NE") {
+		if (cell.x % 2 === 0) {
+			next = { x: cell.x + 1, y: cell.y - 1 };
+		} else {
+			next = { x: cell.x + 1, y: cell.y };
+		}
+	} else {
+		// direction  === SE
+		if (cell.x % 2 === 0) {
+			next = { x: cell.x + 1, y: cell.y };
+		} else {
+			next = { x: cell.x + 1, y: cell.y + 1 };
+		}
+	}
+	next.type = board[next.x][next.y].type;
+	return next;
+}
+
+function getAllCells(direction, firstCell, lastCell) {
+	const cells = [firstCell];
+	let curCell = nextCell(cells[cells.length - 1], direction);
+	while (
+		curCell.type !== null &&
+		(curCell.x !== lastCell.x || curCell.y !== lastCell.y)
+	) {
+		cells.push(curCell);
+		curCell = nextCell(cells[cells.length - 1], direction);
+	}
+	if (curCell.type !== null) {
+		cells.push(lastCell);
+	}
+	return cells;
+}
+
+function checkAlignedCubes(alignedCubes) {
+	let lowerCell = alignedCubes[0];
+	alignedCubes.forEach((cube) => {
+		if (cube.x < lowerCell.x) {
+			lowerCell = cube;
+		} else if (cube.x === lowerCell.x && cube.y < lowerCell.y) {
+			lowerCell = cube;
+		}
+	});
+	let upperCell = alignedCubes[0];
+	alignedCubes.forEach((cube) => {
+		if (cube.x > upperCell.x) {
+			upperCell = cube;
+		} else if (cube.x === upperCell.x && cube.y > upperCell.y) {
+			upperCell = cube;
+		}
+	});
+	// case 1: aligned vertically
+	if (lowerCell.x === upperCell.x) {
+		for (let y = lowerCell.y; y <= upperCell.y; y++) {
+			if (
+				alignedCubes.findIndex(
+					(cube) => cube.x === lowerCell.x && cube.y === y
+				) < 0
+			) {
+				return false;
+			}
+		}
+		return alignedCubes.every((cube) => cube.x === lowerCell.x);
+	}
+	// case 2: aligned North-East
+	if (
+		lowerCell.y > upperCell.y ||
+		(lowerCell.y === upperCell.y &&
+			lowerCell.x % 2 === 1 &&
+			lowerCell.x < upperCell.x)
+	) {
+		const cells = getAllCells("NE", lowerCell, upperCell);
+		if (cells.length !== alignedCubes.length) {
+			return false;
+		}
+		return alignedCubes.every(
+			(cube) =>
+				cells.findIndex((cell) => cell.x === cube.x && cell.y === cube.y) >= 0
+		);
+	}
+	// case 3: aligned South-East
+	if (
+		lowerCell.y < upperCell.y ||
+		(lowerCell.y === upperCell.y &&
+			lowerCell.x % 2 === 0 &&
+			lowerCell.x < upperCell.x)
+	) {
+		const cells = getAllCells("SE", lowerCell, upperCell);
+		if (cells.length !== alignedCubes.length) {
+			return false;
+		}
+		return alignedCubes.every(
+			(cube) =>
+				cells.findIndex((cell) => cell.x === cube.x && cell.y === cube.y) >= 0
+		);
+	}
+	// strange case...
+	return false;
 }
 
 function validateClicked() {
 	// TODO: verifier si les conditions sont bonnes ?
-	if (!checkCubes()) {
-		uiManager.addLogger("Un cube est isolé");
+	const condition = checkCubes();
+	if (condition !== "ok") {
+		uiManager.addLogger(condition);
 		return;
 	}
 	let treasureCubes = 0;
@@ -191,26 +324,29 @@ function validateClicked() {
 			return;
 		}
 		if (cell.bonus.type === "piece") {
-			uiManager.addLogger(`piece: + ${cell.bonus.nb} PV`);
-			PV += cell.bonus.nb;
+			uiManager.addLogger(`piece: + ${cell.bonus.nb * pieceBonus} PV`);
+			PV += cell.bonus.nb * pieceBonus;
 		}
 		if (cell.bonus.type === "tresor") {
 			// check if cube is a known ruin
 			// otherwise, pick a treasure card
 			if (!ruins.some((rcell) => rcell.x === cube.x && rcell.y === cube.y)) {
 				// piocher un tresor
-				const treasureIndex = tresorArray.shift();
-				tresors.push(treasureIndex);
-				if (treasureIndex === 0) {
-					treasureCubes += 1;
+				for (let t = 0; t < tresorBonus; t++) {
+					const treasureIndex = tresorArray.shift();
+					tresors.push(treasureIndex);
+					if (treasureIndex === 0) {
+						treasureCubes += 1;
+					}
 				}
 				ruins.push({ x: cube.x, y: cube.y });
 			}
 		}
 	});
+	setPieceBonus(1);
 	// nettoyer cubes et constraint
 	cubes = [];
-	constraint = "none";
+	constraint = CONSTRAINT.FREE;
 	// passer à la carte exploration suivante
 	validateButton.enabled = false;
 	if (treasureCubes === 0) {
@@ -468,7 +604,7 @@ const ageCards = [0, 1, 2, 3, 4, 5];
 randomizer.shuffleArray(ageCards);
 ageCards.unshift(9);
 
-const specialityArray = [1, 2, 3, 4, 20, 24, 25]; // [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28];
+const specialityArray = [1, 2, 3, 4, 5, 9, 18, 20, 24, 25, 26]; // [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28];
 randomizer.shuffleArray(specialityArray);
 
 const tresorArray = [
@@ -516,6 +652,7 @@ function addCube(x, y) {
 	const cell = board[x][y];
 	// check if cube can be pushed
 	// TODO: constraint
+	// TODO: if aligned and first cube, should explore type of first playable cube
 	const cubeIndex = cubes.findIndex(
 		(c) =>
 			(c.type === CARD.JOKER ||
@@ -720,7 +857,7 @@ function drawVillage(x, y, alternative = false) {
 function drawTower(x, y, alternative = false) {
 	strokeWeight(1);
 	stroke(0);
-	fill(250, 100, 100);
+	fill(240, 230, 180);
 	if (alternative) {
 		fill(250, 150, 150);
 	}
@@ -856,7 +993,9 @@ function reachGoal(index) {
 		return;
 	}
 	const result = doReachGoal(index);
-	uiManager.addLogger(`goal: + ${result} PV`);
+	if (result) {
+		uiManager.addLogger(`goal: + ${result} PV`);
+	}
 }
 
 function doReachGoal(index) {
@@ -1004,10 +1143,10 @@ function drawGame() {
 		} else {
 			stroke(250);
 		}
-		rect(1150, 415, 1320 - 1150, 674 - 415, 15);
+		rect(1150, 415, 1320 - 1150, 676 - 415, 15);
 		if (overExploration) {
 			stroke(25);
-			rect(1150, 415, 1320 - 1150, 674 - 415, 15);
+			rect(1150, 415, 1320 - 1150, 676 - 415, 15);
 		}
 	}
 	if (overTreasure) {
@@ -1153,7 +1292,13 @@ function drawGame() {
 	if (age < 5) {
 		text(`Age ${age}`, 10, 980);
 	} else {
-		text(`Fin du jeu: ${PV + PVTreasure} PV`, 10, 980);
+		text(
+			`Fin du jeu: ${PV + PVTreasure} PV et ${
+				goals.filter((g) => g > 0).length
+			} objectifs sur 3`,
+			10,
+			980
+		);
 		drawScore();
 	}
 
@@ -1163,7 +1308,7 @@ function drawGame() {
 }
 
 function drawScore() {
-	const score = PV + PVTreasure;
+	const score = goals.filter((g) => g > 0).length < 3 ? 0 : PV + PVTreasure;
 	noFill();
 	strokeWeight(5);
 	stroke(50, 205, 50);
@@ -1309,23 +1454,23 @@ function newExplorationCard() {
 		if (ageCards[0] === 0) {
 			// add 1 mountain
 			addCube2Play(CARD.MOUNTAIN, 1);
-			setConstraint("none");
+			setConstraint(CONSTRAINT.FREE);
 		} else if (ageCards[0] === 1) {
 			// add 2 sand
 			addCube2Play(CARD.SAND, 2);
-			setConstraint("none");
+			setConstraint(CONSTRAINT.FREE);
 		} else if (ageCards[0] === 2) {
 			// add 2 grassland
 			addCube2Play(CARD.GRASSLAND, 2);
-			setConstraint("none");
+			setConstraint(CONSTRAINT.FREE);
 		} else if (ageCards[0] === 3) {
 			// add 2 consecutive cells
 			addCube2Play(CARD.JOKER, 2);
-			setConstraint("consecutive");
+			setConstraint(CONSTRAINT.ALIGNED); // pour 2 cubes consecutive === aligned
 		} else if (ageCards[0] === 4) {
 			// add 3 aligned sea cells
 			addCube2Play(CARD.SEA, 3);
-			setConstraint("aligned");
+			setConstraint(CONSTRAINT.ALIGNED);
 		} else if (ageCards[0] === 5) {
 			// I
 			if (age === 1) {
@@ -1376,7 +1521,7 @@ function addValidateButton() {
 }
 
 function prepareCube2Play(specialityCardIndex) {
-	setConstraint("none");
+	setConstraint(CONSTRAINT.FREE);
 	// [1,2,3,4,20,24,25]
 	if (specialityCardIndex === 1) {
 		addCube2Play(CARD.SEA, 2);
@@ -1396,6 +1541,18 @@ function prepareCube2Play(specialityCardIndex) {
 		addCube2Play(CARD.SEA, 1);
 		addCube2Play(CARD.MOUNTAIN, 3);
 	}
+	if (specialityCardIndex === 5) {
+		setPieceBonus(3);
+		addCube2Play(CARD.SAND, 4);
+	}
+	if (specialityCardIndex === 5) {
+		setPieceBonus(3);
+		addCube2Play(CARD.SEA, 4);
+	}
+	if (specialityCardIndex === 18) {
+		addCube2Play(CARD.SEA, 4);
+		setTresorBonus(2);
+	}
 	if (specialityCardIndex === 20) {
 		addCube2Play(CARD.SEA, 5);
 	}
@@ -1405,6 +1562,10 @@ function prepareCube2Play(specialityCardIndex) {
 	}
 	if (specialityCardIndex === 25) {
 		addCube2Play(CARD.SEA, 1);
+		addCube2Play(CARD.GRASSLAND, 4);
+	}
+	if (specialityCardIndex === 26) {
+		setPieceBonus(3);
 		addCube2Play(CARD.GRASSLAND, 4);
 	}
 }
@@ -1980,9 +2141,9 @@ function expect(check, text) {
 	}
 }
 
-function expectLength(length, expected, text) {
-	if (length !== expected) {
-		throw `${text}: got ${length} instead of ${expected}`;
+function expectLength(array, expected, text) {
+	if (array.length !== expected) {
+		throw `${text}: got ${array.length} instead of ${expected}`;
 	}
 }
 
@@ -1993,9 +2154,9 @@ function test() {
 	initBoard();
 	computeRegions();
 	initGoalsAndTreasures();
-	expectLength(regions.length, 30, "error in computeRegions");
+	expectLength(regions, 30, "error in computeRegions");
 
-	expectLength(findRegion(17, 5).cells.length, 5, "error in findRegion");
+	expectLength(findRegion(17, 5).cells, 5, "error in findRegion");
 
 	addCube2Play(CARD.GRASSLAND, 4);
 	addCube2Play(CARD.SAND, 2);
@@ -2006,23 +2167,68 @@ function test() {
 	addCube(10, 8);
 	addCube(9, 8);
 	addCube(11, 7);
-	expectLength(ageExploration.length, 7, "error in addCube");
+	expectLength(ageExploration, 7, "error in addCube");
 	expect(findExplorationCell({ x: 12, y: 5 }), "error in findExplorationCell");
 
-	expectLength(getConnectedTrades().length, 2, "error in getConnectedTrades");
+	expectLength(getConnectedTrades(), 2, "error in getConnectedTrades");
 
-	expectLength(getVillages().length, 1, "error in getVillages");
+	expectLength(getVillages(), 1, "error in getVillages");
 
 	removeCubes();
-	expectLength(ageExploration.length, 2, "error in removeCubes");
+	expectLength(ageExploration, 2, "error in removeCubes");
 	cubes = [];
 
 	prepareCube2Play(2); // 2 mountain and 3 grassland
-	expectLength(cubes.length, 5, "error in prepareCube2Play");
+	expectLength(cubes, 5, "error in prepareCube2Play");
 
 	doReachGoal(2);
 	age = 2;
 	blockGoal();
+
+	expectLength(
+		getAllCells("NE", { x: 9, y: 10 }, { x: 14, y: 8 }),
+		6,
+		"error in getAllCells"
+	);
+
+	expect(
+		checkAlignedCubes([
+			{ x: 9, y: 7 },
+			{ x: 10, y: 7 },
+		]),
+		"error in checkAlignedCubes 1"
+	);
+	expect(
+		checkAlignedCubes([
+			{ x: 10, y: 12 },
+			{ x: 11, y: 12 },
+		]),
+		"error in checkAlignedCubes 2"
+	);
+	expect(
+		checkAlignedCubes([
+			{ x: 11, y: 9 },
+			{ x: 12, y: 9 },
+			{ x: 13, y: 8 },
+		]),
+		"error in checkAlignedCubes 3"
+	);
+	expect(
+		checkAlignedCubes([
+			{ x: 6, y: 7 },
+			{ x: 6, y: 9 },
+			{ x: 6, y: 8 },
+		]),
+		"error in checkAlignedCubes 4"
+	);
+	expect(
+		!checkAlignedCubes([
+			{ x: 8, y: 6 },
+			{ x: 9, y: 5 },
+			{ x: 11, y: 4 },
+		]),
+		"error in checkAlignedCubes 5"
+	);
 }
 
 test();
