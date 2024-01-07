@@ -47,6 +47,9 @@ let PV = 0;
 let PVTreasure = 0;
 let villageRegion = null;
 
+let goals = [0, 0, 0, 0, 0, 0];
+let blockGoalIndex = -1;
+
 const towerPV = [6, 8, 10, 14];
 
 let cubes = [];
@@ -98,8 +101,13 @@ function speakerClicked() {
 }
 
 function startClicked() {
+	initBoard();
+	computeRegions();
+	cubes = [];
+	initGoalsAndTreasures();
+
 	curState = GAME_PLAY_STATE;
-	uiManager.setUI([speakerButton, musicButton, ruleButton]);
+	uiManager.setUI([speakerButton, musicButton, helpButton]);
 	uiManager.addLogger("A vous de jouer!");
 	soundManager.playSound("new_age");
 }
@@ -148,7 +156,7 @@ function checkCubes() {
 		if (cube.type === CARD.VILLAGE) {
 			return;
 		}
-		const region = getRegion({ x: cube.position.x, y: cube.position.y });
+		const region = getRegion({ x: cube.x, y: cube.y });
 		console.log("region:", region);
 		if (
 			!region.some(
@@ -170,11 +178,11 @@ function validateClicked() {
 	let treasureCubes = 0;
 	cubes.forEach((cube) => {
 		if (cube.type === CARD.VILLAGE) {
-			transformCubeToVillage(cube.position.x, cube.position.y);
+			transformCubeToVillage(cube.x, cube.y);
 			uiManager.addLogger(`village: + ${age} PV`);
 			PV += age;
 		}
-		const cell = board[cube.position.x][cube.position.y];
+		const cell = board[cube.x][cube.y];
 		if (cell.type === CARD.TOWER) {
 			uiManager.addLogger(`tower: + ${towerPV[0]} PV`);
 			PV += towerPV.shift();
@@ -189,18 +197,14 @@ function validateClicked() {
 		if (cell.bonus.type === "tresor") {
 			// check if cube is a known ruin
 			// otherwise, pick a treasure card
-			if (
-				!ruins.some(
-					(rcell) => rcell.x === cube.position.x && rcell.y === cube.position.y
-				)
-			) {
+			if (!ruins.some((rcell) => rcell.x === cube.x && rcell.y === cube.y)) {
 				// piocher un tresor
 				const treasureIndex = tresorArray.shift();
 				tresors.push(treasureIndex);
 				if (treasureIndex === 0) {
 					treasureCubes += 1;
 				}
-				ruins.push({ x: cube.position.x, y: cube.position.y });
+				ruins.push({ x: cube.x, y: cube.y });
 			}
 		}
 	});
@@ -211,7 +215,7 @@ function validateClicked() {
 	validateButton.enabled = false;
 	if (treasureCubes === 0) {
 		playState = EXPLORATION_STATE;
-		uiManager.setUI([speakerButton, musicButton, ruleButton]);
+		uiManager.setUI([speakerButton, musicButton, helpButton]);
 	} else {
 		if (treasureCubes === 1) {
 			uiManager.addLogger("Vous avez un cube trésors à placer");
@@ -219,7 +223,7 @@ function validateClicked() {
 			uiManager.addLogger("Vous avez des cubes trésors à placer");
 		}
 		for (let i = 0; i < treasureCubes; i++) {
-			cubes.push({ type: "joker", position: { x: 0, y: 0 } });
+			cubes.push({ type: "joker", x: 0, y: 0 });
 		}
 		soundManager.playSound("new_cube");
 		return;
@@ -318,7 +322,6 @@ function getTowers() {
 function countPVTreasure() {
 	let amphore = 0;
 	PVTreasure = 0;
-	console.log("ageExploration:", ageExploration);
 	tresors.forEach((t) => {
 		if (t === 1) {
 			// amphore
@@ -389,7 +392,7 @@ const musicButton = new BFloatingSwitchButton(
 	"\uD83C\uDFB6",
 	musicClicked
 );
-const ruleButton = new BFloatingSwitchButton(
+const helpButton = new BFloatingSwitchButton(
 	windowWidth - 70 - 20 - 140,
 	70,
 	"\u003F",
@@ -397,12 +400,29 @@ const ruleButton = new BFloatingSwitchButton(
 		// ruleButton.checked = !ruleButton.checked;
 	}
 );
-const startButton = new BButton(
+helpButton.previewCheck = false;
+const aveniaButton = new BButton(
 	140,
 	windowHeight - 120,
 	"AVENIA",
 	startClicked
 );
+
+const aghonButton = new BButton(
+	1070,
+	windowHeight - 120,
+	"AGHON",
+	startClicked
+);
+
+const cnidariaButton = new BButton(
+	140,
+	windowHeight - 30,
+	"CNIDARIA",
+	startClicked
+);
+
+const kazanButton = new BButton(1070, windowHeight - 30, "KAZAN", startClicked);
 
 const validateButton = new BButton(
 	630,
@@ -438,7 +458,7 @@ class Randomizer {
 
 const randomizer = new Randomizer(seed);
 
-const board = [];
+let board = [];
 
 let goalArray = [0, 1, 2, 3, 4, 5];
 randomizer.shuffleArray(goalArray);
@@ -457,21 +477,19 @@ const tresorArray = [
 ];
 randomizer.shuffleArray(tresorArray);
 
-const tresors = [];
+let tresors = [];
 
-const regions = [];
+let regions = [];
 
-const ruins = [];
+let ruins = [];
 
-const knownTrades = [];
+let knownTrades = [];
 
 let connectedTrades = [];
 
-const boarderRuins = [];
-
 const specialityCards = []; // 3 cards
 
-let ageExploration = [{ type: CARD.CAPITAL, x: 9, y: 6 }];
+let ageExploration = [];
 
 let exploredCards = [6, 7, 8];
 
@@ -480,10 +498,10 @@ function removeCubes() {
 }
 
 function undoCube(cubeIndex) {
-	const x = cubes[cubeIndex].position.x;
-	const y = cubes[cubeIndex].position.y;
-	cubes[cubeIndex].position.x = 0;
-	cubes[cubeIndex].position.y = 0;
+	const x = cubes[cubeIndex].x;
+	const y = cubes[cubeIndex].y;
+	cubes[cubeIndex].x = 0;
+	cubes[cubeIndex].y = 0;
 	ageExploration = ageExploration.filter(
 		(cell) => cell.x !== x || cell.y !== y
 	);
@@ -491,13 +509,6 @@ function undoCube(cubeIndex) {
 }
 
 function addCube(x, y) {
-	/* check if cube can be undo
-	const undoCubeIndex = cubes.findIndex(cube=>cube.position.x === x && cube.position.y === y);
-	if( undoCubeIndex >= 0 ) {
-		// undo cube
-		undoCube(undoCubeIndex);
-		return;
-	}*/
 	// check if cube not already added
 	if (ageExploration.findIndex((cell) => cell.x === x && cell.y === y) >= 0) {
 		return false;
@@ -510,7 +521,7 @@ function addCube(x, y) {
 			(c.type === CARD.JOKER ||
 				c.type === cell.type ||
 				cell.type === CARD.TOWER) &&
-			c.position.x === 0
+			c.x === 0
 	);
 	if (cubeIndex === -1) {
 		// pas de cube dispo pour ce type
@@ -521,10 +532,10 @@ function addCube(x, y) {
 	} else {
 		ageExploration.push({ type: "cube", x: x, y: y });
 	}
-	cubes[cubeIndex].position.x = x;
-	cubes[cubeIndex].position.y = y;
+	cubes[cubeIndex].x = x;
+	cubes[cubeIndex].y = y;
 	// check if all cubes have been put on board
-	if (cubes.every((cube) => cube.position.x !== 0)) {
+	if (cubes.every((cube) => cube.x !== 0)) {
 		validateButton.enabled = true;
 	}
 	return true;
@@ -542,16 +553,27 @@ function transformCubeToVillage(x, y) {
 function initUI() {
 	speakerButton.setTextSize(50);
 	musicButton.setTextSize(50);
-	ruleButton.setTextSize(50);
+	helpButton.setTextSize(50);
 	musicButton.enabled = false;
 	musicButton.checked = false;
-	ruleButton.checked = false;
+	helpButton.checked = false;
 	const isSpeakerOn = localStorage.getItem(speakerStorageKey);
 	if (isSpeakerOn === "off") {
 		speakerButton.checked = false;
 		soundManager.mute(true);
 	}
-	const menu = [speakerButton, startButton, musicButton, ruleButton];
+	aghonButton.enabled = false;
+	cnidariaButton.enabled = false;
+	kazanButton.enabled = false;
+	const menu = [
+		speakerButton,
+		aveniaButton,
+		cnidariaButton,
+		kazanButton,
+		aghonButton,
+		musicButton,
+		helpButton,
+	];
 	uiManager.setUI(menu);
 }
 
@@ -567,9 +589,6 @@ function setup() {
 	soundManager.addSound("new_age", "./new_age.wav", 0.25);
 
 	frameRate(10);
-
-	initBoard();
-	computeRegions();
 
 	lastTime = Date.now();
 }
@@ -709,7 +728,7 @@ function drawTower(x, y, alternative = false) {
 	rect(cell.center.x + boardx - 10, cell.center.y + boardy - 25, 20, 50);
 }
 
-function displayAgeExploration() {
+function drawAgeExploration() {
 	ageExploration.forEach((cell) => {
 		if (cell.type === "cube") {
 			drawCube(cell.x, cell.y);
@@ -720,14 +739,14 @@ function displayAgeExploration() {
 		}
 	});
 	cubes.forEach((cube) => {
-		const bcell = board[cube.position.x][cube.position.y];
+		const bcell = board[cube.x][cube.y];
 		if (cube.type === CARD.VILLAGE) {
-			drawVillage(cube.position.x, cube.position.y, true);
+			drawVillage(cube.x, cube.y, true);
 		} else {
-			drawCube(cube.position.x, cube.position.y, true);
+			drawCube(cube.x, cube.y, true);
 		}
 		if (bcell.type === CARD.TOWER) {
-			drawTower(cube.position.x, cube.position.y, true);
+			drawTower(cube.x, cube.y, true);
 		}
 	});
 }
@@ -801,10 +820,6 @@ function drawTreasure() {
 	}
 }
 
-let goals = [0, 0, 0, 0, 0, 0];
-
-let blockGoalIndex = -1;
-
 function drawGoals() {
 	if (blockGoalIndex >= 0) {
 		drawGoalPion(0, 0);
@@ -840,20 +855,23 @@ function reachGoal(index) {
 	if (!goalArray.includes(index)) {
 		return;
 	}
+	const result = doReachGoal(index);
+	uiManager.addLogger(`goal: + ${result} PV`);
+}
+
+function doReachGoal(index) {
 	// add point accordingly
 	if (goals[index] === 0) {
 		// check with solo mode
 		goals[index] = 10;
-		uiManager.addLogger(`goal: + ${10} PV`);
-		PV += 10;
+		return 10;
 	} else if (goals[index] === -10) {
 		goals[index] = 5;
-		uiManager.addLogger(`goal: + ${5} PV`);
-		PV += 5;
+		return 5;
 	} else if (goals[index] === -5) {
 		goals[index] = 1;
-		uiManager.addLogger(`goal: + ${0} PV`);
 	}
+	return 0;
 }
 
 function blockGoal() {
@@ -862,8 +880,8 @@ function blockGoal() {
 		// block first goal
 		if (goals[index] === 0) {
 			goals[index] = -10;
-			blockGoalIndex = 0;
 		}
+		blockGoalIndex = 0;
 	}
 	if (age === 3) {
 		let index = goalArray[0];
@@ -961,7 +979,7 @@ function drawGame() {
 		ruins.forEach((ruin) => drawCoffre(ruin.x, ruin.y));
 		// comptoir commercial
 		knownTrades.forEach((trade) => drawTrade(trade.x, trade.y));
-		displayAgeExploration();
+		drawAgeExploration();
 	}
 	drawExploredCards();
 	if (overCell) {
@@ -1140,12 +1158,7 @@ function drawGame() {
 	}
 
 	if (overHelpButton) {
-		spritesheet.drawSprite(
-			"solo_rules",
-			0,
-			(windowWidth - 550) / 2,
-			(windowHeight - 700) / 2
-		);
+		spritesheet.drawSprite("solo_rules", 0, (windowWidth - 550) / 2, 50);
 	}
 }
 
@@ -1214,17 +1227,12 @@ function draw() {
 		spritesheet.drawScaledSprite(
 			"cover",
 			0,
-			(windowWidth - 630 * 1.5) / 2,
+			(windowWidth - 686 * 1.5) / 2,
 			50,
 			1.5
 		);
 		if (overHelpButton) {
-			spritesheet.drawSprite(
-				"solo_rules",
-				0,
-				(windowWidth - 550) / 2,
-				(windowHeight - 700) / 2
-			);
+			spritesheet.drawSprite("solo_rules", 0, (windowWidth - 550) / 2, 50);
 		}
 	}
 	if (curState === GAME_PLAY_STATE) {
@@ -1243,7 +1251,7 @@ function draw() {
 
 function addCube2Play(type, nb) {
 	for (let i = 0; i < nb; i++) {
-		cubes.push({ type: type, position: { x: 0, y: 0 } });
+		cubes.push({ type: type, x: 0, y: 0 });
 	}
 }
 
@@ -1363,7 +1371,7 @@ function addValidateButton() {
 		undoButton,
 		speakerButton,
 		musicButton,
-		ruleButton,
+		helpButton,
 	]);
 }
 
@@ -1470,12 +1478,13 @@ function mouseClicked() {
 		// add new village
 		cubes.push({
 			type: CARD.VILLAGE,
-			position: { x: overCell.x, y: overCell.y },
+			x: overCell.x,
+			y: overCell.y,
 		});
 		soundManager.playSound("place_cube");
 		playState = CUBE_STATE;
 		// check if all cubes have been put on board
-		if (cubes.every((cube) => cube.position.x !== 0)) {
+		if (cubes.every((cube) => cube.x !== 0)) {
 			validateButton.enabled = true;
 		}
 	}
@@ -1531,7 +1540,7 @@ function keyPressed() {
 	if (key === "t" && cubes.length > 0) {
 		uiManager.addLogger(`Contrainte: ${constraint}`);
 		cubes.forEach((cube) => {
-			if (cube.position.x === 0) {
+			if (cube.x === 0) {
 				uiManager.addLogger(`Cube: ${cube.type}`);
 			}
 		});
@@ -1665,6 +1674,7 @@ function getRing(x, y) {
 }
 
 function computeRegions() {
+	regions = [];
 	// create an 2D array of cells:
 	// true if cell is still free and not associated to a region
 	const freeCells = [];
@@ -1719,228 +1729,300 @@ function computeRegions() {
 	}
 }
 
-function initBoard() {
-	let dx = 179 - 46.5 * 2;
-	let dy = 169 - 54 * 2;
-	for (let i = 0; i < 20; i++) {
-		const column = [];
-		for (let j = 0; j < 15; j++) {
-			column.push({
-				center: { x: dx, y: dy + 54 * j + (i % 2) * 24 },
-				type:
-					i === 0 || i === 19 || j === 0 || j === 14 || j === 13
-						? null
-						: CARD.SEA,
-			});
-		}
-		dx += 46.5;
-		dy += 0.2;
-		board.push(column);
-	}
-	board[3][1].bonus = { type: "piece", nb: 2 };
-	board[3][2].bonus = { type: "piece", nb: 2 };
-	board[1][7].bonus = { type: "piece", nb: 2 };
-	board[1][8].bonus = { type: "piece", nb: 2 };
-	board[3][7].bonus = { type: "piece", nb: 2 };
-	board[5][10].bonus = { type: "piece", nb: 2 };
-	board[9][1].bonus = { type: "piece", nb: 2 };
-	board[10][1].bonus = { type: "piece", nb: 2 };
-	board[15][1].bonus = { type: "piece", nb: 2 };
-	board[18][2].bonus = { type: "piece", nb: 2 };
-	board[9][12].bonus = { type: "piece", nb: 2 };
-	board[13][12].bonus = { type: "piece", nb: 2 };
-	board[16][10].bonus = { type: "piece", nb: 2 };
-	board[17][10].bonus = { type: "piece", nb: 2 };
-	board[2][9].bonus = { type: "piece", nb: 1 };
-	board[3][10].bonus = { type: "piece", nb: 1 };
-	board[4][11].bonus = { type: "piece", nb: 1 };
-	board[6][3].bonus = { type: "piece", nb: 1 };
-	board[6][6].bonus = { type: "piece", nb: 1 };
-	board[8][7].bonus = { type: "piece", nb: 1 };
-	board[9][7].bonus = { type: "piece", nb: 1 };
-	board[11][5].bonus = { type: "piece", nb: 1 };
-	board[11][7].bonus = { type: "piece", nb: 1 };
-	board[12][10].bonus = { type: "piece", nb: 1 };
-	board[12][12].bonus = { type: "piece", nb: 1 };
-	board[13][10].bonus = { type: "piece", nb: 1 };
-	board[14][2].bonus = { type: "piece", nb: 1 };
-	board[15][2].bonus = { type: "piece", nb: 1 };
-	board[15][8].bonus = { type: "piece", nb: 1 };
-	board[16][5].bonus = { type: "piece", nb: 1 };
-	board[16][8].bonus = { type: "piece", nb: 1 };
-	board[16][11].bonus = { type: "piece", nb: 1 };
-	board[18][3].bonus = { type: "piece", nb: 1 };
-	board[18][6].bonus = { type: "piece", nb: 1 };
-	board[18][7].bonus = { type: "piece", nb: 1 };
-	board[18][10].bonus = { type: "piece", nb: 1 };
-	board[5][1].bonus = { type: "tresor" };
-	board[2][5].bonus = { type: "tresor" };
-	board[6][4].bonus = { type: "tresor" };
-	board[8][2].bonus = { type: "tresor" };
-	board[6][9].bonus = { type: "tresor" };
-	board[7][12].bonus = { type: "tresor" };
-	board[15][7].bonus = { type: "tresor" };
-	board[15][11].bonus = { type: "tresor" };
-	board[14][3].bonus = { type: "tresor" };
-	board[18][5].bonus = { type: "tresor" };
-	board[5][3].bonus = { type: "trade", nb: 3 };
-	board[1][6].bonus = { type: "trade", nb: 3 };
-	board[8][4].bonus = { type: "trade", nb: 3 };
-	board[12][2].bonus = { type: "trade", nb: 3 };
-	board[12][5].bonus = { type: "trade", nb: 2 };
-	board[5][11].bonus = { type: "trade", nb: 3 };
-	board[17][2].bonus = { type: "trade", nb: 3 };
-	board[17][7].bonus = { type: "trade", nb: 3 };
-	board[9][8].bonus = { type: "trade", nb: 2 };
-	board[11][12].bonus = { type: "trade", nb: 4 };
-	board[1][1].type = null;
-	board[1][2].type = null;
-	board[1][3].type = null;
-	board[1][4].type = null;
-	board[1][5].type = null;
-	board[2][1].type = null;
-	board[4][1].type = null;
-	board[6][1].type = null;
-	board[8][1].type = null;
-	board[12][1].type = null;
-	board[14][1].type = null;
-	board[16][1].type = null;
-	board[18][1].type = null;
-	board[1][10].type = null;
-	board[1][11].type = null;
-	board[1][12].type = null;
-	board[2][11].type = null;
-	board[2][12].type = null;
-	board[3][12].type = null;
-	board[4][12].type = null;
-	board[5][12].type = null;
-	board[6][12].type = null;
-	board[15][12].type = null;
-	board[16][12].type = null;
-	board[17][11].type = null;
-	board[17][12].type = null;
-	board[18][11].type = null;
-	board[18][12].type = null;
-	board[2][2].type = CARD.TOWER;
-	board[18][1].type = CARD.TOWER;
-	board[3][11].type = CARD.TOWER;
-	board[14][12].type = CARD.TOWER;
-	board[9][6].type = CARD.CAPITAL;
-	board[2][6].type = CARD.GRASSLAND;
-	board[2][7].type = CARD.GRASSLAND;
-	board[2][8].type = CARD.GRASSLAND;
-	board[3][7].type = CARD.GRASSLAND;
-	board[3][3].type = CARD.GRASSLAND;
-	board[4][4].type = CARD.GRASSLAND;
-	board[5][3].type = CARD.GRASSLAND;
-	board[6][3].type = CARD.GRASSLAND;
-	board[7][2].type = CARD.GRASSLAND;
-	board[9][1].type = CARD.GRASSLAND;
-	board[10][2].type = CARD.GRASSLAND;
-	board[11][2].type = CARD.GRASSLAND;
-	board[12][3].type = CARD.GRASSLAND;
-	board[8][8].type = CARD.GRASSLAND;
-	board[9][7].type = CARD.GRASSLAND;
-	board[10][8].type = CARD.GRASSLAND;
-	board[2][10].type = CARD.GRASSLAND;
-	board[3][10].type = CARD.GRASSLAND;
-	board[4][11].type = CARD.GRASSLAND;
-	board[5][11].type = CARD.GRASSLAND;
-	board[6][11].type = CARD.GRASSLAND;
-	board[12][5].type = CARD.GRASSLAND;
-	board[12][6].type = CARD.GRASSLAND;
-	board[12][7].type = CARD.GRASSLAND;
-	board[13][5].type = CARD.GRASSLAND;
-	board[17][1].type = CARD.GRASSLAND;
-	board[18][2].type = CARD.GRASSLAND;
-	board[18][3].type = CARD.GRASSLAND;
-	board[18][4].type = CARD.GRASSLAND;
-	board[16][9].type = CARD.GRASSLAND;
-	board[17][6].type = CARD.GRASSLAND;
-	board[17][7].type = CARD.GRASSLAND;
-	board[17][8].type = CARD.GRASSLAND;
-	board[18][7].type = CARD.GRASSLAND;
-	board[18][8].type = CARD.GRASSLAND;
-	board[11][10].type = CARD.GRASSLAND;
-	board[12][10].type = CARD.GRASSLAND;
-	board[12][11].type = CARD.GRASSLAND;
-	board[13][9].type = CARD.GRASSLAND;
-	board[13][10].type = CARD.GRASSLAND;
-	board[14][10].type = CARD.GRASSLAND;
-	board[9][11].type = CARD.SAND;
-	board[9][12].type = CARD.SAND;
-	board[10][12].type = CARD.SAND;
-	board[10][13].type = CARD.SAND;
-	board[10][5].type = CARD.SAND;
-	board[10][6].type = CARD.SAND;
-	board[11][5].type = CARD.SAND;
-	board[15][5].type = CARD.SAND;
-	board[16][5].type = CARD.SAND;
-	board[16][6].type = CARD.SAND;
-	board[17][5].type = CARD.SAND;
-	board[18][6].type = CARD.SAND;
-	board[15][9].type = CARD.SAND;
-	board[15][10].type = CARD.SAND;
-	board[16][10].type = CARD.SAND;
-	board[17][9].type = CARD.SAND;
-	board[8][10].type = CARD.SAND;
-	board[9][8].type = CARD.SAND;
-	board[9][9].type = CARD.SAND;
-	board[7][4].type = CARD.SAND;
-	board[8][4].type = CARD.SAND;
-	board[9][3].type = CARD.SAND;
-	board[2][9].type = CARD.SAND;
-	board[3][8].type = CARD.SAND;
-	board[3][9].type = CARD.SAND;
-	board[4][8].type = CARD.SAND;
-	board[5][7].type = CARD.SAND;
-	board[11][7].type = CARD.SAND;
-	board[11][8].type = CARD.SAND;
-	board[12][8].type = CARD.SAND;
-	board[10][1].type = CARD.SAND;
-	board[11][1].type = CARD.SAND;
-	board[12][2].type = CARD.SAND;
-	board[13][1].type = CARD.SAND;
-	board[13][2].type = CARD.SAND;
-	board[15][3].type = CARD.SAND;
-	board[16][3].type = CARD.SAND;
-	board[17][2].type = CARD.SAND;
-	board[7][4].type = CARD.SAND;
-	board[1][6].type = CARD.MOUNTAIN;
-	board[1][7].type = CARD.MOUNTAIN;
-	board[1][8].type = CARD.MOUNTAIN;
-	board[1][9].type = CARD.MOUNTAIN;
-	board[3][1].type = CARD.MOUNTAIN;
-	board[3][2].type = CARD.MOUNTAIN;
-	board[4][2].type = CARD.MOUNTAIN;
-	board[4][3].type = CARD.MOUNTAIN;
-	board[5][2].type = CARD.MOUNTAIN;
-	board[4][10].type = CARD.MOUNTAIN;
-	board[5][9].type = CARD.MOUNTAIN;
-	board[5][10].type = CARD.MOUNTAIN;
-	board[6][5].type = CARD.MOUNTAIN;
-	board[6][6].type = CARD.MOUNTAIN;
-	board[7][7].type = CARD.MOUNTAIN;
-	board[7][8].type = CARD.MOUNTAIN;
-	board[8][7].type = CARD.MOUNTAIN;
-	board[10][7].type = CARD.MOUNTAIN;
-	board[11][6].type = CARD.MOUNTAIN;
-	board[11][11].type = CARD.MOUNTAIN;
-	board[11][12].type = CARD.MOUNTAIN;
-	board[12][12].type = CARD.MOUNTAIN;
-	board[13][12].type = CARD.MOUNTAIN;
-	board[13][6].type = CARD.MOUNTAIN;
-	board[13][7].type = CARD.MOUNTAIN;
-	board[14][2].type = CARD.MOUNTAIN;
-	board[15][1].type = CARD.MOUNTAIN;
-	board[15][2].type = CARD.MOUNTAIN;
-	board[16][2].type = CARD.MOUNTAIN;
-	board[14][9].type = CARD.MOUNTAIN;
-	board[15][8].type = CARD.MOUNTAIN;
-	board[16][7].type = CARD.MOUNTAIN;
-	board[16][8].type = CARD.MOUNTAIN;
-	board[16][11].type = CARD.MOUNTAIN;
-	board[17][10].type = CARD.MOUNTAIN;
-	board[18][10].type = CARD.MOUNTAIN;
-	board[18][9].type = CARD.MOUNTAIN;
+function initGoalsAndTreasures() {
+	goals = [0, 0, 0, 0, 0, 0];
+	blockGoalIndex = -1;
+	tresors = [];
+	ruins = [];
+	knownTrades = [];
+	connectedTrades = [];
 }
+
+function initBoard(map = "avenia") {
+	board = [];
+	age = 1;
+	PV = 0;
+	PVTreasure = 0;
+	if (map === "avenia") {
+		let dx = 179 - 46.5 * 2;
+		let dy = 169 - 54 * 2;
+		for (let i = 0; i < 20; i++) {
+			const column = [];
+			for (let j = 0; j < 15; j++) {
+				column.push({
+					center: { x: dx, y: dy + 54 * j + (i % 2) * 24 },
+					type:
+						i === 0 || i === 19 || j === 0 || j === 14 || j === 13
+							? null
+							: CARD.SEA,
+				});
+			}
+			dx += 46.5;
+			dy += 0.2;
+			board.push(column);
+		}
+		board[3][1].bonus = { type: "piece", nb: 2 };
+		board[3][2].bonus = { type: "piece", nb: 2 };
+		board[1][7].bonus = { type: "piece", nb: 2 };
+		board[1][8].bonus = { type: "piece", nb: 2 };
+		board[3][7].bonus = { type: "piece", nb: 2 };
+		board[5][10].bonus = { type: "piece", nb: 2 };
+		board[9][1].bonus = { type: "piece", nb: 2 };
+		board[10][1].bonus = { type: "piece", nb: 2 };
+		board[15][1].bonus = { type: "piece", nb: 2 };
+		board[18][2].bonus = { type: "piece", nb: 2 };
+		board[9][12].bonus = { type: "piece", nb: 2 };
+		board[13][12].bonus = { type: "piece", nb: 2 };
+		board[16][10].bonus = { type: "piece", nb: 2 };
+		board[17][10].bonus = { type: "piece", nb: 2 };
+		board[2][9].bonus = { type: "piece", nb: 1 };
+		board[3][10].bonus = { type: "piece", nb: 1 };
+		board[4][11].bonus = { type: "piece", nb: 1 };
+		board[6][3].bonus = { type: "piece", nb: 1 };
+		board[6][6].bonus = { type: "piece", nb: 1 };
+		board[8][7].bonus = { type: "piece", nb: 1 };
+		board[9][7].bonus = { type: "piece", nb: 1 };
+		board[11][5].bonus = { type: "piece", nb: 1 };
+		board[11][7].bonus = { type: "piece", nb: 1 };
+		board[12][10].bonus = { type: "piece", nb: 1 };
+		board[12][12].bonus = { type: "piece", nb: 1 };
+		board[13][10].bonus = { type: "piece", nb: 1 };
+		board[14][2].bonus = { type: "piece", nb: 1 };
+		board[15][2].bonus = { type: "piece", nb: 1 };
+		board[15][8].bonus = { type: "piece", nb: 1 };
+		board[16][5].bonus = { type: "piece", nb: 1 };
+		board[16][8].bonus = { type: "piece", nb: 1 };
+		board[16][11].bonus = { type: "piece", nb: 1 };
+		board[18][3].bonus = { type: "piece", nb: 1 };
+		board[18][6].bonus = { type: "piece", nb: 1 };
+		board[18][7].bonus = { type: "piece", nb: 1 };
+		board[18][10].bonus = { type: "piece", nb: 1 };
+		board[5][1].bonus = { type: "tresor" };
+		board[2][5].bonus = { type: "tresor" };
+		board[6][4].bonus = { type: "tresor" };
+		board[8][2].bonus = { type: "tresor" };
+		board[6][9].bonus = { type: "tresor" };
+		board[7][12].bonus = { type: "tresor" };
+		board[15][7].bonus = { type: "tresor" };
+		board[15][11].bonus = { type: "tresor" };
+		board[14][3].bonus = { type: "tresor" };
+		board[18][5].bonus = { type: "tresor" };
+		board[5][3].bonus = { type: "trade", nb: 3 };
+		board[1][6].bonus = { type: "trade", nb: 3 };
+		board[8][4].bonus = { type: "trade", nb: 3 };
+		board[12][2].bonus = { type: "trade", nb: 3 };
+		board[12][5].bonus = { type: "trade", nb: 2 };
+		board[5][11].bonus = { type: "trade", nb: 3 };
+		board[17][2].bonus = { type: "trade", nb: 3 };
+		board[17][7].bonus = { type: "trade", nb: 3 };
+		board[9][8].bonus = { type: "trade", nb: 2 };
+		board[11][12].bonus = { type: "trade", nb: 4 };
+		board[1][1].type = null;
+		board[1][2].type = null;
+		board[1][3].type = null;
+		board[1][4].type = null;
+		board[1][5].type = null;
+		board[2][1].type = null;
+		board[4][1].type = null;
+		board[6][1].type = null;
+		board[8][1].type = null;
+		board[12][1].type = null;
+		board[14][1].type = null;
+		board[16][1].type = null;
+		board[18][1].type = null;
+		board[1][10].type = null;
+		board[1][11].type = null;
+		board[1][12].type = null;
+		board[2][11].type = null;
+		board[2][12].type = null;
+		board[3][12].type = null;
+		board[4][12].type = null;
+		board[5][12].type = null;
+		board[6][12].type = null;
+		board[15][12].type = null;
+		board[16][12].type = null;
+		board[17][11].type = null;
+		board[17][12].type = null;
+		board[18][11].type = null;
+		board[18][12].type = null;
+		board[2][2].type = CARD.TOWER;
+		board[18][1].type = CARD.TOWER;
+		board[3][11].type = CARD.TOWER;
+		board[14][12].type = CARD.TOWER;
+		board[9][6].type = CARD.CAPITAL;
+		board[2][6].type = CARD.GRASSLAND;
+		board[2][7].type = CARD.GRASSLAND;
+		board[2][8].type = CARD.GRASSLAND;
+		board[3][7].type = CARD.GRASSLAND;
+		board[3][3].type = CARD.GRASSLAND;
+		board[4][4].type = CARD.GRASSLAND;
+		board[5][3].type = CARD.GRASSLAND;
+		board[6][3].type = CARD.GRASSLAND;
+		board[7][2].type = CARD.GRASSLAND;
+		board[9][1].type = CARD.GRASSLAND;
+		board[10][2].type = CARD.GRASSLAND;
+		board[11][2].type = CARD.GRASSLAND;
+		board[12][3].type = CARD.GRASSLAND;
+		board[8][8].type = CARD.GRASSLAND;
+		board[9][7].type = CARD.GRASSLAND;
+		board[10][8].type = CARD.GRASSLAND;
+		board[2][10].type = CARD.GRASSLAND;
+		board[3][10].type = CARD.GRASSLAND;
+		board[4][11].type = CARD.GRASSLAND;
+		board[5][11].type = CARD.GRASSLAND;
+		board[6][11].type = CARD.GRASSLAND;
+		board[12][5].type = CARD.GRASSLAND;
+		board[12][6].type = CARD.GRASSLAND;
+		board[12][7].type = CARD.GRASSLAND;
+		board[13][5].type = CARD.GRASSLAND;
+		board[17][1].type = CARD.GRASSLAND;
+		board[18][2].type = CARD.GRASSLAND;
+		board[18][3].type = CARD.GRASSLAND;
+		board[18][4].type = CARD.GRASSLAND;
+		board[16][9].type = CARD.GRASSLAND;
+		board[17][6].type = CARD.GRASSLAND;
+		board[17][7].type = CARD.GRASSLAND;
+		board[17][8].type = CARD.GRASSLAND;
+		board[18][7].type = CARD.GRASSLAND;
+		board[18][8].type = CARD.GRASSLAND;
+		board[11][10].type = CARD.GRASSLAND;
+		board[12][10].type = CARD.GRASSLAND;
+		board[12][11].type = CARD.GRASSLAND;
+		board[13][9].type = CARD.GRASSLAND;
+		board[13][10].type = CARD.GRASSLAND;
+		board[14][10].type = CARD.GRASSLAND;
+		board[9][11].type = CARD.SAND;
+		board[9][12].type = CARD.SAND;
+		board[10][12].type = CARD.SAND;
+		board[10][13].type = CARD.SAND;
+		board[10][5].type = CARD.SAND;
+		board[10][6].type = CARD.SAND;
+		board[11][5].type = CARD.SAND;
+		board[15][5].type = CARD.SAND;
+		board[16][5].type = CARD.SAND;
+		board[16][6].type = CARD.SAND;
+		board[17][5].type = CARD.SAND;
+		board[18][6].type = CARD.SAND;
+		board[15][9].type = CARD.SAND;
+		board[15][10].type = CARD.SAND;
+		board[16][10].type = CARD.SAND;
+		board[17][9].type = CARD.SAND;
+		board[8][10].type = CARD.SAND;
+		board[9][8].type = CARD.SAND;
+		board[9][9].type = CARD.SAND;
+		board[7][4].type = CARD.SAND;
+		board[8][4].type = CARD.SAND;
+		board[9][3].type = CARD.SAND;
+		board[2][9].type = CARD.SAND;
+		board[3][8].type = CARD.SAND;
+		board[3][9].type = CARD.SAND;
+		board[4][8].type = CARD.SAND;
+		board[5][7].type = CARD.SAND;
+		board[11][7].type = CARD.SAND;
+		board[11][8].type = CARD.SAND;
+		board[12][8].type = CARD.SAND;
+		board[10][1].type = CARD.SAND;
+		board[11][1].type = CARD.SAND;
+		board[12][2].type = CARD.SAND;
+		board[13][1].type = CARD.SAND;
+		board[13][2].type = CARD.SAND;
+		board[15][3].type = CARD.SAND;
+		board[16][3].type = CARD.SAND;
+		board[17][2].type = CARD.SAND;
+		board[7][4].type = CARD.SAND;
+		board[1][6].type = CARD.MOUNTAIN;
+		board[1][7].type = CARD.MOUNTAIN;
+		board[1][8].type = CARD.MOUNTAIN;
+		board[1][9].type = CARD.MOUNTAIN;
+		board[3][1].type = CARD.MOUNTAIN;
+		board[3][2].type = CARD.MOUNTAIN;
+		board[4][2].type = CARD.MOUNTAIN;
+		board[4][3].type = CARD.MOUNTAIN;
+		board[5][2].type = CARD.MOUNTAIN;
+		board[4][10].type = CARD.MOUNTAIN;
+		board[5][9].type = CARD.MOUNTAIN;
+		board[5][10].type = CARD.MOUNTAIN;
+		board[6][5].type = CARD.MOUNTAIN;
+		board[6][6].type = CARD.MOUNTAIN;
+		board[7][7].type = CARD.MOUNTAIN;
+		board[7][8].type = CARD.MOUNTAIN;
+		board[8][7].type = CARD.MOUNTAIN;
+		board[10][7].type = CARD.MOUNTAIN;
+		board[11][6].type = CARD.MOUNTAIN;
+		board[11][11].type = CARD.MOUNTAIN;
+		board[11][12].type = CARD.MOUNTAIN;
+		board[12][12].type = CARD.MOUNTAIN;
+		board[13][12].type = CARD.MOUNTAIN;
+		board[13][6].type = CARD.MOUNTAIN;
+		board[13][7].type = CARD.MOUNTAIN;
+		board[14][2].type = CARD.MOUNTAIN;
+		board[15][1].type = CARD.MOUNTAIN;
+		board[15][2].type = CARD.MOUNTAIN;
+		board[16][2].type = CARD.MOUNTAIN;
+		board[14][9].type = CARD.MOUNTAIN;
+		board[15][8].type = CARD.MOUNTAIN;
+		board[16][7].type = CARD.MOUNTAIN;
+		board[16][8].type = CARD.MOUNTAIN;
+		board[16][11].type = CARD.MOUNTAIN;
+		board[17][10].type = CARD.MOUNTAIN;
+		board[18][10].type = CARD.MOUNTAIN;
+		board[18][9].type = CARD.MOUNTAIN;
+
+		ageExploration = [{ type: CARD.CAPITAL, x: 9, y: 6 }];
+
+		exploredCards = [6, 7, 8];
+	}
+}
+
+function expect(check, text) {
+	if (!check) {
+		throw text;
+	}
+}
+
+function expectLength(length, expected, text) {
+	if (length !== expected) {
+		throw `${text}: got ${length} instead of ${expected}`;
+	}
+}
+
+/**
+ * Test utilities
+ */
+function test() {
+	initBoard();
+	computeRegions();
+	initGoalsAndTreasures();
+	expectLength(regions.length, 30, "error in computeRegions");
+
+	expectLength(findRegion(17, 5).cells.length, 5, "error in findRegion");
+
+	addCube2Play(CARD.GRASSLAND, 4);
+	addCube2Play(CARD.SAND, 2);
+	addCube(12, 5);
+	addCube(12, 6);
+	addCube(12, 7);
+	transformCubeToVillage(12, 7);
+	addCube(10, 8);
+	addCube(9, 8);
+	addCube(11, 7);
+	expectLength(ageExploration.length, 7, "error in addCube");
+	expect(findExplorationCell({ x: 12, y: 5 }), "error in findExplorationCell");
+
+	expectLength(getConnectedTrades().length, 2, "error in getConnectedTrades");
+
+	expectLength(getVillages().length, 1, "error in getVillages");
+
+	removeCubes();
+	expectLength(ageExploration.length, 2, "error in removeCubes");
+	cubes = [];
+
+	prepareCube2Play(2); // 2 mountain and 3 grassland
+	expectLength(cubes.length, 5, "error in prepareCube2Play");
+
+	doReachGoal(2);
+	age = 2;
+	blockGoal();
+}
+
+test();
