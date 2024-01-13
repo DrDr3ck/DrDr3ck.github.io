@@ -56,6 +56,7 @@ let age = 1; // 1 to 4
 let PV = 0;
 let PVTreasure = 0;
 let villageRegion = null;
+let bestPVParty = 0;
 
 let goals = [0, 0, 0, 0, 0, 0];
 let blockGoalIndex = -1;
@@ -691,6 +692,7 @@ function undoClicked() {
 		undoCube(i);
 	}
 	cubes = cubes.filter((cube) => cube.type !== CARD.VILLAGE);
+	playState = CUBE_STATE;
 }
 
 const speakerButton = new BFloatingSwitchButton(
@@ -917,7 +919,7 @@ function initUI() {
 		speakerButton.checked = false;
 		soundManager.mute(true);
 	}
-	aghonButton.enabled = false;
+	aghonButton.enabled = true;
 	cnidariaButton.enabled = false;
 	kazanButton.enabled = false;
 	resetSeedButton.setTextSize(32);
@@ -962,6 +964,7 @@ function debugDrawCase(x, y, type, row, column, bonus) {
 		fill(216, 166, 112);
 	} else if (type === CARD.SEA) {
 		fill(176, 171, 138);
+		// return;
 	} else if (type === CARD.SAND) {
 		fill(227, 202, 144);
 	} else if (type === CARD.GRASSLAND) {
@@ -1280,6 +1283,24 @@ function getBorderRuins() {
 	});
 }
 
+function getTypedRuins() {
+	const typedRuins = [false, false, false];
+	ruins.forEach((ruin) => {
+		const ring = getRing(ruin.x, ruin.y);
+		ring.forEach((cell) => {
+			const bcell = board[cell.x][cell.y];
+			if (bcell.type === CARD.MOUNTAIN) {
+				typedRuins[0] = true;
+			} else if (bcell.type === CARD.SAND) {
+				typedRuins[1] = true;
+			} else if (bcell.type === CARD.GRASSLAND) {
+				typedRuins[2] = true;
+			}
+		});
+	});
+	return typedRuins.every((t) => t);
+}
+
 /**
  * Checks if goals are reached
  */
@@ -1336,10 +1357,58 @@ function checkGoals() {
 	}
 	if (map === "aghon") {
 		// decouvrir un village adjacent à une tour
-		// explorer des cases ruines adjacentes à prairie,desert et montagne
+		villages.forEach((village) => {
+			const towers = ageExploration.filter((cell) => {
+				const bcell = board[cell.x][cell.y];
+				return bcell.type === CARD.TOWER;
+			});
+			const ring = getRing(village.x, village.y);
+			if (
+				ring.some(
+					(cell) => towers.findIndex((tower) => sameCells(tower, cell)) >= 0
+				)
+			) {
+				reachGoal(0);
+			}
+		});
+		// explorer des cases ruines adjacentes à prairie, desert et montagne
+		if (getTypedRuins()) {
+			reachGoal(1);
+		}
 		// etablir une route commerciale >= 12
-		// decouvrir village sur prairie/desert/montagne
+		if (bestPVParty >= 12) {
+			reachGoal(2);
+		}
+		// decouvrir villages sur prairie/desert/montagne
+		const types = [false, false, false];
+		villages.forEach((village) => {
+			const bcell = board[village.x][village.y];
+			if (bcell.type === CARD.MOUNTAIN) {
+				types[0] = true;
+			} else if (bcell.type === CARD.SAND) {
+				types[1] = true;
+			} else if (bcell.type === CARD.GRASSLAND) {
+				types[2] = true;
+			}
+		});
+		if (types.every((t) => t)) {
+			reachGoal(3);
+		}
 		// placez comptoirs sur case prairie/desert/montagne
+		const trades = [false, false, false];
+		knownTrades.forEach((cell) => {
+			const bcell = board[cell.x][cell.y];
+			if (bcell.type === CARD.MOUNTAIN) {
+				trades[0] = true;
+			} else if (bcell.type === CARD.SAND) {
+				trades[1] = true;
+			} else if (bcell.type === CARD.GRASSLAND) {
+				trades[2] = true;
+			}
+		});
+		if (trades.every((t) => t)) {
+			reachGoal(4);
+		}
 		// decouvrir 2 villages sur des cases montagne
 		if (
 			villages.filter((village) => {
@@ -1969,6 +2038,9 @@ function mouseClicked() {
 			if (PVTrade > bestPV) {
 				bestPV = PVTrade;
 			}
+			if (bestPV > bestPVParty) {
+				bestPVParty = bestPV;
+			}
 		});
 		uiManager.addLogger(`trade: + ${bestPV} PV`);
 		PV += bestPV;
@@ -2551,6 +2623,7 @@ function initBoard(map = "avenia") {
 		);
 		setBoardRegion([7, 1, 7, 2, 7, 3, 8, 1, 8, 2, 8, 3, 7, 9], CARD.GRASSLAND);
 		setBoardRegion([5, 9, 5, 10, 6, 11, 7, 10, 8, 11], CARD.GRASSLAND);
+		setBoardRegion([11, 6, 12, 6, 12, 7, 13, 5], CARD.GRASSLAND);
 		setBoardRegion(
 			[11, 3, 11, 4, 12, 3, 13, 3, 14, 3, 15, 1, 16, 2, 17, 2, 18, 3],
 			CARD.GRASSLAND
