@@ -123,6 +123,7 @@ function preload() {
 	spritesheet.addSpriteSheet("cover", "./cover.png", 686, 503);
 	spritesheet.addSpriteSheet("avenia", "./avenia.png", 1680, 1405);
 	spritesheet.addSpriteSheet("aghon", "./aghon.png", 1680, 1405);
+	spritesheet.addSpriteSheet("kazan", "./kazan.png", 1680, 1405);
 	spritesheet.addSpriteSheet("exploration", "./exploration.png", 840, 588);
 	spritesheet.addSpriteSheet(
 		"exploration_cards",
@@ -964,7 +965,7 @@ function debugDrawCase(x, y, type, row, column, bonus) {
 		fill(216, 166, 112);
 	} else if (type === CARD.SEA) {
 		fill(176, 171, 138);
-		// return;
+		//return;
 	} else if (type === CARD.SAND) {
 		fill(227, 202, 144);
 	} else if (type === CARD.GRASSLAND) {
@@ -978,12 +979,18 @@ function debugDrawCase(x, y, type, row, column, bonus) {
 		return;
 	}
 	stroke(1);
-	ellipse(x + boardx, y + boardy, 25); // 45 de rayon
+	ellipse(x + boardx, y + boardy - 15, 25); // 45 de rayon
 	noStroke();
 	fill(0);
-	text(`${row}/${column}`, x + boardx - 12, y + boardy);
+	text(`${row}/${column}`, x + boardx - 12, y + boardy - 15);
 	if (bonus) {
-		const textBonus = bonus.nb ? `${bonus.type}x${bonus.nb}` : bonus.type;
+		let textBonus = bonus.type;
+		if (bonus.nb) {
+			textBonus = `${bonus.type}x${bonus.nb}`;
+		}
+		if (bonus.alpha) {
+			textBonus = `${bonus.type} ${bonus.alpha}`;
+		}
 		text(textBonus, x + boardx - 12, y + boardy + 12);
 	}
 }
@@ -1418,6 +1425,9 @@ function checkGoals() {
 		) {
 			reachGoal(5);
 		}
+	}
+	if (map === "kazan") {
+		// TODO
 	}
 }
 
@@ -1996,8 +2006,13 @@ function mouseClicked() {
 						}
 						return false;
 					});
-					if (!hasVillage) {
-						// 4. change state
+					// 4. check if village can be put (need a cell without bonus)
+					const canVillage = region.cells.some((cell) => {
+						const bcell = board[cell.x][cell.y];
+						return !bcell.bonus;
+					});
+					if (!hasVillage && canVillage) {
+						// 5. change state
 						playState = VILLAGE_STATE;
 						validateButton.enabled = false;
 						validateForceButton.enabled = false;
@@ -2273,6 +2288,36 @@ function initGoalsAndTreasures() {
 }
 
 function initBoard(map = "avenia") {
+	const setTresors = (tresorCoords) => {
+		const alpha = "ABCDEFGHIJ";
+		for (let i = 0; i < tresorCoords.length - 1; i += 2) {
+			board[tresorCoords[i]][tresorCoords[i + 1]].bonus = {
+				type: "tresor",
+				alpha: alpha[i / 2],
+			};
+		}
+	};
+	const setTrade = (x, y, nb) => {
+		board[x][y].bonus = { type: "trade", nb: nb };
+	};
+	const setPieces = (pieceCoords, nb) => {
+		for (let i = 0; i < pieceCoords.length - 1; i += 2) {
+			board[pieceCoords[i]][pieceCoords[i + 1]].bonus = {
+				type: "piece",
+				nb: nb,
+			};
+		}
+	};
+	const setBoardRegion = (regionCoords, type) => {
+		for (let i = 0; i < regionCoords.length - 1; i += 2) {
+			board[regionCoords[i]][regionCoords[i + 1]].type = type;
+		}
+	};
+	const setNullCells = (nullCoords, type) => {
+		for (let i = 0; i < nullCoords.length - 1; i += 2) {
+			board[nullCoords[i]][nullCoords[i + 1]].type = null;
+		}
+	};
 	board = [];
 	age = 1;
 	PV = 0;
@@ -2506,6 +2551,85 @@ function initBoard(map = "avenia") {
 
 		exploredCards = [6, 7, 8];
 	}
+	if (map === "kazan") {
+		setNullCells([
+			1, 1, 1, 2, 1, 9, 1, 10, 1, 11, 1, 12, 2, 1, 2, 2, 2, 10, 2, 11, 2, 12, 3,
+			10, 3, 11, 3, 12, 4, 1, 4, 11, 4, 12, 5, 11, 5, 12, 6, 12, 7, 12, 8, 12,
+			9, 11, 9, 12, 10, 12, 11, 11, 11, 12, 12, 12, 13, 11, 13, 12, 14, 12, 15,
+			11, 15, 12, 16, 11, 16, 12, 17, 10, 17, 11, 17, 12, 18, 11, 18, 12, 16, 1,
+			17, 1, 18, 1, 18, 2,
+		]);
+		setNullCells([
+			6, 4, 6, 5, 7, 3, 7, 4, 7, 5, 12, 4, 12, 5, 13, 4, 13, 5, 13, 6, 14, 5,
+			14, 6, 14, 7, 15, 6, 15, 7, 15, 8,
+		]);
+		setBoardRegion(
+			[
+				1, 3, 1, 4, 1, 5, 2, 3, 4, 10, 5, 9, 5, 10, 6, 11, 6, 8, 7, 8, 8, 8, 10,
+				11, 11, 10, 12, 10, 11, 5, 11, 6, 12, 6, 12, 1, 12, 2, 13, 1, 14, 1, 14,
+				4, 15, 4, 15, 5, 16, 6, 16, 7,
+			],
+			CARD.MOUNTAIN
+		);
+		setBoardRegion(
+			[
+				2, 4, 2, 5, 2, 6, 3, 3, 3, 4, 3, 7, 3, 8, 4, 7, 5, 7, 6, 6, 7, 6, 8, 6,
+				9, 6, 10, 6, 7, 10, 8, 10, 8, 11, 9, 10, 12, 11, 13, 10, 14, 11, 15, 10,
+				14, 2, 15, 1, 15, 2, 16, 3, 16, 5, 17, 5, 17, 6, 17, 7, 18, 6, 18, 7, 8,
+				3, 9, 2, 9, 1, 10, 2, 10, 3, 11, 8, 11, 9, 12, 8, 13, 8, 9, 3,
+			],
+			CARD.GRASSLAND
+		);
+		setBoardRegion(
+			[
+				1, 8, 2, 8, 2, 9, 3, 9, 4, 9, 4, 8, 5, 8, 5, 6, 6, 7, 7, 7, 8, 7, 9, 7,
+				3, 2, 4, 2, 5, 1, 6, 1, 6, 2, 7, 1, 8, 4, 8, 5, 9, 4, 9, 5, 11, 7, 12,
+				7, 13, 7, 14, 8, 14, 9, 16, 2, 17, 2, 18, 3, 18, 4, 19, 3, 19, 4,
+			],
+			CARD.SAND
+		);
+		setBoardRegion([19, 5, 19, 6, 19, 7, 19, 8], CARD.SEA);
+		setTrade(3, 4, 5);
+		setTrade(7, 1, 3);
+		setTrade(6, 7, 2);
+		setTrade(8, 4, 2);
+		setTrade(9, 10, 2);
+		setTrade(13, 1, 3);
+		setTrade(13, 10, 3);
+		setTrade(19, 4, 4);
+		setTrade(17, 6, 2);
+
+		setTresors([
+			1, 7, 6, 10, 7, 2, 10, 1, 10, 10, 11, 2, 11, 4, 15, 1, 18, 5, 19, 8,
+		]);
+
+		setPieces(
+			[
+				1, 5, 2, 3, 2, 8, 2, 9, 3, 7, 4, 8, 5, 1, 5, 9, 7, 7, 7, 8, 7, 6, 8, 6,
+				9, 4, 11, 7, 13, 7, 13, 8, 14, 4, 15, 2, 16, 2, 16, 3, 12, 6,
+			],
+			1
+		);
+		setPieces(
+			[
+				1, 4, 2, 4, 5, 10, 6, 1, 8, 11, 11, 10, 14, 11, 16, 6, 16, 7, 18, 3, 18,
+				6,
+			],
+			2
+		);
+		setPieces([10, 2, 15, 4, 15, 5], 3);
+		setPieces([1, 3], 4);
+
+		board[3][1].type = CARD.TOWER;
+		board[17][3].type = CARD.TOWER;
+		board[7][11].type = CARD.TOWER;
+		board[18][10].type = CARD.TOWER;
+
+		board[10][7].type = CARD.CAPITAL;
+		ageExploration = [{ type: CARD.CAPITAL, x: 10, y: 7 }];
+
+		exploredCards = [6, 7, 8];
+	}
 	if (map === "aghon") {
 		board[1][1].type = null;
 		board[2][1].type = null;
@@ -2554,17 +2678,7 @@ function initBoard(map = "avenia") {
 		board[19][7].type = CARD.SEA;
 		board[19][8].type = CARD.SEA;
 
-		const setTresors = (tresorCoords) => {
-			for (let i = 0; i < tresorCoords.length - 1; i += 2) {
-				board[tresorCoords[i]][tresorCoords[i + 1]].bonus = { type: "tresor" };
-			}
-		};
-
 		setTresors([5, 1, 1, 7, 6, 10, 8, 8, 8, 4, 10, 1, 16, 3, 19, 7, 14, 11]);
-
-		const setTrade = (x, y, nb) => {
-			board[x][y].bonus = { type: "trade", nb: nb };
-		};
 
 		setTrade(5, 3, 3);
 		setTrade(2, 9, 4);
@@ -2575,15 +2689,6 @@ function initBoard(map = "avenia") {
 		setTrade(13, 3, 3);
 		setTrade(11, 10, 3);
 		setTrade(18, 5, 4);
-
-		const setPieces = (pieceCoords, nb) => {
-			for (let i = 0; i < pieceCoords.length - 1; i += 2) {
-				board[pieceCoords[i]][pieceCoords[i + 1]].bonus = {
-					type: "piece",
-					nb: nb,
-				};
-			}
-		};
 
 		setPieces(
 			[
@@ -2601,12 +2706,6 @@ function initBoard(map = "avenia") {
 			2
 		);
 		setPieces([1, 3, 3, 3], 3);
-
-		const setBoardRegion = (regionCoords, type) => {
-			for (let i = 0; i < regionCoords.length - 1; i += 2) {
-				board[regionCoords[i]][regionCoords[i + 1]].type = type;
-			}
-		};
 
 		setBoardRegion([3, 2, 4, 2, 5, 2, 5, 3, 5, 4], CARD.SAND);
 		setBoardRegion([10, 2, 11, 1, 11, 2, 12, 1, 13, 1, 14, 1], CARD.SAND);
