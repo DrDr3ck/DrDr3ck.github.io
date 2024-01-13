@@ -971,6 +971,7 @@ function debugDrawCase(x, y, type, row, column, bonus) {
 	} else if (type === CARD.CAPITAL) {
 		fill(200, 200, 200);
 	} else {
+		//fill(100, 100, 100);
 		return;
 	}
 	stroke(1);
@@ -979,7 +980,8 @@ function debugDrawCase(x, y, type, row, column, bonus) {
 	fill(0);
 	text(`${row}/${column}`, x + boardx - 12, y + boardy);
 	if (bonus) {
-		text(bonus.type, x + boardx - 12, y + boardy + 12);
+		const textBonus = bonus.nb ? `${bonus.type}x${bonus.nb}` : bonus.type;
+		text(textBonus, x + boardx - 12, y + boardy + 12);
 	}
 }
 
@@ -1282,53 +1284,71 @@ function getBorderRuins() {
  * Checks if goals are reached
  */
 function checkGoals() {
-	// explorer 3 cases ruines le long du bord de la mappe
-	if (getBorderRuins().length >= 3) {
-		reachGoal(0);
-	}
-	// decouvrez un village dans une region 5+
 	const villages = getVillages();
-	if (
-		villages.some((village) => {
-			const region = findRegion(village.x, village.y);
-			return region.cells.length >= 5;
-		})
-	) {
-		reachGoal(1);
-	}
-	// placez 2 comptoirs sur des villes 3+
-	let trades3 = 0;
-	knownTrades.forEach((cell) => {
-		const bcell = board[cell.x][cell.y];
-		if (bcell.bonus.nb >= 3) {
-			trades3 += 1;
+	if (map === "avenia") {
+		// explorer 3 cases ruines le long du bord de la mappe
+		if (getBorderRuins().length >= 3) {
+			reachGoal(0);
 		}
-	});
-	if (trades3 >= 2) {
-		reachGoal(2);
-	}
-	// decouvrez villages sur les 3 types
-	const types = [false, false, false];
-	villages.forEach((village) => {
-		const bcell = board[village.x][village.y];
-		if (bcell.type === CARD.MOUNTAIN) {
-			types[0] = true;
-		} else if (bcell.type === CARD.SAND) {
-			types[1] = true;
-		} else if (bcell.type === CARD.GRASSLAND) {
-			types[2] = true;
+		// decouvrez un village dans une region 5+
+		if (
+			villages.some((village) => {
+				const region = findRegion(village.x, village.y);
+				return region.cells.length >= 5;
+			})
+		) {
+			reachGoal(1);
 		}
-	});
-	if (types.every((t) => t)) {
-		reachGoal(3);
+		// placez 2 comptoirs sur des villes 3+
+		let trades3 = 0;
+		knownTrades.forEach((cell) => {
+			const bcell = board[cell.x][cell.y];
+			if (bcell.bonus.nb >= 3) {
+				trades3 += 1;
+			}
+		});
+		if (trades3 >= 2) {
+			reachGoal(2);
+		}
+		// decouvrez villages sur les 3 types
+		const types = [false, false, false];
+		villages.forEach((village) => {
+			const bcell = board[village.x][village.y];
+			if (bcell.type === CARD.MOUNTAIN) {
+				types[0] = true;
+			} else if (bcell.type === CARD.SAND) {
+				types[1] = true;
+			} else if (bcell.type === CARD.GRASSLAND) {
+				types[2] = true;
+			}
+		});
+		if (types.every((t) => t)) {
+			reachGoal(3);
+		}
+		// placez 2 tours
+		if (getTowers().length >= 2) {
+			reachGoal(4);
+		}
+		// decouvrez 5 villages
+		if (villages.length >= 5) {
+			reachGoal(5);
+		}
 	}
-	// placez 2 tours
-	if (getTowers().length >= 2) {
-		reachGoal(4);
-	}
-	// decouvrez 5 villages
-	if (villages.length >= 5) {
-		reachGoal(5);
+	if (map === "aghon") {
+		// decouvrir un village adjacent à une tour
+		// explorer des cases ruines adjacentes à prairie,desert et montagne
+		// etablir une route commerciale >= 12
+		// decouvrir village sur prairie/desert/montagne
+		// placez comptoirs sur case prairie/desert/montagne
+		// decouvrir 2 villages sur des cases montagne
+		if (
+			villages.filter((village) => {
+				const bcell = board[village.x][village.y];
+				return bcell.type === CARD.MOUNTAIN;
+			}).length >= 2
+		) {
+			reachGoal(5);
+		}
 	}
 }
 
@@ -2120,7 +2140,7 @@ function computeRegions() {
 	// create an 2D array of cells:
 	// true if cell is still free and not associated to a region
 	const freeCells = [];
-	for (let i = 0; i < 20; i++) {
+	for (let i = 0; i < 21; i++) {
 		const columns = [];
 		for (let j = 0; j < 15; j++) {
 			columns.push(true);
@@ -2151,7 +2171,7 @@ function computeRegions() {
 		}
 		return cells;
 	};
-	for (let i = 0; i < 20; i++) {
+	for (let i = 0; i < 21; i++) {
 		for (let j = 0; j < 15; j++) {
 			const cell = board[i][j];
 			if (
@@ -2185,24 +2205,24 @@ function initBoard(map = "avenia") {
 	age = 1;
 	PV = 0;
 	PVTreasure = 0;
-	if (map === "avenia") {
-		let dx = 179 - 46.5 * 2;
-		let dy = 169 - 54 * 2;
-		for (let i = 0; i < 20; i++) {
-			const column = [];
-			for (let j = 0; j < 15; j++) {
-				column.push({
-					center: { x: dx, y: dy + 54 * j + (i % 2) * 24 },
-					type:
-						i === 0 || i === 19 || j === 0 || j === 14 || j === 13
-							? null
-							: CARD.SEA,
-				});
-			}
-			dx += 46.5;
-			dy += 0.2;
-			board.push(column);
+	let dx = 179 - 46.5 * 2;
+	let dy = 169 - 54 * 2;
+	for (let i = 0; i < 21; i++) {
+		const column = [];
+		for (let j = 0; j < 15; j++) {
+			column.push({
+				center: { x: dx, y: dy + 54 * j + (i % 2) * 24 },
+				type:
+					i === 0 || i >= 19 || j === 0 || j === 14 || j === 13
+						? null
+						: CARD.SEA,
+			});
 		}
+		dx += 46.5;
+		dy += 0.2;
+		board.push(column);
+	}
+	if (map === "avenia") {
 		board[3][1].bonus = { type: "piece", nb: 2 };
 		board[3][2].bonus = { type: "piece", nb: 2 };
 		board[1][7].bonus = { type: "piece", nb: 2 };
@@ -2411,6 +2431,150 @@ function initBoard(map = "avenia") {
 		board[18][9].type = CARD.MOUNTAIN;
 
 		ageExploration = [{ type: CARD.CAPITAL, x: 9, y: 6 }];
+
+		exploredCards = [6, 7, 8];
+	}
+	if (map === "aghon") {
+		board[1][1].type = null;
+		board[2][1].type = null;
+		board[2][2].type = null;
+		board[1][2].type = null;
+		board[4][1].type = null;
+		board[1][9].type = null;
+		board[1][10].type = null;
+		board[1][11].type = null;
+		board[1][12].type = null;
+		board[2][10].type = null;
+		board[2][11].type = null;
+		board[2][12].type = null;
+		board[3][11].type = null;
+		board[3][12].type = null;
+		board[4][11].type = null;
+		board[4][12].type = null;
+		board[5][11].type = null;
+		board[5][12].type = null;
+		board[6][12].type = null;
+		board[7][11].type = null;
+		board[7][12].type = null;
+		board[8][12].type = null;
+		board[9][11].type = null;
+		board[9][12].type = null;
+		board[10][12].type = null;
+		board[11][11].type = null;
+		board[11][12].type = null;
+		board[12][12].type = null;
+		board[13][11].type = null;
+		board[13][12].type = null;
+		board[14][12].type = null;
+		board[15][11].type = null;
+		board[15][12].type = null;
+		board[16][11].type = null;
+		board[16][12].type = null;
+		board[17][11].type = null;
+		board[17][12].type = null;
+		board[18][10].type = null;
+		board[18][12].type = null;
+		board[18][11].type = null;
+		board[16][1].type = null;
+		board[18][1].type = null;
+		board[18][2].type = null;
+
+		board[19][7].type = CARD.SEA;
+		board[19][8].type = CARD.SEA;
+
+		const setTresors = (tresorCoords) => {
+			for (let i = 0; i < tresorCoords.length - 1; i += 2) {
+				board[tresorCoords[i]][tresorCoords[i + 1]].bonus = { type: "tresor" };
+			}
+		};
+
+		setTresors([5, 1, 1, 7, 6, 10, 8, 8, 8, 4, 10, 1, 16, 3, 19, 7, 14, 11]);
+
+		const setTrade = (x, y, nb) => {
+			board[x][y].bonus = { type: "trade", nb: nb };
+		};
+
+		setTrade(5, 3, 3);
+		setTrade(2, 9, 4);
+		setTrade(6, 7, 2);
+		setTrade(7, 10, 2);
+		setTrade(8, 3, 2);
+		setTrade(12, 1, 2);
+		setTrade(13, 3, 3);
+		setTrade(11, 10, 3);
+		setTrade(18, 5, 4);
+
+		const setPieces = (pieceCoords, nb) => {
+			for (let i = 0; i < pieceCoords.length - 1; i += 2) {
+				board[pieceCoords[i]][pieceCoords[i + 1]].bonus = {
+					type: "piece",
+					nb: nb,
+				};
+			}
+		};
+
+		setPieces(
+			[
+				4, 2, 5, 4, 7, 1, 7, 2, 3, 8, 8, 5, 4, 10, 5, 9, 5, 10, 9, 9, 10, 2, 10,
+				4, 11, 3, 11, 6, 11, 9, 12, 2, 13, 5, 13, 10, 14, 1, 15, 1, 15, 5, 16,
+				5, 17, 3, 17, 6, 17, 7, 19, 3, 19, 6,
+			],
+			1
+		);
+		setPieces(
+			[
+				1, 4, 1, 6, 1, 8, 2, 3, 3, 4, 8, 1, 14, 2, 13, 8, 15, 9, 16, 9, 17, 5,
+				19, 5, 18, 3,
+			],
+			2
+		);
+		setPieces([1, 3, 3, 3], 3);
+
+		const setBoardRegion = (regionCoords, type) => {
+			for (let i = 0; i < regionCoords.length - 1; i += 2) {
+				board[regionCoords[i]][regionCoords[i + 1]].type = type;
+			}
+		};
+
+		setBoardRegion([3, 2, 4, 2, 5, 2, 5, 3, 5, 4], CARD.SAND);
+		setBoardRegion([10, 2, 11, 1, 11, 2, 12, 1, 13, 1, 14, 1], CARD.SAND);
+		setBoardRegion([17, 3, 18, 4, 19, 3], CARD.SAND);
+		setBoardRegion([19, 6, 18, 7, 17, 7, 18, 8], CARD.SAND);
+		setBoardRegion([15, 4, 15, 5, 15, 6], CARD.SAND);
+		setBoardRegion([5, 6, 5, 7, 6, 7], CARD.SAND);
+		setBoardRegion([8, 5, 9, 5, 9, 6, 8, 7], CARD.SAND);
+		setBoardRegion([9, 9, 10, 10, 11, 9, 11, 10, 12, 11, 13, 10], CARD.SAND);
+
+		setBoardRegion(
+			[1, 6, 2, 6, 2, 7, 16, 5, 16, 6, 17, 6, 18, 6],
+			CARD.GRASSLAND
+		);
+		setBoardRegion([7, 1, 7, 2, 7, 3, 8, 1, 8, 2, 8, 3, 7, 9], CARD.GRASSLAND);
+		setBoardRegion([5, 9, 5, 10, 6, 11, 7, 10, 8, 11], CARD.GRASSLAND);
+		setBoardRegion(
+			[11, 3, 11, 4, 12, 3, 13, 3, 14, 3, 15, 1, 16, 2, 17, 2, 18, 3],
+			CARD.GRASSLAND
+		);
+
+		setBoardRegion(
+			[1, 3, 1, 4, 1, 8, 2, 3, 2, 4, 2, 9, 3, 3, 3, 4, 3, 8, 3, 9, 4, 10],
+			CARD.MOUNTAIN
+		);
+		setBoardRegion(
+			[
+				10, 3, 10, 4, 10, 5, 11, 5, 12, 2, 13, 2, 14, 2, 13, 8, 14, 8, 14, 9,
+				15, 9, 16, 9, 17, 4, 17, 5, 18, 5, 19, 4, 19, 5,
+			],
+			CARD.MOUNTAIN
+		);
+
+		board[3][1].type = CARD.TOWER;
+		board[17][1].type = CARD.TOWER;
+		board[3][10].type = CARD.TOWER;
+		board[17][10].type = CARD.TOWER;
+
+		board[10][6].type = CARD.CAPITAL;
+		ageExploration = [{ type: CARD.CAPITAL, x: 10, y: 6 }];
 
 		exploredCards = [6, 7, 8];
 	}
