@@ -36,6 +36,7 @@ const CARD = {
 };
 
 let map = "avenia";
+let goals_cards = "avenia_goals";
 
 const CONSTRAINT = {
 	FREE: "none",
@@ -94,7 +95,10 @@ function preload() {
 	);
 	spritesheet.addSpriteSheet("tresor_cards", "./tresor_cards.png", 400, 260);
 	spritesheet.addSpriteSheet("comptoirs", "./comptoirs.png", 100, 100);
-	spritesheet.addSpriteSheet("goals", "./goals.png", 520, 370);
+	spritesheet.addSpriteSheet("avenia_goals", "./avenia_goals.png", 520, 370);
+	spritesheet.addSpriteSheet("aghon_goals", "./aghon_goals.png", 520, 370);
+	spritesheet.addSpriteSheet("kazan_goals", "./kazan_goals.png", 520, 370);
+	//spritesheet.addSpriteSheet("goals", "./goals.png", 520, 370);
 	spritesheet.addSpriteSheet("coffre_pion", "./coffre_pion.png", 80, 90);
 	spritesheet.addSpriteSheet("PV", "./PV.png", 136, 141);
 	spritesheet.addSpriteSheet("solo_rules", "./solo_rules.png", 550, 700);
@@ -115,21 +119,25 @@ function speakerClicked() {
 
 function startAveniaClicked() {
 	map = "avenia";
+	goals_cards = "avenia_goals";
 	startClicked();
 }
 
 function startAghonClicked() {
 	map = "aghon";
+	goals_cards = "aghon_goals";
 	startClicked();
 }
 
 function startCnidariaClicked() {
 	map = "cnidaria";
+	goals_cards = "cnidaria_goals";
 	startClicked();
 }
 
 function startKazanClicked() {
 	map = "kazan";
+	goals_cards = "kazan_goals";
 	startClicked();
 }
 
@@ -1349,9 +1357,9 @@ function drawGame() {
 	}
 
 	// goals
-	spritesheet.drawScaledSprite("goals", goalArray[0], 1435, 440 - 25, 0.5);
-	spritesheet.drawScaledSprite("goals", goalArray[1], 1435, 630 - 25, 0.5);
-	spritesheet.drawScaledSprite("goals", goalArray[2], 1435, 820 - 25, 0.5);
+	spritesheet.drawScaledSprite(goals_cards, goalArray[0], 1435, 440 - 25, 0.5);
+	spritesheet.drawScaledSprite(goals_cards, goalArray[1], 1435, 630 - 25, 0.5);
+	spritesheet.drawScaledSprite(goals_cards, goalArray[2], 1435, 820 - 25, 0.5);
 	drawGoals();
 
 	// points de victoire
