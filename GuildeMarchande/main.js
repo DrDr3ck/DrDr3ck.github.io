@@ -57,6 +57,7 @@ let PV = 0;
 let PVTreasure = 0;
 let villageRegion = null;
 let bestPVParty = 0;
+let bestNbPieces = 0;
 
 let goals = [0, 0, 0, 0, 0, 0];
 let blockGoalIndex = -1;
@@ -504,6 +505,9 @@ function validateClicked(force = false) {
 		if (cell.bonus.type === "piece") {
 			uiManager.addLogger(`piece: + ${cell.bonus.nb * pieceBonus} PV`);
 			PV += cell.bonus.nb * pieceBonus;
+			if (cell.bonus.nb > bestNbPieces) {
+				bestNbPieces = cell.bonus.nb;
+			}
 		}
 		if (cell.bonus.type === "tresor") {
 			// check if cube is a known ruin
@@ -558,6 +562,11 @@ function validateClicked(force = false) {
 	if (playState === EXPLORATION_STATE) {
 		newExplorationCard();
 	}
+}
+
+function getConnectedTowns() {
+	const allTowns = [];
+	return allTowns;
 }
 
 /**
@@ -1308,6 +1317,16 @@ function hasAllTypedRuins() {
 	return typedRuins.every((t) => t);
 }
 
+function hasVillageNextToRuin(villages) {
+	return villages.some((village) => {
+		const ring = getRing(village.x, village.y);
+		return ring.some((cell) => {
+			const bcell = board[cell.x][cell.y];
+			return bcell.type === "tresor";
+		});
+	});
+}
+
 /**
  * Checks if goals are reached
  */
@@ -1365,10 +1384,7 @@ function checkGoals() {
 	if (map === "aghon") {
 		// decouvrir un village adjacent à une tour
 		villages.forEach((village) => {
-			const towers = ageExploration.filter((cell) => {
-				const bcell = board[cell.x][cell.y];
-				return bcell.type === CARD.TOWER;
-			});
+			const towers = getTowers();
 			const ring = getRing(village.x, village.y);
 			if (
 				ring.some(
@@ -1427,7 +1443,47 @@ function checkGoals() {
 		}
 	}
 	if (map === "kazan") {
-		// TODO
+		// decouvrez village adjacent à une case ruine
+		if (hasVillageNextToRuin(villages)) {
+			reachGoal(0);
+		}
+		// explorez une case avec au moins 3 pieces
+		if (bestNbPieces >= 3) {
+			reachGoal(1);
+		}
+		// explorez les cases ruines A et J
+		if (
+			ruins.findIndex((ruin) => ruin.alpha === "A") >= 0 &&
+			ruins.findIndex((ruin) => ruin.alpha === "J") >= 0
+		) {
+			reachGoal(2);
+		}
+		// explorez les cases ruines B et D
+		if (
+			ruins.findIndex((ruin) => ruin.alpha === "B") >= 0 &&
+			ruins.findIndex((ruin) => ruin.alpha === "D") >= 0
+		) {
+			reachGoal(3);
+		}
+		// explorer la tour nord est + case ruine C
+		const towers = getTowers();
+		if (
+			towers.findIndex((tower) => tower.x === 17 && tower.y === 3) >= 0 &&
+			ruins.findIndex((ruin) => ruin.alpha === "C") >= 0
+		) {
+			reachGoal(4);
+		}
+		// TODO: reliez 2 villes à 2 cases ruines avec une chaine de cube/village
+		const townsPath = getConnectedTowns();
+		if (
+			townsPath.some((path) => {
+				// TODO
+				console.log("path:", path);
+				return false;
+			})
+		) {
+			reachGoal(5);
+		}
 	}
 }
 
