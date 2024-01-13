@@ -1283,7 +1283,7 @@ function getBorderRuins() {
 	});
 }
 
-function getTypedRuins() {
+function hasAllTypedRuins() {
 	const typedRuins = [false, false, false];
 	ruins.forEach((ruin) => {
 		const ring = getRing(ruin.x, ruin.y);
@@ -1372,7 +1372,7 @@ function checkGoals() {
 			}
 		});
 		// explorer des cases ruines adjacentes à prairie, desert et montagne
-		if (getTypedRuins()) {
+		if (hasAllTypedRuins()) {
 			reachGoal(1);
 		}
 		// etablir une route commerciale >= 12
@@ -2804,6 +2804,13 @@ function test() {
 		]),
 		"error in checkCenteredCubes 2"
 	);
+
+	expect(hasAllTypedRuins(), "error in hasAllTypedRuins");
+	ruins = [
+		{ x: 18, y: 5 },
+		{ x: 8, y: 2 },
+	];
+	expect(!hasAllTypedRuins(), "error in hasAllTypedRuins");
 }
 
 test();
