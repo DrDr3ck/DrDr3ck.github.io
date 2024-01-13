@@ -68,12 +68,54 @@ const towerPV = [6, 8, 10, 14];
 let cubes = [];
 let constraint = CONSTRAINT.FREE;
 
+function getRandomName() {
+	const firstNames = [
+		"Marco",
+		"Christopher",
+		"Amerigo",
+		"John",
+		"Ferdinand",
+		"Hernan",
+		"Francis",
+		"Walter",
+		"James",
+		"Francisco",
+		"Vasco",
+		"Giovanni",
+		"Bartolomeu",
+	];
+	const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+	const lastNames = [
+		"Polo",
+		"Columbus",
+		"Vespucci",
+		"Cabot",
+		"Magellan",
+		"Cortes",
+		"Drake",
+		"Raleigh",
+		"Cook",
+		"Pizarro",
+		"Gama",
+		"Verrazzano",
+		"Dias",
+	];
+	const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+	if (Math.random() < 0.3) {
+		return `Sir ${firstName} ${lastName}`;
+	}
+	if (Math.random() > 0.8) {
+		return `${firstName} da ${lastName}`;
+	}
+	return `${firstName} ${lastName}`;
+}
+
 const queryString = window.location.search;
 const urlParams = new URLSearchParams(queryString);
 let seed = urlParams.get("seed");
-// TODO: seed
 if (!seed) {
-	seed = "Avenia"; //getRandomName().replaceAll(' ', '_');
+	seed = getRandomName().replaceAll(" ", "_");
+	console.log("seed:", seed);
 }
 
 function preload() {
@@ -117,27 +159,66 @@ function speakerClicked() {
 	localStorage.setItem(speakerStorageKey, speakerButton.checked ? "on" : "off");
 }
 
+function getUrl() {
+	if (
+		document.location.toString().includes("seed=") &&
+		document.location.toString().includes("map=")
+	) {
+		return `${document.location.toString()}`;
+	} else if (document.location.toString().includes("seed=")) {
+		return `${document.location.toString()}&map=${map}`;
+	} else if (document.location.toString().includes("map=")) {
+		return `${document.location.toString()}&seed=${seed}`;
+	} else if (document.location.toString().includes("index.html")) {
+		return `${document.location.toString()}?map=${map}&seed=${seed}`;
+	}
+	return `${document.location.toString()}index.html?map=${map}&seed=${seed}`;
+}
+
+function initMap(mapName) {
+	map = mapName;
+	goals_cards = `${mapName}_goals`;
+	randomizer = new Randomizer(seed);
+
+	goalArray = [0, 1, 2, 3, 4, 5];
+	randomizer.shuffleArray(goalArray);
+	goalArray = goalArray.splice(-3); // remove 3 last goals
+
+	ageCards = [0, 1, 2, 3, 4, 5];
+	randomizer.shuffleArray(ageCards);
+	ageCards.unshift(9);
+
+	specialityArray = [
+		1, 2, 3, 4, 5, 13, 14, 15, 18, 19, 20, 21, 23, 24, 25, 26, 27,
+	];
+	// [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28];
+	randomizer.shuffleArray(specialityArray);
+
+	tresorArray = [
+		0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2,
+		2, 3, 3, 5, 5, 6, 6, 7, 7, 8, 8, 8, 8, 8, 8,
+	];
+	randomizer.shuffleArray(tresorArray);
+}
+
 function startAveniaClicked() {
-	map = "avenia";
-	goals_cards = "avenia_goals";
-	startClicked();
+	initMap("avenia");
+	document.location.href = getUrl();
+	//startClicked();
 }
 
 function startAghonClicked() {
-	map = "aghon";
-	goals_cards = "aghon_goals";
+	initMap("aghon");
 	startClicked();
 }
 
 function startCnidariaClicked() {
-	map = "cnidaria";
-	goals_cards = "cnidaria_goals";
+	initMap("cnidaria");
 	startClicked();
 }
 
 function startKazanClicked() {
-	map = "kazan";
-	goals_cards = "kazan_goals";
+	initMap("kazan");
 	startClicked();
 }
 
@@ -170,12 +251,12 @@ const findExplorationCell = (cell) => {
 	return ageExploration[index];
 };
 
-function checkCubes() {
+function checkCubes(curCubes) {
 	const isCellInExploration = (rcell) => {
 		return ageExploration.some((exploration) => sameCells(exploration, rcell));
 	};
 	let isolatedCube = false;
-	cubes.forEach((cube) => {
+	curCubes.forEach((cube) => {
 		const getRegion = (cell) => {
 			const exploration = findExplorationCell(cell);
 			const allCells = [{ x: exploration.x, y: exploration.y, type: "cube" }];
@@ -219,21 +300,25 @@ function checkCubes() {
 		return "ok";
 	} else if (constraint === CONSTRAINT.CONSECUTIVE) {
 		if (
-			checkConsecutiveCubes(cubes.filter((cube) => cube.type !== CARD.VILLAGE))
+			checkConsecutiveCubes(
+				curCubes.filter((cube) => cube.type !== CARD.VILLAGE)
+			)
 		) {
 			return "ok";
 		} else {
 			return "Le chemin est interrompu";
 		}
 	} else if (constraint === CONSTRAINT.ALIGNED) {
-		if (checkAlignedCubes(cubes.filter((cube) => cube.type !== CARD.VILLAGE))) {
+		if (
+			checkAlignedCubes(curCubes.filter((cube) => cube.type !== CARD.VILLAGE))
+		) {
 			return "ok";
 		} else {
 			return "Des cubes ne sont pas bien alignés";
 		}
 	} else if (constraint === CONSTRAINT.CENTERED) {
 		if (
-			checkCenteredCubes(cubes.filter((cube) => cube.type !== CARD.VILLAGE))
+			checkCenteredCubes(curCubes.filter((cube) => cube.type !== CARD.VILLAGE))
 		) {
 			return "ok";
 		} else {
@@ -373,15 +458,17 @@ function checkAlignedCubes(alignedCubes) {
 	return false;
 }
 
-function validateClicked() {
-	// TODO: verifier si les conditions sont bonnes ?
-	const condition = checkCubes();
+function validateClicked(force = false) {
+	const curCubes = force
+		? cubes.filter((cube) => cube.x !== 0 || cube.y !== 0)
+		: cubes;
+	const condition = checkCubes(curCubes);
 	if (condition !== "ok") {
 		uiManager.addLogger(condition);
 		return;
 	}
 	let treasureCubes = 0;
-	cubes.forEach((cube) => {
+	curCubes.forEach((cube) => {
 		if (cube.type === CARD.VILLAGE) {
 			transformCubeToVillage(cube.x, cube.y);
 			uiManager.addLogger(`village: + ${age} PV`);
@@ -422,6 +509,7 @@ function validateClicked() {
 	constraint = CONSTRAINT.FREE;
 	// passer à la carte exploration suivante
 	validateButton.enabled = false;
+	validateForceButton.enabled = true;
 	if (treasureCubes === 0) {
 		playState = EXPLORATION_STATE;
 		uiManager.setUI([speakerButton, musicButton, helpButton]);
@@ -447,6 +535,10 @@ function validateClicked() {
 	countPVTreasure();
 
 	soundManager.playSound("validate");
+
+	if (playState === EXPLORATION_STATE) {
+		newExplorationCard();
+	}
 }
 
 /**
@@ -605,6 +697,11 @@ const helpButton = new BFloatingSwitchButton(
 	}
 );
 helpButton.previewCheck = false;
+
+function resetSeed() {
+	seed = getRandomName().replaceAll(" ", "_");
+}
+const resetSeedButton = new BButton(1400, 300, "Reset", resetSeed);
 const aveniaButton = new BButton(
 	140,
 	windowHeight - 120,
@@ -633,13 +730,15 @@ const kazanButton = new BButton(
 	startKazanClicked
 );
 
-const validateButton = new BButton(
-	630,
-	windowHeight - 5,
-	"Valider",
-	validateClicked
-);
+const validateButton = new BButton(1147, 677, "Valider", validateClicked);
+validateButton.setTextSize(30);
+validateButton.w = 180;
 const undoButton = new BButton(530, 80, "Annuler", undoClicked);
+const validateForceButton = new BButton(805, 980, "Fin de Tour", () => {
+	validateClicked(true);
+});
+validateForceButton.setTextSize(30);
+validateForceButton.w = 180;
 
 class Randomizer {
 	constructor(seed) {
@@ -665,29 +764,23 @@ class Randomizer {
 	}
 }
 
-const randomizer = new Randomizer(seed);
+let randomizer = null;
 
 let board = [];
 
 let goalArray = [0, 1, 2, 3, 4, 5];
-randomizer.shuffleArray(goalArray);
-goalArray = goalArray.splice(-3); // remove 3 last goals
 
-const ageCards = [0, 1, 2, 3, 4, 5];
-randomizer.shuffleArray(ageCards);
-ageCards.unshift(9);
+let ageCards = [0, 1, 2, 3, 4, 5];
 
-const specialityArray = [
-	1, 2, 3, 4, 5, 9, 13, 14, 15, 18, 19, 20, 21, 23, 24, 25, 26, 27,
+let specialityArray = [
+	1, 2, 3, 4, 5, 13, 14, 15, 18, 19, 20, 21, 23, 24, 25, 26, 27,
 ];
 // [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28];
-randomizer.shuffleArray(specialityArray);
 
-const tresorArray = [
+let tresorArray = [
 	0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2,
 	3, 3, 5, 5, 6, 6, 7, 7, 8, 8, 8, 8, 8, 8,
 ];
-randomizer.shuffleArray(tresorArray);
 
 let tresors = [];
 
@@ -718,6 +811,7 @@ function undoCube(cubeIndex) {
 		(cell) => cell.x !== x || cell.y !== y
 	);
 	validateButton.enabled = false;
+	validateForceButton.enabled = true;
 }
 
 function checkType(cell, types, withTower = false) {
@@ -775,6 +869,7 @@ function addCube(x, y) {
 	// check if all cubes have been put on board
 	if (cubes.every((cube) => cube.x !== 0)) {
 		validateButton.enabled = true;
+		validateForceButton.enabled = false;
 	}
 	return true;
 }
@@ -803,8 +898,11 @@ function initUI() {
 	aghonButton.enabled = false;
 	cnidariaButton.enabled = false;
 	kazanButton.enabled = false;
+	resetSeedButton.setTextSize(35);
+	resetSeedButton.w = 200;
 	const menu = [
 		speakerButton,
+		resetSeedButton,
 		aveniaButton,
 		cnidariaButton,
 		kazanButton,
@@ -1456,8 +1554,10 @@ function drawLoading() {
 			document.location.toString().includes("seed=") &&
 			document.location.toString().includes("map=")
 		) {
-			// TODO - get map
-			map = "avenia";
+			console.log(document.location.toString());
+			console.log("seed:", seed);
+			map = urlParams.get("map");
+			initMap(map);
 			startClicked();
 		}
 	}
@@ -1485,6 +1585,10 @@ function draw() {
 			50,
 			1.5
 		);
+		noStroke();
+		fill(250);
+		textSize(15);
+		text(seed.replaceAll("_", " "), 1400, 350);
 		if (overHelpButton) {
 			spritesheet.drawSprite("solo_rules", 0, (windowWidth - 550) / 2, 50);
 		}
@@ -1619,9 +1723,11 @@ function newExplorationCard() {
 
 function addValidateButton() {
 	validateButton.enabled = false;
+	validateForceButton.enabled = true;
 	undoButton.enabled = true;
 	uiManager.setUI([
 		validateButton,
+		validateForceButton,
 		undoButton,
 		speakerButton,
 		musicButton,
@@ -1652,10 +1758,6 @@ function prepareCube2Play(specialityCardIndex) {
 	if (specialityCardIndex === 5) {
 		setPieceBonus(3);
 		addCube2Play(CARD.SAND, 4);
-	}
-	if (specialityCardIndex === 5) {
-		setPieceBonus(3);
-		addCube2Play(CARD.SEA, 4);
 	}
 	if (specialityCardIndex === 13) {
 		setConstraint(CONSTRAINT.CENTERED);
@@ -1765,6 +1867,7 @@ function mouseClicked() {
 						// 4. change state
 						playState = VILLAGE_STATE;
 						validateButton.enabled = false;
+						validateForceButton.enabled = false;
 						villageRegion = region;
 						soundManager.playSound("new_cube");
 					}
@@ -1783,6 +1886,7 @@ function mouseClicked() {
 		// check if all cubes have been put on board
 		if (cubes.every((cube) => cube.x !== 0)) {
 			validateButton.enabled = true;
+			validateForceButton.enabled = false;
 		}
 	}
 	if (playState === TRADE_STATE && overTrade) {
