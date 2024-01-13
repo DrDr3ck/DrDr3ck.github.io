@@ -240,7 +240,6 @@ function startClicked() {
 	curState = GAME_PLAY_STATE;
 	uiManager.setUI([speakerButton, musicButton, helpButton]);
 	uiManager.addLogger("A vous de jouer!");
-	soundManager.playSound("new_age");
 }
 
 function setPieceBonus(bonus) {
@@ -374,6 +373,9 @@ function getAllCells(direction, firstCell, lastCell) {
 }
 
 function checkCenteredCubes(centeredCubes) {
+	if (centeredCubes.length <= 1) {
+		return true;
+	}
 	const firstCell = centeredCubes.shift();
 	const cells = getRing(firstCell.x, firstCell.y);
 	return centeredCubes.every(
@@ -382,6 +384,9 @@ function checkCenteredCubes(centeredCubes) {
 }
 
 function checkConsecutiveCubes(consecutiveCubes) {
+	if (consecutiveCubes.length <= 1) {
+		return true;
+	}
 	const path = [consecutiveCubes[0]];
 	const isCellInPath = (rcell) => {
 		return path.some((pcell) => sameCells(pcell, rcell));
@@ -404,6 +409,9 @@ function checkConsecutiveCubes(consecutiveCubes) {
 }
 
 function checkAlignedCubes(alignedCubes) {
+	if (alignedCubes.length <= 1) {
+		return true;
+	}
 	let lowerCell = alignedCubes[0];
 	alignedCubes.forEach((cube) => {
 		if (cube.x < lowerCell.x) {
@@ -715,7 +723,7 @@ function newGame() {
 }
 const newGameButton = new BButton(640, 300, "Nouvelle Partie", newGame);
 newGameButton.w = 450;
-const resetSeedButton = new BButton(1400, 300, "Reset", resetSeed);
+const resetSeedButton = new BButton(1400, 300, "Reset seed", resetSeed);
 const aveniaButton = new BButton(
 	140,
 	windowHeight - 120,
@@ -912,7 +920,7 @@ function initUI() {
 	aghonButton.enabled = false;
 	cnidariaButton.enabled = false;
 	kazanButton.enabled = false;
-	resetSeedButton.setTextSize(35);
+	resetSeedButton.setTextSize(32);
 	resetSeedButton.w = 200;
 	const menu = [
 		speakerButton,
@@ -1490,7 +1498,11 @@ function drawGame() {
 	fill(250);
 	if (age <= 4) {
 		if (playState === EXPLORATION_STATE) {
-			text("Cliquez sur la carte d'exploration (bord rouge)", 200, 980);
+			if (age === 1) {
+				text("Cliquez sur la carte d'exploration pour commencer", 200, 980);
+			} else {
+				text("Cliquez sur la carte d'exploration (bord rouge)", 200, 980);
+			}
 		} else if (playState === CUBE_STATE) {
 			text("Posez des cubes", 200, 980);
 		} else if (playState === VILLAGE_STATE) {
@@ -1516,6 +1528,22 @@ function drawGame() {
 			980
 		);
 		drawScore();
+	}
+
+	if (age === 1 && ageCards[0] === 9) {
+		// toute premiere carte
+		fill(250, 0, 0);
+		stroke(0);
+		strokeWeight(3);
+		beginShape();
+		vertex(791, 954);
+		vertex(1091, 732);
+		vertex(1112, 775);
+		vertex(1126, 678);
+		vertex(1030, 679);
+		vertex(1069, 709);
+		vertex(758, 915);
+		endShape(CLOSE);
 	}
 
 	if (overHelpButton) {
@@ -1601,8 +1629,9 @@ function draw() {
 		);
 		noStroke();
 		fill(250);
-		textSize(15);
-		text(seed.replaceAll("_", " "), 1400, 350);
+		textSize(25);
+		text("Explorateur:", 1400, 175);
+		text(seed.replaceAll("_", " "), 1400, 220);
 		if (overHelpButton) {
 			spritesheet.drawSprite("solo_rules", 0, (windowWidth - 550) / 2, 50);
 		}
@@ -1899,6 +1928,7 @@ function mouseClicked() {
 		soundManager.playSound("place_cube");
 		playState = CUBE_STATE;
 		// check if all cubes have been put on board
+		validateForceButton.enabled = true;
 		if (cubes.every((cube) => cube.x !== 0)) {
 			validateButton.enabled = true;
 			validateForceButton.enabled = false;
