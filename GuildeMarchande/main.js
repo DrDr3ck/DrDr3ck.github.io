@@ -159,17 +159,27 @@ function speakerClicked() {
 	localStorage.setItem(speakerStorageKey, speakerButton.checked ? "on" : "off");
 }
 
-function getUrl() {
+function getUrl(base = false) {
+	if (base) {
+		const url = document.location.toString();
+		const lastIndex = url.lastIndexOf("/");
+		if (lastIndex > 0) {
+			return url.substring(0, lastIndex);
+		}
+	}
 	if (
 		document.location.toString().includes("seed=") &&
 		document.location.toString().includes("map=")
 	) {
 		return `${document.location.toString()}`;
-	} else if (document.location.toString().includes("seed=")) {
+	}
+	if (document.location.toString().includes("seed=")) {
 		return `${document.location.toString()}&map=${map}`;
-	} else if (document.location.toString().includes("map=")) {
+	}
+	if (document.location.toString().includes("map=")) {
 		return `${document.location.toString()}&seed=${seed}`;
-	} else if (document.location.toString().includes("index.html")) {
+	}
+	if (document.location.toString().includes("index.html")) {
 		return `${document.location.toString()}?map=${map}&seed=${seed}`;
 	}
 	return `${document.location.toString()}index.html?map=${map}&seed=${seed}`;
@@ -204,22 +214,21 @@ function initMap(mapName) {
 function startAveniaClicked() {
 	initMap("avenia");
 	document.location.href = getUrl();
-	//startClicked();
 }
 
 function startAghonClicked() {
 	initMap("aghon");
-	startClicked();
+	document.location.href = getUrl();
 }
 
 function startCnidariaClicked() {
 	initMap("cnidaria");
-	startClicked();
+	document.location.href = getUrl();
 }
 
 function startKazanClicked() {
 	initMap("kazan");
-	startClicked();
+	document.location.href = getUrl();
 }
 
 function startClicked() {
@@ -701,6 +710,11 @@ helpButton.previewCheck = false;
 function resetSeed() {
 	seed = getRandomName().replaceAll(" ", "_");
 }
+function newGame() {
+	document.location.href = getUrl(true);
+}
+const newGameButton = new BButton(640, 300, "Nouvelle Partie", newGame);
+newGameButton.w = 450;
 const resetSeedButton = new BButton(1400, 300, "Reset", resetSeed);
 const aveniaButton = new BButton(
 	140,
@@ -1656,7 +1670,8 @@ function newExplorationCard() {
 			ageCards.unshift(9);
 			exploredCards = [];
 		} else if (age === 5) {
-			// TODO: end of game - add points from treasure !
+			// end of game - add points from treasure !
+			uiManager.setUI([speakerButton, musicButton, helpButton, newGameButton]);
 		}
 		// remove all cubes
 		removeCubes();
