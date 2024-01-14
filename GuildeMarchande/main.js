@@ -757,7 +757,7 @@ function resetSeed() {
 function newGame() {
 	document.location.href = getUrl(true);
 }
-const newGameButton = new BButton(640, 300, "Nouvelle Partie", newGame);
+const newGameButton = new BButton(1200, 300, "Nouvelle Partie", newGame);
 newGameButton.w = 450;
 const resetSeedButton = new BButton(1400, 300, "Reset seed", resetSeed);
 const aveniaButton = new BButton(
@@ -1562,9 +1562,6 @@ function drawGame() {
 			rect(1150, 415, 1320 - 1150, 676 - 415, 15);
 		}
 	}
-	if (overTreasure) {
-		drawTreasure();
-	}
 	if (playState === SPECIALIZED_STATE) {
 		// afficher 2 cartes tirées du tableau
 		noFill();
@@ -1717,6 +1714,9 @@ function drawGame() {
 			980
 		);
 		drawScore();
+	}
+	if (overTreasure) {
+		drawTreasure();
 	}
 
 	if (age === 1 && ageCards[0] === 9) {
