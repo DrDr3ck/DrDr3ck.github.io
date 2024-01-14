@@ -121,6 +121,29 @@ if (!seed) {
 	seed = getRandomName().replaceAll(" ", "_");
 }
 
+const tutoImages = [
+	{ width: 350, height: 650, name: "tutoExplication", button: null },
+	{ width: 300, height: 80, name: "tutoTerrain", button: null },
+	{ width: 420, height: 50, name: "tutoCapitale", button: null },
+	{ width: 400, height: 55, name: "tutoRegion", button: null },
+	{ width: 540, height: 335, name: "tutoTypes", button: null },
+	{ width: 435, height: 60, name: "tutoScore", button: null },
+	{ width: 670, height: 250, name: "tutoExplorationCard", button: null },
+	{ width: 660, height: 430, name: "tutoEndAge", button: null },
+	{ width: 675, height: 460, name: "tutoExploreMap", button: null },
+	{ width: 310, height: 730, name: "tutoRules", button: null },
+	{ width: 735, height: 830, name: "tutoExplorationBoard", button: null },
+	{ width: 640, height: 975, name: "tutoTreasure", button: null },
+	{ width: 330, height: 220, name: "tutoGoal", button: null },
+	{ width: 890, height: 570, name: "tutoSpecializedCard", button: null },
+	{ width: 550, height: 700, name: "tutoSoloRule", button: null },
+	{ width: 560, height: 460, name: "tutoVillage", button: null },
+	{ width: 550, height: 320, name: "tutoTower", button: null },
+	{ width: 550, height: 190, name: "tutoPiece", button: null },
+	{ width: 550, height: 370, name: "tutoRuins", button: null },
+	{ width: 560, height: 680, name: "tutoTowns", button: null },
+];
+
 function preload() {
 	spritesheet.addSpriteSheet("cover", "./cover.png", 686, 503);
 	spritesheet.addSpriteSheet("avenia", "./avenia.png", 1680, 1405);
@@ -153,9 +176,26 @@ function preload() {
 	);
 	spritesheet.addSpriteSheet("pions", "./pions.png", 80, 90);
 	spritesheet.addSpriteSheet("PV", "./PV.png", 136, 141);
-	spritesheet.addSpriteSheet("solo_rules", "./solo_rules.png", 550, 700);
+	spritesheet.addSpriteSheet("avenia_rules", "./avenia_rules.png", 380, 275);
+	spritesheet.addSpriteSheet("aghon_rules", "./aghon_rules.png", 685, 275);
+	spritesheet.addSpriteSheet("kazan_rules", "./kazan_rules.png", 675, 350);
+	spritesheet.addSpriteSheet(
+		"cnidaria_rules",
+		"./cnidaria_rules.png",
+		680,
+		710
+	);
 	spritesheet.addSpriteSheet("solo_pions", "./solo_pions.png", 72, 72);
 	spritesheet.addSpriteSheet("scores", "./scores.png", 126, 80);
+
+	tutoImages.forEach((tuto) => {
+		spritesheet.addSpriteSheet(
+			tuto.name,
+			`./${tuto.name}.png`,
+			tuto.width,
+			tuto.height
+		);
+	});
 }
 
 function musicClicked() {
@@ -780,6 +820,53 @@ const helpButton = new BFloatingSwitchButton(
 );
 helpButton.previewCheck = false;
 
+const createTutoButton = (x, y, str) => {
+	const tutoButton = new BFloatingSwitchButton(x, y, str, () => {});
+	tutoButton.previewCheck = false;
+	tutoButton.setTextSize(50);
+	return tutoButton;
+};
+const tutoExplicationButton = createTutoButton(74, 88, "1");
+tutoImages[0].button = tutoExplicationButton;
+const tutoTerrainButton = createTutoButton(300, 430, "2");
+tutoImages[1].button = tutoTerrainButton;
+const tutoCapitaleButton = createTutoButton(450, 430, "3");
+tutoImages[2].button = tutoCapitaleButton;
+const tutoRegionButton = createTutoButton(1035, 255, "4");
+tutoImages[3].button = tutoRegionButton;
+const tutoTypesButton = createTutoButton(420, 675, "5");
+tutoImages[4].button = tutoTypesButton;
+const tutoScoreButton = createTutoButton(110, 845, "6");
+tutoImages[5].button = tutoScoreButton;
+const tutoExplorationCardButton = createTutoButton(1210, 560, "7");
+tutoImages[6].button = tutoExplorationCardButton;
+const tutoEndAgeButton = createTutoButton(5, 940, "8");
+tutoImages[7].button = tutoEndAgeButton;
+const tutoExploreMapButton = createTutoButton(1035, 125, "9");
+tutoImages[8].button = tutoExploreMapButton;
+const tutoRulesButton = createTutoButton(1040, 940, "10");
+tutoImages[9].button = tutoRulesButton;
+const tutoExplorationBoardButton = createTutoButton(1390, 170, "11");
+tutoImages[10].button = tutoExplorationBoardButton;
+const tutoTreasureButton = createTutoButton(1250, 925, "12");
+tutoImages[11].button = tutoTreasureButton;
+const tutoGoalButton = createTutoButton(1550, 725, "13");
+tutoImages[12].button = tutoGoalButton;
+const tutoSpecializedCardButton = createTutoButton(15, 480, "14");
+tutoImages[13].button = tutoSpecializedCardButton;
+const tutoSoloRuleButton = createTutoButton(550, 930, "15");
+tutoImages[14].button = tutoSoloRuleButton;
+const tutoVillageButton = createTutoButton(410, 260, "5a");
+tutoImages[15].button = tutoVillageButton;
+const tutoTowerButton = createTutoButton(210, 305, "5b");
+tutoImages[16].button = tutoTowerButton;
+const tutoPieceButton = createTutoButton(275, 530, "5c");
+tutoImages[17].button = tutoPieceButton;
+const tutoRuinsButton = createTutoButton(350, 785, "5d");
+tutoImages[18].button = tutoRuinsButton;
+const tutoTownsButton = createTutoButton(160, 540, "5e");
+tutoImages[19].button = tutoTownsButton;
+
 function resetSeed() {
 	seed = getRandomName().replaceAll(" ", "_");
 }
@@ -788,10 +875,19 @@ function newGame() {
 }
 function tutoClicked() {
 	curState = TUTO_STATE;
+	initBoard("avenia");
+	const buttons = [endTutoButton, musicButton, speakerButton];
+	tutoImages.forEach((tuto) => buttons.push(tuto.button));
+	uiManager.setUI(buttons);
+	ageExploration.push({ type: "cube", x: 7, y: 4 });
+	ageExploration.push({ type: "cube", x: 8, y: 4 });
+	ageExploration.push({ type: "cube", x: 9, y: 3 });
+	transformCubeToVillage(7, 4);
 }
 
 const newGameButton = new BButton(1200, 300, "Nouvelle Partie", newGame);
 newGameButton.w = 450;
+const endTutoButton = new BButton(500, 90, "Fin Tutoriel", newGame);
 const resetSeedButton = new BButton(1400, 300, "Reset seed", resetSeed);
 const tutoButton = new BButton(140, 120, "Tutoriel", tutoClicked);
 
@@ -999,7 +1095,7 @@ function initUI() {
 	kazanButton.enabled = true;
 	resetSeedButton.setTextSize(32);
 	resetSeedButton.w = 200;
-	tutoButton.enabled = false;
+	tutoButton.enabled = true;
 	const menu = [
 		speakerButton,
 		resetSeedButton,
@@ -1737,14 +1833,53 @@ function drawSpecializedCards() {
 	}
 }
 
+function highlightCell(cell) {
+	const bcell = board[cell.x][cell.y];
+	noFill();
+	strokeWeight(4);
+	stroke(250);
+	ellipse(bcell.center.x + boardx, bcell.center.y + boardy, 45); // 45 de rayon
+}
+
+function drawAge() {
+	noStroke();
+	fill(250);
+	textSize(25);
+	if (age < 5) {
+		text(`Age ${age}`, 10, 980);
+	} else {
+		text(
+			`Fin du jeu: ${PV + PVTreasure} PV et ${
+				goals.filter((g) => g > 0).length
+			} objectifs sur 3`,
+			10,
+			980
+		);
+		drawScore();
+	}
+}
+
+function drawPV() {
+	spritesheet.drawScaledSprite("PV", 0, 1330, 510, 0.8);
+	noStroke();
+	fill(250);
+	textSize(25);
+	text(`x ${PV}`, 1360, 640);
+	text(`+ ${PVTreasure}`, 1360 - 2, 670);
+}
+
+function drawTreasureCard() {
+	spritesheet.drawScaledSprite("tresor_cards", 9, 1150, 820, 0.65);
+	noStroke();
+	fill(0);
+	textSize(25);
+	text(`x ${tresors.length}`, 1345, 945);
+}
+
 function drawGame() {
 	drawBoards();
 	if (overCell) {
-		const cell = board[overCell.x][overCell.y];
-		noFill();
-		strokeWeight(4);
-		stroke(250);
-		ellipse(cell.center.x + boardx, cell.center.y + boardy, 45); // 45 de rayon
+		highlightCell(overCell);
 	}
 	drawExplorationCard();
 	if (playState === SPECIALIZED_STATE) {
@@ -1844,16 +1979,9 @@ function drawGame() {
 	drawGoals();
 
 	// points de victoire
-	spritesheet.drawScaledSprite("PV", 0, 1330, 510, 0.8);
-	noStroke();
-	fill(250);
-	textSize(25);
-	text(`x ${PV}`, 1360, 640);
-	text(`+ ${PVTreasure}`, 1360 - 2, 670);
+	drawPV();
 	// tresor
-	spritesheet.drawScaledSprite("tresor_cards", 9, 1150, 820, 0.65);
-	fill(0);
-	text(`x ${tresors.length}`, 1345, 945);
+	drawTreasureCard();
 
 	// explication
 	fill(250);
@@ -1878,18 +2006,7 @@ function drawGame() {
 			);
 		}
 	}
-	if (age < 5) {
-		text(`Age ${age}`, 10, 980);
-	} else {
-		text(
-			`Fin du jeu: ${PV + PVTreasure} PV et ${
-				goals.filter((g) => g > 0).length
-			} objectifs sur 3`,
-			10,
-			980
-		);
-		drawScore();
-	}
+	drawAge();
 	if (overTreasure) {
 		drawTreasure();
 	}
@@ -1911,7 +2028,7 @@ function drawGame() {
 	}
 
 	if (overHelpButton) {
-		spritesheet.drawSprite("solo_rules", 0, (windowWidth - 550) / 2, 50);
+		spritesheet.drawSprite(`${map}_rules`, 0, (windowWidth - 550) / 2, 50);
 	}
 }
 
@@ -1971,6 +2088,102 @@ function drawTuto() {
 	drawBoards();
 	drawSpecializedCards();
 	drawGoals();
+	drawAge();
+	drawPV();
+	drawTreasureCard();
+
+	const drawImage = (image) => {
+		const imageX = (windowWidth - image.width) / 2;
+		const imageY = (windowHeight - image.height) / 2;
+		spritesheet.drawSprite(image.name, 0, imageX, imageY);
+		noFill();
+		stroke(0);
+		strokeWeight(5);
+		rect(imageX - 2, imageY - 2, image.width + 4, image.height + 4, 15);
+	};
+
+	const tutoIndex = tutoImages.findIndex((image) => image.button.over == true);
+	if (tutoIndex >= 0) {
+		const tutoImage = tutoImages[tutoIndex];
+		drawImage(tutoImage);
+		tutoImages.forEach((tuto, idx) => {
+			if (tutoIndex !== idx) {
+				tuto.button.visible = false;
+			}
+		});
+		endTutoButton.visible = false;
+	} else {
+		tutoImages.forEach((tuto) => {
+			tuto.button.visible = true;
+		});
+		endTutoButton.visible = true;
+		return;
+	}
+
+	if (tutoTerrainButton.over === true) {
+		highlightCell({ x: 4, y: 4 });
+		highlightCell({ x: 7, y: 5 });
+		highlightCell({ x: 2, y: 7 });
+		highlightCell({ x: 5, y: 7 });
+		line(330, 400, 321, 324);
+		line(330, 400, 441, 387);
+		line(330, 400, 358, 469);
+		line(330, 400, 248, 454);
+	}
+
+	if (tutoCapitaleButton.over === true) {
+		highlightCell({ x: 9, y: 6 });
+		line(480, 402, 534, 427);
+	}
+
+	if (tutoRegionButton.over === true) {
+		highlightCell({ x: 15, y: 3 });
+		highlightCell({ x: 16, y: 3 });
+		highlightCell({ x: 17, y: 2 });
+		line(1062, 228, 902, 250);
+	}
+
+	if (tutoTypesButton.over === true) {
+		highlightCell({ x: 8, y: 7 });
+		highlightCell({ x: 5, y: 7 });
+		highlightCell({ x: 5, y: 11 });
+		highlightCell({ x: 3, y: 11 });
+		highlightCell({ x: 7, y: 12 });
+	}
+
+	if (tutoVillageButton.over === true) {
+		highlightCell({ x: 7, y: 4 });
+		rect(185, 854, 618 - 185, 935 - 854, 15);
+		line(440, 230, 455, 308);
+		line(440, 230, 358, 855);
+	}
+
+	if (tutoTowerButton.over === true) {
+		highlightCell({ x: 2, y: 2 });
+		rect(782, 854, 1133 - 782, 935 - 854, 15);
+		line(243, 276, 228, 217);
+		line(243, 276, 787, 860);
+	}
+
+	if (tutoPieceButton.over === true) {
+		highlightCell({ x: 2, y: 9 });
+	}
+
+	if (tutoRuinsButton.over === true) {
+		highlightCell({ x: 7, y: 12 });
+	}
+
+	if (tutoTownsButton.over === true) {
+		highlightCell({ x: 1, y: 6 });
+	}
+
+	if (tutoScoreButton.over === true) {
+		noFill();
+		strokeWeight(4);
+		stroke(250);
+		rect(185, 854, 618 - 185, 935 - 854, 15);
+		rect(782, 854, 1133 - 782, 935 - 854, 15);
+	}
 }
 
 function draw() {
@@ -1983,7 +2196,6 @@ function draw() {
 	}
 	if (curState === TUTO_STATE) {
 		drawTuto();
-		return;
 	}
 
 	uiManager.processInput();
@@ -2004,9 +2216,6 @@ function draw() {
 		textSize(25);
 		text("Explorateur:", 1400, 175);
 		text(seed.replaceAll("_", " "), 1400, 220);
-		if (overHelpButton) {
-			spritesheet.drawSprite("solo_rules", 0, (windowWidth - 550) / 2, 50);
-		}
 	}
 	if (curState === GAME_PLAY_STATE) {
 		updateGame(elapsedTime);
@@ -2247,6 +2456,9 @@ function mouseClicked() {
 	}
 	toolManager.mouseClicked();
 	uiManager.mouseClicked();
+	if (curState === TUTO_STATE) {
+		return;
+	}
 	// le joueur clique sur la carte d'exploration pour en découvrir une nouvelle
 	if (playState === EXPLORATION_STATE && overExploration) {
 		soundManager.playSound("take_card");
@@ -2616,6 +2828,7 @@ function initGoalsAndTreasures() {
 }
 
 function initBoard(map = "avenia") {
+	cubes = [];
 	const setTresors = (tresorCoords, alpha = "ABCDEFGHIJ") => {
 		for (let i = 0; i < tresorCoords.length - 1; i += 2) {
 			board[tresorCoords[i]][tresorCoords[i + 1]].bonus = {
@@ -2649,6 +2862,7 @@ function initBoard(map = "avenia") {
 	age = 1;
 	PV = 0;
 	PVTreasure = 0;
+	blockGoalIndex = 0;
 	let dx = 179 - 46.5 * 2;
 	let dy = 169 - 54 * 2;
 	if (map === "cnidaria") {
