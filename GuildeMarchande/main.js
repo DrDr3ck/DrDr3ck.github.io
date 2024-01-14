@@ -150,7 +150,7 @@ function preload() {
 		520,
 		370
 	);
-	spritesheet.addSpriteSheet("coffre_pion", "./coffre_pion.png", 80, 90);
+	spritesheet.addSpriteSheet("pions", "./pions.png", 80, 90);
 	spritesheet.addSpriteSheet("PV", "./PV.png", 136, 141);
 	spritesheet.addSpriteSheet("solo_rules", "./solo_rules.png", 550, 700);
 	spritesheet.addSpriteSheet("solo_pions", "./solo_pions.png", 72, 72);
@@ -531,7 +531,18 @@ function validateClicked(force = false) {
 			}
 		}
 		if (cell.bonus.type === "cristal") {
-			// TODO:check if cube is a known cristal
+			// check if cube is a known cristal
+			if (!cristals.some((cristal) => sameCells(cristal, cube))) {
+				// add cristal PV + all other cristal PVs
+				let cristalPV = cell.bonus.nb;
+				cristals.forEach((cristal) => {
+					const bcell = board[cristal.x][cristal.y];
+					cristalPV += bcell.bonus.nb;
+				});
+				// add cristal as known cristal
+				cristals.push({ x: cube.x, y: cube.y });
+				uiManager.addLogger(`cristal: + ${cristalPV} PV`);
+			}
 		}
 	});
 	setTresorBonus(1);
@@ -678,7 +689,10 @@ function getTowers() {
 }
 
 function getCristals() {
-	return getTypedCells(CARD.CRISTAL);
+	return ageExploration.filter((cell) => {
+		const bcell = board[cell.x][cell.y];
+		return bcell.type === CARD.CRISTAL;
+	});
 }
 
 function countPVTreasure() {
@@ -888,11 +902,14 @@ function undoCube(cubeIndex) {
 	validateForceButton.enabled = true;
 }
 
-function checkType(cell, types, withTower = false) {
+function checkType(cell, types, withTowerOrCristal = false) {
 	if (types[0] === CARD.JOKER) {
 		return true;
 	}
-	if (withTower && cell.type === CARD.TOWER) {
+	if (
+		withTowerOrCristal &&
+		(cell.type === CARD.TOWER || cell.type === CARD.CRISTAL)
+	) {
 		return true;
 	}
 	return types.includes(cell.type);
@@ -1050,7 +1067,14 @@ function drawCoffre(x, y) {
 	const cell = board[x][y];
 	const X = cell.center.x + boardx - 25;
 	const Y = cell.center.y + boardy - 25;
-	spritesheet.drawScaledSprite("coffre_pion", 0, X, Y, 0.65);
+	spritesheet.drawScaledSprite("pions", 0, X, Y - 10, 0.65);
+}
+
+function drawCristal(x, y) {
+	const cell = board[x][y];
+	const X = cell.center.x + boardx - 25;
+	const Y = cell.center.y + boardy - 25;
+	spritesheet.drawScaledSprite("pions", 1, X, Y, 0.65);
 }
 
 function drawTrade(x, y) {
@@ -1554,12 +1578,7 @@ function checkGoals() {
 			reachGoal(0);
 		}
 		// explorez 2 cases cristal
-		if (
-			ageExploration.filter((cell) => {
-				const bcell = board[cell.x][cell.y];
-				return (cell.type = CARD.CRISTAL);
-			}).length >= 2
-		) {
+		if (cristals.length >= 2) {
 			reachGoal(1);
 		}
 		// route commerciale 16+
@@ -1589,22 +1608,19 @@ function checkGoals() {
 			reachGoal(4);
 		}
 		// decouvrez 2 villages adjacent à une case cristal
+		let villageCristalCount = 0;
 		villages.forEach((village) => {
 			const cristals = getCristals();
 			const ring = getRing(village.x, village.y);
-			let count = 0;
-			if (
-				ring.some(
-					(cell) =>
-						cristals.findIndex((cristal) => sameCells(cristal, cell)) >= 0
-				)
-			) {
-				count++;
-			}
-			if (count >= 2) {
-				reachGoal(5);
-			}
+			ring.forEach((cell) => {
+				if (cristals.findIndex((cristal) => sameCells(cristal, cell)) >= 0) {
+					villageCristalCount++;
+				}
+			});
 		});
+		if (villageCristalCount >= 2) {
+			reachGoal(5);
+		}
 	}
 }
 
@@ -1616,6 +1632,8 @@ function drawGame() {
 	} else {
 		// ruines
 		ruins.forEach((ruin) => drawCoffre(ruin.x, ruin.y));
+		//cristal
+		cristals.forEach((cristal) => drawCristal(cristal.x, cristal.y));
 		// comptoir commercial
 		knownTrades.forEach((trade) => drawTrade(trade.x, trade.y));
 		drawAgeExploration();
@@ -1685,7 +1703,7 @@ function drawGame() {
 			"speciality_cards",
 			0,
 			map === "cnidaria" ? -90 : -110,
-			120 - 25,
+			95,
 			map === "cnidaria" ? 0.5 : 0.6
 		);
 	} else {
@@ -1702,7 +1720,7 @@ function drawGame() {
 			"speciality_cards",
 			0,
 			map === "cnidaria" ? -90 : -110,
-			380 - 25,
+			355,
 			map === "cnidaria" ? 0.5 : 0.6
 		);
 	} else {
@@ -1710,7 +1728,7 @@ function drawGame() {
 			"speciality_cards",
 			specialityCards[1],
 			map === "cnidaria" ? -5 : 5,
-			380 - 25,
+			355,
 			map === "cnidaria" ? 0.5 : 0.6
 		);
 	}
@@ -1719,7 +1737,7 @@ function drawGame() {
 			"speciality_cards",
 			0,
 			map === "cnidaria" ? -90 : -110,
-			640 - 25,
+			615,
 			map === "cnidaria" ? 0.5 : 0.6
 		);
 	} else {
@@ -1727,7 +1745,7 @@ function drawGame() {
 			"speciality_cards",
 			specialityCards[2],
 			map === "cnidaria" ? -5 : 5,
-			640 - 25,
+			615,
 			map === "cnidaria" ? 0.5 : 0.6
 		);
 	}
@@ -1738,13 +1756,31 @@ function drawGame() {
 		strokeWeight(4);
 		stroke(25);
 		if (overSpecializedCard === 0) {
-			rect(5, 95, 160 - 5, 333 - 95, 15);
+			rect(
+				5,
+				95,
+				map === cnidaria ? 130 : 155,
+				map === cnidaria ? 200 : 238,
+				15
+			);
 		}
 		if (overSpecializedCard === 1) {
-			rect(5, 355, 160 - 5, 593 - 355, 15);
+			rect(
+				5,
+				355,
+				map === cnidaria ? 130 : 155,
+				map === cnidaria ? 200 : 238,
+				15
+			);
 		}
 		if (overSpecializedCard === 2) {
-			rect(5, 615, 160 - 5, 849 - 615, 15);
+			rect(
+				5,
+				615,
+				map === cnidaria ? 130 : 155,
+				map === cnidaria ? 200 : 238,
+				15
+			);
 		}
 	}
 
