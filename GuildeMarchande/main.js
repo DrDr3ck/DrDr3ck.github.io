@@ -243,6 +243,9 @@ function startKazanClicked() {
 function startClicked() {
 	initBoard(map);
 	computeRegions();
+	if (map === "avenia") {
+		computeTerres();
+	}
 	cubes = [];
 	initGoalsAndTreasures();
 
@@ -872,6 +875,8 @@ let tresors = [];
 
 let regions = [];
 
+let terres = [];
+
 let ruins = [];
 
 let cristals = [];
@@ -923,7 +928,6 @@ function addCube(x, y) {
 		return false;
 	}
 	const cell = board[x][y];
-	// TODO: constraint
 	// if aligned/centered and first cube, should explore type of first playable cube
 	if (
 		cubes.filter((c) => c.x !== 0 && c.y !== 0).length === 0 &&
@@ -1423,19 +1427,18 @@ function checkGoals() {
 		if (trades3 >= 2) {
 			reachGoal(2);
 		}
-		// decouvrez villages sur les 3 types
-		const types = [false, false, false];
-		villages.forEach((village) => {
-			const bcell = board[village.x][village.y];
-			if (bcell.type === CARD.MOUNTAIN) {
-				types[0] = true;
-			} else if (bcell.type === CARD.SAND) {
-				types[1] = true;
-			} else if (bcell.type === CARD.GRASSLAND) {
-				types[2] = true;
+		// decouvrez villages sur les 3 terres
+		let villageOnTerre = 0;
+		terres.forEach((terre, index) => {
+			if (
+				terre.cells.filter((cell) =>
+					villages.some((village) => sameCells(village, cell))
+				).length > 0
+			) {
+				villageOnTerre++;
 			}
 		});
-		if (types.every((t) => t)) {
+		if (villageOnTerre >= 3) {
 			reachGoal(3);
 		}
 		// placez 2 tours
@@ -2458,6 +2461,61 @@ function getRing(x, y) {
 	return cells;
 }
 
+function computeTerres() {
+	terres = [];
+	// create an 2D array of cells:
+	// true if cell is still free and not associated to a region
+	const freeCells = [];
+	for (let i = 0; i < 24; i++) {
+		const columns = [];
+		for (let j = 0; j < 15; j++) {
+			columns.push(true);
+		}
+		freeCells.push(columns);
+	}
+	const getTerre = (x, y) => {
+		const cells = [{ x: x, y: y }];
+		freeCells[x][y] = false;
+		let curIndex = 0;
+		while (curIndex < cells.length) {
+			const ring = getRing(cells[curIndex].x, cells[curIndex].y);
+			ring.forEach((cell) => {
+				// check if cell is free
+				if (!freeCells[cell.x][cell.y]) {
+					return;
+				}
+				// check if cell has same type
+				const bcell = board[cell.x][cell.y];
+				if ([CARD.SAND, CARD.GRASSLAND, CARD.MOUNTAIN].includes(bcell.type)) {
+					// add cell and mark it
+					cells.push({ x: cell.x, y: cell.y });
+					freeCells[cell.x][cell.y] = false;
+				}
+			});
+			curIndex += 1;
+		}
+		return cells;
+	};
+	for (let i = 0; i < 24; i++) {
+		for (let j = 0; j < 15; j++) {
+			const cell = board[i][j];
+			if (
+				cell.type === null ||
+				[CARD.SEA, CARD.TOWER, CARD.CAPITAL].includes(cell.type)
+			) {
+				continue;
+			}
+			if (!freeCells[i][j]) {
+				// cell already associated to a terre
+				continue;
+			}
+			// new terre
+			const terre = { type: cell.type, cells: getTerre(i, j) };
+			terres.push(terre);
+		}
+	}
+}
+
 function computeRegions() {
 	regions = [];
 	// create an 2D array of cells:
@@ -3103,6 +3161,9 @@ function test() {
 	expectLength(regions, 30, "error in computeRegions");
 
 	expectLength(findRegion(17, 5).cells, 5, "error in findRegion");
+
+	computeTerres();
+	expectLength(terres, 6, "error in computeTerres");
 
 	addCube2Play(CARD.GRASSLAND, 4);
 	addCube2Play(CARD.SAND, 2);
