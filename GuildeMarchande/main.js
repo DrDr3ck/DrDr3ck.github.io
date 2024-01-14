@@ -987,7 +987,7 @@ function initUI() {
 		soundManager.mute(true);
 	}
 	aghonButton.enabled = true;
-	cnidariaButton.enabled = false;
+	cnidariaButton.enabled = true;
 	kazanButton.enabled = true;
 	resetSeedButton.setTextSize(32);
 	resetSeedButton.w = 200;
