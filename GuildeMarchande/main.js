@@ -566,6 +566,31 @@ function validateClicked(force = false) {
 
 function getConnectedTowns() {
 	const allTowns = [];
+	const towns = ageExploration.filter((cell) => {
+		const bcell = board[cell.x][cell.y];
+		return bcell.bonus?.type === "trade";
+	});
+	const isCellInExploration = (rcell) => {
+		return ageExploration.some((exploration) => sameCells(exploration, rcell));
+	};
+	towns.forEach((curTown) => {
+		const path = [{ x: curTown.x, y: curTown.y }];
+		const isCellInPath = (rcell) => {
+			return path.some((pcell) => sameCells(pcell, rcell));
+		};
+		let pathIndex = 0;
+		while (pathIndex < path.length) {
+			const cell = path[pathIndex];
+			const ring = getRing(cell.x, cell.y);
+			ring.forEach((rcell) => {
+				if (isCellInExploration(rcell) && !isCellInPath(rcell)) {
+					path.push({ x: rcell.x, y: rcell.y });
+				}
+			});
+			pathIndex++;
+		}
+		allTowns.push(path);
+	});
 	return allTowns;
 }
 
@@ -1322,7 +1347,7 @@ function hasVillageNextToRuin(villages) {
 		const ring = getRing(village.x, village.y);
 		return ring.some((cell) => {
 			const bcell = board[cell.x][cell.y];
-			return bcell.type === "tresor";
+			return bcell.bonus?.type === "tresor";
 		});
 	});
 }
@@ -1473,13 +1498,20 @@ function checkGoals() {
 		) {
 			reachGoal(4);
 		}
-		// TODO: reliez 2 villes à 2 cases ruines avec une chaine de cube/village
+		// reliez 2 villes à 2 cases ruines avec une chaine de cube/village
 		const townsPath = getConnectedTowns();
 		if (
 			townsPath.some((path) => {
-				// TODO
-				console.log("path:", path);
-				return false;
+				const townCount = path.filter((cell) => {
+					const bcell = board[cell.x][cell.y];
+					return bcell.bonus?.type === "trade";
+				});
+				const ruinCount = path.filter((cell) => {
+					const bcell = board[cell.x][cell.y];
+					return bcell.bonus?.type === "tresor";
+				});
+				console.log(townCount, ruinCount);
+				return townCount.length >= 2 && ruinCount.length >= 2;
 			})
 		) {
 			reachGoal(5);
@@ -2960,12 +2992,23 @@ function test() {
 		"error in checkCenteredCubes 2"
 	);
 
-	expect(hasAllTypedRuins(), "error in hasAllTypedRuins");
+	expect(hasAllTypedRuins(), "error in hasAllTypedRuins 1");
 	ruins = [
 		{ x: 18, y: 5 },
 		{ x: 8, y: 2 },
 	];
-	expect(!hasAllTypedRuins(), "error in hasAllTypedRuins");
+	expect(!hasAllTypedRuins(), "error in hasAllTypedRuins 2");
+
+	expect(
+		!hasVillageNextToRuin(getVillages()),
+		"error in hasVillageNextToRuin 1"
+	);
+	addCube(7, 2);
+	transformCubeToVillage(7, 2);
+	expect(
+		hasVillageNextToRuin(getVillages()),
+		"error in hasVillageNextToRuin 2"
+	);
 }
 
 test();
