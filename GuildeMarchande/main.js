@@ -955,7 +955,7 @@ function initUI() {
 	}
 	aghonButton.enabled = true;
 	cnidariaButton.enabled = false;
-	kazanButton.enabled = false;
+	kazanButton.enabled = true;
 	resetSeedButton.setTextSize(32);
 	resetSeedButton.w = 200;
 	const menu = [
