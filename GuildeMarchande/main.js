@@ -13,6 +13,7 @@ const GAME_LOADING_STATE = 0;
 const GAME_START_STATE = 1;
 const GAME_PLAY_STATE = 2;
 const GAME_OVER_STATE = 3;
+const TUTO_STATE = 4;
 let curState = GAME_LOADING_STATE;
 const EXPLORATION_STATE = "exploration"; // click on the exploration card to reveal it.
 const CUBE_STATE = "cube"; // poser des cubes
@@ -788,9 +789,15 @@ function resetSeed() {
 function newGame() {
 	document.location.href = getUrl(true);
 }
+function tutoClicked() {
+	curState = TUTO_STATE;
+}
+
 const newGameButton = new BButton(1200, 300, "Nouvelle Partie", newGame);
 newGameButton.w = 450;
 const resetSeedButton = new BButton(1400, 300, "Reset seed", resetSeed);
+const tutoButton = new BButton(140, 120, "Tutoriel", tutoClicked);
+
 const aveniaButton = new BButton(
 	140,
 	windowHeight - 120,
@@ -995,6 +1002,7 @@ function initUI() {
 	kazanButton.enabled = true;
 	resetSeedButton.setTextSize(32);
 	resetSeedButton.w = 200;
+	tutoButton.enabled = false;
 	const menu = [
 		speakerButton,
 		resetSeedButton,
@@ -1004,6 +1012,7 @@ function initUI() {
 		aghonButton,
 		musicButton,
 		helpButton,
+		tutoButton,
 	];
 	uiManager.setUI(menu);
 }
@@ -1270,6 +1279,9 @@ function drawTreasure() {
 }
 
 function drawGoals() {
+	spritesheet.drawScaledSprite(goals_cards, goalArray[0], 1435, 440 - 25, 0.5);
+	spritesheet.drawScaledSprite(goals_cards, goalArray[1], 1435, 630 - 25, 0.5);
+	spritesheet.drawScaledSprite(goals_cards, goalArray[2], 1435, 820 - 25, 0.5);
 	if (blockGoalIndex >= 0) {
 		drawGoalPion(0, 0);
 	}
@@ -1307,6 +1319,7 @@ function reachGoal(index) {
 	const result = doReachGoal(index);
 	if (result) {
 		uiManager.addLogger(`goal: + ${result} PV`);
+		PV += result;
 	}
 }
 
@@ -1627,7 +1640,7 @@ function checkGoals() {
 	}
 }
 
-function drawGame() {
+function drawBoards() {
 	spritesheet.drawScaledSprite(map, 0, boardx, boardy, 0.65);
 	spritesheet.drawScaledSprite("exploration", 0, 1150, boardy, 0.65);
 	if (toggleDebug) {
@@ -1642,13 +1655,10 @@ function drawGame() {
 		drawAgeExploration();
 	}
 	drawExploredCards();
-	if (overCell) {
-		const cell = board[overCell.x][overCell.y];
-		noFill();
-		strokeWeight(4);
-		stroke(250);
-		ellipse(cell.center.x + boardx, cell.center.y + boardy, 45); // 45 de rayon
-	}
+	drawExplorationCard();
+}
+
+function drawExplorationCard() {
 	if (ageCards.length !== 0) {
 		spritesheet.drawScaledSprite(
 			"exploration_cards",
@@ -1670,37 +1680,9 @@ function drawGame() {
 			rect(1150, 415, 1320 - 1150, 676 - 415, 15);
 		}
 	}
-	if (playState === SPECIALIZED_STATE) {
-		// afficher 2 cartes tirées du tableau
-		noFill();
-		strokeWeight(4);
-		stroke(250); //stroke(184,150,109);
-		spritesheet.drawScaledSprite(
-			"speciality_cards",
-			specialityArray[0],
-			997,
-			100,
-			0.8
-		);
-		rect(997, 100, 205, 320, 15);
-		spritesheet.drawScaledSprite(
-			"speciality_cards",
-			specialityArray[1],
-			997,
-			467,
-			0.8
-		);
-		rect(997, 467, 205, 320, 15);
-		stroke(25);
-		if (overSpecialization === 0) {
-			rect(997, 100, 205, 320, 15);
-		}
-		if (overSpecialization === 1) {
-			rect(997, 467, 205, 320, 15);
-		}
-	}
+}
 
-	// afficher cards specialites
+function drawSpecializedCards() {
 	if (specialityCards.length <= 0) {
 		spritesheet.drawScaledSprite(
 			"speciality_cards",
@@ -1752,6 +1734,50 @@ function drawGame() {
 			map === "cnidaria" ? 0.5 : 0.6
 		);
 	}
+}
+
+function drawGame() {
+	drawBoards();
+	if (overCell) {
+		const cell = board[overCell.x][overCell.y];
+		noFill();
+		strokeWeight(4);
+		stroke(250);
+		ellipse(cell.center.x + boardx, cell.center.y + boardy, 45); // 45 de rayon
+	}
+	drawExplorationCard();
+	if (playState === SPECIALIZED_STATE) {
+		// afficher 2 cartes tirées du tableau
+		noFill();
+		strokeWeight(4);
+		stroke(250); //stroke(184,150,109);
+		spritesheet.drawScaledSprite(
+			"speciality_cards",
+			specialityArray[0],
+			997,
+			100,
+			0.8
+		);
+		rect(997, 100, 205, 320, 15);
+		spritesheet.drawScaledSprite(
+			"speciality_cards",
+			specialityArray[1],
+			997,
+			467,
+			0.8
+		);
+		rect(997, 467, 205, 320, 15);
+		stroke(25);
+		if (overSpecialization === 0) {
+			rect(997, 100, 205, 320, 15);
+		}
+		if (overSpecialization === 1) {
+			rect(997, 467, 205, 320, 15);
+		}
+	}
+
+	// afficher cards specialites
+	drawSpecializedCards();
 
 	// choose a specialized card (I/II/III)
 	if (playState === SPECIALIZED_CARD_STATE) {
@@ -1814,9 +1840,6 @@ function drawGame() {
 	}
 
 	// goals
-	spritesheet.drawScaledSprite(goals_cards, goalArray[0], 1435, 440 - 25, 0.5);
-	spritesheet.drawScaledSprite(goals_cards, goalArray[1], 1435, 630 - 25, 0.5);
-	spritesheet.drawScaledSprite(goals_cards, goalArray[2], 1435, 820 - 25, 0.5);
 	drawGoals();
 
 	// points de victoire
@@ -1943,12 +1966,22 @@ function drawLoading() {
 	}
 }
 
+function drawTuto() {
+	drawBoards();
+	drawSpecializedCards();
+	drawGoals();
+}
+
 function draw() {
 	const currentTime = Date.now();
 	const elapsedTime = currentTime - lastTime;
 	background(51);
 	if (curState === GAME_LOADING_STATE) {
 		drawLoading();
+		return;
+	}
+	if (curState === TUTO_STATE) {
+		drawTuto();
 		return;
 	}
 
