@@ -1757,7 +1757,7 @@ function drawGame() {
 		stroke(25);
 		if (overSpecializedCard === 0) {
 			rect(
-				5,
+				map === "cnidaria" ? -5 : 5,
 				95,
 				map === "cnidaria" ? 130 : 155,
 				map === "cnidaria" ? 200 : 238,
@@ -1766,7 +1766,7 @@ function drawGame() {
 		}
 		if (overSpecializedCard === 1) {
 			rect(
-				5,
+				map === "cnidaria" ? -5 : 5,
 				355,
 				map === "cnidaria" ? 130 : 155,
 				map === "cnidaria" ? 200 : 238,
@@ -1775,7 +1775,7 @@ function drawGame() {
 		}
 		if (overSpecializedCard === 2) {
 			rect(
-				5,
+				map === "cnidaria" ? -5 : 5,
 				615,
 				map === "cnidaria" ? 130 : 155,
 				map === "cnidaria" ? 200 : 238,
@@ -2980,10 +2980,10 @@ function initBoard(map = "avenia") {
 			CARD.MOUNTAIN
 		);
 
-		board[2][3].type = CARD.TOWER;
-		board[19][2].type = CARD.TOWER;
-		board[22][10].type = CARD.TOWER;
-		board[15][12].type = CARD.TOWER;
+		board[3][1].type = CARD.TOWER;
+		board[17][1].type = CARD.TOWER;
+		board[3][10].type = CARD.TOWER;
+		board[17][10].type = CARD.TOWER;
 
 		board[10][6].type = CARD.CAPITAL;
 		ageExploration = [{ type: CARD.CAPITAL, x: 10, y: 6 }];
