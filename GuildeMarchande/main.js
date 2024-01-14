@@ -1104,7 +1104,6 @@ function initUI() {
 		kazanButton,
 		aghonButton,
 		musicButton,
-		helpButton,
 		tutoButton,
 	];
 	uiManager.setUI(menu);
@@ -1401,8 +1400,8 @@ function drawGoals() {
 }
 
 function addPV(str, value) {
-	uiManager.addLogger(`${str}: + ${result} PV`);
-	PV += result;
+	uiManager.addLogger(`${str}: + ${value} PV`);
+	PV += value;
 }
 
 /**
