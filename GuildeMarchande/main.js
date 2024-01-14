@@ -501,20 +501,17 @@ function validateClicked(force = false) {
 	curCubes.forEach((cube) => {
 		if (cube.type === CARD.VILLAGE) {
 			transformCubeToVillage(cube.x, cube.y);
-			uiManager.addLogger(`village: + ${age} PV`);
-			PV += age;
+			addPV("village", age);
 		}
 		const cell = board[cube.x][cube.y];
 		if (cell.type === CARD.TOWER) {
-			uiManager.addLogger(`tower: + ${towerPV[0]} PV`);
-			PV += towerPV.shift();
+			addPV("tour", towerPV.shift());
 		}
 		if (!cell.bonus) {
 			return;
 		}
 		if (cell.bonus.type === "piece") {
-			uiManager.addLogger(`piece: + ${cell.bonus.nb * pieceBonus} PV`);
-			PV += cell.bonus.nb * pieceBonus;
+			addPV("piece", cell.bonus.nb * pieceBonus);
 			if (cell.bonus.nb > bestNbPieces) {
 				bestNbPieces = cell.bonus.nb;
 			}
@@ -545,7 +542,7 @@ function validateClicked(force = false) {
 				});
 				// add cristal as known cristal
 				cristals.push({ x: cube.x, y: cube.y });
-				uiManager.addLogger(`cristal: + ${cristalPV} PV`);
+				addPV("cristal", cristalPV);
 			}
 		}
 	});
@@ -1307,6 +1304,11 @@ function drawGoals() {
 	});
 }
 
+function addPV(str, value) {
+	uiManager.addLogger(`${str}: + ${result} PV`);
+	PV += result;
+}
+
 /**
  * Player reaches a goal
  * @param index index of reached goal
@@ -1318,8 +1320,7 @@ function reachGoal(index) {
 	}
 	const result = doReachGoal(index);
 	if (result) {
-		uiManager.addLogger(`goal: + ${result} PV`);
-		PV += result;
+		addPV("objectif", result);
 	}
 }
 
@@ -2329,8 +2330,7 @@ function mouseClicked() {
 				bestTradePV = bestPV;
 			}
 		});
-		uiManager.addLogger(`trade: + ${bestPV} PV`);
-		PV += bestPV;
+		addPV("commerce", bestPV);
 		validateClicked();
 	}
 	if (playState === SPECIALIZED_STATE && overSpecialization !== -1) {
