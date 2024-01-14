@@ -32,6 +32,7 @@ const CARD = {
 	JOKER: "joker",
 	CAPITAL: "capital",
 	TOWER: "tower",
+	CRISTAL: "cristal",
 	VILLAGE: "village",
 };
 
@@ -56,7 +57,7 @@ let age = 1; // 1 to 4
 let PV = 0;
 let PVTreasure = 0;
 let villageRegion = null;
-let bestPVParty = 0;
+let bestTradePV = 0;
 let bestNbPieces = 0;
 
 let goals = [0, 0, 0, 0, 0, 0];
@@ -123,6 +124,7 @@ function preload() {
 	spritesheet.addSpriteSheet("cover", "./cover.png", 686, 503);
 	spritesheet.addSpriteSheet("avenia", "./avenia.png", 1680, 1405);
 	spritesheet.addSpriteSheet("aghon", "./aghon.png", 1680, 1405);
+	spritesheet.addSpriteSheet("cnidaria", "./cnidaria.png", 1680, 1405);
 	spritesheet.addSpriteSheet("kazan", "./kazan.png", 1680, 1405);
 	spritesheet.addSpriteSheet("exploration", "./exploration.png", 840, 588);
 	spritesheet.addSpriteSheet(
@@ -142,7 +144,12 @@ function preload() {
 	spritesheet.addSpriteSheet("avenia_goals", "./avenia_goals.png", 520, 370);
 	spritesheet.addSpriteSheet("aghon_goals", "./aghon_goals.png", 520, 370);
 	spritesheet.addSpriteSheet("kazan_goals", "./kazan_goals.png", 520, 370);
-	//spritesheet.addSpriteSheet("goals", "./goals.png", 520, 370);
+	spritesheet.addSpriteSheet(
+		"cnidaria_goals",
+		"./cnidaria_goals.png",
+		520,
+		370
+	);
 	spritesheet.addSpriteSheet("coffre_pion", "./coffre_pion.png", 80, 90);
 	spritesheet.addSpriteSheet("PV", "./PV.png", 136, 141);
 	spritesheet.addSpriteSheet("solo_rules", "./solo_rules.png", 550, 700);
@@ -523,6 +530,9 @@ function validateClicked(force = false) {
 				ruins.push({ x: cube.x, y: cube.y });
 			}
 		}
+		if (cell.bonus.type === "cristal") {
+			// TODO:check if cube is a known cristal
+		}
 	});
 	setTresorBonus(1);
 	setPieceBonus(1);
@@ -655,16 +665,20 @@ function getConnectedTrades() {
 	return allTrades;
 }
 
+function getTypedCells(type) {
+	return ageExploration.filter((exploration) => exploration.type === type);
+}
+
 function getVillages() {
-	return ageExploration.filter(
-		(exploration) => exploration.type === CARD.VILLAGE
-	);
+	return getTypedCells(CARD.VILLAGE);
 }
 
 function getTowers() {
-	return ageExploration.filter(
-		(exploration) => exploration.type === CARD.TOWER
-	);
+	return getTypedCells(CARD.TOWER);
+}
+
+function getCristals() {
+	return getTypedCells(CARD.CRISTAL);
 }
 
 function countPVTreasure() {
@@ -846,6 +860,8 @@ let regions = [];
 
 let ruins = [];
 
+let cristals = [];
+
 let knownTrades = [];
 
 let connectedTrades = [];
@@ -1001,6 +1017,8 @@ function debugDrawCase(x, y, type, row, column, bonus) {
 		//return;
 	} else if (type === CARD.SAND) {
 		fill(227, 202, 144);
+	} else if (type === CARD.CRISTAL) {
+		fill(227, 182, 193);
 	} else if (type === CARD.GRASSLAND) {
 		fill(176, 161, 87);
 	} else if (type === CARD.TOWER) {
@@ -1008,7 +1026,7 @@ function debugDrawCase(x, y, type, row, column, bonus) {
 	} else if (type === CARD.CAPITAL) {
 		fill(200, 200, 200);
 	} else {
-		//fill(100, 100, 100);
+		fill(100, 100, 100);
 		return;
 	}
 	stroke(1);
@@ -1423,7 +1441,7 @@ function checkGoals() {
 			reachGoal(1);
 		}
 		// etablir une route commerciale >= 12
-		if (bestPVParty >= 12) {
+		if (bestTradePV >= 12) {
 			reachGoal(2);
 		}
 		// decouvrir villages sur prairie/desert/montagne
@@ -1519,6 +1537,75 @@ function checkGoals() {
 			reachGoal(5);
 		}
 	}
+	if (map === "cnidaria") {
+		// decouvrez 3 villages dans le meme type de region
+		const villageRegionCount = [0, 0, 0];
+		villages.forEach((village) => {
+			const bcell = board[village.x][village.y];
+			if (bcell.type === CARD.MOUNTAIN) {
+				villageRegionCount[0] += 1;
+			} else if (bcell.type === CARD.SAND) {
+				villageRegionCount[1] += 1;
+			} else if (bcell.type === CARD.GRASSLAND) {
+				villageRegionCount[2] += 1;
+			}
+		});
+		if (villageRegionCount.some((count) => count >= 3)) {
+			reachGoal(0);
+		}
+		// explorez 2 cases cristal
+		if (
+			ageExploration.filter((cell) => {
+				const bcell = board[cell.x][cell.y];
+				return (cell.type = CARD.CRISTAL);
+			}).length >= 2
+		) {
+			reachGoal(1);
+		}
+		// route commerciale 16+
+		if (bestTradePV >= 16) {
+			reachGoal(2);
+		}
+		// explorez les ruines:
+		const typedRuinsCount = [0, 0, 0]; // CRT
+		ruins.forEach((ruin) => {
+			const bcell = board[ruin.x][ruin.y];
+			if (bcell.bonus?.alpha === "C") {
+				typedRuinsCount[0] += 1;
+			}
+			if (bcell.bonus?.alpha === "R") {
+				typedRuinsCount[1] += 1;
+			}
+			if (bcell.bonus?.alpha === "T") {
+				typedRuinsCount[2] += 1;
+			}
+		});
+		// 1. explorez 3 cases ruines du meme type (triangle,rond,carre)
+		if (typedRuinsCount.some((c) => c >= 3)) {
+			reachGoal(3);
+		}
+		// 2. explorez 1 case ruines du chaque type (triangle,rond,carre)
+		if (typedRuinsCount.every((c) => c > 0)) {
+			reachGoal(4);
+		}
+		// decouvrez 2 villages adjacent à une case cristal
+		villages.forEach((village) => {
+			const cristals = getCristals();
+			const ring = getRing(village.x, village.y);
+			let count = 0;
+			if (
+				ring.some(
+					(cell) =>
+						cristals.findIndex((cristal) => sameCells(cristal, cell)) >= 0
+				)
+			) {
+				count++;
+			}
+			if (count >= 2) {
+				reachGoal(5);
+			}
+		});
+	}
 }
 
 function drawGame() {
@@ -1594,36 +1681,54 @@ function drawGame() {
 
 	// afficher cards specialites
 	if (specialityCards.length <= 0) {
-		spritesheet.drawScaledSprite("speciality_cards", 0, 5 - 115, 120 - 25, 0.6);
+		spritesheet.drawScaledSprite(
+			"speciality_cards",
+			0,
+			map === "cnidaria" ? -90 : -110,
+			120 - 25,
+			map === "cnidaria" ? 0.5 : 0.6
+		);
 	} else {
 		spritesheet.drawScaledSprite(
 			"speciality_cards",
 			specialityCards[0],
-			5,
-			120 - 25,
-			0.6
+			map === "cnidaria" ? -5 : 5,
+			95,
+			map === "cnidaria" ? 0.5 : 0.6
 		);
 	}
 	if (specialityCards.length <= 1) {
-		spritesheet.drawScaledSprite("speciality_cards", 0, -110, 380 - 25, 0.6);
+		spritesheet.drawScaledSprite(
+			"speciality_cards",
+			0,
+			map === "cnidaria" ? -90 : -110,
+			380 - 25,
+			map === "cnidaria" ? 0.5 : 0.6
+		);
 	} else {
 		spritesheet.drawScaledSprite(
 			"speciality_cards",
 			specialityCards[1],
-			5,
+			map === "cnidaria" ? -5 : 5,
 			380 - 25,
-			0.6
+			map === "cnidaria" ? 0.5 : 0.6
 		);
 	}
 	if (specialityCards.length <= 2) {
-		spritesheet.drawScaledSprite("speciality_cards", 0, -110, 640 - 25, 0.6);
+		spritesheet.drawScaledSprite(
+			"speciality_cards",
+			0,
+			map === "cnidaria" ? -90 : -110,
+			640 - 25,
+			map === "cnidaria" ? 0.5 : 0.6
+		);
 	} else {
 		spritesheet.drawScaledSprite(
 			"speciality_cards",
 			specialityCards[2],
-			5,
+			map === "cnidaria" ? -5 : 5,
 			640 - 25,
-			0.6
+			map === "cnidaria" ? 0.5 : 0.6
 		);
 	}
 
@@ -2141,8 +2246,8 @@ function mouseClicked() {
 			if (PVTrade > bestPV) {
 				bestPV = PVTrade;
 			}
-			if (bestPV > bestPVParty) {
-				bestPVParty = bestPV;
+			if (bestPV > bestTradePV) {
+				bestTradePV = bestPV;
 			}
 		});
 		uiManager.addLogger(`trade: + ${bestPV} PV`);
@@ -2315,7 +2420,7 @@ function computeRegions() {
 	// create an 2D array of cells:
 	// true if cell is still free and not associated to a region
 	const freeCells = [];
-	for (let i = 0; i < 21; i++) {
+	for (let i = 0; i < 24; i++) {
 		const columns = [];
 		for (let j = 0; j < 15; j++) {
 			columns.push(true);
@@ -2346,7 +2451,7 @@ function computeRegions() {
 		}
 		return cells;
 	};
-	for (let i = 0; i < 21; i++) {
+	for (let i = 0; i < 24; i++) {
 		for (let j = 0; j < 15; j++) {
 			const cell = board[i][j];
 			if (
@@ -2371,13 +2476,13 @@ function initGoalsAndTreasures() {
 	blockGoalIndex = -1;
 	tresors = [];
 	ruins = [];
+	cristals = [];
 	knownTrades = [];
 	connectedTrades = [];
 }
 
 function initBoard(map = "avenia") {
-	const setTresors = (tresorCoords) => {
-		const alpha = "ABCDEFGHIJ";
+	const setTresors = (tresorCoords, alpha = "ABCDEFGHIJ") => {
 		for (let i = 0; i < tresorCoords.length - 1; i += 2) {
 			board[tresorCoords[i]][tresorCoords[i + 1]].bonus = {
 				type: "tresor",
@@ -2401,7 +2506,7 @@ function initBoard(map = "avenia") {
 			board[regionCoords[i]][regionCoords[i + 1]].type = type;
 		}
 	};
-	const setNullCells = (nullCoords, type) => {
+	const setNullCells = (nullCoords) => {
 		for (let i = 0; i < nullCoords.length - 1; i += 2) {
 			board[nullCoords[i]][nullCoords[i + 1]].type = null;
 		}
@@ -2412,7 +2517,11 @@ function initBoard(map = "avenia") {
 	PVTreasure = 0;
 	let dx = 179 - 46.5 * 2;
 	let dy = 169 - 54 * 2;
-	for (let i = 0; i < 21; i++) {
+	if (map === "cnidaria") {
+		dx -= 94;
+		dy -= 55;
+	}
+	for (let i = 0; i < 24; i++) {
 		const column = [];
 		for (let j = 0; j < 15; j++) {
 			column.push({
@@ -2828,13 +2937,102 @@ function initBoard(map = "avenia") {
 			CARD.MOUNTAIN
 		);
 
-		board[3][1].type = CARD.TOWER;
-		board[17][1].type = CARD.TOWER;
-		board[3][10].type = CARD.TOWER;
-		board[17][10].type = CARD.TOWER;
+		board[2][3].type = CARD.TOWER;
+		board[19][2].type = CARD.TOWER;
+		board[22][10].type = CARD.TOWER;
+		board[15][12].type = CARD.TOWER;
 
 		board[10][6].type = CARD.CAPITAL;
 		ageExploration = [{ type: CARD.CAPITAL, x: 10, y: 6 }];
+
+		exploredCards = [6, 7, 8];
+	}
+	if (map === "cnidaria") {
+		setNullCells([
+			1, 1, 1, 2, 1, 3, 1, 4, 1, 5, 1, 6, 1, 7, 1, 8, 1, 9, 1, 10, 1, 11, 1, 12,
+			2, 1, 2, 2, 2, 4, 2, 5, 2, 6, 2, 7, 2, 8, 2, 9, 2, 10, 2, 11, 2, 12, 3,
+			10, 3, 11, 3, 12, 4, 11, 4, 1, 4, 12, 5, 10, 5, 11, 5, 12, 6, 12, 6, 1, 7,
+			1, 8, 1, 10, 1, 12, 1, 12, 2, 13, 1, 14, 1, 15, 1, 16, 1, 17, 1, 18, 1,
+			18, 2, 12, 3, 12, 4, 7, 12, 9, 12, 11, 12, 13, 11, 14, 11, 14, 12, 15, 11,
+			16, 11, 17, 11, 16, 12, 17, 12,
+		]);
+
+		setBoardRegion(
+			[
+				4, 2, 4, 3, 5, 2, 3, 6, 3, 7, 4, 6, 5, 6, 5, 7, 6, 11, 7, 9, 7, 10, 7,
+				11, 9, 8, 10, 8, 11, 7, 11, 8, 14, 7, 15, 6, 15, 7, 16, 5, 17, 4, 18, 3,
+				18, 4, 18, 5, 19, 9, 19, 10, 20, 11, 21, 11,
+			],
+			CARD.MOUNTAIN
+		);
+		setBoardRegion(
+			[
+				3, 1, 3, 2, 3, 3, 3, 5, 4, 5, 5, 5, 4, 9, 4, 10, 5, 1, 5, 8, 5, 9, 6, 2,
+				6, 3, 8, 10, 8, 11, 9, 2, 9, 3, 9, 6, 9, 10, 10, 2, 10, 6, 10, 9, 11, 1,
+				11, 9, 12, 8, 12, 9, 15, 3, 16, 3, 16, 4, 17, 2, 17, 3, 18, 12, 18, 13,
+				19, 12, 20, 13, 21, 13, 19, 4, 19, 5, 19, 6, 20, 6, 20, 8, 20, 9, 20,
+				10, 21, 9, 11, 5, 12, 6,
+			],
+			CARD.SAND
+		);
+		setBoardRegion(
+			[
+				3, 4, 4, 4, 5, 3, 4, 7, 4, 8, 3, 8, 3, 9, 7, 2, 7, 3, 8, 2, 8, 3, 8, 4,
+				8, 6, 8, 7, 8, 8, 8, 12, 9, 7, 9, 11, 10, 12, 11, 11, 10, 7, 11, 6, 13,
+				2, 13, 3, 14, 3, 15, 2, 16, 2, 14, 8, 15, 8, 14, 9, 13, 7, 19, 3, 20, 4,
+				20, 5, 21, 4, 21, 5, 18, 9, 18, 10, 18, 11, 19, 11, 20, 12, 21, 12,
+			],
+			CARD.GRASSLAND
+		);
+
+		setTrade(8, 3, 4);
+		setTrade(5, 8, 4);
+		setTrade(14, 3, 4);
+		setTrade(18, 12, 5);
+		setTrade(11, 6, 2);
+		setTrade(13, 7, 2);
+
+		setPieces(
+			[
+				3, 4, 4, 5, 5, 6, 7, 2, 7, 9, 8, 2, 8, 6, 8, 8, 9, 11, 10, 9, 11, 3, 11,
+				5, 11, 7, 11, 9, 13, 2, 13, 10, 14, 7, 14, 8, 16, 4, 19, 3, 19, 6, 18,
+				11,
+			],
+			1
+		);
+		setPieces(
+			[
+				3, 1, 3, 6, 3, 7, 3, 8, 3, 9, 4, 2, 4, 10, 5, 1, 7, 10, 9, 8, 11, 1, 10,
+				12, 14, 5, 17, 4, 18, 5, 20, 6, 20, 8, 20, 11, 21, 11, 18, 13, 18, 9,
+			],
+			2
+		);
+
+		setTresors(
+			[5, 4, 7, 11, 10, 3, 13, 12, 14, 13, 15, 10, 17, 2, 19, 7, 21, 4, 21, 13],
+			"CRRCTCTRRT"
+		);
+
+		board[19][8].type = CARD.SEA;
+		board[14][13].type = CARD.SEA;
+		board[19][7].type = CARD.SEA;
+
+		board[9][1].type = CARD.CRISTAL;
+		board[9][1].bonus = { type: CARD.CRISTAL, nb: 3 };
+		board[14][2].type = CARD.CRISTAL;
+		board[14][2].bonus = { type: CARD.CRISTAL, nb: 2 };
+		board[13][8].type = CARD.CRISTAL;
+		board[13][8].bonus = { type: CARD.CRISTAL, nb: 1 };
+		board[19][13].type = CARD.CRISTAL;
+		board[19][13].bonus = { type: CARD.CRISTAL, nb: 4 };
+
+		board[2][3].type = CARD.TOWER;
+		board[19][2].type = CARD.TOWER;
+		board[22][10].type = CARD.TOWER;
+		board[15][12].type = CARD.TOWER;
+
+		board[12][7].type = CARD.CAPITAL;
+		ageExploration = [{ type: CARD.CAPITAL, x: 12, y: 7 }];
 
 		exploredCards = [6, 7, 8];
 	}
