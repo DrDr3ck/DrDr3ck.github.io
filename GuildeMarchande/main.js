@@ -117,7 +117,6 @@ const urlParams = new URLSearchParams(queryString);
 let seed = urlParams.get("seed");
 if (!seed) {
 	seed = getRandomName().replaceAll(" ", "_");
-	console.log("seed:", seed);
 }
 
 function preload() {
@@ -1477,16 +1476,20 @@ function checkGoals() {
 			reachGoal(1);
 		}
 		// explorez les cases ruines A et J
+		const isRuin = (cell, alpha) => {
+			const bcell = board[cell.x][cell.y];
+			return bcell.bonus?.alpha === alpha;
+		};
 		if (
-			ruins.findIndex((ruin) => ruin.alpha === "A") >= 0 &&
-			ruins.findIndex((ruin) => ruin.alpha === "J") >= 0
+			ruins.findIndex((ruin) => isRuin(ruin, "A")) >= 0 &&
+			ruins.findIndex((ruin) => isRuin(ruin, "J")) >= 0
 		) {
 			reachGoal(2);
 		}
 		// explorez les cases ruines B et D
 		if (
-			ruins.findIndex((ruin) => ruin.alpha === "B") >= 0 &&
-			ruins.findIndex((ruin) => ruin.alpha === "D") >= 0
+			ruins.findIndex((ruin) => isRuin(ruin, "B")) >= 0 &&
+			ruins.findIndex((ruin) => isRuin(ruin, "D")) >= 0
 		) {
 			reachGoal(3);
 		}
@@ -1494,7 +1497,7 @@ function checkGoals() {
 		const towers = getTowers();
 		if (
 			towers.findIndex((tower) => tower.x === 17 && tower.y === 3) >= 0 &&
-			ruins.findIndex((ruin) => ruin.alpha === "C") >= 0
+			ruins.findIndex((ruin) => isRuin(ruin, "C")) >= 0
 		) {
 			reachGoal(4);
 		}
@@ -1510,7 +1513,6 @@ function checkGoals() {
 					const bcell = board[cell.x][cell.y];
 					return bcell.bonus?.type === "tresor";
 				});
-				console.log(townCount, ruinCount);
 				return townCount.length >= 2 && ruinCount.length >= 2;
 			})
 		) {
@@ -1783,8 +1785,6 @@ function drawLoading() {
 			document.location.toString().includes("seed=") &&
 			document.location.toString().includes("map=")
 		) {
-			console.log(document.location.toString());
-			console.log("seed:", seed);
 			map = urlParams.get("map");
 			initMap(map);
 			startClicked();
@@ -2664,7 +2664,7 @@ function initBoard(map = "avenia") {
 				2, 4, 2, 5, 2, 6, 3, 3, 3, 4, 3, 7, 3, 8, 4, 7, 5, 7, 6, 6, 7, 6, 8, 6,
 				9, 6, 10, 6, 7, 10, 8, 10, 8, 11, 9, 10, 12, 11, 13, 10, 14, 11, 15, 10,
 				14, 2, 15, 1, 15, 2, 16, 3, 16, 5, 17, 5, 17, 6, 17, 7, 18, 6, 18, 7, 8,
-				3, 9, 2, 9, 1, 10, 2, 10, 3, 11, 8, 11, 9, 12, 8, 13, 8, 9, 3,
+				3, 9, 2, 10, 2, 10, 3, 11, 8, 11, 9, 12, 8, 13, 8, 9, 3,
 			],
 			CARD.GRASSLAND
 		);
