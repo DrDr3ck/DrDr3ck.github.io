@@ -1759,8 +1759,8 @@ function drawGame() {
 			rect(
 				5,
 				95,
-				map === cnidaria ? 130 : 155,
-				map === cnidaria ? 200 : 238,
+				map === "cnidaria" ? 130 : 155,
+				map === "cnidaria" ? 200 : 238,
 				15
 			);
 		}
@@ -1768,8 +1768,8 @@ function drawGame() {
 			rect(
 				5,
 				355,
-				map === cnidaria ? 130 : 155,
-				map === cnidaria ? 200 : 238,
+				map === "cnidaria" ? 130 : 155,
+				map === "cnidaria" ? 200 : 238,
 				15
 			);
 		}
@@ -1777,8 +1777,8 @@ function drawGame() {
 			rect(
 				5,
 				615,
-				map === cnidaria ? 130 : 155,
-				map === cnidaria ? 200 : 238,
+				map === "cnidaria" ? 130 : 155,
+				map === "cnidaria" ? 200 : 238,
 				15
 			);
 		}
