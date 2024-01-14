@@ -1784,6 +1784,13 @@ function drawGame() {
 		}
 	}
 
+	if (playState === VILLAGE_STATE) {
+		noFill();
+		strokeWeight(4);
+		stroke(250, 100, 100);
+		rect(51, 850, 86, 86, 5);
+	}
+
 	if (playState === TRADE_STATE) {
 		connectedTrades.forEach((trades) => {
 			trades.forEach((trade) => {
