@@ -127,9 +127,14 @@ const tutoImages = [
 	{ width: 420, height: 50, name: "tutoCapitale", button: null },
 	{ width: 400, height: 55, name: "tutoRegion", button: null },
 	{ width: 540, height: 335, name: "tutoTypes", button: null },
+	{ width: 560, height: 460, name: "tutoVillage", button: null },
+	{ width: 550, height: 320, name: "tutoTower", button: null },
+	{ width: 550, height: 190, name: "tutoPiece", button: null },
+	{ width: 550, height: 370, name: "tutoRuins", button: null },
+	{ width: 560, height: 680, name: "tutoTowns", button: null },
 	{ width: 435, height: 60, name: "tutoScore", button: null },
-	{ width: 670, height: 250, name: "tutoExplorationCard", button: null },
 	{ width: 660, height: 430, name: "tutoEndAge", button: null },
+	{ width: 670, height: 250, name: "tutoExplorationCard", button: null },
 	{ width: 675, height: 460, name: "tutoExploreMap", button: null },
 	{ width: 310, height: 730, name: "tutoRules", button: null },
 	{ width: 735, height: 830, name: "tutoExplorationBoard", button: null },
@@ -137,11 +142,6 @@ const tutoImages = [
 	{ width: 330, height: 220, name: "tutoGoal", button: null },
 	{ width: 890, height: 570, name: "tutoSpecializedCard", button: null },
 	{ width: 550, height: 700, name: "tutoSoloRule", button: null },
-	{ width: 560, height: 460, name: "tutoVillage", button: null },
-	{ width: 550, height: 320, name: "tutoTower", button: null },
-	{ width: 550, height: 190, name: "tutoPiece", button: null },
-	{ width: 550, height: 370, name: "tutoRuins", button: null },
-	{ width: 560, height: 680, name: "tutoTowns", button: null },
 ];
 
 function preload() {
@@ -830,42 +830,42 @@ const tutoExplicationButton = createTutoButton(74, 88, "1");
 tutoImages[0].button = tutoExplicationButton;
 const tutoTerrainButton = createTutoButton(300, 430, "2");
 tutoImages[1].button = tutoTerrainButton;
-const tutoCapitaleButton = createTutoButton(450, 430, "3");
+const tutoCapitaleButton = createTutoButton(450, 470, "3");
 tutoImages[2].button = tutoCapitaleButton;
 const tutoRegionButton = createTutoButton(1035, 255, "4");
 tutoImages[3].button = tutoRegionButton;
 const tutoTypesButton = createTutoButton(420, 675, "5");
 tutoImages[4].button = tutoTypesButton;
-const tutoScoreButton = createTutoButton(110, 845, "6");
-tutoImages[5].button = tutoScoreButton;
-const tutoExplorationCardButton = createTutoButton(1210, 560, "7");
-tutoImages[6].button = tutoExplorationCardButton;
-const tutoEndAgeButton = createTutoButton(5, 940, "8");
-tutoImages[7].button = tutoEndAgeButton;
-const tutoExploreMapButton = createTutoButton(1035, 125, "9");
-tutoImages[8].button = tutoExploreMapButton;
-const tutoRulesButton = createTutoButton(1040, 940, "10");
-tutoImages[9].button = tutoRulesButton;
-const tutoExplorationBoardButton = createTutoButton(1390, 170, "11");
-tutoImages[10].button = tutoExplorationBoardButton;
-const tutoTreasureButton = createTutoButton(1250, 925, "12");
-tutoImages[11].button = tutoTreasureButton;
-const tutoGoalButton = createTutoButton(1550, 725, "13");
-tutoImages[12].button = tutoGoalButton;
-const tutoSpecializedCardButton = createTutoButton(15, 480, "14");
-tutoImages[13].button = tutoSpecializedCardButton;
-const tutoSoloRuleButton = createTutoButton(550, 930, "15");
-tutoImages[14].button = tutoSoloRuleButton;
 const tutoVillageButton = createTutoButton(410, 260, "5a");
-tutoImages[15].button = tutoVillageButton;
-const tutoTowerButton = createTutoButton(210, 305, "5b");
-tutoImages[16].button = tutoTowerButton;
+tutoImages[5].button = tutoVillageButton;
+const tutoTowerButton = createTutoButton(120, 305, "5b");
+tutoImages[6].button = tutoTowerButton;
 const tutoPieceButton = createTutoButton(275, 530, "5c");
-tutoImages[17].button = tutoPieceButton;
+tutoImages[7].button = tutoPieceButton;
 const tutoRuinsButton = createTutoButton(350, 785, "5d");
-tutoImages[18].button = tutoRuinsButton;
+tutoImages[8].button = tutoRuinsButton;
 const tutoTownsButton = createTutoButton(160, 540, "5e");
-tutoImages[19].button = tutoTownsButton;
+tutoImages[9].button = tutoTownsButton;
+const tutoScoreButton = createTutoButton(110, 845, "6");
+tutoImages[10].button = tutoScoreButton;
+const tutoEndAgeButton = createTutoButton(5, 940, "7");
+tutoImages[11].button = tutoEndAgeButton;
+const tutoExplorationCardButton = createTutoButton(1210, 560, "8");
+tutoImages[12].button = tutoExplorationCardButton;
+const tutoExploreMapButton = createTutoButton(1035, 125, "9");
+tutoImages[13].button = tutoExploreMapButton;
+const tutoRulesButton = createTutoButton(1140, 125, "10");
+tutoImages[14].button = tutoRulesButton;
+const tutoExplorationBoardButton = createTutoButton(1390, 170, "11");
+tutoImages[15].button = tutoExplorationBoardButton;
+const tutoTreasureButton = createTutoButton(1250, 925, "12");
+tutoImages[16].button = tutoTreasureButton;
+const tutoGoalButton = createTutoButton(1550, 725, "13");
+tutoImages[17].button = tutoGoalButton;
+const tutoSpecializedCardButton = createTutoButton(15, 480, "14");
+tutoImages[18].button = tutoSpecializedCardButton;
+const tutoSoloRuleButton = createTutoButton(550, 930, "15");
+tutoImages[19].button = tutoSoloRuleButton;
 
 function resetSeed() {
 	seed = getRandomName().replaceAll(" ", "_");
@@ -2106,7 +2106,7 @@ function drawTuto() {
 		const tutoImage = tutoImages[tutoIndex];
 		drawImage(tutoImage);
 		tutoImages.forEach((tuto, idx) => {
-			if (tutoIndex !== idx) {
+			if (tutoIndex !== idx && tutoIndex !== idx - 1) {
 				tuto.button.visible = false;
 			}
 		});
@@ -2132,7 +2132,7 @@ function drawTuto() {
 
 	if (tutoCapitaleButton.over === true) {
 		highlightCell({ x: 9, y: 6 });
-		line(480, 402, 534, 427);
+		line(480, 440, 534, 427);
 	}
 
 	if (tutoRegionButton.over === true) {
@@ -2160,20 +2160,23 @@ function drawTuto() {
 	if (tutoTowerButton.over === true) {
 		highlightCell({ x: 2, y: 2 });
 		rect(782, 854, 1133 - 782, 935 - 854, 15);
-		line(243, 276, 228, 217);
-		line(243, 276, 787, 860);
+		line(143, 276, 228, 217);
+		line(143, 276, 787, 860);
 	}
 
 	if (tutoPieceButton.over === true) {
 		highlightCell({ x: 2, y: 9 });
+		line(306, 500, 246, 557);
 	}
 
 	if (tutoRuinsButton.over === true) {
 		highlightCell({ x: 7, y: 12 });
+		line(381, 756, 440, 760);
 	}
 
 	if (tutoTownsButton.over === true) {
 		highlightCell({ x: 1, y: 6 });
+		line(191, 512, 181, 457);
 	}
 
 	if (tutoScoreButton.over === true) {
@@ -2182,6 +2185,8 @@ function drawTuto() {
 		stroke(250);
 		rect(185, 854, 618 - 185, 935 - 854, 15);
 		rect(782, 854, 1133 - 782, 935 - 854, 15);
+		line(139, 814, 189, 860);
+		line(139, 814, 786, 859);
 	}
 }
 
