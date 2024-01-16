@@ -1863,8 +1863,7 @@ function drawPV() {
 	noStroke();
 	fill(250);
 	textSize(25);
-	text(`x ${PV}`, 1360, 640);
-	text(`+ ${PVTreasure}`, 1360 - 2, 670);
+	text(`x ${PV + PVTreasure}`, 1360, 640);
 }
 
 function drawTreasureCard() {
