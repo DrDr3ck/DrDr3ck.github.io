@@ -146,7 +146,9 @@ const tutoImages = [
 	{ width: 550, height: 700, name: "tutoSoloRule", button: null },
 ];
 
+// Loading images
 function preload() {
+	spritesheet.addSpriteSheet("cases", "./cases.png", 105, 95);
 	spritesheet.addSpriteSheet("cover", "./cover.png", 686, 503);
 	spritesheet.addSpriteSheet("avenia", "./avenia.png", 1680, 1405);
 	spritesheet.addSpriteSheet("aghon", "./aghon.png", 1680, 1405);
@@ -948,7 +950,9 @@ const kazanButton = new BButton(
 const validateButton = new BButton(1147, 677, "Valider", validateClicked);
 validateButton.setTextSize(30);
 validateButton.w = 180;
-const undoButton = new BButton(530, 80, "Annuler", undoClicked);
+const undoButton = new BButton(940, 70, "Annuler", undoClicked);
+undoButton.setTextSize(30);
+undoButton.w = 180;
 const validateForceButton = new BButton(805, 980, "Fin de Tour", () => {
 	validateClicked(true);
 });
@@ -1320,6 +1324,9 @@ function drawAgeExploration() {
 		}
 	});
 	cubes.forEach((cube) => {
+		if (cube.x === 0 && cube.y === 0) {
+			return;
+		}
 		const bcell = board[cube.x][cube.y];
 		if (cube.type === CARD.VILLAGE) {
 			drawVillage(cube.x, cube.y, true);
@@ -1905,6 +1912,26 @@ function drawTreasureCard() {
 	text(`x ${tresors.length}`, 1345, 945);
 }
 
+function drawPlayableCase(cube, index) {
+	const caseScale = 0.8;
+	const caseIndices = [
+		CARD.MOUNTAIN,
+		CARD.SAND,
+		CARD.GRASSLAND,
+		CARD.JOKER,
+		CARD.SEA,
+		`${CARD.SEA}|${CARD.GRASSLAND}`,
+	];
+	const caseIndex = caseIndices.findIndex((cur) => cur === cube.type);
+	spritesheet.drawScaledSprite(
+		"cases",
+		caseIndex,
+		275 + index * 100,
+		30,
+		caseScale
+	);
+}
+
 function drawGame() {
 	drawBoards();
 	if (overCell) {
@@ -1976,6 +2003,22 @@ function drawGame() {
 				15
 			);
 		}
+	}
+
+	if (
+		playState === CUBE_STATE &&
+		cubes.filter((c) => c.x === 0 && c.y === 0).length > 0
+	) {
+		let index = 0;
+		stroke(0);
+		strokeWeight(2);
+		fill(250, 250, 230);
+		rect(260, 13, 920 - 260, 110, 5);
+		cubes.forEach((cube) => {
+			if (cube.x === 0) {
+				drawPlayableCase(cube, index++);
+			}
+		});
 	}
 
 	if (playState === VILLAGE_STATE) {
@@ -2441,11 +2484,11 @@ function prepareCube2Play(specialityCardIndex) {
 	}
 	if (specialityCardIndex === 14) {
 		setConstraint(CONSTRAINT.CONSECUTIVE);
-		addCube2Play(`${CARD.GRASSLAND}|${CARD.SEA}`, 5);
+		addCube2Play(`${CARD.SEA}|${CARD.GRASSLAND}`, 5);
 	}
 	if (specialityCardIndex === 15) {
 		setConstraint(CONSTRAINT.CONSECUTIVE);
-		addCube2Play(`${CARD.SAND}|${CARD.SEA}`, 5);
+		addCube2Play(`${CARD.SEA}|${CARD.SAND}`, 5);
 	}
 	if (specialityCardIndex === 18) {
 		addCube2Play(CARD.SEA, 4);
@@ -2453,7 +2496,7 @@ function prepareCube2Play(specialityCardIndex) {
 	}
 	if (specialityCardIndex === 19) {
 		setConstraint(CONSTRAINT.CONSECUTIVE);
-		addCube2Play(`${CARD.MOUNTAIN}|${CARD.SEA}`, 4);
+		addCube2Play(`${CARD.SEA}|${CARD.MOUNTAIN}`, 4);
 	}
 	if (specialityCardIndex === 20) {
 		addCube2Play(CARD.SEA, 5);
