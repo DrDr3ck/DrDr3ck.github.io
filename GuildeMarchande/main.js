@@ -54,10 +54,12 @@ let overTrade = null;
 let overExploration = false;
 let overTreasure = false;
 let overHelpButton = false;
+let overCoins = false;
 let overSpecialization = -1; // 0 or 1
 let overSpecializedCard = -1; // 0, 1 or 2
 let age = 1; // 1 to 4
 let PV = 0;
+let PVHistory = [];
 let PVTreasure = 0;
 let villageRegion = null;
 let bestTradePV = 0;
@@ -1440,6 +1442,8 @@ function drawGoals() {
 function addPV(str, value) {
 	uiManager.addLogger(`${str}: + ${value} PV`);
 	PV += value;
+	// add PV in last history item
+	PVHistory[PVHistory.length - 1].PV.push(`${str}: + ${value}`);
 }
 
 /**
@@ -1921,6 +1925,8 @@ function drawPlayableCase(cube, index) {
 		CARD.JOKER,
 		CARD.SEA,
 		`${CARD.SEA}|${CARD.GRASSLAND}`,
+		`${CARD.SEA}|${CARD.SAND}`,
+		`${CARD.SEA}|${CARD.MOUNTAIN}`,
 	];
 	const caseIndex = caseIndices.findIndex((cur) => cur === cube.type);
 	spritesheet.drawScaledSprite(
@@ -2101,6 +2107,10 @@ function drawGame() {
 
 	if (overHelpButton) {
 		spritesheet.drawSprite(`${map}_rules`, 0, (windowWidth - 550) / 2, 50);
+	}
+
+	if (overCoins) {
+		drawAllPVHistory();
 	}
 
 	// draw animations
@@ -2379,6 +2389,8 @@ function newExplorationCard() {
 		// remove all cubes
 		removeCubes();
 		return;
+	} else {
+		PVHistory.push({ age: age, cardIndex: ageCards[0], PV: [] });
 	}
 	playState = CUBE_STATE;
 	if (ageCards.length > 0) {
@@ -2437,6 +2449,50 @@ function newExplorationCard() {
 	if (playState === CUBE_STATE) {
 		addValidateButton();
 	}
+}
+
+function drawPVHistory(ageHistory, rowPixel) {
+	if (ageHistory.length === 0) {
+		return;
+	}
+	ageHistory.forEach((history, index) => {
+		spritesheet.drawScaledSprite(
+			"exploration_cards",
+			history.cardIndex,
+			52 + 150 * index,
+			rowPixel,
+			0.45
+		);
+		history.PV.forEach((value, textIndex) => {
+			text(value, 55 + 10 + 150 * index, rowPixel + 25 + 15 + 20 * textIndex);
+		});
+	});
+}
+function drawPVTreasure() {
+	spritesheet.drawScaledSprite("tresor_cards", 4, 500, 26, 0.4);
+	text(`+ ${PVTreasure}`, 500 + 10, 25 + 20);
+}
+function drawAllPVHistory() {
+	noStroke();
+	fill(0);
+	textSize(15);
+	drawPVHistory(
+		PVHistory.filter((history) => history.age === 1),
+		135
+	);
+	drawPVHistory(
+		PVHistory.filter((history) => history.age === 2),
+		335
+	);
+	drawPVHistory(
+		PVHistory.filter((history) => history.age === 3),
+		535
+	);
+	drawPVHistory(
+		PVHistory.filter((history) => history.age === 4),
+		735
+	);
+	drawPVTreasure();
 }
 
 function addValidateButton() {
@@ -2751,6 +2807,7 @@ function mouseMoved() {
 	overCell = null;
 	overTrade = null;
 	overHelpButton = distance(1500, 40, mouseX, mouseY) < 25;
+	overCoins = distance(1382, 569, mouseX, mouseY) < 40;
 	if (playState === CUBE_STATE) {
 		board.forEach((column, x) =>
 			column.forEach((cell, y) => {
@@ -2971,6 +3028,7 @@ function initBoard(map = "avenia") {
 	board = [];
 	age = 1;
 	PV = 0;
+	PVHistory = [];
 	PVTreasure = 0;
 	blockGoalIndex = 0;
 	let dx = 179 - 46.5 * 2;
