@@ -518,21 +518,16 @@ function checkAlignedCubes(alignedCubes) {
 		return true;
 	}
 	let lowerCell = alignedCubes[0];
-	alignedCubes.forEach((cube) => {
-		if (cube.x < lowerCell.x) {
-			lowerCell = cube;
-		} else if (cube.x === lowerCell.x && cube.y < lowerCell.y) {
-			lowerCell = cube;
-		}
-	});
-	let upperCell = alignedCubes[0];
-	alignedCubes.forEach((cube) => {
-		if (cube.x > upperCell.x) {
-			upperCell = cube;
-		} else if (cube.x === upperCell.x && cube.y > upperCell.y) {
-			upperCell = cube;
-		}
-	});
+	let upperCell = alignedCubes[alignedCubes.length - 1];
+	if (upperCell.x < lowerCell.x) {
+		const tmpCell = lowerCell;
+		lowerCell = upperCell;
+		upperCell = tmpCell;
+	} else if (upperCell.x === lowerCell.x && upperCell.y < lowerCell.y) {
+		const tmpCell = lowerCell;
+		lowerCell = upperCell;
+		upperCell = tmpCell;
+	}
 	// case 1: aligned vertically
 	if (lowerCell.x === upperCell.x) {
 		for (let y = lowerCell.y; y <= upperCell.y; y++) {
@@ -805,11 +800,13 @@ function getTowers() {
 	return getTypedCells(CARD.TOWER);
 }
 
-function getCristals() {
-	return ageExploration.filter((cell) => {
-		const bcell = board[cell.x][cell.y];
-		return bcell.type === CARD.CRISTAL;
-	});
+function getAllCristals() {
+	return [
+		{ x: 9, y: 1 },
+		{ x: 14, y: 2 },
+		{ x: 13, y: 8 },
+		{ x: 19, y: 13 },
+	];
 }
 
 function countPVTreasure() {
@@ -1823,10 +1820,10 @@ function checkGoals() {
 		// decouvrez 2 villages adjacent à une case cristal
 		let villageCristalCount = 0;
 		villages.forEach((village) => {
-			const cristals = getCristals();
+			const allCristals = getAllCristals();
 			const ring = getRing(village.x, village.y);
 			ring.forEach((cell) => {
-				if (cristals.findIndex((cristal) => sameCells(cristal, cell)) >= 0) {
+				if (allCristals.findIndex((cristal) => sameCells(cristal, cell)) >= 0) {
 					villageCristalCount++;
 				}
 			});
