@@ -446,25 +446,15 @@ function checkConsecutiveCubes(consecutiveCubes) {
 	if (consecutiveCubes.length <= 1) {
 		return true;
 	}
-	const path = [consecutiveCubes[0]];
-	const isCellInPath = (rcell) => {
-		return path.some((pcell) => sameCells(pcell, rcell));
-	};
-	const isCellInCubes = (rcell) => {
-		return consecutiveCubes.some((pcell) => sameCells(pcell, rcell));
-	};
-	let pathIndex = 0;
-	while (pathIndex < path.length) {
-		const cell = path[pathIndex];
-		const ring = getRing(cell.x, cell.y);
-		ring.forEach((rcell) => {
-			if (isCellInCubes(rcell) && !isCellInPath(rcell)) {
-				path.push({ x: rcell.x, y: rcell.y });
-			}
-		});
-		pathIndex++;
+	for (let i = 1; i < consecutiveCubes.length; i++) {
+		const curCell = consecutiveCubes[i];
+		const ring = getRing(curCell.x, curCell.y);
+		const prevCell = consecutiveCubes[i - 1];
+		if (!ring.some((rcell) => sameCells(rcell, prevCell))) {
+			return false;
+		}
 	}
-	return path.length === consecutiveCubes.length;
+	return true;
 }
 
 function checkAlignedCubes(alignedCubes) {
@@ -1057,6 +1047,16 @@ function addCube(x, y) {
 	if (
 		ageExploration.findIndex((cell) => sameCells(cell, { x: x, y: y })) >= 0
 	) {
+		return false;
+	}
+	// check if cube is next to an already existing cube
+	const ring = getRing(x, y);
+	if (
+		!ring.some(
+			(rcell) => ageExploration.findIndex((cell) => sameCells(rcell, cell)) >= 0
+		)
+	) {
+		// le cube doit etre posé à coté d'un autre cube existant
 		return false;
 	}
 	const cell = board[x][y];
@@ -3688,6 +3688,17 @@ function test() {
 			{ x: 15, y: 6 },
 		]),
 		"error in checkConsecutiveCubes 2"
+	);
+
+	expect(
+		!checkConsecutiveCubes([
+			{ x: 12, y: 5 },
+			{ x: 12, y: 6 },
+			{ x: 15, y: 6 },
+			{ x: 13, y: 5 },
+			{ x: 14, y: 6 },
+		]),
+		"error in checkConsecutiveCubes 3"
 	);
 
 	expect(
