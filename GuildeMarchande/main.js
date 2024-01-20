@@ -9,6 +9,8 @@ const jobManager = new JobManager();
 const soundManager = new SoundMgr();
 const spritesheet = new SpriteSheet();
 
+let animations = [];
+
 const GAME_LOADING_STATE = 0;
 const GAME_START_STATE = 1;
 const GAME_PLAY_STATE = 2;
@@ -528,6 +530,15 @@ function checkAlignedCubes(alignedCubes) {
 	return false;
 }
 
+function explorationBoardCardPosition(explorationCardIndex) {
+	const cardsX = [1181, 1279, 1379, 1478, 1580, 1225, 1329, 1433, 1537];
+	if (explorationCardIndex <= 4) {
+		return { x: cardsX[explorationCardIndex], y: 66 };
+	} else {
+		return { x: cardsX[explorationCardIndex], y: 237 };
+	}
+}
+
 function validateClicked(force = false) {
 	const curCubes = force
 		? cubes.filter((cube) => cube.x !== 0 || cube.y !== 0)
@@ -567,6 +578,21 @@ function validateClicked(force = false) {
 					if (treasureIndex === 0) {
 						treasureCubes += 1;
 					}
+					// animation tresor
+					const bcell = board[cube.x][cube.y];
+					const tresorCard = new AnimatedImage(
+						"tresor_cards",
+						treasureIndex,
+						bcell.center.x,
+						bcell.center.y,
+						0.2
+					);
+					animations.push(tresorCard);
+					tresorCard.startAnimation(
+						{ x: 1150, y: 820 },
+						5 - animations.length * 0.45,
+						0.65
+					);
 				}
 				ruins.push({ x: cube.x, y: cube.y });
 			}
@@ -1120,12 +1146,17 @@ function setup() {
 	soundManager.addSound("new_cube", "./new_cube.wav", 1);
 	soundManager.addSound("new_age", "./new_age.wav", 0.25);
 
-	frameRate(10);
+	frameRate(15);
 
 	lastTime = Date.now();
 }
 
-function updateGame(elapsedTime) {}
+function updateGame(elapsedTime) {
+	animations.forEach((animation) => animation.update(elapsedTime));
+	animations = animations.filter(
+		(animation) => animation.index !== animation.indexMax
+	);
+}
 
 const boardx = 50;
 const boardy = 25;
@@ -2028,6 +2059,9 @@ function drawGame() {
 	if (overHelpButton) {
 		spritesheet.drawSprite(`${map}_rules`, 0, (windowWidth - 550) / 2, 50);
 	}
+
+	// draw animations
+	animations.forEach((animation) => animation.draw());
 }
 
 function drawScore() {
@@ -2249,9 +2283,22 @@ function setConstraint(value) {
 // check if it is the end of current age
 function newExplorationCard() {
 	cubes = [];
-	if (ageCards[0] !== 9) {
-		// put card on exploration board
-		exploredCards.push(ageCards[0]);
+	if (ageCards[0] !== 9 && ageCards.length > 1) {
+		const cardIndex = ageCards[0];
+		const animatedCard = new AnimatedImage(
+			"exploration_cards",
+			ageCards[0],
+			1150,
+			440 - 25,
+			0.65,
+			() => {
+				// put card on exploration board
+				exploredCards.push(cardIndex);
+			}
+		);
+		animations.push(animatedCard);
+		const finalPosition = explorationBoardCardPosition(ageCards[0]);
+		animatedCard.startAnimation(finalPosition, 8, 0.325);
 	}
 	ageCards.shift();
 	if (ageCards.length === 0) {
@@ -2549,15 +2596,32 @@ function mouseClicked() {
 		validateClicked();
 	}
 	if (playState === SPECIALIZED_STATE && overSpecialization !== -1) {
-		// 1. put specialized card in the current Age
-		specialityCards.push(specialityArray[overSpecialization]);
+		const specialityIndex = specialityArray[overSpecialization];
+		const specializedCard = new AnimatedImage(
+			"speciality_cards",
+			specialityArray[overSpecialization],
+			997,
+			overSpecialization === 0 ? 100 : 467,
+			0.8,
+			() => {
+				// 1. put specialized card in the current Age
+				specialityCards.push(specialityIndex);
+			}
+		);
+		animations.push(specializedCard);
+		const cardY = [95, 355, 615];
+		specializedCard.startAnimation(
+			{ x: map === "cnidaria" ? -5 : 5, y: cardY[specialityCards.length] },
+			8,
+			map === "cnidaria" ? 0.5 : 0.6
+		);
 		// 2. remove the 2 cards from the list of specialized cards
 		specialityArray.shift();
 		specialityArray.shift();
 		// 3. change state to CUBE_STATE
 		playState = CUBE_STATE;
 		// 4. add cube to play
-		prepareCube2Play(specialityCards[specialityCards.length - 1]);
+		prepareCube2Play(specialityIndex);
 		addValidateButton();
 	}
 	if (playState === SPECIALIZED_CARD_STATE && overSpecializedCard !== -1) {
