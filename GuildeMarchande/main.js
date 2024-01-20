@@ -47,6 +47,7 @@ const CONSTRAINT = {
 	CONSECUTIVE: "consecutive",
 	ALIGNED: "aligned",
 	CENTERED: "centered",
+	INREGION: "in_same_region",
 };
 
 let overCell = null;
@@ -255,10 +256,10 @@ function initMap(mapName) {
 	ageCards.unshift(9);
 
 	specialityArray = [
-		1, 2, 3, 4, 5, 6, 7, 8, 13, 14, 15, 16, 17, 18, 19, 20, 21, 23, 24, 25, 26,
-		27,
+		1, 2, 3, 4, 5, 6, 7, 8, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
+		26, 27,
 	];
-	// [9, 10, 11, 12, 22, 28];
+	// [9, 10, 11, 12, 28];
 	randomizer.shuffleArray(specialityArray);
 
 	tresorArray = [
@@ -366,6 +367,16 @@ function checkCubes(curCubes) {
 	}
 	if (constraint === CONSTRAINT.FREE) {
 		return "ok";
+	} else if (constraint === CONSTRAINT.INREGION) {
+		if (
+			checkInSameRegionCubes(
+				curCubes.filter((cube) => cube.type !== CARD.VILLAGE)
+			)
+		) {
+			return "ok";
+		} else {
+			return "Tout n'est pas dans la même région";
+		}
 	} else if (constraint === CONSTRAINT.CONSECUTIVE) {
 		if (
 			checkConsecutiveCubes(
@@ -440,6 +451,23 @@ function checkCenteredCubes(centeredCubes) {
 	const cells = getRing(firstCell.x, firstCell.y);
 	return centeredCubes.every(
 		(cube) => cells.findIndex((cell) => sameCells(cell, cube)) >= 0
+	);
+}
+
+function checkInSameRegionCubes(sameRegionCubes) {
+	const bcell = board[sameRegionCubes[0].x][sameRegionCubes[0].y];
+	if (![CARD.SAND, CARD.GRASSLAND, CARD.MOUNTAIN].includes(bcell.type)) {
+		return false;
+	}
+	const regionIndex = findRegionIndex(
+		sameRegionCubes[0].x,
+		sameRegionCubes[0].y
+	);
+	if (regionIndex === -1) {
+		return false;
+	}
+	return sameRegionCubes.every(
+		(cube) => findRegionIndex(cube.x, cube.y) === regionIndex
 	);
 }
 
@@ -2587,6 +2615,10 @@ function prepareCube2Play(specialityCardIndex) {
 		addCube2Play(CARD.GRASSLAND, 1);
 		addCube2Play(CARD.JOKER, 5);
 	}
+	if (specialityCardIndex === 22) {
+		setConstraint(CONSTRAINT.INREGION);
+		addCube2Play(CARD.JOKER, 4);
+	}
 	if (specialityCardIndex === 23) {
 		setConstraint(CONSTRAINT.CENTERED);
 		addCube2Play(CARD.SEA, 1);
@@ -2611,13 +2643,18 @@ function prepareCube2Play(specialityCardIndex) {
 	}
 }
 
-function findRegion(x, y) {
+function findRegionIndex(x, y) {
 	const regionIndex = regions.findIndex((region) => {
 		if (region.cells.some((cell) => sameCells(cell, { x: x, y: y }))) {
 			return true;
 		}
 		return false;
 	});
+	return regionIndex;
+}
+
+function findRegion(x, y) {
+	const regionIndex = findRegionIndex(x, y);
 	if (regionIndex >= 0) {
 		return regions[regionIndex];
 	}
@@ -3605,15 +3642,18 @@ function test() {
 	computeTerres();
 	expectLength(terres, 6, "error in computeTerres");
 
+	ageExploration[0].x = 11;
+	ageExploration[0].y = 5;
+	setConstraint(CONSTRAINT.FREE);
 	addCube2Play(CARD.GRASSLAND, 4);
 	addCube2Play(CARD.SAND, 2);
 	addCube(12, 5);
 	addCube(12, 6);
 	addCube(12, 7);
 	transformCubeToVillage(12, 7);
+	addCube(11, 7);
 	addCube(10, 8);
 	addCube(9, 8);
-	addCube(11, 7);
 	expectLength(ageExploration, 7, "error in addCube");
 	expect(findExplorationCell({ x: 12, y: 5 }), "error in findExplorationCell");
 
@@ -3756,6 +3796,8 @@ function test() {
 		!hasVillageNextToRuin(getVillages()),
 		"error in hasVillageNextToRuin 1"
 	);
+	ageExploration[0].x = 6;
+	ageExploration[0].y = 3;
 	addCube(7, 2);
 	transformCubeToVillage(7, 2);
 	expect(
