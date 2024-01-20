@@ -255,9 +255,10 @@ function initMap(mapName) {
 	ageCards.unshift(9);
 
 	specialityArray = [
-		1, 2, 3, 4, 5, 13, 14, 15, 18, 19, 20, 21, 23, 24, 25, 26, 27,
+		1, 2, 3, 4, 5, 6, 7, 8, 13, 14, 15, 16, 17, 18, 19, 20, 21, 23, 24, 25, 26,
+		27,
 	];
-	// [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28];
+	// [9, 10, 11, 12, 22, 28];
 	randomizer.shuffleArray(specialityArray);
 
 	tresorArray = [
@@ -2533,6 +2534,21 @@ function prepareCube2Play(specialityCardIndex) {
 		setPieceBonus(3);
 		addCube2Play(CARD.SAND, 4);
 	}
+	if (specialityCardIndex === 6) {
+		setConstraint(CONSTRAINT.ALIGNED);
+		addCube2Play(CARD.SAND, 1);
+		addCube2Play(CARD.JOKER, 3);
+	}
+	if (specialityCardIndex === 7) {
+		setConstraint(CONSTRAINT.ALIGNED);
+		addCube2Play(CARD.GRASSLAND, 1);
+		addCube2Play(CARD.JOKER, 3);
+	}
+	if (specialityCardIndex === 8) {
+		setConstraint(CONSTRAINT.ALIGNED);
+		addCube2Play(CARD.SEA, 1);
+		addCube2Play(CARD.JOKER, 3);
+	}
 	if (specialityCardIndex === 13) {
 		setConstraint(CONSTRAINT.CENTERED);
 		addCube2Play(CARD.MOUNTAIN, 1);
@@ -2545,6 +2561,15 @@ function prepareCube2Play(specialityCardIndex) {
 	if (specialityCardIndex === 15) {
 		setConstraint(CONSTRAINT.CONSECUTIVE);
 		addCube2Play(`${CARD.SEA}|${CARD.SAND}`, 5);
+	}
+	if (specialityCardIndex === 16) {
+		setPieceBonus(2);
+		addCube2Play(CARD.MOUNTAIN, 3);
+	}
+	if (specialityCardIndex === 17) {
+		setConstraint(CONSTRAINT.ALIGNED);
+		addCube2Play(CARD.MOUNTAIN, 1);
+		addCube2Play(CARD.JOKER, 3);
 	}
 	if (specialityCardIndex === 18) {
 		addCube2Play(CARD.SEA, 4);
