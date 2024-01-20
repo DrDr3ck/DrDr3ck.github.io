@@ -14,7 +14,12 @@ class SpriteSheet {
 	 */
 	addSpriteSheet(name, filename, width, height) {
 		loadImage(filename, (image) => {
-			this.sheets[name] = { width: width, height: height, image: image, subimages: {} };
+			this.sheets[name] = {
+				width: width,
+				height: height,
+				image: image,
+				subimages: {},
+			};
 			this.totalLoadedImages++;
 		});
 		this.totalImagesToLoad++;
@@ -56,6 +61,71 @@ class SpriteSheet {
 	}
 }
 
+class AnimatedImage {
+	constructor(imageName, imageIndex, x, y, scale, fct) {
+		this.position = { x: x, y: y };
+		this.endPosition = { x: x, y: y };
+		this.delta = { dx: 0, dy: 0 };
+		this.state = null;
+		this.indexMax = 0;
+		this.index = 0;
+		this.speed = 1;
+		this.scale = scale;
+		this.finalScale = scale;
+		this.imageName = imageName;
+		this.imageIndex = imageIndex;
+		this.fct = fct;
+	}
+
+	/**
+	 * Starts the animation
+	 * @param endPosition final position of the Image
+	 * @param speed in pixel per second
+	 */
+	startAnimation(endPosition, speed, finalScale = 0) {
+		this.endPosition = endPosition;
+		this.delta.x = endPosition.x - this.position.x;
+		this.delta.y = endPosition.y - this.position.y;
+		this.speed = speed;
+
+		const distance = (x1, y1, x2, y2) => {
+			return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2));
+		};
+		const dist = distance(
+			this.position.x,
+			this.position.y,
+			endPosition.x,
+			endPosition.y
+		);
+		this.indexMax = dist / speed;
+		this.index = 0;
+		if (finalScale !== 0) {
+			this.finalScale = finalScale;
+		}
+	}
+
+	update(elapsedTime) {
+		this.index = this.index + this.speed;
+		if (this.index >= this.indexMax) {
+			this.index = this.indexMax;
+			if (this.fct) {
+				this.fct();
+			}
+		}
+	}
+
+	draw() {
+		if (this.indexMax === 0) {
+			return;
+		}
+		const factor = this.index / this.indexMax;
+		const X = this.position.x + this.delta.x * factor;
+		const Y = this.position.y + this.delta.y * factor;
+		const scale = this.scale + (this.finalScale - this.scale) * factor;
+		spritesheet.drawScaledSprite(this.imageName, this.imageIndex, X, Y, scale);
+	}
+}
+
 class Sprite {
 	constructor(x, y) {
 		this.position = { x: x, y: y };
@@ -78,7 +148,8 @@ class Sprite {
 		this.height = sheet.height;
 		for (const frame of frameArray) {
 			const x = (this.width * frame) % sheet.image.width;
-			const y = Math.floor(this.width * frame / sheet.image.width) * this.height;
+			const y =
+				Math.floor((this.width * frame) / sheet.image.width) * this.height;
 			animations.push(sheet.image.get(x, y, this.width, this.height));
 		}
 		this.animations[name] = animations;
@@ -100,7 +171,9 @@ class Sprite {
 	draw() {
 		if (!this.state) return;
 		const index =
-			this.index >= 0 ? Math.floor(this.index) % this.indexMax : Math.floor(-this.index) % this.indexMax;
+			this.index >= 0
+				? Math.floor(this.index) % this.indexMax
+				: Math.floor(-this.index) % this.indexMax;
 		image(
 			this.animations[this.state][index],
 			this.position.x,
@@ -119,7 +192,7 @@ class Sprite {
 			top: this.position.y,
 			bottom: this.position.y + this.height,
 			left: this.position.x,
-			right: this.position.x + this.width
+			right: this.position.x + this.width,
 		};
 	}
 }
