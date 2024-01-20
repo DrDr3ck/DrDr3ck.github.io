@@ -36,6 +36,7 @@ const CARD = {
 	CAPITAL: "capital",
 	TOWER: "tower",
 	TYPE: "type",
+	PIECE: "piece",
 	CRISTAL: "cristal",
 	VILLAGE: "village",
 };
@@ -1986,13 +1987,14 @@ function drawPlayableCase(cube, index) {
 		`${CARD.SEA}|${CARD.SAND}`,
 		`${CARD.SEA}|${CARD.MOUNTAIN}`,
 		CARD.TYPE,
+		CARD.PIECE,
 	];
 	const caseIndex = caseIndices.findIndex((cur) => cur === cube.type);
 	spritesheet.drawScaledSprite(
 		"cases",
 		caseIndex,
 		275 + index * 100,
-		30,
+		15,
 		caseScale
 	);
 }
@@ -2078,7 +2080,7 @@ function drawGame() {
 		stroke(0);
 		strokeWeight(2);
 		fill(250, 250, 230);
-		rect(260, 13, 920 - 260, 110, 5);
+		rect(260, 3, 920 - 260, 95, 5);
 		let maxCase = 6;
 		cubes.forEach((cube) => {
 			if (cube.x === 0 && maxCase > 0) {
