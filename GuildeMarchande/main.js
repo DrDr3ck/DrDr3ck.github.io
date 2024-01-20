@@ -2076,7 +2076,7 @@ function drawGame() {
 		let index = 0;
 		stroke(0);
 		strokeWeight(2);
-		fill(250, 250, 230);
+		fill(250, 250, 230, 120);
 		rect(260, 3, 920 - 260, 95, 5);
 		let maxCase = 6;
 		cubes.forEach((cube) => {
