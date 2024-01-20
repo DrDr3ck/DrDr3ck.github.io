@@ -35,6 +35,7 @@ const CARD = {
 	JOKER: "joker",
 	CAPITAL: "capital",
 	TOWER: "tower",
+	TYPE: "type",
 	CRISTAL: "cristal",
 	VILLAGE: "village",
 };
@@ -48,6 +49,7 @@ const CONSTRAINT = {
 	ALIGNED: "aligned",
 	CENTERED: "centered",
 	INREGION: "in_same_region",
+	ALIGNEDSAMETYPE: "aligned-same_type",
 };
 
 let overCell = null;
@@ -256,10 +258,10 @@ function initMap(mapName) {
 	ageCards.unshift(9);
 
 	specialityArray = [
-		1, 2, 3, 4, 5, 6, 7, 8, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
-		26, 27,
+		1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
+		24, 25, 26, 27,
 	];
-	// [9, 10, 11, 12, 28];
+	// [9, 12, 28];
 	randomizer.shuffleArray(specialityArray);
 
 	tresorArray = [
@@ -395,6 +397,18 @@ function checkCubes(curCubes) {
 		} else {
 			return "Des cubes ne sont pas bien alignés";
 		}
+	} else if (constraint === CONSTRAINT.ALIGNEDSAMETYPE) {
+		if (
+			!checkAlignedCubes(curCubes.filter((cube) => cube.type !== CARD.VILLAGE))
+		) {
+			return "Des cubes ne sont pas bien alignés";
+		} else if (
+			!checkSameTypeCubes(curCubes.filter((cube) => cube.type !== CARD.VILLAGE))
+		) {
+			return "Des cubes ne sont pas du même type";
+		} else {
+			return "ok";
+		}
 	} else if (constraint === CONSTRAINT.CENTERED) {
 		if (
 			checkCenteredCubes(curCubes.filter((cube) => cube.type !== CARD.VILLAGE))
@@ -484,6 +498,18 @@ function checkConsecutiveCubes(consecutiveCubes) {
 		}
 	}
 	return true;
+}
+
+function checkSameTypeCubes(sameTypeCubes) {
+	const bcell = board[sameTypeCubes[0].x][sameTypeCubes[0].y];
+	if (![CARD.SAND, CARD.GRASSLAND, CARD.MOUNTAIN].includes(bcell.type)) {
+		return false;
+	}
+	const curType = bcell.type;
+	return sameTypeCubes.every((cube) => {
+		const bcell = board[cube.x][cube.y];
+		return bcell.type === curType;
+	});
 }
 
 function checkAlignedCubes(alignedCubes) {
@@ -1060,6 +1086,9 @@ function undoCube(cubeIndex) {
 
 function checkType(cell, types, withTowerOrCristal = false) {
 	if (types[0] === CARD.JOKER) {
+		return true;
+	}
+	if (types[0] === CARD.TYPE) {
 		return true;
 	}
 	if (
@@ -1956,6 +1985,7 @@ function drawPlayableCase(cube, index) {
 		`${CARD.SEA}|${CARD.GRASSLAND}`,
 		`${CARD.SEA}|${CARD.SAND}`,
 		`${CARD.SEA}|${CARD.MOUNTAIN}`,
+		CARD.TYPE,
 	];
 	const caseIndex = caseIndices.findIndex((cur) => cur === cube.type);
 	spritesheet.drawScaledSprite(
@@ -2049,9 +2079,11 @@ function drawGame() {
 		strokeWeight(2);
 		fill(250, 250, 230);
 		rect(260, 13, 920 - 260, 110, 5);
+		let maxCase = 6;
 		cubes.forEach((cube) => {
-			if (cube.x === 0) {
+			if (cube.x === 0 && maxCase > 0) {
 				drawPlayableCase(cube, index++);
+				maxCase--;
 			}
 		});
 	}
@@ -2577,6 +2609,14 @@ function prepareCube2Play(specialityCardIndex) {
 		addCube2Play(CARD.SEA, 1);
 		addCube2Play(CARD.JOKER, 3);
 	}
+	if (specialityCardIndex === 10) {
+		setConstraint(CONSTRAINT.ALIGNED);
+		addCube2Play(CARD.SEA, 20);
+	}
+	if (specialityCardIndex === 11) {
+		setConstraint(CONSTRAINT.ALIGNEDSAMETYPE);
+		addCube2Play(CARD.TYPE, 20);
+	}
 	if (specialityCardIndex === 13) {
 		setConstraint(CONSTRAINT.CENTERED);
 		addCube2Play(CARD.MOUNTAIN, 1);
@@ -2617,7 +2657,7 @@ function prepareCube2Play(specialityCardIndex) {
 	}
 	if (specialityCardIndex === 22) {
 		setConstraint(CONSTRAINT.INREGION);
-		addCube2Play(CARD.JOKER, 4);
+		addCube2Play(CARD.TYPE, 4);
 	}
 	if (specialityCardIndex === 23) {
 		setConstraint(CONSTRAINT.CENTERED);
