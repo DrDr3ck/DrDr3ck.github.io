@@ -187,58 +187,7 @@ const tutoImages = [
 
 // Loading images
 function preload() {
-	spritesheet.addSpriteSheet("cases", "./cases.png", 105, 95);
 	spritesheet.addSpriteSheet("cover", "./cover.png", 686, 503);
-	spritesheet.addSpriteSheet("avenia", "./avenia.png", 1680, 1405);
-	spritesheet.addSpriteSheet("aghon", "./aghon.png", 1680, 1405);
-	spritesheet.addSpriteSheet("cnidaria", "./cnidaria.png", 1680, 1405);
-	spritesheet.addSpriteSheet("kazan", "./kazan.png", 1680, 1405);
-	spritesheet.addSpriteSheet("exploration", "./exploration.png", 840, 588);
-	spritesheet.addSpriteSheet(
-		"exploration_cards",
-		"./exploration_cards.png",
-		260,
-		400
-	);
-	spritesheet.addSpriteSheet(
-		"speciality_cards",
-		"./speciality_cards.png",
-		260,
-		400
-	);
-	spritesheet.addSpriteSheet("tresor_cards", "./tresor_cards.png", 400, 260);
-	spritesheet.addSpriteSheet("comptoirs", "./comptoirs.png", 100, 100);
-	spritesheet.addSpriteSheet("avenia_goals", "./avenia_goals.png", 520, 370);
-	spritesheet.addSpriteSheet("aghon_goals", "./aghon_goals.png", 520, 370);
-	spritesheet.addSpriteSheet("kazan_goals", "./kazan_goals.png", 520, 370);
-	spritesheet.addSpriteSheet(
-		"cnidaria_goals",
-		"./cnidaria_goals.png",
-		520,
-		370
-	);
-	spritesheet.addSpriteSheet("pions", "./pions.png", 80, 90);
-	spritesheet.addSpriteSheet("PV", "./PV.png", 136, 141);
-	spritesheet.addSpriteSheet("avenia_rules", "./avenia_rules.png", 380, 275);
-	spritesheet.addSpriteSheet("aghon_rules", "./aghon_rules.png", 685, 275);
-	spritesheet.addSpriteSheet("kazan_rules", "./kazan_rules.png", 675, 350);
-	spritesheet.addSpriteSheet(
-		"cnidaria_rules",
-		"./cnidaria_rules.png",
-		680,
-		710
-	);
-	spritesheet.addSpriteSheet("solo_pions", "./solo_pions.png", 72, 72);
-	spritesheet.addSpriteSheet("scores", "./scores.png", 126, 80);
-
-	tutoImages.forEach((tuto) => {
-		spritesheet.addSpriteSheet(
-			tuto.name,
-			`./${tuto.name}.png`,
-			tuto.width,
-			tuto.height
-		);
-	});
 }
 
 function musicClicked() {
@@ -330,6 +279,7 @@ function startKazanClicked() {
 }
 
 function startClicked() {
+	resizeCanvas(windowWidth, windowHeight);
 	initBoard(map);
 	computeRegions();
 	if (map === "avenia") {
@@ -1360,8 +1310,60 @@ function initUI() {
 
 function setup() {
 	initUI();
-	canvas = createCanvas(windowWidth, windowHeight);
+	canvas = createCanvas(windowWidth, windowHeight - 145);
 	canvas.parent("canvas");
+
+	spritesheet.addSpriteSheet("cases", "./cases.png", 105, 95);
+	spritesheet.addSpriteSheet("avenia", "./avenia.png", 1680, 1405);
+	spritesheet.addSpriteSheet("aghon", "./aghon.png", 1680, 1405);
+	spritesheet.addSpriteSheet("cnidaria", "./cnidaria.png", 1680, 1405);
+	spritesheet.addSpriteSheet("kazan", "./kazan.png", 1680, 1405);
+	spritesheet.addSpriteSheet("exploration", "./exploration.png", 840, 588);
+	spritesheet.addSpriteSheet(
+		"exploration_cards",
+		"./exploration_cards.png",
+		260,
+		400
+	);
+	spritesheet.addSpriteSheet(
+		"speciality_cards",
+		"./speciality_cards.png",
+		260,
+		400
+	);
+	spritesheet.addSpriteSheet("tresor_cards", "./tresor_cards.png", 400, 260);
+	spritesheet.addSpriteSheet("comptoirs", "./comptoirs.png", 100, 100);
+	spritesheet.addSpriteSheet("avenia_goals", "./avenia_goals.png", 520, 370);
+	spritesheet.addSpriteSheet("aghon_goals", "./aghon_goals.png", 520, 370);
+	spritesheet.addSpriteSheet("kazan_goals", "./kazan_goals.png", 520, 370);
+	spritesheet.addSpriteSheet(
+		"cnidaria_goals",
+		"./cnidaria_goals.png",
+		520,
+		370
+	);
+	spritesheet.addSpriteSheet("pions", "./pions.png", 80, 90);
+	spritesheet.addSpriteSheet("PV", "./PV.png", 136, 141);
+	spritesheet.addSpriteSheet("avenia_rules", "./avenia_rules.png", 380, 275);
+	spritesheet.addSpriteSheet("aghon_rules", "./aghon_rules.png", 685, 275);
+	spritesheet.addSpriteSheet("kazan_rules", "./kazan_rules.png", 675, 350);
+	spritesheet.addSpriteSheet(
+		"cnidaria_rules",
+		"./cnidaria_rules.png",
+		680,
+		710
+	);
+	spritesheet.addSpriteSheet("solo_pions", "./solo_pions.png", 72, 72);
+	spritesheet.addSpriteSheet("scores", "./scores.png", 126, 80);
+
+	tutoImages.forEach((tuto) => {
+		spritesheet.addSpriteSheet(
+			tuto.name,
+			`./${tuto.name}.png`,
+			tuto.width,
+			tuto.height
+		);
+	});
 
 	soundManager.addSound("take_card", "./take_card.mp3", 1);
 	soundManager.addSound("place_cube", "./place_cube.wav", 1);
@@ -2366,6 +2368,13 @@ function initGame() {}
 
 function drawLoading() {
 	fill(0);
+	spritesheet.drawScaledSprite(
+		"cover",
+		0,
+		(windowWidth - 686 * 1.5) / 2,
+		50,
+		1.5
+	);
 	noStroke();
 	textSize(50);
 	textAlign(CENTER, CENTER);

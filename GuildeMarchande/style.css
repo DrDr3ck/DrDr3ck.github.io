@@ -21,7 +21,7 @@ body {
 #canvas {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  /*height: 100%;*/
   /* This centers our sketch horizontally. */
   justify-content: center;
 }
