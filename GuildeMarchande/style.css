@@ -1,12 +1,13 @@
 html,
 body {
-  height: 90%;
+  height: 100%;
+  overflow-y: hidden;
 }
 
 body {
-  margin-top: 10px;
   display: flex;
   flex-direction: column;
+  align-items: center;
 }
 
 #header {
@@ -19,6 +20,8 @@ body {
 
 #canvas {
   display: flex;
+  flex-direction: column;
+  height: 100%;
   /* This centers our sketch horizontally. */
   justify-content: center;
 }
