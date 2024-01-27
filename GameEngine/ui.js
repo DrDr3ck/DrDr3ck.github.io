@@ -22,7 +22,7 @@ class UIManager {
 
 	setUI(components) {
 		this.currentUI.forEach((c) => (c.visible = false));
-		this.currentUI = [ ...components ];
+		this.currentUI = [...components];
 		this.currentUI.forEach((c) => (c.visible = true));
 		this.setMenu(null);
 	}
@@ -57,7 +57,10 @@ class UIManager {
 		let over = false;
 		if (this.currentDialog) {
 			this.currentDialog.components.forEach((c) => {
-				c.mouseOver(mouseX - this.currentDialog.x, mouseY - this.currentDialog.y);
+				c.mouseOver(
+					mouseX - this.currentDialog.x,
+					mouseY - this.currentDialog.y
+				);
 				over = over || (c.over && c.isClickable());
 			});
 		} else {
@@ -67,28 +70,36 @@ class UIManager {
 			});
 		}
 		if (over) {
-			cursor('pointer');
+			cursor("pointer");
 		} else {
 			if (toolManager && toolManager.currentTool) {
 				cursor(CROSS);
 			} else {
-				cursor('default');
+				cursor("default");
 			}
 		}
 	}
 
-	draw() {
-		this.currentUI.forEach((c) => {
-			c.draw();
-		});
-		this.animations.forEach(animations => animations.forEach(animation => animation.draw()));
-		if (this.currentDialog) {
-			this.currentDialog.draw();
-		}
+	drawLogger() {
 		push();
 		textAlign(LEFT, BOTTOM);
 		this.loggerContainer.draw();
 		pop();
+	}
+
+	draw(drawLogger = true) {
+		this.currentUI.forEach((c) => {
+			c.draw();
+		});
+		this.animations.forEach((animations) =>
+			animations.forEach((animation) => animation.draw())
+		);
+		if (this.currentDialog) {
+			this.currentDialog.draw();
+		}
+		if (drawLogger) {
+			this.drawLogger();
+		}
 	}
 
 	mouseClicked() {
@@ -133,11 +144,11 @@ class UIManager {
 		this.components.forEach((c) => {
 			c.update(elapsedTime);
 		});
-		if( this.animations.length > 0 ) {
+		if (this.animations.length > 0) {
 			let animations = this.animations[0];
-			animations = animations.filter(animation => animation.time > 0);
-			animations.forEach(animation => animation.update(elapsedTime));
-			if( animations.length === 0 ) {
+			animations = animations.filter((animation) => animation.time > 0);
+			animations.forEach((animation) => animation.update(elapsedTime));
+			if (animations.length === 0) {
 				this.animations.shift();
 			}
 		}
@@ -190,9 +201,9 @@ class UIComponent {
 		if (!this.enabled || !this.visible) {
 			return false;
 		}
-		if (mx > this.x + this.w*this.scale) return false;
+		if (mx > this.x + this.w * this.scale) return false;
 		if (mx < this.x) return false;
-		if (my > this.y + this.h*this.scale) return false;
+		if (my > this.y + this.h * this.scale) return false;
 		if (my < this.y) return false;
 		this.over = true;
 		return true;
@@ -329,7 +340,14 @@ class BButton extends BButtonTextBase {
 			fill(47, 67, 47);
 		}
 
-		rect(this.x + this.w / 2, this.y - this.h / 2, this.w, this.h + extend, fRadius, lRadius);
+		rect(
+			this.x + this.w / 2,
+			this.y - this.h / 2,
+			this.w,
+			this.h + extend,
+			fRadius,
+			lRadius
+		);
 		if (this.over) {
 			stroke(188, 255, 219);
 			strokeWeight(2);
@@ -337,7 +355,12 @@ class BButton extends BButtonTextBase {
 			noStroke();
 		}
 		const deltaY = this.textSize < 30 ? 4 : 0;
-		drawText(this.text, this.x + this.w / 2, this.y - this.h / 2 - deltaY, this.enabled);
+		drawText(
+			this.text,
+			this.x + this.w / 2,
+			this.y - this.h / 2 - deltaY,
+			this.enabled
+		);
 	}
 }
 
@@ -348,7 +371,7 @@ class BFloatingButton extends BButtonTextBase {
 		this.textSize = textSize;
 		this.checked = true;
 		this.previewCheck = false;
-		this.color= {r: 9, g: 47, b: 18};
+		this.color = { r: 9, g: 47, b: 18 };
 	}
 
 	setTextSize(size) {
@@ -368,8 +391,13 @@ class BFloatingButton extends BButtonTextBase {
 			strokeWeight(Math.ceil(this.textSize / 30));
 		}
 		const factor = this.enabled ? 1 : 1.5;
-		fill(this.color.r*factor, this.color.g*factor, this.color.b*factor);
-		ellipse(this.x + this.w / 2, this.y - this.h / 2, this.w + extend, this.h + extend);
+		fill(this.color.r * factor, this.color.g * factor, this.color.b * factor);
+		ellipse(
+			this.x + this.w / 2,
+			this.y - this.h / 2,
+			this.w + extend,
+			this.h + extend
+		);
 
 		push();
 		if (this.over) {
@@ -416,10 +444,20 @@ class BImageButton extends BInteractiveButtonBase {
 		if (this.over) {
 			tint(255, 200);
 		}
-		if( this.scale === 1 ) {
+		if (this.scale === 1) {
 			image(this.img, this.x, this.y, this.w, this.h);
 		} else {
-			image(this.img, this.x, this.y, this.w*this.scale, this.h*this.scale, 0, 0, this.w, this.h);
+			image(
+				this.img,
+				this.x,
+				this.y,
+				this.w * this.scale,
+				this.h * this.scale,
+				0,
+				0,
+				this.w,
+				this.h
+			);
 		}
 		pop();
 	}
@@ -428,7 +466,7 @@ class BImageButton extends BInteractiveButtonBase {
 class BImageBorderButton extends BImageButton {
 	constructor(x, y, img, callback) {
 		super(x, y, img, callback);
-		this.color= {r: 9, g: 47, b: 18};
+		this.color = { r: 9, g: 47, b: 18 };
 	}
 
 	doDraw() {
@@ -443,8 +481,14 @@ class BImageBorderButton extends BImageButton {
 			strokeWeight(1);
 		}
 		const factor = this.enabled ? 1 : 1.5;
-		fill(this.color.r*factor, this.color.g*factor, this.color.b*factor);
-		rect(this.x-extend/2, this.y-extend/2, this.w + extend, this.h + extend, 5);
+		fill(this.color.r * factor, this.color.g * factor, this.color.b * factor);
+		rect(
+			this.x - extend / 2,
+			this.y - extend / 2,
+			this.w + extend,
+			this.h + extend,
+			5
+		);
 		pop();
 		super.doDraw();
 	}
@@ -534,7 +578,9 @@ class BMenu extends BButtonBase {
 
 	closeMenu() {
 		this.children.forEach((c) => (c.visible = false));
-		uiManager.currentUI = uiManager.currentUI.filter((c) => !this.children.includes(c));
+		uiManager.currentUI = uiManager.currentUI.filter(
+			(c) => !this.children.includes(c)
+		);
 		this.open = false;
 	}
 
@@ -616,20 +662,31 @@ class BItemSelector extends UIContainer {
 		this.nbRows = nbRows;
 		this.margin = 10;
 		this.itemSize = 80;
-		this.w = nbCols * (this.itemSize + this.margin) + this.margin + this.margin * 2; // space for "-/+"
+		this.w =
+			nbCols * (this.itemSize + this.margin) + this.margin + this.margin * 2; // space for "-/+"
 		this.h = nbRows * (this.itemSize + this.margin) + this.margin;
 		this.maxRows = 1;
 		this.curRow = 0;
-		this.minus = new BFloatingButton(this.x + this.w - this.margin, this.y + this.margin * 2, '-', () => {
-			this.curRow--;
-			this.checkNavigators();
-		});
+		this.minus = new BFloatingButton(
+			this.x + this.w - this.margin,
+			this.y + this.margin * 2,
+			"-",
+			() => {
+				this.curRow--;
+				this.checkNavigators();
+			}
+		);
 		this.minus.setTextSize(12);
 		this.minus.visible = true;
-		this.plus = new BFloatingButton(this.x + this.w - this.margin, this.y + this.h - this.margin * 2, '+', () => {
-			this.curRow++;
-			this.checkNavigators();
-		});
+		this.plus = new BFloatingButton(
+			this.x + this.w - this.margin,
+			this.y + this.h - this.margin * 2,
+			"+",
+			() => {
+				this.curRow++;
+				this.checkNavigators();
+			}
+		);
 		this.plus.setTextSize(12);
 		this.plus.visible = true;
 		this.checkNavigators();
@@ -651,7 +708,10 @@ class BItemSelector extends UIContainer {
 	}
 
 	computeNextItemPosition() {
-		const x = this.x + this.margin + (this.components.length % this.nbCols) * (this.itemSize + this.margin);
+		const x =
+			this.x +
+			this.margin +
+			(this.components.length % this.nbCols) * (this.itemSize + this.margin);
 		const y = this.y + this.margin;
 		return { x: x, y: y };
 	}
@@ -722,7 +782,8 @@ class Dialog extends UIContainer {
 		stroke(29, 105, 62);
 		strokeWeight(2);
 		fill(9, 47, 18);
-		const percent = 1 - Math.max(this.popupAnimation, 0) / this.totalPopupAnimationTime;
+		const percent =
+			1 - Math.max(this.popupAnimation, 0) / this.totalPopupAnimationTime;
 		background(10, 10, 10, percent * this.transparency);
 		if (this.popupAnimation === 0) {
 			translate(this.x, this.y);
@@ -732,8 +793,8 @@ class Dialog extends UIContainer {
 			const x = this.startX - (this.startX - this.x) * percent;
 			const y = this.startY - (this.startY - this.y) * percent;
 			rect(
-				x + this.w / 2 - this.w * percent / 2,
-				y + this.h / 2 - this.h * percent / 2,
+				x + this.w / 2 - (this.w * percent) / 2,
+				y + this.h / 2 - (this.h * percent) / 2,
 				this.w * percent,
 				this.h * percent,
 				5
@@ -775,12 +836,12 @@ class LoggerContainer extends UIComponent {
 		// only display the 5 last messages
 		const maxLogger = Math.min(this.maxLines, this.loggers.length);
 		const minLogger = Math.max(0, this.loggers.length - this.maxLines);
-		let y = this.h - 10 - maxLogger * this.textSize+2;
+		let y = this.h - 10 - maxLogger * this.textSize + 2;
 		for (let i = minLogger; i < this.loggers.length; i++) {
 			const logger = this.loggers[i];
 			if (y > this.h) return;
 			logger.draw(x, y);
-			y += this.textSize+2;
+			y += this.textSize + 2;
 		}
 	}
 
@@ -815,7 +876,7 @@ function dist(x1, y1, x2, y2) {
 }
 
 class Animation {
-	constructor(src, dst, speed, callback=null) {
+	constructor(src, dst, speed, callback = null) {
 		this.sourcePosition = src;
 		this.destinationPosition = dst;
 		this.speed = speed; // nb pixels per sec.
@@ -830,9 +891,13 @@ class Animation {
 	update(elapsedTime) {
 		this.time = Math.max(0, this.time - elapsedTime);
 		const coef = this.time === 0 ? 0 : this.time / this.originTime;
-		this.x = this.sourcePosition.X + (this.destinationPosition.X-this.sourcePosition.X)*(1-coef);
-		this.y = this.sourcePosition.Y + (this.destinationPosition.Y-this.sourcePosition.Y)*(1-coef);
-		if( this.time === 0 && this.callback ) {
+		this.x =
+			this.sourcePosition.X +
+			(this.destinationPosition.X - this.sourcePosition.X) * (1 - coef);
+		this.y =
+			this.sourcePosition.Y +
+			(this.destinationPosition.Y - this.sourcePosition.Y) * (1 - coef);
+		if (this.time === 0 && this.callback) {
 			this.callback();
 			this.callback = null;
 		}
@@ -855,10 +920,20 @@ class MoveAnimation extends Animation {
 	}
 
 	doDraw() {
-		if( this.scale === 1 ) {
+		if (this.scale === 1) {
 			image(this.img, this.x, this.y, this.w, this.h);
 		} else {
-			image(this.img, this.x, this.y, this.w*this.scale, this.h*this.scale, 0, 0, this.w, this.h);
+			image(
+				this.img,
+				this.x,
+				this.y,
+				this.w * this.scale,
+				this.h * this.scale,
+				0,
+				0,
+				this.w,
+				this.h
+			);
 		}
 	}
 }
