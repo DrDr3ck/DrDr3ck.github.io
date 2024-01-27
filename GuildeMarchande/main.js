@@ -43,6 +43,7 @@ const CARD = {
 
 let map = "avenia";
 let goals_cards = "avenia_goals";
+let persistence = null;
 
 const CONSTRAINT = {
 	FREE: "none",
@@ -85,6 +86,8 @@ function getRandomName() {
 		"Marco",
 		"Christopher",
 		"Amerigo",
+		"Charles",
+		"Dixon",
 		"John",
 		"Ferdinand",
 		"Hernan",
@@ -95,6 +98,7 @@ function getRandomName() {
 		"Vasco",
 		"Giovanni",
 		"Bartolomeu",
+		"Nuno",
 	];
 	const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
 	const lastNames = [
@@ -109,12 +113,41 @@ function getRandomName() {
 		"Cook",
 		"Pizarro",
 		"Gama",
+		"Denham",
 		"Verrazzano",
 		"Dias",
+		"Pytheas",
+		"Tristao",
+		"Foucauld",
+		"Hornemann",
+		"Tilho",
+		"Monod",
 	];
-	const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+	const townNames = [
+		"Paris",
+		"Venice",
+		"Hamburg",
+		"Wasserbourg",
+		"Mexico",
+		"Delhi",
+		"Lagos",
+		"London",
+		"Madrid",
+		"Pune",
+		"Xian",
+		"Singapour",
+	];
+	let lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+	if (Math.random() > 0.5) {
+		const townName = townNames[Math.floor(Math.random() * townNames.length)];
+		lastName = `${lastName} from ${townName}`;
+	}
 	if (Math.random() < 0.3) {
 		return `Sir ${firstName} ${lastName}`;
+	} else {
+		if (Math.random() < 0.3) {
+			return `Capt ${firstName} ${lastName}`;
+		}
 	}
 	if (Math.random() > 0.8) {
 		return `${firstName} da ${lastName}`;
@@ -213,6 +246,7 @@ function musicClicked() {
 }
 
 const speakerStorageKey = "DrDr3ck/GuildeMarchande/Speaker";
+const currentPlayKey = "DrDr3ck/GuildeMarchande/Play";
 function speakerClicked() {
 	speakerButton.checked = !speakerButton.checked;
 	soundManager.mute(!speakerButton.checked);
@@ -304,6 +338,23 @@ function startClicked() {
 	curState = GAME_PLAY_STATE;
 	uiManager.setUI([speakerButton, musicButton, helpButton]);
 	uiManager.addLogger("A vous de jouer!");
+	// replay ?
+	replay(true);
+}
+
+function replay(doIt, replayKey = currentPlayKey) {
+	const steps = JSON.parse(localStorage.getItem(replayKey));
+	if (doIt && steps && map === steps.map && seed === steps.seed) {
+		persistence = new Persistence(
+			steps ? steps.map : map,
+			steps ? steps.seed : seed
+		);
+		if (steps) {
+			persistence.replay(steps.steps);
+		}
+	} else {
+		persistence = new Persistence(map, seed);
+	}
 }
 
 function setPieceBonus(bonus) {
@@ -624,20 +675,22 @@ function validateClicked(force = false) {
 						treasureCubes += 1;
 					}
 					// animation tresor
-					const bcell = board[cube.x][cube.y];
-					const tresorCard = new AnimatedImage(
-						"tresor_cards",
-						treasureIndex,
-						bcell.center.x,
-						bcell.center.y,
-						0.2
-					);
-					animations.push(tresorCard);
-					tresorCard.startAnimation(
-						{ x: 1150, y: 820 },
-						5 - animations.length * 0.45,
-						0.65
-					);
+					if (!persistenceMode) {
+						const bcell = board[cube.x][cube.y];
+						const tresorCard = new AnimatedImage(
+							"tresor_cards",
+							treasureIndex,
+							bcell.center.x,
+							bcell.center.y,
+							0.2
+						);
+						animations.push(tresorCard);
+						tresorCard.startAnimation(
+							{ x: 1150, y: 820 },
+							5 - animations.length * 0.45,
+							0.65
+						);
+					}
 				}
 				ruins.push({ x: cube.x, y: cube.y });
 			}
@@ -660,6 +713,9 @@ function validateClicked(force = false) {
 	setTresorBonus(1);
 	setPieceBonus(1);
 	// nettoyer cubes et constraint
+	if (cubes.length > 0) {
+		persistence.addStep(cubes);
+	}
 	cubes = [];
 	constraint = CONSTRAINT.FREE;
 	// passer à la carte exploration suivante
@@ -681,8 +737,7 @@ function validateClicked(force = false) {
 		return;
 	}
 	// tester les comptoirs
-	connectedTrades = getConnectedTrades();
-	if (connectedTrades.length >= 1) {
+	if (getConnectedTrades().length >= 1) {
 		playState = TRADE_STATE;
 	}
 	checkGoals();
@@ -692,7 +747,9 @@ function validateClicked(force = false) {
 	soundManager.playSound("validate");
 
 	if (playState === EXPLORATION_STATE) {
-		newExplorationCard();
+		if (!persistenceMode) {
+			newExplorationCard();
+		}
 	}
 }
 
@@ -1004,6 +1061,77 @@ const validateForceButton = new BButton(805, 980, "Fin de Tour", () => {
 validateForceButton.setTextSize(30);
 validateForceButton.w = 180;
 
+let persistenceMode = false;
+
+class Persistence {
+	constructor(mapName, seed) {
+		this.map = mapName;
+		this.seed = seed;
+		this.steps = [];
+	}
+
+	replay(steps) {
+		persistenceMode = true;
+		steps.forEach((step) => {
+			if (step.type === "exploration") {
+				newExplorationCard();
+				return;
+			}
+			if (step.type === "speciality") {
+				// 4. add cube to play
+				prepareCube2Play(specialityArray[step.cardIndex]);
+				chooseSpecialityCard(step.cardIndex);
+				// 3. change state to CUBE_STATE
+				playState = CUBE_STATE;
+			}
+			if (step.type === "trade") {
+				chooseTrade(step.tradeCell);
+				validateClicked(true);
+			}
+			if (step.type === "cubes") {
+				step.cubes.forEach((cube) => {
+					if (cube.type === "village") {
+						addNewVillage(cube.x, cube.y);
+					} else {
+						addCube(cube.x, cube.y, true);
+					}
+				});
+				validateClicked(true);
+			}
+		});
+		persistenceMode = false;
+	}
+
+	saveReplay(replayKey = currentPlayKey) {
+		const jsonReplay = JSON.stringify({
+			map: this.map,
+			seed: this.seed,
+			steps: this.steps,
+		});
+		localStorage.setItem(replayKey, jsonReplay);
+	}
+
+	newExplorationCard() {
+		this.steps.push({ type: "exploration" });
+		this.saveReplay();
+	}
+
+	chooseSpecialityCard(cardIndex) {
+		this.steps.push({ type: "speciality", cardIndex: cardIndex });
+		this.saveReplay();
+	}
+
+	chooseTrade(tradeCell) {
+		this.steps.push({ type: "trade", tradeCell: tradeCell });
+		this.saveReplay();
+	}
+
+	addStep(stepCubes) {
+		this.steps.push({ type: "cubes", cubes: [...stepCubes] });
+		this.saveReplay();
+	}
+}
+
 class Randomizer {
 	constructor(seed) {
 		if (seed) {
@@ -1098,41 +1226,44 @@ function checkType(cell, types, withTowerOrCristal = false) {
 	return types.includes(cell.type);
 }
 
-function addCube(x, y) {
-	// check if cube not already added
-	if (
-		ageExploration.findIndex((cell) => sameCells(cell, { x: x, y: y })) >= 0
-	) {
-		return false;
-	}
-	// check if cube is next to an already existing cube
-	const ring = getRing(x, y);
-	if (
-		!ring.some(
-			(rcell) => ageExploration.findIndex((cell) => sameCells(rcell, cell)) >= 0
-		)
-	) {
-		// le cube doit etre posé à coté d'un autre cube existant
-		return false;
-	}
+function addCube(x, y, force = false) {
 	const cell = board[x][y];
-	// if aligned/centered and first cube, should explore type of first playable cube
-	if (
-		cubes.filter((c) => c.x !== 0 && c.y !== 0).length === 0 &&
-		[CONSTRAINT.CENTERED, CONSTRAINT.ALIGNED].includes(constraint)
-	) {
-		// first cube
-		if (!checkType(cell, cubes[0].type.split("|"))) {
+	if (!force) {
+		// check if cube not already added
+		if (
+			ageExploration.findIndex((ecell) => sameCells(ecell, { x: x, y: y })) >= 0
+		) {
 			return false;
 		}
-		// check that first cube is next to an existing cube
+		// check if cube is next to an already existing cube
 		const ring = getRing(x, y);
 		if (
 			!ring.some(
-				(r) => ageExploration.findIndex((explo) => sameCells(explo, r)) >= 0
+				(rcell) =>
+					ageExploration.findIndex((ecell) => sameCells(rcell, ecell)) >= 0
 			)
 		) {
+			// le cube doit etre posé à coté d'un autre cube existant
 			return false;
+		}
+		// if aligned/centered and first cube, should explore type of first playable cube
+		if (
+			cubes.filter((c) => c.x !== 0 && c.y !== 0).length === 0 &&
+			[CONSTRAINT.CENTERED, CONSTRAINT.ALIGNED].includes(constraint)
+		) {
+			// first cube
+			if (!checkType(cell, cubes[0].type.split("|"), true)) {
+				return false;
+			}
+			// check that first cube is next to an existing cube
+			const ring = getRing(x, y);
+			if (
+				!ring.some(
+					(r) => ageExploration.findIndex((explo) => sameCells(explo, r)) >= 0
+				)
+			) {
+				return false;
+			}
 		}
 	}
 	const cubeIndex = cubes.findIndex(
@@ -2095,6 +2226,7 @@ function drawGame() {
 	}
 
 	if (playState === TRADE_STATE) {
+		connectedTrades = getConnectedTrades();
 		connectedTrades.forEach((trades) => {
 			trades.forEach((trade) => {
 				const cell = board[trade.x][trade.y];
@@ -2352,6 +2484,8 @@ function draw() {
 
 	uiManager.update(elapsedTime);
 
+	uiManager.drawLogger();
+
 	// draw game
 	if (curState === GAME_START_STATE) {
 		spritesheet.drawScaledSprite(
@@ -2372,7 +2506,7 @@ function draw() {
 		drawGame();
 	}
 
-	uiManager.draw();
+	uiManager.draw(false);
 	if (toolManager.currentTool) {
 		toolManager.currentTool.draw();
 	}
@@ -2395,31 +2529,41 @@ function setConstraint(value) {
 // change playState to 'cube'
 // check if it is the end of current age
 function newExplorationCard() {
+	persistence.newExplorationCard();
+	if (cubes.length > 0) {
+		persistence.addStep(cubes);
+	}
 	cubes = [];
 	if (ageCards[0] !== 9 && ageCards.length > 1) {
 		const cardIndex = ageCards[0];
-		const animatedCard = new AnimatedImage(
-			"exploration_cards",
-			ageCards[0],
-			1150,
-			440 - 25,
-			0.65,
-			() => {
-				// put card on exploration board
-				exploredCards.push(cardIndex);
-			}
-		);
-		animations.push(animatedCard);
-		const finalPosition = explorationBoardCardPosition(ageCards[0]);
-		animatedCard.startAnimation(finalPosition, 8, 0.325);
+		if (!persistenceMode) {
+			const animatedCard = new AnimatedImage(
+				"exploration_cards",
+				ageCards[0],
+				1150,
+				440 - 25,
+				0.65,
+				() => {
+					// put card on exploration board
+					exploredCards.push(cardIndex);
+				}
+			);
+			animations.push(animatedCard);
+			const finalPosition = explorationBoardCardPosition(ageCards[0]);
+			animatedCard.startAnimation(finalPosition, 8, 0.325);
+		} else {
+			exploredCards.push(cardIndex);
+		}
 	}
 	ageCards.shift();
 	if (ageCards.length === 0) {
 		// new Age
 		age += 1;
 		if (age < 5) {
-			uiManager.addLogger("Nouvel age");
-			soundManager.playSound("new_age");
+			if (!persistenceMode) {
+				uiManager.addLogger("Nouvel age");
+				soundManager.playSound("new_age");
+			}
 		}
 		if (age === 2) {
 			for (let i = 0; i < 7; i++) {
@@ -2700,6 +2844,14 @@ function findRegion(x, y) {
 	return null;
 }
 
+function addNewVillage(x, y) {
+	cubes.push({
+		type: CARD.VILLAGE,
+		x: x,
+		y: y,
+	});
+}
+
 function mouseClicked() {
 	if (toggleDebug) {
 		uiManager.addLogger(`X=${mouseX}, Y=${mouseY}`);
@@ -2759,11 +2911,7 @@ function mouseClicked() {
 		}
 	} else if (playState === VILLAGE_STATE && overCell) {
 		// add new village
-		cubes.push({
-			type: CARD.VILLAGE,
-			x: overCell.x,
-			y: overCell.y,
-		});
+		addNewVillage(overCell.x, overCell.y);
 		soundManager.playSound("place_cube");
 		playState = CUBE_STATE;
 		// check if all cubes have been put on board
@@ -2774,29 +2922,12 @@ function mouseClicked() {
 		}
 	}
 	if (playState === TRADE_STATE && overTrade) {
-		// transform town as trade
-		knownTrades.push(overTrade);
-		// find which trades is the best
-		let bestPV = 0;
-		connectedTrades.forEach((trades) => {
-			if (!trades.some((trade) => sameCells(trade, overTrade))) {
-				return;
-			}
-			const bTrade1 = board[trades[0].x][trades[0].y];
-			const bTrade2 = board[trades[1].x][trades[1].y];
-			const PVTrade = bTrade1.bonus.nb * bTrade2.bonus.nb;
-			if (PVTrade > bestPV) {
-				bestPV = PVTrade;
-			}
-			if (bestPV > bestTradePV) {
-				bestTradePV = bestPV;
-			}
-		});
-		addPV("commerce", bestPV);
+		chooseTrade(overTrade);
 		validateClicked();
 	}
 	if (playState === SPECIALIZED_STATE && overSpecialization !== -1) {
-		const specialityIndex = specialityArray[overSpecialization];
+		// 1. set animation
+		const specializationIndex = overSpecialization;
 		const specializedCard = new AnimatedImage(
 			"speciality_cards",
 			specialityArray[overSpecialization],
@@ -2804,8 +2935,8 @@ function mouseClicked() {
 			overSpecialization === 0 ? 100 : 467,
 			0.8,
 			() => {
-				// 1. put specialized card in the current Age
-				specialityCards.push(specialityIndex);
+				// 2. choose specialized card
+				chooseSpecialityCard(specializationIndex);
 			}
 		);
 		animations.push(specializedCard);
@@ -2815,13 +2946,10 @@ function mouseClicked() {
 			8,
 			map === "cnidaria" ? 0.5 : 0.6
 		);
-		// 2. remove the 2 cards from the list of specialized cards
-		specialityArray.shift();
-		specialityArray.shift();
 		// 3. change state to CUBE_STATE
 		playState = CUBE_STATE;
 		// 4. add cube to play
-		prepareCube2Play(specialityIndex);
+		prepareCube2Play(specialityArray[overSpecialization]);
 		addValidateButton();
 	}
 	if (playState === SPECIALIZED_CARD_STATE && overSpecializedCard !== -1) {
@@ -2833,10 +2961,53 @@ function mouseClicked() {
 	return false;
 }
 
+function chooseSpecialityCard(specialityCardIndex) {
+	// 1. put specialized card in the current Age
+	specialityCards.push(specialityArray[specialityCardIndex]);
+	// 2. remove the 2 cards from the list of specialized cards
+	specialityArray.shift();
+	specialityArray.shift();
+
+	persistence.chooseSpecialityCard(specialityCardIndex);
+}
+
+function chooseTrade(tradeCell) {
+	connectedTrades = getConnectedTrades();
+	// transform town as trade
+	knownTrades.push(tradeCell);
+	// find which trades is the best
+	let bestPV = 0;
+	connectedTrades.forEach((trades) => {
+		if (!trades.some((trade) => sameCells(trade, tradeCell))) {
+			return;
+		}
+		const bTrade1 = board[trades[0].x][trades[0].y];
+		const bTrade2 = board[trades[1].x][trades[1].y];
+		const PVTrade = bTrade1.bonus.nb * bTrade2.bonus.nb;
+		if (PVTrade > bestPV) {
+			bestPV = PVTrade;
+		}
+		if (bestPV > bestTradePV) {
+			bestTradePV = bestPV;
+		}
+	});
+	addPV("commerce", bestPV);
+
+	persistence.chooseTrade(tradeCell);
+}
+
 function keyPressed() {
 	if (key === "D") {
 		toggleDebug = !toggleDebug;
 	}
+	/*
+	if (key === "R") {
+		replay(true, "DrDr3ck/GuildeMarchande/RePlay");
+	}
+	if (key === "S") {
+		persistence.saveReplay("DrDr3ck/GuildeMarchande/RePlay");
+	}
+	*/
 	if (key === "t" && cubes.length > 0) {
 		uiManager.addLogger(`Contrainte: ${constraint}`);
 		cubes.forEach((cube) => {
@@ -2936,6 +3107,7 @@ function mouseMoved() {
 		});
 	}
 	if (playState === TRADE_STATE) {
+		connectedTrades = getConnectedTrades();
 		connectedTrades.forEach((trades) => {
 			trades.forEach((cell) => {
 				const bcell = board[cell.x][cell.y];
