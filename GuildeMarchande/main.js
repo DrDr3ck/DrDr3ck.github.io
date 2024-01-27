@@ -339,7 +339,7 @@ function startClicked() {
 	initGoalsAndTreasures();
 
 	curState = GAME_PLAY_STATE;
-	uiManager.setUI([speakerButton, musicButton, helpButton, backButton]);
+	uiManager.setUI([speakerButton, fullScreenButton, helpButton, backButton]);
 	uiManager.addLogger("A vous de jouer!");
 	// replay ?
 	replay(true);
@@ -726,7 +726,7 @@ function validateClicked(force = false) {
 	validateForceButton.enabled = true;
 	if (treasureCubes === 0) {
 		playState = EXPLORATION_STATE;
-		uiManager.setUI([speakerButton, musicButton, helpButton, backButton]);
+		uiManager.setUI([speakerButton, fullScreenButton, helpButton, backButton]);
 	} else {
 		if (treasureCubes === 1) {
 			uiManager.addLogger("Vous avez un cube trésors à placer");
@@ -932,13 +932,13 @@ function undoClicked() {
 }
 
 const speakerButton = new BFloatingSwitchButton(
-	windowWidth - 70 - 10 - 70,
+	windowWidth - 70,
 	70,
 	"\uD83D\uDD0A",
 	speakerClicked
 );
 const musicButton = new BFloatingSwitchButton(
-	windowWidth - 70,
+	windowWidth - 70 - 10 - 70,
 	70,
 	"\uD83C\uDFB6",
 	musicClicked
@@ -955,6 +955,24 @@ const backButton = new BButton(20, 40, "Menu", () => {
 	newGame();
 });
 helpButton.previewCheck = false;
+
+const fullScreenButton = new BFloatingSwitchButton(
+	windowWidth - 70 - 10 - 70,
+	70,
+	"\u2B1A",
+	() => {
+		if (document.fullscreenElement) {
+			document.exitFullscreen();
+			fullScreenButton.checked = false;
+			//resizeCanvas(windowWidth, windowHeight);
+		} else {
+			document.documentElement.requestFullscreen();
+			fullScreenButton.checked = true;
+			//resizeCanvas(window.screen.availWidth, window.screen.availHeight);
+		}
+	}
+);
+fullScreenButton.checked = document.fullscreenElement;
 
 const createTutoButton = (x, y, str) => {
 	const tutoButton = new BFloatingSwitchButton(x, y, str, () => {});
@@ -1009,16 +1027,11 @@ function resetSeed() {
 function newGame() {
 	document.location.href = getUrl(true);
 }
+function endTuto() {
+	window.close();
+}
 function tutoClicked() {
-	curState = TUTO_STATE;
-	initBoard("avenia");
-	const buttons = [endTutoButton, musicButton, speakerButton];
-	tutoImages.forEach((tuto) => buttons.push(tuto.button));
-	uiManager.setUI(buttons);
-	ageExploration.push({ type: "cube", x: 7, y: 4 });
-	ageExploration.push({ type: "cube", x: 8, y: 4 });
-	ageExploration.push({ type: "cube", x: 9, y: 3 });
-	transformCubeToVillage(7, 4);
+	window.open(`${getUrl(true)}/index.html?tuto`, "_blank");
 }
 
 function continueClicked() {
@@ -1030,35 +1043,35 @@ function continueClicked() {
 
 const newGameButton = new BButton(1200, 300, "Nouvelle Partie", newGame);
 newGameButton.w = 450;
-const endTutoButton = new BButton(500, 90, "Fin Tutoriel", newGame);
+const endTutoButton = new BButton(500, 90, "Fin Tutoriel", endTuto);
 const resetSeedButton = new BButton(1400, 300, "Reset seed", resetSeed);
 const tutoButton = new BButton(140, 120, "Tutoriel", tutoClicked);
 const continueButton = new BButton(140, 220, "Continue", continueClicked);
 
 const aveniaButton = new BButton(
-	140,
-	windowHeight - 120,
+	10,
+	windowHeight - 420,
 	"AVENIA",
 	startAveniaClicked
 );
 
 const aghonButton = new BButton(
-	1070,
-	windowHeight - 120,
+	1270,
+	windowHeight - 420,
 	"AGHON",
 	startAghonClicked
 );
 
 const cnidariaButton = new BButton(
-	140,
-	windowHeight - 30,
+	10,
+	windowHeight - 330,
 	"CNIDARIA",
 	startCnidariaClicked
 );
 
 const kazanButton = new BButton(
-	1070,
-	windowHeight - 30,
+	1270,
+	windowHeight - 330,
 	"KAZAN",
 	startKazanClicked
 );
@@ -1313,7 +1326,7 @@ function transformCubeToVillage(x, y) {
 
 function initUI() {
 	speakerButton.setTextSize(50);
-	musicButton.setTextSize(50);
+	fullScreenButton.setTextSize(50);
 	helpButton.setTextSize(50);
 	backButton.setTextSize(25);
 	backButton.w = 150;
@@ -1339,7 +1352,6 @@ function initUI() {
 		cnidariaButton,
 		kazanButton,
 		aghonButton,
-		musicButton,
 		tutoButton,
 		continueButton,
 	];
@@ -2376,6 +2388,16 @@ function drawLoading() {
 			map = urlParams.get("map");
 			initMap(map);
 			startClicked();
+		} else if (document.location.toString().includes("tuto")) {
+			curState = TUTO_STATE;
+			initBoard("avenia");
+			const buttons = [endTutoButton, fullScreenButton, speakerButton];
+			tutoImages.forEach((tuto) => buttons.push(tuto.button));
+			uiManager.setUI(buttons);
+			ageExploration.push({ type: "cube", x: 7, y: 4 });
+			ageExploration.push({ type: "cube", x: 8, y: 4 });
+			ageExploration.push({ type: "cube", x: 9, y: 3 });
+			transformCubeToVillage(7, 4);
 		}
 	}
 }
@@ -2518,6 +2540,7 @@ function draw() {
 		fill(250);
 		textSize(25);
 		text("Explorateur:", 1400, 175);
+		textSize(15);
 		text(seed.replaceAll("_", " "), 1400, 220);
 	}
 	if (curState === GAME_PLAY_STATE) {
@@ -2609,7 +2632,7 @@ function newExplorationCard() {
 			// end of game - add points from treasure !
 			uiManager.setUI([
 				speakerButton,
-				musicButton,
+				fullScreenButton,
 				helpButton,
 				newGameButton,
 				backButton,
@@ -2733,7 +2756,7 @@ function addValidateButton() {
 		validateForceButton,
 		undoButton,
 		speakerButton,
-		musicButton,
+		fullScreenButton,
 		helpButton,
 		backButton,
 	]);
