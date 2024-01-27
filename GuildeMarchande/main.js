@@ -140,7 +140,7 @@ function getRandomName() {
 	let lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
 	if (Math.random() > 0.5) {
 		const townName = townNames[Math.floor(Math.random() * townNames.length)];
-		lastName = `${lastName} from ${townName}`;
+		lastName = `${lastName} di ${townName}`;
 	}
 	if (Math.random() < 0.3) {
 		return `Sir ${firstName} ${lastName}`;
@@ -909,7 +909,7 @@ helpButton.previewCheck = false;
 const fullScreenButton = new BFloatingSwitchButton(
 	windowWidth - 70 - 10 - 70,
 	70,
-	"\u2B1A",
+	"\u26F6",
 	() => {
 		if (document.fullscreenElement) {
 			document.exitFullscreen();
