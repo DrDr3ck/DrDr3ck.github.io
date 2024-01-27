@@ -1,5 +1,5 @@
 const uiManager = new UIManager();
-const windowWidth = 1700;
+const windowWidth = 1680;
 const windowHeight = 1000;
 uiManager.loggerContainer = new LoggerContainer(1150, 700, 240, 100);
 uiManager.loggerContainer.visible = true;
@@ -247,6 +247,9 @@ function musicClicked() {
 
 const speakerStorageKey = "DrDr3ck/GuildeMarchande/Speaker";
 const currentPlayKey = "DrDr3ck/GuildeMarchande/Play";
+
+const replaySteps = JSON.parse(localStorage.getItem(currentPlayKey));
+
 function speakerClicked() {
 	speakerButton.checked = !speakerButton.checked;
 	soundManager.mute(!speakerButton.checked);
@@ -336,7 +339,7 @@ function startClicked() {
 	initGoalsAndTreasures();
 
 	curState = GAME_PLAY_STATE;
-	uiManager.setUI([speakerButton, musicButton, helpButton]);
+	uiManager.setUI([speakerButton, musicButton, helpButton, backButton]);
 	uiManager.addLogger("A vous de jouer!");
 	// replay ?
 	replay(true);
@@ -723,7 +726,7 @@ function validateClicked(force = false) {
 	validateForceButton.enabled = true;
 	if (treasureCubes === 0) {
 		playState = EXPLORATION_STATE;
-		uiManager.setUI([speakerButton, musicButton, helpButton]);
+		uiManager.setUI([speakerButton, musicButton, helpButton, backButton]);
 	} else {
 		if (treasureCubes === 1) {
 			uiManager.addLogger("Vous avez un cube trésors à placer");
@@ -948,6 +951,9 @@ const helpButton = new BFloatingSwitchButton(
 		// ruleButton.checked = !ruleButton.checked;
 	}
 );
+const backButton = new BButton(20, 40, "Menu", () => {
+	newGame();
+});
 helpButton.previewCheck = false;
 
 const createTutoButton = (x, y, str) => {
@@ -1015,11 +1021,19 @@ function tutoClicked() {
 	transformCubeToVillage(7, 4);
 }
 
+function continueClicked() {
+	map = replaySteps.map;
+	seed = replaySteps.seed;
+	initMap(map);
+	document.location.href = getUrl();
+}
+
 const newGameButton = new BButton(1200, 300, "Nouvelle Partie", newGame);
 newGameButton.w = 450;
 const endTutoButton = new BButton(500, 90, "Fin Tutoriel", newGame);
 const resetSeedButton = new BButton(1400, 300, "Reset seed", resetSeed);
 const tutoButton = new BButton(140, 120, "Tutoriel", tutoClicked);
+const continueButton = new BButton(140, 220, "Continue", continueClicked);
 
 const aveniaButton = new BButton(
 	140,
@@ -1301,6 +1315,8 @@ function initUI() {
 	speakerButton.setTextSize(50);
 	musicButton.setTextSize(50);
 	helpButton.setTextSize(50);
+	backButton.setTextSize(25);
+	backButton.w = 150;
 	musicButton.enabled = false;
 	musicButton.checked = false;
 	helpButton.checked = false;
@@ -1315,6 +1331,7 @@ function initUI() {
 	resetSeedButton.setTextSize(32);
 	resetSeedButton.w = 200;
 	tutoButton.enabled = true;
+	continueButton.visible = replaySteps;
 	const menu = [
 		speakerButton,
 		resetSeedButton,
@@ -1324,6 +1341,7 @@ function initUI() {
 		aghonButton,
 		musicButton,
 		tutoButton,
+		continueButton,
 	];
 	uiManager.setUI(menu);
 }
@@ -1449,20 +1467,21 @@ function drawGoalCube(column, row) {
 	stroke(0);
 	strokeWeight(1);
 	fill(250, 100, 100);
-	rect(1520 + 100 * column, 530 + 190 * row, 20, 20);
+	rect(1510 + 100 * column, 530 + 190 * row, 20, 20);
 }
 
 function drawGoalPion(column, row) {
+	const reajustX = 15;
 	if (row === 0 && column === 0) {
-		spritesheet.drawScaledSprite("solo_pions", 0, 1500, 510, 1);
+		spritesheet.drawScaledSprite("solo_pions", 0, 1500 - reajustX, 510, 1);
 	} else if (row === 0 && column === 1) {
-		spritesheet.drawScaledSprite("solo_pions", 1, 1605, 510, 1);
+		spritesheet.drawScaledSprite("solo_pions", 1, 1605 - reajustX, 510, 1);
 	} else if (row === 1 && column === 0) {
-		spritesheet.drawScaledSprite("solo_pions", 2, 1500, 700, 1);
+		spritesheet.drawScaledSprite("solo_pions", 2, 1500 - reajustX, 700, 1);
 	} else if (row === 1 && column === 1) {
-		spritesheet.drawScaledSprite("solo_pions", 3, 1605, 700, 1);
+		spritesheet.drawScaledSprite("solo_pions", 3, 1605 - reajustX, 700, 1);
 	} else if (row === 2 && column === 0) {
-		spritesheet.drawScaledSprite("solo_pions", 4, 1500, 890, 1);
+		spritesheet.drawScaledSprite("solo_pions", 4, 1500 - reajustX, 890, 1);
 	}
 }
 
@@ -1598,9 +1617,9 @@ function drawTreasure() {
 }
 
 function drawGoals() {
-	spritesheet.drawScaledSprite(goals_cards, goalArray[0], 1435, 440 - 25, 0.5);
-	spritesheet.drawScaledSprite(goals_cards, goalArray[1], 1435, 630 - 25, 0.5);
-	spritesheet.drawScaledSprite(goals_cards, goalArray[2], 1435, 820 - 25, 0.5);
+	spritesheet.drawScaledSprite(goals_cards, goalArray[0], 1420, 440 - 25, 0.5);
+	spritesheet.drawScaledSprite(goals_cards, goalArray[1], 1420, 630 - 25, 0.5);
+	spritesheet.drawScaledSprite(goals_cards, goalArray[2], 1420, 820 - 25, 0.5);
 	if (blockGoalIndex >= 0) {
 		drawGoalPion(0, 0);
 	}
@@ -2088,7 +2107,7 @@ function drawAge() {
 }
 
 function drawPV() {
-	spritesheet.drawScaledSprite("PV", 0, 1330, 510, 0.8);
+	spritesheet.drawScaledSprite("PV", 0, 1320, 510, 0.8);
 	noStroke();
 	fill(250);
 	textSize(25);
@@ -2588,7 +2607,13 @@ function newExplorationCard() {
 			exploredCards = [];
 		} else if (age === 5) {
 			// end of game - add points from treasure !
-			uiManager.setUI([speakerButton, musicButton, helpButton, newGameButton]);
+			uiManager.setUI([
+				speakerButton,
+				musicButton,
+				helpButton,
+				newGameButton,
+				backButton,
+			]);
 		}
 		// remove all cubes
 		removeCubes();
@@ -2710,6 +2735,7 @@ function addValidateButton() {
 		speakerButton,
 		musicButton,
 		helpButton,
+		backButton,
 	]);
 }
 
@@ -3079,7 +3105,7 @@ function mouseMoved() {
 	overCell = null;
 	overTrade = null;
 	overHelpButton = distance(1500, 40, mouseX, mouseY) < 25;
-	overCoins = distance(1382, 569, mouseX, mouseY) < 40;
+	overCoins = distance(1372, 569, mouseX, mouseY) < 40;
 	if (playState === CUBE_STATE) {
 		board.forEach((column, x) =>
 			column.forEach((cell, y) => {
