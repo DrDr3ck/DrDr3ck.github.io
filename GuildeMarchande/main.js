@@ -15,7 +15,8 @@ const GAME_LOADING_STATE = 0;
 const GAME_START_STATE = 1;
 const GAME_PLAY_STATE = 2;
 const GAME_OVER_STATE = 3;
-const TUTO_STATE = 4;
+const RULES_STATE = 4;
+const TUTO_STATE = 5;
 let curState = GAME_LOADING_STATE;
 const EXPLORATION_STATE = "exploration"; // click on the exploration card to reveal it.
 const CUBE_STATE = "cube"; // poser des cubes
@@ -162,27 +163,27 @@ if (!seed) {
 	seed = getRandomName().replaceAll(" ", "_");
 }
 
-const tutoImages = [
-	{ width: 350, height: 650, name: "tutoExplication", button: null },
-	{ width: 300, height: 80, name: "tutoTerrain", button: null },
-	{ width: 420, height: 50, name: "tutoCapitale", button: null },
-	{ width: 400, height: 55, name: "tutoRegion", button: null },
-	{ width: 540, height: 335, name: "tutoTypes", button: null },
-	{ width: 560, height: 460, name: "tutoVillage", button: null },
-	{ width: 550, height: 320, name: "tutoTower", button: null },
-	{ width: 550, height: 190, name: "tutoPiece", button: null },
-	{ width: 550, height: 370, name: "tutoRuins", button: null },
-	{ width: 560, height: 680, name: "tutoTowns", button: null },
-	{ width: 435, height: 60, name: "tutoScore", button: null },
-	{ width: 660, height: 430, name: "tutoEndAge", button: null },
-	{ width: 670, height: 250, name: "tutoExplorationCard", button: null },
-	{ width: 675, height: 460, name: "tutoExploreMap", button: null },
-	{ width: 310, height: 730, name: "tutoRules", button: null },
-	{ width: 735, height: 830, name: "tutoExplorationBoard", button: null },
-	{ width: 640, height: 975, name: "tutoTreasure", button: null },
-	{ width: 330, height: 220, name: "tutoGoal", button: null },
-	{ width: 890, height: 570, name: "tutoSpecializedCard", button: null },
-	{ width: 550, height: 700, name: "tutoSoloRule", button: null },
+const rulesImages = [
+	{ width: 350, height: 650, name: "ruleExplication", button: null },
+	{ width: 300, height: 80, name: "ruleTerrain", button: null },
+	{ width: 420, height: 50, name: "ruleCapitale", button: null },
+	{ width: 400, height: 55, name: "ruleRegion", button: null },
+	{ width: 540, height: 335, name: "ruleTypes", button: null },
+	{ width: 560, height: 460, name: "ruleVillage", button: null },
+	{ width: 550, height: 320, name: "ruleTower", button: null },
+	{ width: 550, height: 190, name: "rulePiece", button: null },
+	{ width: 550, height: 370, name: "ruleRuins", button: null },
+	{ width: 560, height: 680, name: "ruleTowns", button: null },
+	{ width: 435, height: 60, name: "ruleScore", button: null },
+	{ width: 660, height: 430, name: "ruleEndAge", button: null },
+	{ width: 670, height: 250, name: "ruleExplorationCard", button: null },
+	{ width: 675, height: 460, name: "ruleExploreMap", button: null },
+	{ width: 310, height: 730, name: "ruleRules", button: null },
+	{ width: 735, height: 830, name: "ruleExplorationBoard", button: null },
+	{ width: 640, height: 975, name: "ruleTreasure", button: null },
+	{ width: 330, height: 220, name: "ruleGoal", button: null },
+	{ width: 890, height: 570, name: "ruleSpecializedCard", button: null },
+	{ width: 550, height: 700, name: "ruleSoloRule", button: null },
 ];
 
 // Loading images
@@ -589,6 +590,9 @@ function explorationBoardCardPosition(explorationCardIndex) {
 }
 
 function validateClicked(force = false) {
+	if (curState === TUTO_STATE) {
+		return;
+	}
 	const curCubes = force
 		? cubes.filter((cube) => cube.x !== 0 || cube.y !== 0)
 		: cubes;
@@ -874,6 +878,9 @@ function countPVTreasure() {
 }
 
 function undoClicked() {
+	if (curState === TUTO_STATE) {
+		return;
+	}
 	for (let i = 0; i < cubes.length; i++) {
 		undoCube(i);
 	}
@@ -924,52 +931,52 @@ const fullScreenButton = new BFloatingSwitchButton(
 );
 fullScreenButton.checked = document.fullscreenElement;
 
-const createTutoButton = (x, y, str) => {
-	const tutoButton = new BFloatingSwitchButton(x, y, str, () => {});
-	tutoButton.previewCheck = false;
-	tutoButton.setTextSize(50);
-	return tutoButton;
+const createRuleButton = (x, y, str) => {
+	const ruleButton = new BFloatingSwitchButton(x, y, str, () => {});
+	ruleButton.previewCheck = false;
+	ruleButton.setTextSize(50);
+	return ruleButton;
 };
-const tutoExplicationButton = createTutoButton(74, 88, "1");
-tutoImages[0].button = tutoExplicationButton;
-const tutoTerrainButton = createTutoButton(300, 430, "2");
-tutoImages[1].button = tutoTerrainButton;
-const tutoCapitaleButton = createTutoButton(450, 470, "3");
-tutoImages[2].button = tutoCapitaleButton;
-const tutoRegionButton = createTutoButton(1035, 255, "4");
-tutoImages[3].button = tutoRegionButton;
-const tutoTypesButton = createTutoButton(420, 675, "5");
-tutoImages[4].button = tutoTypesButton;
-const tutoVillageButton = createTutoButton(410, 260, "5a");
-tutoImages[5].button = tutoVillageButton;
-const tutoTowerButton = createTutoButton(120, 305, "5b");
-tutoImages[6].button = tutoTowerButton;
-const tutoPieceButton = createTutoButton(275, 530, "5c");
-tutoImages[7].button = tutoPieceButton;
-const tutoRuinsButton = createTutoButton(350, 785, "5d");
-tutoImages[8].button = tutoRuinsButton;
-const tutoTownsButton = createTutoButton(160, 540, "5e");
-tutoImages[9].button = tutoTownsButton;
-const tutoScoreButton = createTutoButton(110, 845, "6");
-tutoImages[10].button = tutoScoreButton;
-const tutoEndAgeButton = createTutoButton(5, 940, "7");
-tutoImages[11].button = tutoEndAgeButton;
-const tutoExplorationCardButton = createTutoButton(1210, 560, "8");
-tutoImages[12].button = tutoExplorationCardButton;
-const tutoExploreMapButton = createTutoButton(1035, 125, "9");
-tutoImages[13].button = tutoExploreMapButton;
-const tutoRulesButton = createTutoButton(1140, 125, "10");
-tutoImages[14].button = tutoRulesButton;
-const tutoExplorationBoardButton = createTutoButton(1390, 170, "11");
-tutoImages[15].button = tutoExplorationBoardButton;
-const tutoTreasureButton = createTutoButton(1250, 925, "12");
-tutoImages[16].button = tutoTreasureButton;
-const tutoGoalButton = createTutoButton(1550, 725, "13");
-tutoImages[17].button = tutoGoalButton;
-const tutoSpecializedCardButton = createTutoButton(15, 480, "14");
-tutoImages[18].button = tutoSpecializedCardButton;
-const tutoSoloRuleButton = createTutoButton(550, 930, "15");
-tutoImages[19].button = tutoSoloRuleButton;
+const ruleExplicationButton = createRuleButton(74, 88, "1");
+rulesImages[0].button = ruleExplicationButton;
+const ruleTerrainButton = createRuleButton(300, 430, "2");
+rulesImages[1].button = ruleTerrainButton;
+const ruleCapitaleButton = createRuleButton(450, 470, "3");
+rulesImages[2].button = ruleCapitaleButton;
+const ruleRegionButton = createRuleButton(1035, 255, "4");
+rulesImages[3].button = ruleRegionButton;
+const ruleTypesButton = createRuleButton(420, 675, "5");
+rulesImages[4].button = ruleTypesButton;
+const ruleVillageButton = createRuleButton(410, 260, "5a");
+rulesImages[5].button = ruleVillageButton;
+const ruleTowerButton = createRuleButton(120, 305, "5b");
+rulesImages[6].button = ruleTowerButton;
+const rulePieceButton = createRuleButton(275, 530, "5c");
+rulesImages[7].button = rulePieceButton;
+const ruleRuinsButton = createRuleButton(350, 785, "5d");
+rulesImages[8].button = ruleRuinsButton;
+const ruleTownsButton = createRuleButton(160, 540, "5e");
+rulesImages[9].button = ruleTownsButton;
+const ruleScoreButton = createRuleButton(110, 845, "6");
+rulesImages[10].button = ruleScoreButton;
+const ruleEndAgeButton = createRuleButton(5, 940, "7");
+rulesImages[11].button = ruleEndAgeButton;
+const ruleExplorationCardButton = createRuleButton(1210, 560, "8");
+rulesImages[12].button = ruleExplorationCardButton;
+const ruleExploreMapButton = createRuleButton(1035, 125, "9");
+rulesImages[13].button = ruleExploreMapButton;
+const ruleRulesButton = createRuleButton(1140, 125, "10");
+rulesImages[14].button = ruleRulesButton;
+const ruleExplorationBoardButton = createRuleButton(1390, 170, "11");
+rulesImages[15].button = ruleExplorationBoardButton;
+const ruleTreasureButton = createRuleButton(1250, 925, "12");
+rulesImages[16].button = ruleTreasureButton;
+const ruleGoalButton = createRuleButton(1550, 725, "13");
+rulesImages[17].button = ruleGoalButton;
+const ruleSpecializedCardButton = createRuleButton(15, 480, "14");
+rulesImages[18].button = ruleSpecializedCardButton;
+const ruleSoloRuleButton = createRuleButton(550, 930, "15");
+rulesImages[19].button = ruleSoloRuleButton;
 
 function resetSeed() {
 	seed = getRandomName().replaceAll(" ", "_");
@@ -977,8 +984,8 @@ function resetSeed() {
 function newGame() {
 	document.location.href = getUrl(true);
 }
-function endTuto() {
-	window.close();
+function rulesClicked() {
+	window.open(`${getUrl(true)}/index.html?rules`, "_blank");
 }
 function tutoClicked() {
 	window.open(`${getUrl(true)}/index.html?tuto`, "_blank");
@@ -993,10 +1000,13 @@ function continueClicked() {
 
 const newGameButton = new BButton(1200, 300, "Nouvelle Partie", newGame);
 newGameButton.w = 450;
-const endTutoButton = new BButton(500, 90, "Fin Tutoriel", endTuto);
+const closeButton = new BButton(500, 90, "J'ai compris!", () => {
+	window.close();
+});
 const resetSeedButton = new BButton(1400, 300, "Reset seed", resetSeed);
-const tutoButton = new BButton(140, 120, "Tutoriel", tutoClicked);
-const continueButton = new BButton(140, 220, "Continue", continueClicked);
+const rulesButton = new BButton(140, 120, "Règles", rulesClicked);
+const tutoButton = new BButton(140, 220, "Tutoriel", tutoClicked);
+const continueButton = new BButton(140, 320, "Continue", rulesClicked);
 
 const aveniaButton = new BButton(
 	10,
@@ -1032,7 +1042,7 @@ validateButton.w = 180;
 const undoButton = new BButton(940, 70, "Annuler", undoClicked);
 undoButton.setTextSize(30);
 undoButton.w = 180;
-const validateForceButton = new BButton(805, 980, "Fin de Tour", () => {
+const validateForceButton = new BButton(950, 980, "Fin de Tour", () => {
 	validateClicked(true);
 });
 validateForceButton.setTextSize(30);
@@ -1080,6 +1090,9 @@ class Persistence {
 	}
 
 	saveReplay(replayKey = currentPlayKey) {
+		if (curState === TUTO_STATE) {
+			return;
+		}
 		const jsonReplay = JSON.stringify({
 			map: this.map,
 			seed: this.seed,
@@ -1142,9 +1155,10 @@ let goalArray = [0, 1, 2, 3, 4, 5];
 let ageCards = [0, 1, 2, 3, 4, 5];
 
 let specialityArray = [
-	1, 2, 3, 4, 5, 13, 14, 15, 18, 19, 20, 21, 23, 24, 25, 26, 27,
+	1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
+	24, 25, 26, 27,
 ];
-// [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28];
+// [ 9, 12, 18];
 
 let tresorArray = [
 	0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2,
@@ -1293,7 +1307,7 @@ function initUI() {
 	kazanButton.enabled = true;
 	resetSeedButton.setTextSize(32);
 	resetSeedButton.w = 200;
-	tutoButton.enabled = true;
+	rulesButton.enabled = true;
 	continueButton.visible = replaySteps;
 	const menu = [
 		speakerButton,
@@ -1302,8 +1316,9 @@ function initUI() {
 		cnidariaButton,
 		kazanButton,
 		aghonButton,
-		tutoButton,
+		rulesButton,
 		continueButton,
+		tutoButton,
 	];
 	uiManager.setUI(menu);
 }
@@ -1356,12 +1371,12 @@ function setup() {
 	spritesheet.addSpriteSheet("solo_pions", "./solo_pions.png", 72, 72);
 	spritesheet.addSpriteSheet("scores", "./scores.png", 126, 80);
 
-	tutoImages.forEach((tuto) => {
+	rulesImages.forEach((rule) => {
 		spritesheet.addSpriteSheet(
-			tuto.name,
-			`./${tuto.name}.png`,
-			tuto.width,
-			tuto.height
+			rule.name,
+			`./${rule.name}.png`.replace("rule", "tuto"),
+			rule.width,
+			rule.height
 		);
 	});
 
@@ -2094,10 +2109,10 @@ function drawSpecializedCards() {
 	}
 }
 
-function highlightCell(cell) {
+function highlightCell(cell, weight = 4) {
 	const bcell = board[cell.x][cell.y];
 	noFill();
-	strokeWeight(4);
+	strokeWeight(weight);
 	stroke(250);
 	ellipse(bcell.center.x + boardx, bcell.center.y + boardy, 45); // 45 de rayon
 }
@@ -2160,6 +2175,63 @@ function drawPlayableCase(cube, index) {
 	);
 }
 
+function drawPlayableCubes() {
+	let index = 0;
+	stroke(0);
+	strokeWeight(2);
+	fill(250, 250, 230, 120);
+	rect(260, 3, 920 - 260, 95, 5);
+	let maxCase = 6;
+	cubes.forEach((cube) => {
+		if (cube.x === 0 && maxCase > 0) {
+			drawPlayableCase(cube, index++);
+			maxCase--;
+		}
+	});
+}
+
+function drawSpecializedCardsToChoose() {
+	noFill();
+	strokeWeight(4);
+	stroke(250); //stroke(184,150,109);
+	spritesheet.drawScaledSprite(
+		"speciality_cards",
+		specialityArray[0],
+		997,
+		100,
+		0.8
+	);
+	rect(997, 100, 205, 320, 15);
+	spritesheet.drawScaledSprite(
+		"speciality_cards",
+		specialityArray[1],
+		997,
+		467,
+		0.8
+	);
+	rect(997, 467, 205, 320, 15);
+	stroke(25);
+	if (overSpecialization === 0) {
+		rect(997, 100, 205, 320, 15);
+	}
+	if (overSpecialization === 1) {
+		rect(997, 467, 205, 320, 15);
+	}
+}
+
+function drawTrades() {
+	connectedTrades = getConnectedTrades();
+	connectedTrades.forEach((trades) => {
+		trades.forEach((trade) => {
+			const cell = board[trade.x][trade.y];
+			noFill();
+			strokeWeight(4);
+			stroke(250, 100, 100);
+			ellipse(cell.center.x + boardx, cell.center.y + boardy, 40);
+		});
+	});
+}
+
 function drawGame() {
 	drawBoards();
 	if (overCell) {
@@ -2168,32 +2240,7 @@ function drawGame() {
 	drawExplorationCard();
 	if (playState === SPECIALIZED_STATE) {
 		// afficher 2 cartes tirées du tableau
-		noFill();
-		strokeWeight(4);
-		stroke(250); //stroke(184,150,109);
-		spritesheet.drawScaledSprite(
-			"speciality_cards",
-			specialityArray[0],
-			997,
-			100,
-			0.8
-		);
-		rect(997, 100, 205, 320, 15);
-		spritesheet.drawScaledSprite(
-			"speciality_cards",
-			specialityArray[1],
-			997,
-			467,
-			0.8
-		);
-		rect(997, 467, 205, 320, 15);
-		stroke(25);
-		if (overSpecialization === 0) {
-			rect(997, 100, 205, 320, 15);
-		}
-		if (overSpecialization === 1) {
-			rect(997, 467, 205, 320, 15);
-		}
+		drawSpecializedCardsToChoose();
 	}
 
 	// afficher cards specialites
@@ -2237,18 +2284,7 @@ function drawGame() {
 		playState === CUBE_STATE &&
 		cubes.filter((c) => c.x === 0 && c.y === 0).length > 0
 	) {
-		let index = 0;
-		stroke(0);
-		strokeWeight(2);
-		fill(250, 250, 230, 120);
-		rect(260, 3, 920 - 260, 95, 5);
-		let maxCase = 6;
-		cubes.forEach((cube) => {
-			if (cube.x === 0 && maxCase > 0) {
-				drawPlayableCase(cube, index++);
-				maxCase--;
-			}
-		});
+		drawPlayableCubes();
 	}
 
 	if (playState === VILLAGE_STATE) {
@@ -2259,16 +2295,7 @@ function drawGame() {
 	}
 
 	if (playState === TRADE_STATE) {
-		connectedTrades = getConnectedTrades();
-		connectedTrades.forEach((trades) => {
-			trades.forEach((trade) => {
-				const cell = board[trade.x][trade.y];
-				noFill();
-				strokeWeight(4);
-				stroke(250, 100, 100);
-				ellipse(cell.center.x + boardx, cell.center.y + boardy, 40);
-			});
-		});
+		drawTrades();
 		if (overTrade) {
 			const cell = board[overTrade.x][overTrade.y];
 			noFill();
@@ -2316,18 +2343,7 @@ function drawGame() {
 
 	if (age === 1 && ageCards[0] === 9) {
 		// toute premiere carte
-		fill(250, 0, 0);
-		stroke(0);
-		strokeWeight(3);
-		beginShape();
-		vertex(791, 954);
-		vertex(1091, 732);
-		vertex(1112, 775);
-		vertex(1126, 678);
-		vertex(1030, 679);
-		vertex(1069, 709);
-		vertex(758, 915);
-		endShape(CLOSE);
+		drawArrow();
 	}
 
 	if (overHelpButton) {
@@ -2340,6 +2356,21 @@ function drawGame() {
 
 	// draw animations
 	animations.forEach((animation) => animation.draw());
+}
+
+function drawArrow() {
+	fill(250, 0, 0);
+	stroke(0);
+	strokeWeight(3);
+	beginShape();
+	vertex(791, 954);
+	vertex(1091, 732);
+	vertex(1112, 775);
+	vertex(1126, 678);
+	vertex(1030, 679);
+	vertex(1069, 709);
+	vertex(758, 915);
+	endShape(CLOSE);
 }
 
 function drawScore() {
@@ -2397,21 +2428,520 @@ function drawLoading() {
 			map = urlParams.get("map");
 			initMap(map);
 			startClicked();
-		} else if (document.location.toString().includes("tuto")) {
-			curState = TUTO_STATE;
+		} else if (document.location.toString().includes("rules")) {
+			curState = RULES_STATE;
+			resizeCanvas(windowWidth, windowHeight);
 			initBoard("avenia");
-			const buttons = [endTutoButton, fullScreenButton, speakerButton];
-			tutoImages.forEach((tuto) => buttons.push(tuto.button));
+			const buttons = [closeButton, fullScreenButton, speakerButton];
+			rulesImages.forEach((rule) => buttons.push(rule.button));
 			uiManager.setUI(buttons);
 			ageExploration.push({ type: "cube", x: 7, y: 4 });
 			ageExploration.push({ type: "cube", x: 8, y: 4 });
 			ageExploration.push({ type: "cube", x: 9, y: 3 });
 			transformCubeToVillage(7, 4);
+		} else if (document.location.toString().includes("tuto")) {
+			curState = TUTO_STATE;
+			resizeCanvas(windowWidth, windowHeight);
+			initMap("avenia");
+			initBoard("avenia");
+			initGoalsAndTreasures();
+			backButton.enabled = false;
+			persistence = new Persistence("avenia", "noSeed");
+			ageCards = [9, 2, 3, 5, 4, 1, 0];
+			const buttons = [closeButton, fullScreenButton, speakerButton];
+			uiManager.setUI(buttons);
 		}
 	}
 }
 
+const guidedTour = new GuidedTour();
+guidedTour.addStep({
+	draw: () => {
+		const image = rulesImages[0];
+		const imageX = (windowWidth - image.width) / 2;
+		const imageY = (windowHeight - image.height) / 2;
+		spritesheet.drawSprite(image.name, 0, imageX, imageY);
+		noFill();
+		stroke(0);
+		strokeWeight(5);
+		rect(imageX - 2, imageY - 2, image.width + 4, image.height + 4, 15);
+
+		noStroke();
+		fill(250);
+		text(
+			"Clique gauche avec la souris pour avancer dans le tutoriel",
+			200,
+			980
+		);
+	},
+});
+guidedTour.addStep({
+	draw: () => {
+		drawArrow();
+		noStroke();
+		fill(250);
+		text("Revele une carte exploration en cliquant dessus", 200, 980);
+	},
+});
+guidedTour.addStep({
+	initStep: () => {
+		newExplorationCard();
+	},
+	draw: () => {
+		noStroke();
+		fill(250);
+		text("Place des cubes sur la carte", 200, 980);
+
+		stroke(0);
+		strokeWeight(5);
+		text("Deux cubes prairies doivent être placés sur la carte", 380, 180);
+		text("Le premier doit être connecté à la capitale", 380, 230);
+		text("Clique sur le cercle blanc pour placer le premier cube", 380, 280);
+		highlightCell({ x: 9, y: 7 });
+		drawPlayableCubes();
+	},
+});
+guidedTour.addStep({
+	initStep: () => {
+		addCube(9, 7);
+	},
+	draw: () => {
+		noStroke();
+		fill(250);
+		text("Place des cubes", 200, 980);
+
+		stroke(0);
+		strokeWeight(5);
+		text(
+			"Un cube doit toujours être placé à côté de la capitale ou d'un cube existant",
+			380,
+			180
+		);
+		text("Clique sur le cercle blanc pour placer le deuxième cube", 380, 230);
+		highlightCell({ x: 8, y: 8 });
+		drawPlayableCubes();
+	},
+});
+guidedTour.addStep({
+	initStep: () => {
+		addCube(8, 8);
+	},
+	draw: () => {
+		noStroke();
+		fill(250);
+		text("Valide tes placements", 200, 980);
+
+		stroke(0);
+		strokeWeight(5);
+		text("Clique sur Valider pour valider ton placement", 380, 180);
+		text(
+			"Au cours d'une partie, tu peux aussi cliquer sur Annuler pour replacer tes cubes différemment",
+			380,
+			230
+		);
+		text(
+			"Remarque: un cube te rapportera un point de victoire car placé sur une case pièce",
+			380,
+			280
+		);
+		drawPlayableCubes();
+	},
+	finalizeStep: () => {
+		undoButton.visible = false;
+	},
+});
+
+guidedTour.addStep({
+	initStep: () => {
+		addPV("piece", 1);
+		newExplorationCard();
+	},
+	draw: () => {
+		noStroke();
+		fill(250);
+		text("Place des cubes", 200, 980);
+
+		stroke(0);
+		strokeWeight(5);
+		text(
+			"Pour cette carte, deux cubes doivent être placés de manière contigues",
+			380,
+			180
+		);
+		text("Ils peuvent être placés à plusieurs endroits", 380, 230);
+		text("Clique sur la case montagne pour placer le premier cube", 635, 460);
+		highlightCell({ x: 10, y: 7 }, 8);
+		highlightCell({ x: 10, y: 8 });
+		highlightCell({ x: 9, y: 8 });
+		highlightCell({ x: 10, y: 6 });
+		highlightCell({ x: 9, y: 5 });
+		highlightCell({ x: 8, y: 6 });
+		highlightCell({ x: 8, y: 7 });
+		highlightCell({ x: 7, y: 7 });
+		highlightCell({ x: 7, y: 8 });
+		highlightCell({ x: 8, y: 9 });
+		drawPlayableCubes();
+	},
+});
+
+guidedTour.addStep({
+	initStep: () => {
+		addCube(10, 7);
+	},
+	draw: () => {
+		noStroke();
+		fill(250);
+		text("Place des cubes", 200, 980);
+
+		stroke(0);
+		strokeWeight(5);
+		text("Le deuxième cube doit être placé à côté du premier", 380, 180);
+		text("Il peut être placé à plusieurs endroits", 380, 230);
+		text("Clique sur la case montagne pour placer le premier cube", 680, 410);
+		highlightCell({ x: 10, y: 6 });
+		highlightCell({ x: 10, y: 8 });
+		highlightCell({ x: 11, y: 6 }, 8);
+		highlightCell({ x: 11, y: 7 });
+		drawPlayableCubes();
+	},
+});
+
+guidedTour.addStep({
+	initStep: () => {
+		addCube(11, 6);
+	},
+	draw: () => {
+		noStroke();
+		fill(250);
+		text("Place un village", 200, 980);
+
+		stroke(0);
+		strokeWeight(5);
+		text("Une région vient d'être complétée", 380, 180);
+		text(
+			"Un village doit être placé sur une des cases 'vides' de la région",
+			380,
+			230
+		);
+		text("Une case vide est une case sans pièce, ni ville", 380, 280);
+		text("Place une ville sur le cercle blanc", 380, 330);
+		highlightCell({ x: 11, y: 6 });
+	},
+});
+
+guidedTour.addStep({
+	initStep: () => {
+		addNewVillage(11, 6);
+	},
+	draw: () => {
+		noStroke();
+		fill(250);
+		text("Valide tes placements", 200, 980);
+
+		stroke(0);
+		strokeWeight(5);
+		text("Clique sur Valider pour valider ton placement", 380, 180);
+		text("Un point de village te sera donné comme point de victoire", 380, 230);
+	},
+	finalizeStep: () => {
+		transformCubeToVillage(11, 6);
+		addPV("village", 1);
+	},
+});
+
+guidedTour.addStep({
+	initStep: () => {
+		newExplorationCard();
+		validateButton.visible = false;
+		specialityArray[0] = 6;
+		specialityArray[1] = 2;
+	},
+	draw: () => {
+		noStroke();
+		fill(250);
+		text("Choisis une carte", 200, 980);
+
+		stroke(0);
+		strokeWeight(5);
+		text(
+			"Cette carte t'impose de choisir parmi 2 cartes spécialités",
+			360,
+			180
+		);
+		text("Clique sur la deuxième carte", 360, 230);
+
+		drawSpecializedCardsToChoose();
+	},
+	finalizeStep: () => {
+		validateButton.visible = true;
+		prepareCube2Play(specialityArray[1]);
+		chooseSpecialityCard(1);
+	},
+});
+
+guidedTour.addStep({
+	draw: () => {
+		noStroke();
+		fill(250);
+		text("Place des cubes", 200, 980);
+
+		stroke(0);
+		strokeWeight(5);
+		text(
+			"Trois prairies et deux montagnes doivent être placés dans n'importe quel ordre",
+			360,
+			180
+		);
+		text("Cinq emplacements ont été choisi pour vous", 360, 230);
+		text("Remarque: deux villages vont être rajoutés", 360, 280);
+
+		highlightCell({ x: 10, y: 8 }, 8);
+		highlightCell({ x: 12, y: 6 });
+		highlightCell({ x: 12, y: 5 });
+		highlightCell({ x: 13, y: 6 });
+		highlightCell({ x: 13, y: 7 }, 8);
+
+		drawPlayableCubes();
+	},
+	finalizeStep: () => {
+		addCube(10, 8);
+		addNewVillage(10, 8);
+		addCube(12, 6);
+		addCube(12, 5);
+		addCube(13, 6);
+		addCube(13, 7);
+		addNewVillage(13, 7);
+	},
+});
+
+guidedTour.addStep({
+	draw: () => {
+		noStroke();
+		fill(250);
+		text("Valide tes placements", 200, 980);
+
+		stroke(0);
+		strokeWeight(5);
+		text("Clique sur Valider pour valider ton placement", 380, 180);
+	},
+	finalizeStep: () => {
+		addPV("village", 1);
+		addPV("village", 1);
+		transformCubeToVillage(10, 8);
+		transformCubeToVillage(13, 7);
+	},
+});
+
+guidedTour.addStep({
+	initStep: () => {
+		newExplorationCard();
+	},
+	draw: () => {
+		noStroke();
+		fill(250);
+		text("Place des cubes", 200, 980);
+
+		stroke(0);
+		strokeWeight(5);
+		text("Trois cases 'mer' doivent être placées en ligne", 380, 180);
+		text("Une ruine va être explorée", 380, 230);
+		text("Une carte trésor va être dévoilée", 380, 280);
+
+		highlightCell({ x: 13, y: 8 });
+		highlightCell({ x: 14, y: 8 });
+		highlightCell({ x: 15, y: 7 }, 8);
+
+		drawPlayableCubes();
+	},
+	finalizeStep: () => {
+		addCube(13, 8);
+		addCube(14, 8);
+		addCube(15, 7);
+	},
+});
+
+guidedTour.addStep({
+	draw: () => {
+		noStroke();
+		fill(250);
+		text("Valide tes placements", 200, 980);
+
+		stroke(0);
+		strokeWeight(5);
+		text("Clique sur Valider pour valider ton placement", 380, 180);
+	},
+	finalizeStep: () => {
+		// Add treasure
+		tresors.push(1);
+		ruins.push({ x: 15, y: 7 });
+		newExplorationCard();
+	},
+});
+
+guidedTour.addStep({
+	draw: () => {
+		noStroke();
+		fill(250);
+		text("Clique pour passer à l'étape suivante", 200, 980);
+
+		stroke(0);
+		strokeWeight(5);
+		text(
+			"Place ton curseur sur la carte trésor pour voir tous tes trésors",
+			380,
+			230
+		);
+	},
+});
+
+guidedTour.addStep({
+	draw: () => {
+		noStroke();
+		fill(250);
+		text("Place des cubes", 200, 980);
+
+		stroke(0);
+		strokeWeight(5);
+		text("Deux cubes désert doivent être placés", 380, 180);
+
+		highlightCell({ x: 9, y: 8 });
+		highlightCell({ x: 11, y: 5 });
+
+		drawPlayableCubes();
+	},
+	finalizeStep: () => {
+		addCube(9, 8);
+		addCube(11, 5);
+	},
+});
+
+guidedTour.addStep({
+	initStep: () => {
+		validateButton.visible = false;
+	},
+	draw: () => {
+		noStroke();
+		fill(250);
+		text(
+			"Cliquez sur une ville pour la transformer en comptoir commercial",
+			200,
+			980
+		);
+
+		stroke(0);
+		strokeWeight(5);
+		text(
+			"Deux villes sont reliées par un chemin continu de cubes/village",
+			380,
+			180
+		);
+		text(
+			"Clique sur la ville désert pour la transformer en comptoir commercial",
+			380,
+			230
+		);
+		text("2 x 2 points de victoire seront rajoutés au score", 380, 280);
+		text(
+			"La ville avec le comptoir commercial ne pourra plus être utilisée pour de futurs points de victoire",
+			380,
+			330
+		);
+
+		drawTrades();
+	},
+	finalizeStep: () => {
+		chooseTrade({ x: 9, y: 8 });
+		newExplorationCard();
+		validateButton.visible = true;
+	},
+});
+
+guidedTour.addStep({
+	draw: () => {
+		noStroke();
+		fill(250);
+		text("Place des cubes", 200, 980);
+
+		stroke(0);
+		strokeWeight(5);
+		text("Un cube montagne doit être placés", 380, 180);
+
+		highlightCell({ x: 8, y: 7 });
+
+		drawPlayableCubes();
+	},
+	finalizeStep: () => {
+		addCube(8, 7);
+		addPV("piece", 1);
+	},
+});
+
+guidedTour.addStep({
+	draw: () => {
+		noStroke();
+		fill(250);
+		text("Valide tes placements", 200, 980);
+
+		stroke(0);
+		strokeWeight(5);
+		text("Clique sur Valider pour valider ton placement", 380, 180);
+		text("Remarque: c'est la dernière carte de cet age", 380, 230);
+		text(
+			"Tous les cubes seront retirés, seuls capitale et villages resteront",
+			380,
+			280
+		);
+	},
+	finalizeStep: () => {
+		newExplorationCard();
+	},
+});
+
+guidedTour.addStep({
+	initStep: () => {
+		const buttons = [closeButton, fullScreenButton, speakerButton];
+		uiManager.setUI(buttons);
+	},
+	draw: () => {
+		noStroke();
+		fill(250);
+		text("Tu as fini le tutoriel", 200, 980);
+
+		stroke(0);
+		strokeWeight(5);
+		text(
+			"Les trois cartes objectifs doivent être validées pour gagner",
+			380,
+			180
+		);
+		text(
+			"Un minimum de 90 points est exigé pour gagner en mode 'facile'",
+			380,
+			230
+		);
+		text("Tu as tout compris, tu peux aller jouer", 380, 280);
+	},
+});
+
 function drawTuto() {
+	drawBoards();
+	drawExplorationCard();
+	drawSpecializedCards();
+	drawGoals();
+	drawAge();
+	if (overTreasure) {
+		drawTreasure();
+	}
+	drawPV();
+	drawTreasureCard();
+
+	// draw animations
+	animations.forEach((animation) => animation.draw());
+
+	guidedTour.draw();
+}
+
+function drawRules() {
 	drawBoards();
 	drawSpecializedCards();
 	drawGoals();
@@ -2429,25 +2959,25 @@ function drawTuto() {
 		rect(imageX - 2, imageY - 2, image.width + 4, image.height + 4, 15);
 	};
 
-	const tutoIndex = tutoImages.findIndex((image) => image.button.over == true);
-	if (tutoIndex >= 0) {
-		const tutoImage = tutoImages[tutoIndex];
-		drawImage(tutoImage);
-		tutoImages.forEach((tuto, idx) => {
-			if (tutoIndex !== idx && tutoIndex !== idx - 1) {
-				tuto.button.visible = false;
+	const ruleIndex = rulesImages.findIndex((image) => image.button.over == true);
+	if (ruleIndex >= 0) {
+		const ruleImage = rulesImages[ruleIndex];
+		drawImage(ruleImage);
+		rulesImages.forEach((rule, idx) => {
+			if (ruleIndex !== idx && ruleIndex !== idx - 1) {
+				rule.button.visible = false;
 			}
 		});
-		endTutoButton.visible = false;
+		closeButton.visible = false;
 	} else {
-		tutoImages.forEach((tuto) => {
-			tuto.button.visible = true;
+		rulesImages.forEach((rule) => {
+			rule.button.visible = true;
 		});
-		endTutoButton.visible = true;
+		closeButton.visible = true;
 		return;
 	}
 
-	if (tutoTerrainButton.over === true) {
+	if (ruleTerrainButton.over === true) {
 		highlightCell({ x: 4, y: 4 });
 		highlightCell({ x: 7, y: 5 });
 		highlightCell({ x: 2, y: 7 });
@@ -2458,19 +2988,19 @@ function drawTuto() {
 		line(330, 400, 248, 454);
 	}
 
-	if (tutoCapitaleButton.over === true) {
+	if (ruleCapitaleButton.over === true) {
 		highlightCell({ x: 9, y: 6 });
 		line(480, 440, 534, 427);
 	}
 
-	if (tutoRegionButton.over === true) {
+	if (ruleRegionButton.over === true) {
 		highlightCell({ x: 15, y: 3 });
 		highlightCell({ x: 16, y: 3 });
 		highlightCell({ x: 17, y: 2 });
 		line(1062, 228, 902, 250);
 	}
 
-	if (tutoTypesButton.over === true) {
+	if (ruleTypesButton.over === true) {
 		highlightCell({ x: 8, y: 7 });
 		highlightCell({ x: 5, y: 7 });
 		highlightCell({ x: 5, y: 11 });
@@ -2478,36 +3008,36 @@ function drawTuto() {
 		highlightCell({ x: 7, y: 12 });
 	}
 
-	if (tutoVillageButton.over === true) {
+	if (ruleVillageButton.over === true) {
 		highlightCell({ x: 7, y: 4 });
 		rect(185, 854, 618 - 185, 935 - 854, 15);
 		line(440, 230, 455, 308);
 		line(440, 230, 358, 855);
 	}
 
-	if (tutoTowerButton.over === true) {
+	if (ruleTowerButton.over === true) {
 		highlightCell({ x: 2, y: 2 });
 		rect(782, 854, 1133 - 782, 935 - 854, 15);
 		line(143, 276, 228, 217);
 		line(143, 276, 787, 860);
 	}
 
-	if (tutoPieceButton.over === true) {
+	if (rulePieceButton.over === true) {
 		highlightCell({ x: 2, y: 9 });
 		line(306, 500, 246, 557);
 	}
 
-	if (tutoRuinsButton.over === true) {
+	if (ruleRuinsButton.over === true) {
 		highlightCell({ x: 7, y: 12 });
 		line(381, 756, 440, 760);
 	}
 
-	if (tutoTownsButton.over === true) {
+	if (ruleTownsButton.over === true) {
 		highlightCell({ x: 1, y: 6 });
 		line(191, 512, 181, 457);
 	}
 
-	if (tutoScoreButton.over === true) {
+	if (ruleScoreButton.over === true) {
 		noFill();
 		strokeWeight(4);
 		stroke(250);
@@ -2526,7 +3056,11 @@ function draw() {
 		drawLoading();
 		return;
 	}
+	if (curState === RULES_STATE) {
+		drawRules();
+	}
 	if (curState === TUTO_STATE) {
+		updateGame(elapsedTime);
 		drawTuto();
 	}
 
@@ -2916,7 +3450,11 @@ function mouseClicked() {
 	}
 	toolManager.mouseClicked();
 	uiManager.mouseClicked();
+	if (curState === RULES_STATE) {
+		return;
+	}
 	if (curState === TUTO_STATE) {
+		guidedTour.nextStep();
 		return;
 	}
 	// le joueur clique sur la carte d'exploration pour en découvrir une nouvelle
@@ -3066,6 +3604,14 @@ function keyPressed() {
 		persistence.saveReplay("DrDr3ck/GuildeMarchande/RePlay");
 	}
 	*/
+	console.log("keyCode", keyCode);
+	// SPACE
+	if (curState === TUTO_STATE && keyCode === 32) {
+		guidedTour.nextStep();
+	}
+	if (curState === TUTO_STATE && keyCode === BACKSPACE) {
+		// guidedTour.prevStep();
+	}
 	if (key === "t" && cubes.length > 0) {
 		uiManager.addLogger(`Contrainte: ${constraint}`);
 		cubes.forEach((cube) => {
