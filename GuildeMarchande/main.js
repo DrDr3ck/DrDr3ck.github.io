@@ -1006,7 +1006,7 @@ const closeButton = new BButton(500, 90, "J'ai compris!", () => {
 const resetSeedButton = new BButton(1400, 300, "Reset seed", resetSeed);
 const rulesButton = new BButton(140, 120, "Règles", rulesClicked);
 const tutoButton = new BButton(140, 220, "Tutoriel", tutoClicked);
-const continueButton = new BButton(140, 320, "Continue", rulesClicked);
+const continueButton = new BButton(140, 320, "Continue", continueClicked);
 
 const aveniaButton = new BButton(
 	10,
