@@ -1000,7 +1000,7 @@ function continueClicked() {
 
 const newGameButton = new BButton(1200, 300, "Nouvelle Partie", newGame);
 newGameButton.w = 450;
-const closeButton = new BButton(500, 90, "J'ai compris!", () => {
+const closeButton = new BButton(500, 90, "J'ai tout lu!", () => {
 	window.close();
 });
 const resetSeedButton = new BButton(1400, 300, "Reset seed", resetSeed);
@@ -1308,7 +1308,6 @@ function initUI() {
 	resetSeedButton.setTextSize(32);
 	resetSeedButton.w = 200;
 	rulesButton.enabled = true;
-	continueButton.visible = replaySteps;
 	const menu = [
 		speakerButton,
 		resetSeedButton,
@@ -1321,6 +1320,7 @@ function initUI() {
 		tutoButton,
 	];
 	uiManager.setUI(menu);
+	continueButton.visible = replaySteps || false;
 }
 
 function setup() {
@@ -2448,7 +2448,7 @@ function drawLoading() {
 			backButton.enabled = false;
 			persistence = new Persistence("avenia", "noSeed");
 			ageCards = [9, 2, 3, 5, 4, 1, 0];
-			const buttons = [closeButton, fullScreenButton, speakerButton];
+			const buttons = [fullScreenButton, speakerButton];
 			uiManager.setUI(buttons);
 		}
 	}
@@ -2899,6 +2899,7 @@ guidedTour.addStep({
 
 guidedTour.addStep({
 	initStep: () => {
+		closeButton.text = "Je veux jouer!";
 		const buttons = [closeButton, fullScreenButton, speakerButton];
 		uiManager.setUI(buttons);
 	},
@@ -3145,7 +3146,7 @@ function newExplorationCard() {
 		// new Age
 		age += 1;
 		if (age < 5) {
-			if (!persistenceMode) {
+			if (!persistenceMode && curState !== TUTO_STATE) {
 				uiManager.addLogger("Nouvel age");
 				soundManager.playSound("new_age");
 			}
