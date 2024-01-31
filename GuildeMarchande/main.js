@@ -2140,7 +2140,7 @@ function drawPV() {
 	noStroke();
 	fill(250);
 	textSize(25);
-	text(`x ${PV + PVTreasure}`, 1360, 640);
+	text(`x ${PV + PVTreasure}`, 1350, 640);
 }
 
 function drawTreasureCard() {
@@ -4290,13 +4290,10 @@ function initBoard(map = "avenia") {
 			1
 		);
 		setPieces(
-			[
-				1, 4, 1, 6, 1, 8, 2, 3, 3, 4, 8, 1, 14, 2, 13, 8, 15, 9, 16, 9, 17, 5,
-				19, 5, 18, 3,
-			],
+			[1, 4, 1, 6, 2, 3, 3, 4, 8, 1, 14, 2, 15, 9, 16, 9, 17, 5, 19, 5, 18, 3],
 			2
 		);
-		setPieces([1, 3, 3, 3], 3);
+		setPieces([1, 3, 1, 8, 3, 3, 13, 8], 3);
 
 		setBoardRegion([3, 2, 4, 2, 5, 2, 5, 3, 5, 4], CARD.SAND);
 		setBoardRegion([10, 2, 11, 1, 11, 2, 12, 1, 13, 1, 14, 1], CARD.SAND);
