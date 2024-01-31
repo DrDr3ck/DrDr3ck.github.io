@@ -3086,6 +3086,12 @@ function draw() {
 		text("Explorateur:", 1400, 175);
 		textSize(15);
 		text(seed.replaceAll("_", " "), 1400, 220);
+
+		text(
+			"Ce jeu n'est pas sponsorisé par Origames/AEG mais produit par un fan",
+			640,
+			830
+		);
 	}
 	if (curState === GAME_PLAY_STATE) {
 		updateGame(elapsedTime);
