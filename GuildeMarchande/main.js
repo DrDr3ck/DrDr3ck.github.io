@@ -3683,7 +3683,7 @@ function mouseMoved() {
 	overTreasure = isOverTreasure();
 	overCell = null;
 	overTrade = null;
-	overHelpButton = distance(1500, 40, mouseX, mouseY) < 25;
+	overHelpButton = distance(1480, 40, mouseX, mouseY) < 25;
 	overCoins = distance(1372, 569, mouseX, mouseY) < 40;
 	if (playState === CUBE_STATE) {
 		board.forEach((column, x) =>
