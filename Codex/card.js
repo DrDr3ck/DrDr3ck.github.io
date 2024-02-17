@@ -12,12 +12,12 @@ const OBJECT = {
 };
 
 class Card {
-	constructor(color) {
+	constructor(color, corners = [null, null, null, null], center = null) {
 		this.color = color;
-		this.corners = [null, null, null, null];
+		this.corners = corners;
 		this.cost = null;
 		this.points = null;
-		this.center = null;
+		this.center = center;
 		this.verso = {
 			corners: [
 				{ value: null },
@@ -46,7 +46,7 @@ class Card {
 	}
 
 	setCenter(center) {
-		this.center = center;
+		this.center = [center];
 	}
 
 	setVerso(corners, center) {
@@ -59,8 +59,8 @@ class Card {
 	}
 
 	drawCorners(corners, x, y, scale) {
-		const coordsX = [x, x + 210 - 54, x, x + 210 - 54];
-		const coordsY = [y, y, y + 140 - 65, y + 140 - 65];
+		const coordsX = [x, x + (210 - 54) * scale, x, x + (210 - 54) * scale];
+		const coordsY = [y, y, y + (140 - 65) * scale, y + (140 - 65) * scale];
 		const cornerIndex = this.color * 4;
 		corners.forEach((corner, index) => {
 			if (!corner) {
@@ -115,8 +115,8 @@ class Card {
 			spritesheet.drawScaledSprite(
 				"centers",
 				center[0],
-				x + (210 - 70) / 2,
-				y + (140 - 70) / 2,
+				x + ((210 - 70) * scale) / 2,
+				y + ((140 - 70) * scale) / 2,
 				scale
 			);
 		}
@@ -149,14 +149,52 @@ class Card {
 		}
 	}
 
+	drawCost(x, y, scale) {
+		if (!this.cost) {
+			return;
+		}
+		// draw resources
+		fill(196, 196, 100);
+		stroke(0);
+		strokeWeight(1);
+		const nb = this.cost.length;
+		let X = x + (210 - nb * 15 * scale) / 2;
+		let Y = y + (140 - 20 * scale);
+		rect(X, Y, nb * 15 + 1, 20);
+		X += 8;
+		Y += 10;
+		this.cost.forEach((resource) => {
+			if (resource === COLOR.ORANGE) {
+				fill(233, 76, 22);
+			}
+			if (resource === COLOR.GREEN) {
+				fill(116, 184, 124);
+			}
+			if (resource === COLOR.PURPLE) {
+				fill(169, 68, 143);
+			}
+			if (resource === COLOR.BLUE) {
+				fill(121, 199, 199);
+			}
+			ellipse(X, Y, 12);
+			X += 15;
+		});
+		// draw golden border
+		noFill();
+		stroke(250, 250, 0);
+		strokeWeight(4);
+		rect(x, y, 210 * scale, 140 * scale, 5);
+	}
+
 	draw(x, y, scale = 1) {
 		this.drawBackground(x, y, scale);
 		this.drawCorners(this.corners, x, y, scale);
 		this.drawCenter(this.center, x, y, scale);
 		this.drawPoints(x, y, scale);
+		this.drawCost(x, y, scale);
 	}
 
-	drawVerso(x, y, scale) {
+	drawVerso(x, y, scale = 1) {
 		this.drawBackground(x, y, scale);
 		this.drawCorners(this.verso.corners, x, y, scale);
 		this.drawCenter(this.verso.center, x, y, scale);

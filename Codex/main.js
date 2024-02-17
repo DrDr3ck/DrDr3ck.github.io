@@ -55,12 +55,7 @@ const musicButton = new BFloatingSwitchButton(
 	"\uD83C\uDFB6",
 	musicClicked
 );
-const startButton = new BButton(
-	80,
-	windowHeight - 50 - 200,
-	"START",
-	startClicked
-);
+const startButton = new BButton(80, windowHeight - 50, "START", startClicked);
 
 const cards = [
 	new Card(COLOR.ORANGE),
@@ -69,10 +64,10 @@ const cards = [
 	new Card(COLOR.PURPLE),
 ];
 
-cards[0].setCenter([COLOR.ORANGE]);
-cards[1].setCenter([COLOR.BLUE]);
-cards[2].setCenter([COLOR.GREEN]);
-cards[3].setCenter([COLOR.PURPLE]);
+cards[0].setCenter(COLOR.ORANGE);
+cards[1].setCenter(COLOR.BLUE);
+cards[2].setCenter(COLOR.GREEN);
+cards[3].setCenter(COLOR.PURPLE);
 cards[0].setPoints("1");
 cards[1].setPoints(OBJECT.FEATHER);
 cards[2].setPoints("corner");
@@ -96,6 +91,10 @@ cards[2].setCorners(
 		value: COLOR.GREEN,
 	}
 );
+
+cards[2].setCost([COLOR.GREEN, COLOR.GREEN, COLOR.GREEN]);
+
+let board = null;
 
 function initUI() {
 	speakerButton.setTextSize(50);
@@ -136,9 +135,13 @@ function setup() {
 
 function updateGame(elapsedTime) {}
 
-function drawGame() {}
+function drawGame() {
+	board.draw();
+}
 
-function initGame() {}
+function initGame() {
+	board = new Board();
+}
 
 function drawLoading() {
 	fill(0);
@@ -152,6 +155,10 @@ function drawLoading() {
 	noStroke();
 	textSize(50);
 	textAlign(CENTER, CENTER);
+	fill(250);
+	text("Loading...", width / 2 - 2, height / 2 - 2);
+	textAlign(CENTER, CENTER);
+	fill(0);
 	text("Loading...", width / 2, height / 2);
 	if (
 		soundManager.totalLoadedSounds === soundManager.soundToLoad &&
