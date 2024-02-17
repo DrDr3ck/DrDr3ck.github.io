@@ -133,19 +133,61 @@ class Card {
 			return;
 		}
 		if (this.points === "1") {
-			spritesheet.drawScaledSprite("points", 4, x + (210 - 70) / 2, y, scale);
+			spritesheet.drawScaledSprite(
+				"points",
+				4,
+				x + ((210 - 70) * scale) / 2,
+				y,
+				scale
+			);
 		} else if (this.points === "3") {
-			spritesheet.drawScaledSprite("points", 5, x + (210 - 70) / 2, y, scale);
+			spritesheet.drawScaledSprite(
+				"points",
+				5,
+				x + ((210 - 70) * scale) / 2,
+				y,
+				scale
+			);
 		} else if (this.points === "5") {
-			spritesheet.drawScaledSprite("points", 6, x + (210 - 70) / 2, y, scale);
+			spritesheet.drawScaledSprite(
+				"points",
+				6,
+				x + ((210 - 70) * scale) / 2,
+				y,
+				scale
+			);
 		} else if (this.points === OBJECT.PARCHMENT) {
-			spritesheet.drawScaledSprite("points", 0, x + (210 - 70) / 2, y, scale);
+			spritesheet.drawScaledSprite(
+				"points",
+				0,
+				x + ((210 - 70) * scale) / 2,
+				y,
+				scale
+			);
 		} else if (this.points === OBJECT.FEATHER) {
-			spritesheet.drawScaledSprite("points", 1, x + (210 - 70) / 2, y, scale);
+			spritesheet.drawScaledSprite(
+				"points",
+				1,
+				x + ((210 - 70) * scale) / 2,
+				y,
+				scale
+			);
 		} else if (this.points === OBJECT.INKWELL) {
-			spritesheet.drawScaledSprite("points", 2, x + (210 - 70) / 2, y, scale);
+			spritesheet.drawScaledSprite(
+				"points",
+				2,
+				x + ((210 - 70) * scale) / 2,
+				y,
+				scale
+			);
 		} else if (this.points === "corner") {
-			spritesheet.drawScaledSprite("points", 3, x + (210 - 70) / 2, y, scale);
+			spritesheet.drawScaledSprite(
+				"points",
+				3,
+				x + ((210 - 70) * scale) / 2,
+				y,
+				scale
+			);
 		}
 	}
 
