@@ -14,6 +14,32 @@ const jobManager = new JobManager();
 const soundManager = new SoundMgr();
 const spritesheet = new SpriteSheet();
 
+class Randomizer {
+	constructor(seed) {
+		if (seed) {
+			this.generator = new Math.seedrandom(seed.toString());
+		} else {
+			this.generator = Math.random;
+		}
+	}
+
+	/* Randomize array in-place using Durstenfeld shuffle algorithm */
+	shuffleArray(array) {
+		for (var i = array.length - 1; i > 0; i--) {
+			var j = this.randomInt(i + 1);
+			var temp = array[i];
+			array[i] = array[j];
+			array[j] = temp;
+		}
+	}
+
+	randomInt(i) {
+		return Math.floor(this.generator() * i);
+	}
+}
+
+let randomizer = null;
+
 const GAME_LOADING_STATE = 0;
 const GAME_START_STATE = 1;
 const GAME_PLAY_STATE = 2;
@@ -141,6 +167,8 @@ function drawGame() {
 
 function initGame() {
 	board = new Board();
+	randomizer = new Randomizer(); // TODO
+	board.initCards();
 }
 
 function drawLoading() {
