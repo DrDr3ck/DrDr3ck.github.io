@@ -81,7 +81,7 @@ cards[0].setCorners(
 	{ value: null },
 	null,
 	{ value: COLOR.ORANGE },
-	{ value: OBJECT.FLASK }
+	{ value: OBJECT.INKWELL }
 );
 
 cards[1].setCorners({ value: OBJECT.PARCHMENT }, { value: COLOR.BLUE }, null, {
