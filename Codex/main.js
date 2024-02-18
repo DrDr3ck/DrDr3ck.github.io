@@ -148,6 +148,12 @@ function setup() {
 	spritesheet.addSpriteSheet("corners", "./corners.png", 54, 65);
 	spritesheet.addSpriteSheet("points", "./points.png", 80, 35);
 	spritesheet.addSpriteSheet("resources", "./resources.png", 45, 45);
+	spritesheet.addSpriteSheet(
+		"objective_cards",
+		"./objective_cards.png",
+		210,
+		140
+	);
 	spritesheet.addSpriteSheet("verso_cards", "./verso_cards.png", 210, 140);
 	spritesheet.addSpriteSheet(
 		"background_cards",
