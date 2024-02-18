@@ -36,9 +36,13 @@ class Board {
 		this.goldenCards = [];
 		this.starterCards = [];
 		this.starterCard = null;
+
+		this.playerCards = [];
+		this.playerCardScale = 0.75;
+		this.resourceCardScale = 0.75;
 	}
 
-	draw() {
+	draw(overPlayerCardIndex, overResourceCardIndex) {
 		noStroke();
 		textSize(15);
 		textAlign(CENTER, CENTER);
@@ -50,9 +54,9 @@ class Board {
 		this.tyborResources.purple[0].draw(100 + 500 * scale, 50, scale);
 		this.tyborResources.green[0].draw(100 + 750 * scale, 50, scale);
 
-		this.drawResourceCards();
-		this.drawGoldCards();
-		this.drawPlayerCards();
+		this.drawResourceCards(overResourceCardIndex);
+		this.drawGoldenCards(overResourceCardIndex);
+		this.drawPlayerCards(overPlayerCardIndex);
 		this.drawObjectiveCards();
 		this.drawPlayerBoard();
 	}
@@ -60,6 +64,7 @@ class Board {
 	drawObjectiveCards() {
 		spritesheet.drawScaledSprite("objective_cards", 0, 1230, 120, 0.75);
 		spritesheet.drawScaledSprite("objective_cards", 5, 1230, 230, 0.75);
+		spritesheet.drawScaledSprite("objective_cards", 9, 1230, 680, 0.75);
 	}
 
 	drawPlayerBoard() {
@@ -69,30 +74,94 @@ class Board {
 		}
 	}
 
-	drawResourceCards() {
-		this.resourceCards[2].drawVerso(720, 10, 0.75);
-		this.resourceCards[1].draw(890, 10, 0.75);
-		this.resourceCards[0].draw(1060, 10, 0.75);
+	drawResourceCards(overResourceCardIndex) {
+		this.resourceCards[2].drawVerso(720, 10, this.resourceCardScale);
+		this.resourceCards[1].draw(890, 10, this.resourceCardScale);
+		this.resourceCards[0].draw(1060, 10, this.resourceCardScale);
+		if (overResourceCardIndex !== -1 && overResourceCardIndex < 3) {
+			noFill();
+			stroke(0);
+			strokeWeight(2);
+			rect(
+				720 + 170 * overResourceCardIndex,
+				10,
+				210 * this.resourceCardScale,
+				140 * this.resourceCardScale,
+				5
+			);
+		}
 	}
 
-	drawGoldCards() {
-		// TODO
-		spritesheet.drawScaledSprite("verso_cards", 2, 720, 120, 0.75);
-		spritesheet.drawScaledSprite("background_cards", 2, 890, 120, 0.75);
-		spritesheet.drawScaledSprite("background_cards", 0, 1060, 120, 0.75);
-		noFill();
-		stroke(250, 250, 0);
-		strokeWeight(4);
-		rect(720, 120, 210 * 0.75, 140 * 0.75, 5);
-		rect(890, 120, 210 * 0.75, 140 * 0.75, 5);
-		rect(1060, 120, 210 * 0.75, 140 * 0.75, 5);
+	drawGoldenCards(overResourceCardIndex) {
+		this.goldenCards[2].drawVerso(720, 120, 0.75);
+		this.goldenCards[1].draw(890, 120, 0.75);
+		this.goldenCards[0].draw(1060, 120, 0.75);
+		if (overResourceCardIndex !== -1 && overResourceCardIndex >= 3) {
+			noFill();
+			stroke(0);
+			strokeWeight(2);
+			rect(
+				720 + 170 * (overResourceCardIndex - 3),
+				120,
+				210 * this.resourceCardScale,
+				140 * this.resourceCardScale,
+				5
+			);
+		}
 	}
 
-	drawPlayerCards() {
-		// TODO
-		this.resourceCards[0].draw(400, 690, 0.75);
-		this.resourceCards[1].draw(570, 690, 0.75);
-		this.goldenCards[0].draw(740, 690, 0.75);
+	drawPlayerCards(overPlayerCardIndex) {
+		this.playerCards.forEach((card, index) =>
+			card.draw(400 + 170 * index, 690, this.playerCardScale)
+		);
+		if (overPlayerCardIndex !== -1) {
+			noFill();
+			stroke(0);
+			strokeWeight(2);
+			rect(
+				400 + 170 * overPlayerCardIndex,
+				690,
+				210 * this.playerCardScale,
+				140 * this.playerCardScale,
+				5
+			);
+		}
+	}
+
+	isOverPlayerCard(x, y) {
+		for (let i = 0; i < this.playerCards.length; i++) {
+			if (
+				x > 400 + 170 * i &&
+				x < 400 + 170 * i + 210 * this.playerCardScale &&
+				y > 690 &&
+				y < 690 + 140 * this.playerCardScale
+			) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	isOverResourceCard(x, y) {
+		for (let i = 0; i < 3; i++) {
+			if (
+				x > 720 + 170 * i &&
+				x < 720 + 170 * i + 210 * this.resourceCardScale &&
+				y > 10 &&
+				y < 10 + 140 * this.resourceCardScale
+			) {
+				return i;
+			}
+			if (
+				x > 720 + 170 * i &&
+				x < 720 + 170 * i + 210 * this.resourceCardScale &&
+				y > 120 &&
+				y < 120 + 140 * this.resourceCardScale
+			) {
+				return i + 3;
+			}
+		}
+		return -1;
 	}
 
 	addCard(color, corners, points = null, cost = null) {
@@ -670,5 +739,9 @@ class Board {
 
 		randomizer.shuffleArray(this.starterCards);
 		this.starterCard = this.starterCards[0];
+
+		this.playerCards.push(this.resourceCards.pop());
+		this.playerCards.push(this.resourceCards.pop());
+		this.playerCards.push(this.goldenCards.pop());
 	}
 }

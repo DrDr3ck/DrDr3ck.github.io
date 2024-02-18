@@ -124,9 +124,9 @@ class Card {
 		stroke(0);
 		strokeWeight(1);
 		if (center.length === 2) {
-			const X = x + ((210 - 50) * scale) / 2;
+			const X = x + ((210 - 45) * scale) / 2;
 			const Y = y + ((140 - 90) * scale) / 2;
-			rect(X, Y, 50 * scale, 90 * scale);
+			rect(X, Y, 45 * scale, 90 * scale, 5);
 			spritesheet.drawScaledSprite("resources", center[0], X, Y, scale);
 			spritesheet.drawScaledSprite(
 				"resources",
@@ -137,9 +137,9 @@ class Card {
 			);
 		}
 		if (center.length === 3) {
-			const X = x + ((210 - 50) * scale) / 2;
+			const X = x + ((210 - 45) * scale) / 2;
 			const Y = y + ((140 - 135) * scale) / 2;
-			rect(X, Y, 50 * scale, 135 * scale);
+			rect(X, Y, 45 * scale, 135 * scale, 5);
 			spritesheet.drawScaledSprite("resources", center[0], X, Y, scale);
 			spritesheet.drawScaledSprite(
 				"resources",
@@ -252,6 +252,10 @@ class Card {
 			X += 15;
 		});
 		// draw golden border
+		this.drawGoldenBorder(x, y, scale);
+	}
+
+	drawGoldenBorder(x, y, scale = 1) {
 		noFill();
 		stroke(250, 250, 0);
 		strokeWeight(4);
@@ -270,5 +274,8 @@ class Card {
 		this.drawBackground(x, y, scale);
 		this.drawCorners(this.verso.corners, x, y, scale);
 		this.drawCenter(this.verso.center, x, y, scale);
+		if (this.cost) {
+			this.drawGoldenBorder(x, y, scale);
+		}
 	}
 }

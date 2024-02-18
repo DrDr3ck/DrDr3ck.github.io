@@ -48,6 +48,9 @@ let curState = GAME_LOADING_STATE;
 let toggleDebug = false;
 let lastTime = 0;
 
+let overPlayerCardIndex = -1;
+let overResourceCardIndex = -1;
+
 function preload() {
 	spritesheet.addSpriteSheet("cover", "./cover.jpg", 977, 1000);
 }
@@ -168,7 +171,7 @@ function setup() {
 function updateGame(elapsedTime) {}
 
 function drawGame() {
-	board.draw();
+	board.draw(overPlayerCardIndex, overResourceCardIndex);
 }
 
 function initGame() {
@@ -250,6 +253,16 @@ function draw() {
 	lastTime = currentTime;
 }
 
+// check if mouse is over one of the 3 cards of the player
+function isOverPlayerCard() {
+	return board.isOverPlayerCard(mouseX, mouseY);
+}
+
+// check if mouse is over one of the 6 resource cards
+function isOverResourceCard() {
+	return board.isOverResourceCard(mouseX, mouseY);
+}
+
 function mouseClicked() {
 	if (toggleDebug) {
 		uiManager.addLogger(`X=${mouseX}, Y=${mouseY}`);
@@ -257,6 +270,11 @@ function mouseClicked() {
 	toolManager.mouseClicked();
 	uiManager.mouseClicked();
 	return false;
+}
+
+function mouseMoved() {
+	overPlayerCardIndex = isOverPlayerCard();
+	overResourceCardIndex = isOverResourceCard();
 }
 
 function keyPressed() {
