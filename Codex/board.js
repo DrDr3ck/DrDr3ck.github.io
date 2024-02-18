@@ -69,8 +69,7 @@ class Board {
 
 	drawPlayerBoard() {
 		if (this.starterCard) {
-			console.log("starterCard");
-			this.starterCard.drawVerso(480, 370, 0.75);
+			this.starterCard.draw(480, 370, 0.75);
 		}
 	}
 

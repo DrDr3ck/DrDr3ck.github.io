@@ -12,6 +12,11 @@ const OBJECT = {
 	INKWELL: 6,
 };
 
+const CARD = {
+	RECTO: "recto",
+	VERSO: "verso",
+};
+
 class Card {
 	constructor(color, corners = [null, null, null, null], center = null) {
 		this.color = color;
@@ -28,6 +33,7 @@ class Card {
 			],
 			center: [color],
 		};
+		this.rectoVerso = CARD.RECTO;
 	}
 
 	color() {
@@ -263,6 +269,14 @@ class Card {
 	}
 
 	draw(x, y, scale = 1) {
+		if (this.rectoVerso === CARD.RECTO) {
+			this.drawRecto(x, y, scale);
+		} else {
+			this.drawVerso(x, y, scale);
+		}
+	}
+
+	drawRecto(x, y, scale = 1) {
 		this.drawBackground(x, y, scale);
 		this.drawCorners(this.corners, x, y, scale);
 		this.drawCenter(this.center, x, y, scale);
