@@ -3,6 +3,7 @@ const COLOR = {
 	BLUE: 1,
 	PURPLE: 2,
 	GREEN: 3,
+	GOLD: 4,
 };
 
 const OBJECT = {
@@ -66,7 +67,6 @@ class Card {
 			if (!corner) {
 				return;
 			}
-			//console.log(corner);
 			spritesheet.drawScaledSprite(
 				"corners",
 				cornerIndex + index,
@@ -120,11 +120,41 @@ class Card {
 				scale
 			);
 		}
+		fill(190, 170, 125);
+		stroke(0);
+		strokeWeight(1);
 		if (center.length === 2) {
-			// TODO
+			const X = x + ((210 - 50) * scale) / 2;
+			const Y = y + ((140 - 90) * scale) / 2;
+			rect(X, Y, 50 * scale, 90 * scale);
+			spritesheet.drawScaledSprite("resources", center[0], X, Y, scale);
+			spritesheet.drawScaledSprite(
+				"resources",
+				center[1],
+				X,
+				Y + 45 * scale,
+				scale
+			);
 		}
 		if (center.length === 3) {
-			// TODO
+			const X = x + ((210 - 50) * scale) / 2;
+			const Y = y + ((140 - 135) * scale) / 2;
+			rect(X, Y, 50 * scale, 135 * scale);
+			spritesheet.drawScaledSprite("resources", center[0], X, Y, scale);
+			spritesheet.drawScaledSprite(
+				"resources",
+				center[1],
+				X,
+				Y + 45 * scale,
+				scale
+			);
+			spritesheet.drawScaledSprite(
+				"resources",
+				center[2],
+				X,
+				Y + 90 * scale,
+				scale
+			);
 		}
 	}
 
@@ -180,7 +210,7 @@ class Card {
 				y,
 				scale
 			);
-		} else if (this.points === "corner") {
+		} else if (this.points === "2") {
 			spritesheet.drawScaledSprite(
 				"points",
 				3,
@@ -200,8 +230,8 @@ class Card {
 		stroke(0);
 		strokeWeight(1);
 		const nb = this.cost.length;
-		let X = x + (210 - nb * 15 * scale) / 2;
-		let Y = y + (140 - 20 * scale);
+		let X = x + (210 * scale - nb * 15) / 2;
+		let Y = y + 140 * scale - 20;
 		rect(X, Y, nb * 15 + 1, 20);
 		X += 8;
 		Y += 10;
@@ -210,10 +240,10 @@ class Card {
 				fill(233, 76, 22);
 			}
 			if (resource === COLOR.GREEN) {
-				fill(116, 184, 124);
+				fill(45, 88, 35);
 			}
 			if (resource === COLOR.PURPLE) {
-				fill(169, 68, 143);
+				fill(124, 38, 83);
 			}
 			if (resource === COLOR.BLUE) {
 				fill(121, 199, 199);
