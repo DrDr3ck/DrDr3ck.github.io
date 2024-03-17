@@ -198,7 +198,7 @@ function musicClicked() {
 const speakerStorageKey = "DrDr3ck/GuildeMarchande/Speaker";
 const currentPlayKey = "DrDr3ck/GuildeMarchande/Play";
 
-const replaySteps = JSON.parse(localStorage.getItem(currentPlayKey));
+const replaySteps = ""; //JSON.parse(localStorage.getItem(currentPlayKey));
 
 function speakerClicked() {
 	speakerButton.checked = !speakerButton.checked;
@@ -297,7 +297,7 @@ function startClicked() {
 }
 
 function replay(doIt, replayKey = currentPlayKey) {
-	const steps = JSON.parse(localStorage.getItem(replayKey));
+	const steps = ""; //JSON.parse(localStorage.getItem(replayKey));
 	if (doIt && steps && map === steps.map && seed === steps.seed) {
 		persistence = new Persistence(
 			steps ? steps.map : map,
