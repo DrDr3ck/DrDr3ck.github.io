@@ -33,15 +33,23 @@ const colors = [
 	{ r: 239, g: 211, b: 69 },
 ];
 
-let overCaseIndex = -1;
+const BLUE = 0;
+const PURPLE = 1;
+const GREEN = 2;
+const RED = 3;
+const YELLOW = 4;
+
+let overTileIndex = -1;
 let overDiceIndex = -1;
 let selectedDiceIndex = -1;
 
-const boardSize = 60;
-const boardCases = [];
+let availableTiles = [];
+
+const tileSize = 60;
+const boardTiles = [];
 for (let j = 0; j < 4; j++) {
 	for (let i = 0; i < 5; i++) {
-		boardCases.push({
+		boardTiles.push({
 			X: 87 + 89 * i,
 			Y: 300 + 89 * j,
 			constraint: null,
@@ -49,6 +57,21 @@ for (let j = 0; j < 4; j++) {
 		});
 	}
 }
+
+function setConstraints() {
+	boardTiles[1].constraint = { value: 4 };
+	boardTiles[3].constraint = { color: YELLOW };
+	boardTiles[4].constraint = { value: 6 };
+	boardTiles[5].constraint = { color: RED };
+	boardTiles[7].constraint = { value: 2 };
+	boardTiles[12].constraint = { color: RED };
+	boardTiles[13].constraint = { color: PURPLE };
+	boardTiles[14].constraint = { value: 3 };
+	boardTiles[15].constraint = { color: BLUE };
+	boardTiles[16].constraint = { color: YELLOW };
+}
+
+setConstraints();
 
 class Dice {
 	constructor(X, Y, color, value) {
@@ -75,15 +98,9 @@ class Dice {
 	}
 }
 
-// debug
-boardCases[0].dice = new Dice(0, 0, colors[0], 3);
-// end debug
-
 function preload() {}
 
-function musicClicked() {
-	// TODO
-}
+function musicClicked() {}
 
 const speakerStorageKey = "DrDr3ck/GameEngine/Speaker";
 function speakerClicked() {
@@ -182,9 +199,10 @@ function updateGame(elapsedTime) {}
 
 function drawDice(X, Y, dice) {
 	fill(dice.color.r, dice.color.g, dice.color.b);
-	rect(X, Y, dice.size, dice.size);
+	rect(X, Y, dice.size, dice.size, 3);
 	fill(0);
 	stroke(0);
+	strokeWeight(2);
 	textSize(40);
 	textAlign(CENTER, CENTER);
 	text(dice.value.toString(), X + dice.size / 2, Y + dice.size / 2);
@@ -207,11 +225,34 @@ function drawDices() {
 
 function drawBoard() {
 	spritesheet.drawSprite("board", 0, 50, 100);
-	boardCases.forEach((tile, i) => {
+	boardTiles.forEach((tile, i) => {
+		if (tile.constraint) {
+			if (tile.constraint.color !== undefined) {
+				const curColor = colors[tile.constraint.color];
+				fill(curColor.r, curColor.g, curColor.b);
+				stroke(0);
+				strokeWeight(4);
+				rect(tile.X, tile.Y, tileSize + 2, tileSize + 2, 3);
+				strokeWeight(2);
+			}
+			if (tile.constraint.value) {
+				fill(0);
+				stroke(0);
+				strokeWeight(2);
+				textSize(40);
+				textAlign(CENTER, CENTER);
+				text(
+					tile.constraint.value.toString(),
+					tile.X + tileSize / 2,
+					tile.Y + tileSize / 2
+				);
+			}
+		}
 		if (tile.dice) {
+			stroke(0);
 			drawDice(
-				tile.X + (boardSize - tile.dice.size / 2) - boardSize / 2,
-				tile.Y + (boardSize - tile.dice.size / 2) - boardSize / 2,
+				tile.X + (tileSize - tile.dice.size / 2) - tileSize / 2,
+				tile.Y + (tileSize - tile.dice.size / 2) - tileSize / 2,
 				tile.dice
 			);
 		}
@@ -223,11 +264,15 @@ function drawGame() {
 	drawBoard();
 	drawDices();
 
-	if (overCaseIndex !== -1) {
-		const tile = boardCases[overCaseIndex];
+	if (overTileIndex !== -1) {
+		const tile = boardTiles[overTileIndex];
 		noFill();
-		stroke(250);
-		rect(tile.X, tile.Y, boardSize, boardSize, 3);
+		if (availableTiles.indexOf(overTileIndex) >= 0) {
+			stroke(250);
+		} else {
+			stroke(250, 50, 50);
+		}
+		rect(tile.X, tile.Y, tileSize, tileSize, 3);
 	}
 }
 
@@ -283,6 +328,68 @@ function draw() {
 	lastTime = currentTime;
 }
 
+function getNeighborTiles(i, j) {
+	if (i > 0 && i < 4 && j > 0 && j < 3) {
+		return [
+			{ i: i - 1, j: j - 1 },
+			{ i: i, j: j - 1 },
+			{ i: i + 1, j: j - 1 },
+			{ i: i + 1, j: j },
+			{ i: i - 1, j: j },
+			{ i: i - 1, j: j + 1 },
+			{ i: i, j: j + 1 },
+			{ i: i + 1, j: j + 1 },
+		];
+	}
+	return [];
+}
+
+function prepareBoardTiles(dice) {
+	const hasDice = boardTiles.some((tile) => tile.dice);
+	if (!hasDice) {
+		availableTiles = [];
+		for (let j = 0; j < 4; j++) {
+			for (let i = 0; i < 5; i++) {
+				const curIndex = i + j * 5;
+				if (i === 0 || i === 4 || j === 0 || j === 3) {
+					availableTiles.push(curIndex);
+				}
+			}
+		}
+		return;
+	} else {
+		availableTiles = [];
+		for (let j = 0; j < 4; j++) {
+			for (let i = 0; i < 5; i++) {
+				const curIndex = i + j * 5;
+				const curTile = boardTiles[curIndex];
+				const neighbor = getNeighborTiles(i, j);
+				if (
+					neighbor.every((n) => {
+						const nCurIndex = n.i + n.j * 5;
+						return boardTiles[nCurIndex].dice !== null;
+					})
+				) {
+					continue;
+				}
+				if (curTile.dice === null) {
+					if (curTile.constraint?.color) {
+						const curColor = colors[curTile.constraint.color];
+						if (curColor !== dice.color) {
+							continue;
+						}
+					} else if (curTile.constraint?.value) {
+						if (curTile.constraint.value !== dice.value) {
+							continue;
+						}
+					}
+				}
+				availableTiles.push(curIndex);
+			}
+		}
+	}
+}
+
 function checkOverDice() {
 	overDiceIndex = -1;
 	curDices.forEach((dice, i) => {
@@ -292,16 +399,16 @@ function checkOverDice() {
 	});
 }
 
-function checkOverBoardCase() {
-	overCaseIndex = -1;
-	boardCases.forEach((tile, i) => {
+function checkOverBoardTile() {
+	overTileIndex = -1;
+	boardTiles.forEach((tile, i) => {
 		if (
 			mouseX > tile.X &&
-			mouseX < tile.X + boardSize &&
+			mouseX < tile.X + tileSize &&
 			mouseY > tile.Y &&
-			mouseY < tile.Y + boardSize
+			mouseY < tile.Y + tileSize
 		) {
-			overCaseIndex = i;
+			overTileIndex = i;
 		}
 	});
 }
@@ -310,13 +417,34 @@ function mouseMoved() {
 	if (selectedDiceIndex === -1) {
 		checkOverDice();
 	} else {
-		checkOverBoardCase();
+		checkOverBoardTile();
 	}
 }
 
+function canPutDice(dice, tileIndex) {
+	// TODO: can put dice on this tile ?
+	if (availableTiles.indexOf(tileIndex) >= 0) {
+		return true;
+	}
+	return false;
+}
+
 function mousePressed() {
+	if (selectedDiceIndex != -1 && overTileIndex !== -1) {
+		if (canPutDice(curDices[overDiceIndex], overTileIndex)) {
+			boardTiles[overTileIndex].dice = curDices[overDiceIndex];
+			curDices.splice(overDiceIndex, 1);
+			overDiceIndex = -1;
+			selectedDiceIndex = -1;
+			overTileIndex = -1;
+		} else {
+			return;
+		}
+	}
 	if (overDiceIndex !== -1 && selectedDiceIndex == -1) {
 		selectedDiceIndex = overDiceIndex;
+		// compute available tiles
+		prepareBoardTiles(curDices[selectedDiceIndex]);
 	} else {
 		selectedDiceIndex = -1;
 		checkOverDice();
