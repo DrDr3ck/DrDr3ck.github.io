@@ -25,6 +25,7 @@ let lastTime = 0;
 let score = [];
 let curDices = [];
 let dices = [];
+let skipDices = 0;
 const colors = [
 	{ r: 73, g: 195, b: 201 },
 	{ r: 161, g: 75, b: 162 },
@@ -32,6 +33,8 @@ const colors = [
 	{ r: 235, g: 58, b: 39 },
 	{ r: 239, g: 211, b: 69 },
 ];
+
+const objectives = { public: [], private: [] };
 
 const BLUE = 0;
 const PURPLE = 1;
@@ -58,20 +61,22 @@ for (let j = 0; j < 4; j++) {
 	}
 }
 
-function setConstraints() {
-	boardTiles[1].constraint = { value: 4 };
-	boardTiles[3].constraint = { color: YELLOW };
-	boardTiles[4].constraint = { value: 6 };
-	boardTiles[5].constraint = { color: RED };
-	boardTiles[7].constraint = { value: 2 };
-	boardTiles[12].constraint = { color: RED };
-	boardTiles[13].constraint = { color: PURPLE };
-	boardTiles[14].constraint = { value: 3 };
-	boardTiles[15].constraint = { color: BLUE };
-	boardTiles[16].constraint = { color: YELLOW };
+function setConstraints(cardIndex) {
+	if (cardIndex === 0) {
+		boardTiles[1].constraint = { value: 4 };
+		boardTiles[3].constraint = { color: YELLOW };
+		boardTiles[4].constraint = { value: 6 };
+		boardTiles[5].constraint = { color: RED };
+		boardTiles[7].constraint = { value: 2 };
+		boardTiles[12].constraint = { color: RED };
+		boardTiles[13].constraint = { color: PURPLE };
+		boardTiles[14].constraint = { value: 3 };
+		boardTiles[15].constraint = { color: BLUE };
+		boardTiles[16].constraint = { color: YELLOW };
+	}
 }
 
-setConstraints();
+setConstraints(0); // give 2 random cards, player choose between the 4 'motifs'
 
 class Dice {
 	constructor(X, Y, color, value) {
@@ -109,10 +114,34 @@ function speakerClicked() {
 	localStorage.setItem(speakerStorageKey, speakerButton.checked ? "on" : "off");
 }
 
+function skipClicked() {
+	skipDices = skipDices + 1;
+	if (curDices.length - skipDices === 2) {
+		roleDices();
+	}
+}
+
 function startClicked() {
 	curState = GAME_PLAY_STATE;
-	uiManager.setUI([speakerButton, musicButton]);
+	uiManager.setUI([speakerButton, musicButton, skipButton]);
 	uiManager.addLogger("Start game");
+	const public = [BLUE, PURPLE, GREEN, RED, YELLOW];
+	const private = [
+		"Light",
+		"Medium",
+		"Deep",
+		"Shade",
+		"Color",
+		"Color Diagonal",
+		"Column Shade",
+		"Column Color",
+		"Row Shade",
+		"Row Color",
+	];
+	shuffleArray(public);
+	shuffleArray(private);
+	objectives.public = [public[0], public[1]];
+	objectives.private = [private[0], private[1]];
 	roleDices();
 }
 
@@ -135,6 +164,15 @@ const startButton = new BButton(
 	startClicked
 );
 
+const skipButton = new BButton(
+	windowWidth - 200,
+	windowHeight - 50 - 200,
+	"SKIP",
+	skipClicked
+);
+skipButton.setTextSize(25);
+skipButton.w = 180;
+
 function initUI() {
 	speakerButton.setTextSize(50);
 	musicButton.setTextSize(50);
@@ -149,10 +187,12 @@ function initUI() {
 	uiManager.setUI(menu);
 }
 
+const generator = new Math.seedrandom("test");
+
 /* Randomize array in-place using Durstenfeld shuffle algorithm */
 const shuffleArray = (array) => {
 	for (var i = array.length - 1; i > 0; i--) {
-		var j = Math.floor(Math.random() * (i + 1));
+		var j = Math.floor(generator() * (i + 1));
 		var temp = array[i];
 		array[i] = array[j];
 		array[j] = temp;
@@ -184,7 +224,17 @@ function setup() {
 }
 
 function roleDices() {
+	if (curDices.length > 0) {
+		// add dices on score board
+		score.push(curDices);
+	}
+	skipDices = 0;
 	curDices = [];
+	if (dices.length === 50) {
+		// end of game
+		skipButton.enabled = false;
+		return;
+	}
 	curDices.push(dices.pop());
 	curDices[0].setPosition(800, 400);
 	curDices.push(dices.pop());
@@ -200,12 +250,15 @@ function updateGame(elapsedTime) {}
 function drawDice(X, Y, dice) {
 	fill(dice.color.r, dice.color.g, dice.color.b);
 	rect(X, Y, dice.size, dice.size, 3);
-	fill(0);
-	stroke(0);
-	strokeWeight(2);
-	textSize(40);
-	textAlign(CENTER, CENTER);
-	text(dice.value.toString(), X + dice.size / 2, Y + dice.size / 2);
+	if (dice.value) {
+		stroke(0);
+		fill(0);
+		stroke(0);
+		strokeWeight(2);
+		textSize(40);
+		textAlign(CENTER, CENTER);
+		text(dice.value.toString(), X + dice.size / 2, Y + dice.size / 2);
+	}
 }
 
 function drawDices() {
@@ -248,6 +301,12 @@ function drawBoard() {
 				);
 			}
 		}
+		if (availableTiles.includes(i)) {
+			fill(250, 250, 20);
+		} else {
+			fill(128);
+		}
+		// text(i.toString(), tile.X, tile.Y);
 		if (tile.dice) {
 			stroke(0);
 			drawDice(
@@ -259,10 +318,63 @@ function drawBoard() {
 	});
 }
 
-function drawGame() {
+function drawScore() {
 	spritesheet.drawSprite("score", 0, 590, 100);
+	let total = 0;
+	stroke(0);
+	score.forEach((dices, i) => {
+		dices.forEach((dice, j) => {
+			drawDice(615 + 60 * i, 215 - 60 * j, dice);
+			total = total + dice.value;
+		});
+	});
+	fill(250);
+	stroke(0);
+	text(total.toString(), 1270, 220);
+}
+
+function drawPublic() {
+	const c0 = colors[objectives.public[0]];
+	let v0 = 0;
+	const c1 = colors[objectives.public[1]];
+	let v1 = 0;
+	boardTiles.forEach((tile) => {
+		if (tile.dice) {
+			if (tile.dice.color === c0) {
+				v0 = v0 + tile.dice.value;
+			}
+			if (tile.dice.color === c1) {
+				v1 = v1 + tile.dice.value;
+			}
+		}
+	});
+	drawDice(110, 700, {
+		color: c0,
+		size: 50,
+		value: v0,
+	});
+	drawDice(210, 700, {
+		color: c1,
+		size: 50,
+		value: v1,
+	});
+}
+
+function drawPrivate() {
+	stroke(0);
+	fill(255);
+	textSize(32);
+	text(objectives.private[0], 800, 700);
+	text(objectives.private[1], 800, 735);
+}
+
+function drawGame() {
+	drawScore();
 	drawBoard();
 	drawDices();
+
+	drawPublic();
+	drawPrivate();
 
 	if (overTileIndex !== -1) {
 		const tile = boardTiles[overTileIndex];
@@ -329,19 +441,32 @@ function draw() {
 }
 
 function getNeighborTiles(i, j) {
-	if (i > 0 && i < 4 && j > 0 && j < 3) {
-		return [
-			{ i: i - 1, j: j - 1 },
-			{ i: i, j: j - 1 },
-			{ i: i + 1, j: j - 1 },
-			{ i: i + 1, j: j },
-			{ i: i - 1, j: j },
-			{ i: i - 1, j: j + 1 },
-			{ i: i, j: j + 1 },
-			{ i: i + 1, j: j + 1 },
-		];
+	const tiles = [];
+	if (i > 0) {
+		tiles.push({ i: i - 1, j: j });
+		if (j > 0) {
+			tiles.push({ i: i - 1, j: j - 1 });
+		}
+		if (j < 3) {
+			tiles.push({ i: i - 1, j: j + 1 });
+		}
 	}
-	return [];
+	if (j > 0) {
+		tiles.push({ i: i, j: j - 1 });
+		if (i < 4) {
+			tiles.push({ i: i + 1, j: j - 1 });
+		}
+	}
+	if (i < 4) {
+		tiles.push({ i: i + 1, j: j });
+		if (j < 3) {
+			tiles.push({ i: i + 1, j: j + 1 });
+		}
+	}
+	if (j < 3) {
+		tiles.push({ i: i, j: j + 1 });
+	}
+	return tiles;
 }
 
 function prepareBoardTiles(dice) {
@@ -352,6 +477,18 @@ function prepareBoardTiles(dice) {
 			for (let i = 0; i < 5; i++) {
 				const curIndex = i + j * 5;
 				if (i === 0 || i === 4 || j === 0 || j === 3) {
+					const curTile = boardTiles[curIndex];
+					// check constraint of tile if any
+					if (curTile.constraint?.color >= 0) {
+						const curColor = colors[curTile.constraint.color];
+						if (curColor !== dice.color) {
+							continue;
+						}
+					} else if (curTile.constraint?.value) {
+						if (curTile.constraint.value !== dice.value) {
+							continue;
+						}
+					}
 					availableTiles.push(curIndex);
 				}
 			}
@@ -363,25 +500,51 @@ function prepareBoardTiles(dice) {
 			for (let i = 0; i < 5; i++) {
 				const curIndex = i + j * 5;
 				const curTile = boardTiles[curIndex];
+				// if cur tile has already a dice, cannot place dice at this location
+				if (curTile.dice) {
+					continue;
+				}
 				const neighbor = getNeighborTiles(i, j);
+				// if all surrounding tiles are empty, cannot place dice at this location
 				if (
 					neighbor.every((n) => {
 						const nCurIndex = n.i + n.j * 5;
-						return boardTiles[nCurIndex].dice !== null;
+						return boardTiles[nCurIndex].dice === null;
 					})
 				) {
 					continue;
 				}
-				if (curTile.dice === null) {
-					if (curTile.constraint?.color) {
-						const curColor = colors[curTile.constraint.color];
-						if (curColor !== dice.color) {
-							continue;
+				// if some surrounding tiles contains dices with same color/value of
+				// current dice, cannot place dice at this location
+				if (
+					neighbor.some((n) => {
+						if (n.i === i || n.j === j) {
+							const nCurIndex = n.i + n.j * 5;
+							const nCurDice = boardTiles[nCurIndex].dice;
+							if (!nCurDice) {
+								return false;
+							}
+							if (
+								nCurDice.color === dice.color ||
+								nCurDice.value === dice.value
+							) {
+								return true;
+							}
 						}
-					} else if (curTile.constraint?.value) {
-						if (curTile.constraint.value !== dice.value) {
-							continue;
-						}
+						return false;
+					})
+				) {
+					continue;
+				}
+				// check constraint of tile if any
+				if (curTile.constraint?.color >= 0) {
+					const curColor = colors[curTile.constraint.color];
+					if (curColor !== dice.color) {
+						continue;
+					}
+				} else if (curTile.constraint?.value) {
+					if (curTile.constraint.value !== dice.value) {
+						continue;
 					}
 				}
 				availableTiles.push(curIndex);
@@ -422,7 +585,7 @@ function mouseMoved() {
 }
 
 function canPutDice(dice, tileIndex) {
-	// TODO: can put dice on this tile ?
+	// can put dice on this tile ?
 	if (availableTiles.indexOf(tileIndex) >= 0) {
 		return true;
 	}
@@ -437,6 +600,10 @@ function mousePressed() {
 			overDiceIndex = -1;
 			selectedDiceIndex = -1;
 			overTileIndex = -1;
+			if (curDices.length - skipDices === 2) {
+				roleDices();
+			}
+			availableTiles = [];
 		} else {
 			return;
 		}
