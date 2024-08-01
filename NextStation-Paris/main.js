@@ -24,7 +24,9 @@ let lastTime = 0;
 
 let randomizer = null;
 
-let seed = 0;
+let seed = Math.random();
+
+let pencils = [COLORS.BLUE, COLORS.ORANGE, COLORS.PURPLE, COLORS.GREEN];
 
 let cardArray = [];
 
@@ -47,6 +49,8 @@ function startClicked() {
 	uiManager.addLogger("Start game");
 	randomizer = new Randomizer(seed);
 	randomizer.shuffleArray(cardArray);
+
+	randomizer.shuffleArray(pencils);
 }
 
 const speakerButton = new BFloatingSwitchButton(
@@ -98,10 +102,24 @@ function setup() {
 
 function updateGame(elapsedTime) {}
 
+function getX(x) {
+	return (x - 1) * ((747 - 53) / 9) + 53;
+}
+
+function getY(y) {
+	return (y - 1) * ((747 - 53) / 9) + 50;
+}
+
 function displayStation(station) {
 	stroke(110, 160, 130);
 	if (station.color === COLORS.BLUE) {
 		stroke(50, 50, 130);
+	} else if (station.color === COLORS.ORANGE) {
+		stroke(255, 127, 80);
+	} else if (station.color === COLORS.GREEN) {
+		stroke(127, 255, 80);
+	} else if (station.color === COLORS.PURPLE) {
+		stroke(127, 0, 127);
 	}
 	strokeWeight(5);
 	if (station.monument) {
@@ -109,8 +127,8 @@ function displayStation(station) {
 	} else {
 		noFill();
 	}
-	const X = (station.position.x - 1) * ((747 - 53) / 9) + 53;
-	const Y = (station.position.y - 1) * ((747 - 53) / 9) + 50;
+	const X = getX(station.position.x);
+	const Y = getY(station.position.y);
 	ellipse(X, Y, 40);
 	if (station.symbol === SHAPES.SQUARE) {
 		square(X - 10, Y - 10, 20);
@@ -127,6 +145,21 @@ function displayStation(station) {
 		vertex(X - 10, Y - 5);
 		endShape(CLOSE);
 	}
+	textAlign(CENTER, CENTER);
+	stroke(0);
+	strokeWeight(1);
+	fill(0);
+	textSize(15);
+	text(station.district, X, Y);
+}
+
+function displaySection(section) {
+	line(
+		getX(section.stations[0].position.x),
+		getY(section.stations[0].position.y),
+		getX(section.stations[1].position.x),
+		getY(section.stations[1].position.y)
+	);
 }
 
 let stations = [];
@@ -139,6 +172,13 @@ function drawGame() {
 	spritesheet.drawSprite("crayons", 0, 1200, 120);
 
 	// debug
+	stroke(80);
+	strokeWeight(2);
+	noFill();
+	//setLineDash([5, 5]);
+	sections.forEach((element) => {
+		displaySection(element);
+	});
 	stations.forEach((element) => {
 		displayStation(element);
 	});
@@ -146,7 +186,9 @@ function drawGame() {
 }
 
 function initGame() {
-	stations = getStations();
+	const map = buildMap();
+	stations = map.stations;
+	sections = map.sections;
 }
 
 function drawLoading() {
