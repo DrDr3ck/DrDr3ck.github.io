@@ -42,6 +42,17 @@ const GREEN = 2;
 const RED = 3;
 const YELLOW = 4;
 
+const LIGHT = "Light";
+const MEDIUM = "Medium";
+const DEEP = "Deep";
+const SHADE = "Shade";
+const COLOR = "Color";
+const COLOR_DIAGONAL = "Color Diagonal";
+const COLUMN_SHADE = "Column Shade";
+const COLUMN_COLOR = "Column Color";
+const ROW_SHADE = "Row Shade";
+const ROW_COLOR = "Row Color";
+
 let overTileIndex = -1;
 let overDiceIndex = -1;
 let selectedDiceIndex = -1;
@@ -127,16 +138,16 @@ function startClicked() {
 	uiManager.addLogger("Start game");
 	const public = [BLUE, PURPLE, GREEN, RED, YELLOW];
 	const private = [
-		"Light",
-		"Medium",
-		"Deep",
-		"Shade",
-		"Color",
-		"Color Diagonal",
-		"Column Shade",
-		"Column Color",
-		"Row Shade",
-		"Row Color",
+		LIGHT,
+		MEDIUM,
+		DEEP,
+		SHADE,
+		COLOR,
+		COLOR_DIAGONAL,
+		COLUMN_SHADE,
+		COLUMN_COLOR,
+		ROW_SHADE,
+		ROW_COLOR,
 	];
 	shuffleArray(public);
 	shuffleArray(private);
