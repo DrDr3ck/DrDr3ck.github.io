@@ -210,11 +210,28 @@ class Overhead {
 }
 
 class Card {
-	constructor(color, symbol, trackSwitch = false) {
+	constructor(cardIndex, color, symbol) {
+		this.index = cardIndex;
 		this.color = color;
 		this.symbol = symbol;
-		this.switch = trackSwitch;
+		this.switch = color === "switch";
 	}
+}
+
+function getCards() {
+	const cards = [];
+	cards.push(new Card(1, "blue", SHAPES.CIRCLE));
+	cards.push(new Card(2, "blue", SHAPES.TRIANGLE));
+	cards.push(new Card(3, "blue", SHAPES.PENTAGONE));
+	cards.push(new Card(4, "blue", SHAPES.SQUARE));
+	cards.push(new Card(5, "blue", SHAPES.JOKER));
+	cards.push(new Card(6, "switch", SHAPES.JOKER)); // SWITCH
+	cards.push(new Card(7, "yellow", SHAPES.PENTAGONE));
+	cards.push(new Card(8, "yellow", SHAPES.CIRCLE));
+	cards.push(new Card(9, "yellow", SHAPES.TRIANGLE));
+	cards.push(new Card(10, "yellow", SHAPES.SQUARE));
+	cards.push(new Card(11, "yellow", SHAPES.JOKER));
+	return cards;
 }
 
 class Randomizer {
@@ -240,3 +257,7 @@ class Randomizer {
 		return Math.floor(this.generator() * i);
 	}
 }
+
+const distance = (x1, y1, x2, y2) => {
+	return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2));
+};

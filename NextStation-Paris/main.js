@@ -1,9 +1,9 @@
 const uiManager = new UIManager();
-const windowWidth = 1400;
+const windowWidth = 1500;
 const windowHeight = 800;
 uiManager.loggerContainer = new LoggerContainer(
 	windowWidth - 300,
-	windowHeight - 100,
+	windowHeight - 500,
 	240,
 	100
 );
@@ -24,9 +24,16 @@ let lastTime = 0;
 
 let randomizer = null;
 
+let stationLine = [];
+
+let overStation = null;
+let clickedStation = null;
+
 let seed = Math.random();
 
-let pencils = [COLORS.BLUE, COLORS.ORANGE, COLORS.PURPLE, COLORS.GREEN];
+let pencils = [COLORS.GREEN, COLORS.BLUE, COLORS.ORANGE, COLORS.PURPLE];
+
+let round = 0;
 
 let cardArray = [];
 
@@ -51,6 +58,9 @@ function startClicked() {
 	randomizer.shuffleArray(cardArray);
 
 	randomizer.shuffleArray(pencils);
+	randomizer.shuffleArray(cards);
+
+	startLine();
 }
 
 const speakerButton = new BFloatingSwitchButton(
@@ -66,7 +76,7 @@ const musicButton = new BFloatingSwitchButton(
 	musicClicked
 );
 const startButton = new BButton(
-	80,
+	850,
 	windowHeight - 50 - 200,
 	"START",
 	startClicked
@@ -92,10 +102,11 @@ function setup() {
 	canvas.parent("canvas");
 
 	spritesheet.addSpriteSheet("paris", "./paris.png", 770, 765);
+	spritesheet.addSpriteSheet("score", "./score.png", 615, 315);
 	spritesheet.addSpriteSheet("cards", "./cards.png", 325, 210);
 	spritesheet.addSpriteSheet("crayons", "./crayons.png", 93, 93);
 
-	frameRate(60);
+	frameRate(15);
 
 	lastTime = Date.now();
 }
@@ -110,47 +121,75 @@ function getY(y) {
 	return (y - 1) * ((747 - 53) / 9) + 50;
 }
 
-function displayStation(station) {
+const getStation = (stations, x, y) => {
+	return stations.find(
+		(station) => station.position.x == x && station.position.y == y
+	);
+};
+
+function startLine() {
+	// which color for current line ?
+	switch (pencils[round]) {
+		case COLORS.GREEN:
+			stationLine = [getStation(stations, 3, 7)];
+			break;
+		case COLORS.BLUE:
+			stationLine = [getStation(stations, 4, 3)];
+			break;
+		case COLORS.ORANGE:
+			stationLine = [getStation(stations, 8, 4)];
+			break;
+		case COLORS.PURPLE:
+			stationLine = [getStation(stations, 8, 8)];
+			break;
+	}
+}
+
+function displayStation(station, over = false) {
 	stroke(110, 160, 130);
-	if (station.color === COLORS.BLUE) {
+	const color = over ? pencils[round] : station.color;
+	if (color === COLORS.BLUE) {
 		stroke(50, 50, 130);
-	} else if (station.color === COLORS.ORANGE) {
+	} else if (color === COLORS.ORANGE) {
 		stroke(255, 127, 80);
-	} else if (station.color === COLORS.GREEN) {
+	} else if (color === COLORS.GREEN) {
 		stroke(127, 255, 80);
-	} else if (station.color === COLORS.PURPLE) {
+	} else if (color === COLORS.PURPLE) {
 		stroke(127, 0, 127);
 	}
 	strokeWeight(5);
-	if (station.monument) {
+	if (station.monument && !over) {
 		fill(160, 110, 130);
 	} else {
 		noFill();
 	}
 	const X = getX(station.position.x);
 	const Y = getY(station.position.y);
-	ellipse(X, Y, 40);
-	if (station.symbol === SHAPES.SQUARE) {
-		square(X - 10, Y - 10, 20);
-	} else if (station.symbol === SHAPES.CIRCLE) {
-		ellipse(X, Y, 20);
-	} else if (station.symbol === SHAPES.TRIANGLE) {
-		triangle(X, Y - 10, X - 10, Y + 10, X + 10, Y + 10);
-	} else if (station.symbol === SHAPES.PENTAGONE) {
-		beginShape();
-		vertex(X, Y - 10);
-		vertex(X + 10, Y - 5);
-		vertex(X + 5, Y + 10);
-		vertex(X - 5, Y + 10);
-		vertex(X - 10, Y - 5);
-		endShape(CLOSE);
+	ellipse(X, Y, over ? 45 : 40);
+	if (!over) {
+		if (station.symbol === SHAPES.SQUARE) {
+			square(X - 10, Y - 10, 20);
+		} else if (station.symbol === SHAPES.CIRCLE) {
+			ellipse(X, Y, 20);
+		} else if (station.symbol === SHAPES.TRIANGLE) {
+			triangle(X, Y - 10, X - 10, Y + 10, X + 10, Y + 10);
+		} else if (station.symbol === SHAPES.PENTAGONE) {
+			beginShape();
+			vertex(X, Y - 10);
+			vertex(X + 10, Y - 5);
+			vertex(X + 5, Y + 10);
+			vertex(X - 5, Y + 10);
+			vertex(X - 10, Y - 5);
+			endShape(CLOSE);
+		}
+		textAlign(CENTER, CENTER);
+		stroke(0);
+		strokeWeight(1);
+		fill(0);
+		textSize(15);
+		text(station.district, X, Y);
+		//text(`${station.position.x},${station.position.y}`, X, Y);
 	}
-	textAlign(CENTER, CENTER);
-	stroke(0);
-	strokeWeight(1);
-	fill(0);
-	textSize(15);
-	text(station.district, X, Y);
 }
 
 function displaySection(section) {
@@ -162,33 +201,154 @@ function displaySection(section) {
 	);
 }
 
+function displayPencil() {
+	// COLORS.GREEN, COLORS.BLUE, COLORS.ORANGE, COLORS.PURPLE
+	switch (pencils[round]) {
+		case COLORS.GREEN:
+			spritesheet.drawSprite("crayons", 0, 1200, 120);
+			break;
+		case COLORS.BLUE:
+			spritesheet.drawSprite("crayons", 1, 1200, 120);
+			break;
+		case COLORS.ORANGE:
+			spritesheet.drawSprite("crayons", 2, 1200, 120);
+			break;
+		case COLORS.PURPLE:
+			spritesheet.drawSprite("crayons", 3, 1200, 120);
+			break;
+	}
+}
+
+function getCurrentColor() {
+	switch (pencils[round]) {
+		case COLORS.GREEN:
+			return [5, 134, 62];
+		case COLORS.BLUE:
+			return [0, 164, 227];
+		case COLORS.ORANGE:
+			return [235, 92, 43];
+		case COLORS.PURPLE:
+			return [146, 101, 168];
+	}
+}
+
 let stations = [];
+
+let cards = [];
+
+function displayLine() {
+	stationLine.forEach((station) => displayStation(station));
+}
+
+function getCrossedDistricts(stationLine) {
+	const districts = [];
+	stationLine.forEach((station) => {
+		const district = station.district;
+		if (!districts.includes(district)) {
+			districts.push(district);
+		}
+	});
+	return districts.length;
+}
+function getMaxStation(stationLine) {
+	const districts = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+	stationLine.forEach((station) => {
+		const district = station.district;
+		districts[district]++;
+	});
+	return districts.reduce((previous, cur) => {
+		if (cur > previous) {
+			return cur;
+		}
+		return previous;
+	}, 0);
+}
+
+function getMonument(stationLine) {
+	let monuments = 0;
+	stationLine.forEach((station) => {
+		if (station.monument) {
+			monuments++;
+		}
+	});
+	return monuments;
+}
+
+function drawScore() {
+	textAlign(CENTER, CENTER);
+	strokeWeight(1);
+	const colors = getCurrentColor();
+	stroke(colors[0], colors[1], colors[2]);
+	fill(colors[0], colors[1], colors[2]);
+	textSize(20);
+	const districs = getCrossedDistricts(stationLine);
+	const maxStation = getMaxStation(stationLine);
+	const monument = getMonument(stationLine);
+	if (round === 0) {
+		text(districs, 910 - 30, 400 + 135);
+		text(maxStation, 910 - 30, 455 + 135);
+		text(monument, 910 - 30, 510 + 135);
+		text(districs * maxStation + monument, 910 - 30, 565 + 135);
+	}
+}
+
+function drawLine(station) {
+	const X = getX(station.position.x);
+	const Y = getY(station.position.y);
+	const colors = getCurrentColor();
+	stroke(colors[0], colors[1], colors[2]);
+	strokeWeight(3);
+	line(X, Y, mouseX, mouseY);
+}
 
 function drawGame() {
 	spritesheet.drawSprite("paris", 0, 15, 15);
+	const scoreScale = 0.9;
+	spritesheet.drawScaledSprite(
+		"score",
+		0,
+		windowWidth - 615 * scoreScale - 145,
+		windowHeight - 315 * scoreScale - 15,
+		scoreScale
+	);
+	drawScore();
 
-	spritesheet.drawSprite("cards", 0, 815, 15);
+	spritesheet.drawSprite("cards", cards[0].index, 815, 15);
 
-	spritesheet.drawSprite("crayons", 0, 1200, 120);
+	displayPencil();
 
-	// debug
+	displayLine();
+
+	if (overStation) {
+		displayStation(overStation, true);
+	}
+
+	if (clickedStation) {
+		drawLine(clickedStation);
+	}
+
+	/* debug
 	stroke(80);
 	strokeWeight(2);
 	noFill();
-	//setLineDash([5, 5]);
 	sections.forEach((element) => {
 		displaySection(element);
 	});
 	stations.forEach((element) => {
 		displayStation(element);
 	});
-	// end debug
+	// end debug*/
 }
 
 function initGame() {
 	const map = buildMap();
 	stations = map.stations;
 	sections = map.sections;
+
+	cards = getCards();
+
+	// debug
+	//startClicked();
 }
 
 function drawLoading() {
@@ -225,6 +385,11 @@ function draw() {
 
 	// draw game
 	if (curState === GAME_START_STATE) {
+		spritesheet.drawSprite("paris", 0, 15, 15);
+
+		spritesheet.drawSprite("cards", 0, 815, 15);
+
+		displayPencil();
 	}
 	if (curState === GAME_PLAY_STATE) {
 		updateGame(elapsedTime);
@@ -246,7 +411,31 @@ function mouseClicked() {
 	}
 	toolManager.mouseClicked();
 	uiManager.mouseClicked();
+
+	if (overStation) {
+		if (clickedStation !== overStation) {
+			// check if station is clickable !!
+			clickedStation = overStation;
+		} else {
+			clickedStation = null;
+		}
+	}
 	return false;
+}
+
+function isOverStation(station) {
+	const X = getX(station.position.x);
+	const Y = getY(station.position.y);
+	return distance(X, Y, mouseX, mouseY) < 20;
+}
+
+function mouseMoved() {
+	overStation = null;
+	stations.forEach((station) => {
+		if (isOverStation(station)) {
+			overStation = station;
+		}
+	});
 }
 
 function keyPressed() {
