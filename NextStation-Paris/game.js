@@ -98,7 +98,10 @@ function buildMap() {
 	stations.push(new Station(SHAPES.SQUARE, 12, { x: 8, y: 10 }));
 	stations.push(new Station(SHAPES.TRIANGLE, 4, { x: 10, y: 10 }));
 	// centrale
-	stations.push(new Station(SHAPES.JOKER, 13, { x: 5.5, y: 5.5 }));
+	stations.push(new Station(SHAPES.JOKER, 13, { x: 5, y: 5 }));
+	stations.push(new Station(SHAPES.JOKER, 13, { x: 6, y: 5 }));
+	stations.push(new Station(SHAPES.JOKER, 13, { x: 5, y: 6 }));
+	stations.push(new Station(SHAPES.JOKER, 13, { x: 6, y: 6 }));
 
 	const getStation = (x, y) => {
 		return stations.find(
@@ -113,38 +116,79 @@ function buildMap() {
 		const stationFrom = getStation(x1, y1);
 		const stationTo = getStation(x2, y2);
 		if (!stationFrom || !stationTo) {
-			throw "error in add Section";
+			throw "error in add Section" + x1 + "," + y1 + ":" + x2 + "," + y2;
 		}
 		sections.push(new Section(stationFrom, stationTo));
 	};
 
-	console.log("stations:", stations);
-	console.log("1,1:", getStation(1, 1));
+	const addSections = (x1, y1, positions) => {
+		for (let i = 0; i < positions.length; i += 2) {
+			const x2 = positions[i];
+			const y2 = positions[i + 1];
+			addSection(x1, y1, x2, y2);
+		}
+	};
 
 	// line 1
-	addSection(1, 1, 2, 2);
-	addSection(1, 1, 2, 1);
-	addSection(1, 1, 1, 2);
-	addSection(2, 1, 1, 2);
-	addSection(2, 1, 2, 2);
-	addSection(2, 1, 4, 1);
-	addSection(2, 1, 4, 3);
-	addSection(4, 1, 2, 3);
-	addSection(4, 1, 4, 3);
-	addSection(4, 1, 5, 2);
-	addSection(4, 1, 7, 1);
-	addSection(7, 1, 6, 2);
-	addSection(7, 1, 7, 4);
-	addSection(7, 1, 9, 3);
-	addSection(7, 1, 8, 1);
-	addSection(8, 1, 6, 3);
-	addSection(8, 1, 8, 4);
-	addSection(8, 1, 9, 2);
-	addSection(8, 1, 10, 1);
-	addSection(10, 1, 9, 2);
-	addSection(10, 1, 10, 2);
+	addSections(1, 1, [2, 2, 2, 1, 1, 2]);
+	addSections(2, 1, [1, 2, 2, 2, 4, 1, 4, 3]);
+	addSections(4, 1, [2, 3, 4, 3, 5, 2, 7, 1]);
+	addSections(7, 1, [6, 2, 7, 4, 9, 3, 8, 1]);
+	addSections(8, 1, [6, 3, 8, 4, 9, 2, 10, 1]);
+	addSections(10, 1, [9, 2, 10, 2]);
 	// line 2
-	addSection(1, 2, 2, 2);
+	addSections(1, 2, [1, 5, 2, 3, 2, 2]);
+	addSections(2, 2, [2, 3, 4, 4, 5, 2]);
+	addSections(5, 2, [4, 3, 5, 4, 6, 3, 6, 2]);
+	addSections(6, 2, [4, 4, 6, 3, 8, 4, 9, 2]);
+	addSections(9, 2, [7, 4, 9, 3, 10, 2]);
+	addSections(10, 2, [9, 3, 10, 4]);
+	// line 3
+	addSections(2, 3, [2, 4, 3, 4, 4, 3]);
+	addSections(4, 3, [3, 4, 4, 4, 5, 4, 6, 3]);
+	addSections(6, 3, [5, 4, 6, 5, 7, 4, 9, 3]);
+	addSections(9, 3, [8, 4, 9, 8, 10, 4]);
+	// line 4
+	addSections(2, 4, [1, 5, 2, 7, 4, 6, 3, 4]);
+	addSections(3, 4, [1, 6, 3, 7, 5, 6, 4, 4]);
+	addSections(4, 4, [4, 6, 5, 5, 5, 4, 7, 4]);
+	addSections(5, 4, [2, 7, 5, 5, 6, 5, 7, 4]); // 2 points centraux!!
+	addSections(7, 4, [6, 5, 7, 5, 8, 4]);
+	addSections(8, 4, [7, 5, 8, 6, 10, 6, 10, 4]);
+	addSections(10, 4, [8, 6, 10, 5]);
+	// line 5
+	addSections(1, 5, [1, 6, 3, 7, 5, 5]);
+	addSections(7, 5, [6, 5, 6, 6, 7, 7, 8, 6, 10, 5]); // 2 points centraux!!
+	addSections(10, 5, [10, 6]);
+	// line 6
+	addSections(1, 6, [1, 9, 2, 7, 4, 6]);
+	addSections(4, 6, [3, 7, 4, 9, 5, 7, 5, 5, 5, 6]); // 2 points centraux!!
+	addSections(8, 6, [6, 6, 7, 7, 8, 8, 10, 6]);
+	addSections(10, 6, [8, 8, 10, 9]);
+	// line 7
+	addSections(2, 7, [2, 9, 3, 8, 3, 7]);
+	addSections(3, 7, [1, 9, 3, 8, 5, 9, 5, 7]);
+	addSections(5, 7, [5, 8, 6, 8, 6, 7, 5, 6, 6, 6]); // 2 points centraux!!
+	addSections(6, 7, [5, 6, 6, 6, 5, 8, 6, 8, 7, 7]); // 2 points centraux!!
+	addSections(7, 7, [6, 6, 6, 8, 7, 10, 8, 8]);
+	// line 8
+	addSections(3, 8, [2, 9, 3, 10, 4, 9, 5, 8, 5, 6]);
+	addSections(5, 8, [4, 9, 5, 9, 7, 10, 6, 8]);
+	addSections(6, 8, [5, 9, 6, 10, 8, 10, 8, 8]);
+	addSections(8, 8, [6, 10, 8, 10, 9, 9, 9, 8]);
+	addSections(9, 8, [6, 5, 7, 10, 9, 9, 10, 9]);
+	// line 9
+	addSections(1, 9, [1, 10, 2, 9]);
+	addSections(2, 9, [1, 10, 3, 10, 4, 9]);
+	addSections(4, 9, [3, 10, 5, 9]);
+	addSections(5, 9, [6, 10, 9, 9]);
+	addSections(9, 9, [8, 10, 10, 10, 10, 9]);
+	// line 9
+	addSections(1, 10, [3, 10]);
+	addSections(3, 10, [6, 10]);
+	addSections(6, 10, [7, 10]);
+	addSections(7, 10, [8, 10]);
+	addSections(8, 10, [10, 10]);
 	return { stations: stations, sections: sections };
 }
 
