@@ -8,6 +8,24 @@ class Station {
 
 		this.sections = [];
 	}
+
+	onBorder() {
+		return (
+			this.sections.reduce((total, section) => {
+				if (section.color) {
+					return total + 1;
+				}
+				return total;
+			}, 0) <= 1
+		);
+	}
+
+	hasSameSymbol(symbol) {
+		if (symbol === SHAPES.JOKER || this.symbol === SHAPES.JOKER) {
+			return true;
+		}
+		return symbol === this.symbol;
+	}
 }
 
 const SHAPES = {
@@ -189,6 +207,9 @@ function buildMap() {
 	addSections(6, 10, [7, 10]);
 	addSections(7, 10, [8, 10]);
 	addSections(8, 10, [10, 10]);
+
+	// TODO: compute 'crossing' sections
+
 	return { stations: stations, sections: sections };
 }
 
@@ -200,6 +221,19 @@ class Section {
 		this.color = undefined;
 		station1.sections.push(this);
 		station2.sections.push(this);
+	}
+
+	// return true if section is already crossed by another one
+	isCrossed() {
+		// section already used by another line
+		if (this.color) {
+			return true;
+		}
+		// section is a overhead: no crossing
+		if (this.overhead) {
+			return false;
+		}
+		return this.crossing.some((section) => section.color !== undefined);
 	}
 }
 

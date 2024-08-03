@@ -233,6 +233,7 @@ function getCurrentColor() {
 }
 
 let stations = [];
+let sections = [];
 
 let cards = [];
 
@@ -288,7 +289,7 @@ function drawScore() {
 		text(districs, 910 - 30, 400 + 135);
 		text(maxStation, 910 - 30, 455 + 135);
 		text(monument, 910 - 30, 510 + 135);
-		text(districs * maxStation + monument, 910 - 30, 565 + 135);
+		text(districs * maxStation + monument * 2, 910 - 30, 565 + 135);
 	}
 }
 
@@ -405,6 +406,52 @@ function draw() {
 	lastTime = currentTime;
 }
 
+function getBorderStations(line) {
+	const border = [];
+	line.forEach((station) => {
+		if (station.onBorder()) {
+			border.push(station);
+		}
+	});
+	return border;
+}
+
+function findSection(stationFrom, stationTo) {
+	for (const section of sections) {
+		if (
+			section.stations.includes(stationFrom) &&
+			section.stations.includes(stationTo)
+		) {
+			return section;
+		}
+	}
+	return null;
+}
+
+// check if station is clickable.
+// for first station, it should be a station that is at an end of the line
+// for second station, it should be a station that has a section with clickedStation
+// + section that is not crossing another already drawn section
+// + no loop
+function isClickable(station) {
+	if (!clickedStation) {
+		// first station
+		const stations = getBorderStations(stationLine);
+		return stations.includes(station);
+	}
+	// second station
+	if (!station.hasSameSymbol(cards[0].symbol)) {
+		return false;
+	}
+	// check if a section exists between the two stations
+	const section = findSection(clickedStation, station);
+	if (!section) {
+		return false;
+	}
+	// TODO: check if section is not already crossed by another section
+	return !section.isCrossed();
+}
+
 function mouseClicked() {
 	if (toggleDebug) {
 		uiManager.addLogger(`X=${mouseX}, Y=${mouseY}`);
@@ -413,9 +460,20 @@ function mouseClicked() {
 	uiManager.mouseClicked();
 
 	if (overStation) {
+		console.log("overStation is clicked:", overStation);
 		if (clickedStation !== overStation) {
 			// check if station is clickable !!
-			clickedStation = overStation;
+			if (isClickable(overStation)) {
+				if (!clickedStation) {
+					clickedStation = overStation;
+				} else {
+					// draw line
+					const section = findSection(clickedStation, overStation);
+					section.color = pencils[round];
+					stationLine.push(overStation);
+					clickedStation = null;
+				}
+			}
 		} else {
 			clickedStation = null;
 		}
@@ -441,5 +499,8 @@ function mouseMoved() {
 function keyPressed() {
 	if (key === "D") {
 		toggleDebug = !toggleDebug;
+	}
+	if (keyCode === ESCAPE) {
+		clickedStation = null;
 	}
 }
