@@ -24,13 +24,15 @@ let lastTime = 0;
 
 let randomizer = null;
 
+let useSwitch = false;
+
 let stationLine = [];
 let prevStationLines = [];
 
 let overStation = null;
 let clickedStation = null;
 
-let seed = Math.random();
+let seed = "ParisJO"; // switch0: ParisJO2024 switch1: Paris switch2: ParisJO
 
 let pencils = [COLORS.GREEN, COLORS.BLUE, COLORS.ORANGE, COLORS.PURPLE];
 
@@ -55,6 +57,7 @@ function startClicked() {
 	curState = GAME_PLAY_STATE;
 	uiManager.setUI([speakerButton, musicButton]);
 	uiManager.addLogger("Start game");
+	console.log("seed:", seed);
 	randomizer = new Randomizer(seed);
 	randomizer.shuffleArray(cardArray);
 
@@ -105,6 +108,7 @@ function setup() {
 	spritesheet.addSpriteSheet("paris", "./paris.png", 770, 765);
 	spritesheet.addSpriteSheet("score", "./score.png", 615, 315);
 	spritesheet.addSpriteSheet("cards", "./cards.png", 325, 210);
+	spritesheet.addSpriteSheet("switch", "./switch.png", 131, 131);
 	spritesheet.addSpriteSheet("crayons", "./crayons.png", 93, 93);
 
 	frameRate(15);
@@ -145,6 +149,11 @@ function startLine() {
 			break;
 	}
 	prevStationLines.push({ color: pencils[round], line: stationLine });
+	// check if first card is the 'switch' !!
+	if (cards[0].switch) {
+		nextCard();
+		useSwitch = true;
+	}
 }
 
 function displayStation(station, lineColor = null) {
@@ -263,6 +272,16 @@ function displayLine(color, line, lastLine) {
 	sections.forEach((section) => displaySection(section));
 }
 
+function getOverHead(num) {
+	// TODO: score for overhead
+	return 0;
+}
+
+function getLinks(num) {
+	// TODO: score for links
+	return 0;
+}
+
 function getCrossedDistricts(stationLine) {
 	const districts = [];
 	stationLine.forEach((station) => {
@@ -301,6 +320,7 @@ function drawScore() {
 	textAlign(CENTER, CENTER);
 	strokeWeight(1);
 	textSize(20);
+	let total = 0;
 	prevStationLines.forEach((cur, index) => {
 		const colors = getRGBColor(cur.color);
 		stroke(colors[0], colors[1], colors[2]);
@@ -313,8 +333,28 @@ function drawScore() {
 		text(districs, X, 400 + 135);
 		text(maxStation, X, 455 + 135);
 		text(monument, X, 510 + 135);
+		total += districs * maxStation + monument * 2;
 		text(districs * maxStation + monument * 2, X, 565 + 135);
 	});
+	// total station lines
+	text(total, 1115, 700);
+	// TODO: overhead
+	const overhead2 = getOverHead(1);
+	const overhead6 = getOverHead(2);
+	text(overhead2, 1056, 755);
+	text(overhead6, 1178, 755);
+
+	text(overhead2 * 2 + overhead6 * 6, 1178, 700);
+	total += overhead2 * 2 + overhead6 * 6;
+	// TODO: correspondance
+	const link2 = getLinks(2);
+	const link5 = getLinks(3);
+	const link9 = getLinks(4);
+
+	text(link2 * 2 + link5 * 5 + link9 * 9, 1242, 700);
+	total += link2 * 2 + link5 * 5 + link9 * 9;
+	// grand total
+	text(total, 1280, 755);
 }
 
 function drawLine(station) {
@@ -324,6 +364,13 @@ function drawLine(station) {
 	stroke(colors[0], colors[1], colors[2]);
 	strokeWeight(3);
 	line(X, Y, mouseX, mouseY);
+}
+
+function drawCard() {
+	spritesheet.drawSprite("cards", cards[0].index, 815, 15);
+	if (useSwitch) {
+		spritesheet.drawScaledSprite("switch", 0, 1080, 160, 0.8);
+	}
 }
 
 function drawGame() {
@@ -338,7 +385,7 @@ function drawGame() {
 	);
 	drawScore();
 
-	spritesheet.drawSprite("cards", cards[0].index, 815, 15);
+	drawCard();
 
 	displayPencil();
 
@@ -373,7 +420,7 @@ function initGame() {
 	cards = getCards();
 
 	// debug
-	//startClicked();
+	startClicked();
 }
 
 function drawLoading() {
@@ -433,7 +480,7 @@ function draw() {
 function getBorderStations(line) {
 	const border = [];
 	line.forEach((station) => {
-		if (station.onBorder(pencils[round])) {
+		if (useSwitch || station.onBorder(pencils[round])) {
 			border.push(station);
 		}
 	});
@@ -488,9 +535,16 @@ function nextRound() {
 }
 
 function nextCard() {
+	useSwitch = false;
 	cards.shift();
 	if (cards.length === 0) {
 		nextRound();
+		return;
+	}
+	if (cards[0].switch) {
+		nextCard();
+		useSwitch = true;
+		return;
 	}
 }
 
