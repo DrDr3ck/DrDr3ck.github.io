@@ -9,10 +9,10 @@ class Station {
 		this.sections = [];
 	}
 
-	onBorder() {
+	onBorder(curColor) {
 		return (
 			this.sections.reduce((total, section) => {
-				if (section.color) {
+				if (section.color === curColor) {
 					return total + 1;
 				}
 				return total;
@@ -201,6 +201,7 @@ function buildMap() {
 	addSections(4, 9, [3, 10, 5, 9]);
 	addSections(5, 9, [6, 10, 9, 9]);
 	addSections(9, 9, [8, 10, 10, 10, 10, 9]);
+	addSections(9, 10, [10, 10]);
 	// line 9
 	addSections(1, 10, [3, 10]);
 	addSections(3, 10, [6, 10]);

@@ -25,6 +25,7 @@ let lastTime = 0;
 let randomizer = null;
 
 let stationLine = [];
+let prevStationLines = [];
 
 let overStation = null;
 let clickedStation = null;
@@ -143,11 +144,12 @@ function startLine() {
 			stationLine = [getStation(stations, 8, 8)];
 			break;
 	}
+	prevStationLines.push({ color: pencils[round], line: stationLine });
 }
 
-function displayStation(station, over = false) {
+function displayStation(station, lineColor = null) {
 	stroke(110, 160, 130);
-	const color = over ? pencils[round] : station.color;
+	const color = lineColor ?? station.color;
 	if (color === COLORS.BLUE) {
 		stroke(50, 50, 130);
 	} else if (color === COLORS.ORANGE) {
@@ -158,15 +160,15 @@ function displayStation(station, over = false) {
 		stroke(127, 0, 127);
 	}
 	strokeWeight(5);
-	if (station.monument && !over) {
+	if (station.monument && !lineColor) {
 		fill(160, 110, 130);
 	} else {
 		noFill();
 	}
 	const X = getX(station.position.x);
 	const Y = getY(station.position.y);
-	ellipse(X, Y, over ? 45 : 40);
-	if (!over) {
+	ellipse(X, Y, lineColor ? 45 : 40);
+	if (!lineColor) {
 		if (station.symbol === SHAPES.SQUARE) {
 			square(X - 10, Y - 10, 20);
 		} else if (station.symbol === SHAPES.CIRCLE) {
@@ -219,8 +221,8 @@ function displayPencil() {
 	}
 }
 
-function getCurrentColor() {
-	switch (pencils[round]) {
+function getRGBColor(color = null) {
+	switch (color ?? pencils[round]) {
 		case COLORS.GREEN:
 			return [5, 134, 62];
 		case COLORS.BLUE:
@@ -237,8 +239,28 @@ let sections = [];
 
 let cards = [];
 
-function displayLine() {
-	stationLine.forEach((station) => displayStation(station));
+function displayLines() {
+	prevStationLines.forEach((cur, index) =>
+		displayLine(cur.color, cur.line, prevStationLines.length === index + 1)
+	);
+}
+
+function displayLine(color, line, lastLine) {
+	if (lastLine) {
+		line.forEach((station) => displayStation(station, color));
+	}
+	const sections = [];
+	line.forEach((station) => {
+		for (const section of station.sections) {
+			if (section.color === color && !sections.includes(section)) {
+				sections.push(section);
+			}
+		}
+	});
+	strokeWeight(3);
+	const colors = getRGBColor(color);
+	stroke(colors[0], colors[1], colors[2]);
+	sections.forEach((section) => displaySection(section));
 }
 
 function getCrossedDistricts(stationLine) {
@@ -278,25 +300,27 @@ function getMonument(stationLine) {
 function drawScore() {
 	textAlign(CENTER, CENTER);
 	strokeWeight(1);
-	const colors = getCurrentColor();
-	stroke(colors[0], colors[1], colors[2]);
-	fill(colors[0], colors[1], colors[2]);
 	textSize(20);
-	const districs = getCrossedDistricts(stationLine);
-	const maxStation = getMaxStation(stationLine);
-	const monument = getMonument(stationLine);
-	if (round === 0) {
-		text(districs, 910 - 30, 400 + 135);
-		text(maxStation, 910 - 30, 455 + 135);
-		text(monument, 910 - 30, 510 + 135);
-		text(districs * maxStation + monument * 2, 910 - 30, 565 + 135);
-	}
+	prevStationLines.forEach((cur, index) => {
+		const colors = getRGBColor(cur.color);
+		stroke(colors[0], colors[1], colors[2]);
+		fill(colors[0], colors[1], colors[2]);
+		const districs = getCrossedDistricts(cur.line);
+		const maxStation = getMaxStation(cur.line);
+		const monument = getMonument(cur.line);
+		const Xs = [881, 939, 997, 1056];
+		const X = Xs[index];
+		text(districs, X, 400 + 135);
+		text(maxStation, X, 455 + 135);
+		text(monument, X, 510 + 135);
+		text(districs * maxStation + monument * 2, X, 565 + 135);
+	});
 }
 
 function drawLine(station) {
 	const X = getX(station.position.x);
 	const Y = getY(station.position.y);
-	const colors = getCurrentColor();
+	const colors = getRGBColor();
 	stroke(colors[0], colors[1], colors[2]);
 	strokeWeight(3);
 	line(X, Y, mouseX, mouseY);
@@ -318,10 +342,10 @@ function drawGame() {
 
 	displayPencil();
 
-	displayLine();
+	displayLines();
 
 	if (overStation) {
-		displayStation(overStation, true);
+		displayStation(overStation, pencils[round]);
 	}
 
 	if (clickedStation) {
@@ -409,7 +433,7 @@ function draw() {
 function getBorderStations(line) {
 	const border = [];
 	line.forEach((station) => {
-		if (station.onBorder()) {
+		if (station.onBorder(pencils[round])) {
 			border.push(station);
 		}
 	});
@@ -452,6 +476,32 @@ function isClickable(station) {
 	return !section.isCrossed();
 }
 
+function nextRound() {
+	round++;
+	if (round === 4) {
+		// TODO: end of game
+	} else {
+		cards = getCards();
+		randomizer.shuffleArray(cards);
+		startLine();
+	}
+}
+
+function nextCard() {
+	cards.shift();
+	if (cards.length === 0) {
+		nextRound();
+	}
+}
+
+function addLine() {
+	const section = findSection(clickedStation, overStation);
+	section.color = pencils[round];
+	stationLine.push(overStation);
+	clickedStation = null;
+	nextCard();
+}
+
 function mouseClicked() {
 	if (toggleDebug) {
 		uiManager.addLogger(`X=${mouseX}, Y=${mouseY}`);
@@ -468,10 +518,7 @@ function mouseClicked() {
 					clickedStation = overStation;
 				} else {
 					// draw line
-					const section = findSection(clickedStation, overStation);
-					section.color = pencils[round];
-					stationLine.push(overStation);
-					clickedStation = null;
+					addLine();
 				}
 			}
 		} else {
