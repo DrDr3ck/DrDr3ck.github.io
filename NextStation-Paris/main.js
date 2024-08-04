@@ -27,9 +27,9 @@ let randomizer = null;
 let useSwitch = false;
 
 let stationLine = [];
-let prevStationLines = [];
+const allStationLines = [];
 
-let overStation = null;
+let over = {};
 let clickedStation = null;
 
 let seed = "ParisJO"; // switch0: ParisJO2024 switch1: Paris switch2: ParisJO
@@ -39,6 +39,34 @@ let pencils = [COLORS.GREEN, COLORS.BLUE, COLORS.ORANGE, COLORS.PURPLE];
 let round = 0;
 
 let cardArray = [];
+
+const scoreUI = {
+	lines: [
+		{
+			districts: {
+				topLeft: { x: 861, y: 513 },
+				bottomRight: { x: 903, y: 550 },
+			},
+			stations: {
+				topLeft: { x: 861, y: 570 },
+				bottomRight: { x: 903, y: 607 },
+			},
+			monuments: {
+				topLeft: { x: 861, y: 625 },
+				bottomRight: { x: 903, y: 665 },
+			},
+		},
+	],
+	links: {
+		two: {},
+		three: {},
+		four: {},
+	},
+	overheads: {
+		one: {},
+		two: {},
+	},
+};
 
 function preload() {}
 
@@ -148,7 +176,7 @@ function startLine() {
 			stationLine = [getStation(stations, 8, 8)];
 			break;
 	}
-	prevStationLines.push({ color: pencils[round], line: stationLine });
+	allStationLines.push({ color: pencils[round], line: stationLine });
 	// check if first card is the 'switch' !!
 	if (cards[0].switch) {
 		nextCard();
@@ -156,7 +184,100 @@ function startLine() {
 	}
 }
 
-function displayStation(station, lineColor = null) {
+function displayDistrict(district) {
+	noFill();
+	stroke(0);
+	strokeWeight(2);
+	if (district === 1) {
+		beginShape();
+		vertex(20, 23);
+		vertex(80, 23);
+		vertex(80, 74);
+		vertex(20, 74);
+		endShape(CLOSE);
+	}
+	if (district === 5) {
+		beginShape();
+		vertex(20, 92);
+		vertex(100, 92);
+		vertex(100, 23);
+		vertex(390, 23);
+		vertex(390, 153);
+		vertex(20, 153);
+		endShape(CLOSE);
+	}
+	if (district === 7) {
+		beginShape();
+		vertex(20, 175);
+		vertex(390, 175);
+		vertex(390, 308);
+		vertex(308, 308);
+		vertex(308, 383);
+		vertex(20, 383);
+		endShape(CLOSE);
+	}
+	if (district === 9) {
+		beginShape();
+		vertex(20, 408);
+		vertex(312, 408);
+		vertex(312, 485);
+		vertex(390, 485);
+		vertex(390, 615);
+		vertex(20, 615);
+		endShape(CLOSE);
+	}
+	if (district === 10) {
+		beginShape();
+		vertex(415, 485);
+		vertex(493, 485);
+		vertex(493, 410);
+		vertex(773, 410);
+		vertex(773, 615);
+		vertex(415, 615);
+		endShape(CLOSE);
+	}
+	if (district === 13) {
+		beginShape();
+		vertex(337, 331);
+		vertex(463, 331);
+		vertex(463, 460);
+		vertex(337, 460);
+		endShape(CLOSE);
+	}
+}
+
+function displayStations(stationColor) {
+	if (!stationColor) {
+		return;
+	}
+	const coloredLine = allStationLines.find(
+		(line) => line.color == stationColor
+	);
+	if (coloredLine) {
+		const stations = getMaxStation(coloredLine.line);
+		stations.forEach((station) => displayStation(station, "black"));
+		const district = stations[0].district;
+		displayDistrict(district);
+	}
+}
+
+function displayDistricts(districtColor) {
+	if (!districtColor) {
+		return;
+	}
+	const coloredLine = allStationLines.find(
+		(line) => line.color == districtColor
+	);
+	if (coloredLine) {
+		const districts = getCrossedDistricts(coloredLine.line);
+		districts.forEach((district) => displayDistrict(district));
+	}
+}
+
+function displayStation(station, lineColor) {
+	if (!station) {
+		return;
+	}
 	stroke(110, 160, 130);
 	const color = lineColor ?? station.color;
 	if (color === COLORS.BLUE) {
@@ -174,9 +295,9 @@ function displayStation(station, lineColor = null) {
 	} else {
 		noFill();
 	}
-	const X = getX(station.position.x);
-	const Y = getY(station.position.y);
-	ellipse(X, Y, lineColor ? 45 : 40);
+	const X = station.district === 13 ? getX(5.5) : getX(station.position.x);
+	const Y = station.district === 13 ? getY(5.5) : getY(station.position.y);
+	ellipse(X, Y, station.district === 13 ? 145 : 45);
 	if (!lineColor) {
 		if (station.symbol === SHAPES.SQUARE) {
 			square(X - 10, Y - 10, 20);
@@ -249,8 +370,8 @@ let sections = [];
 let cards = [];
 
 function displayLines() {
-	prevStationLines.forEach((cur, index) =>
-		displayLine(cur.color, cur.line, prevStationLines.length === index + 1)
+	allStationLines.forEach((cur, index) =>
+		displayLine(cur.color, cur.line, allStationLines.length === index + 1)
 	);
 }
 
@@ -290,20 +411,26 @@ function getCrossedDistricts(stationLine) {
 			districts.push(district);
 		}
 	});
-	return districts.length;
+	return districts;
 }
 function getMaxStation(stationLine) {
-	const districts = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+	const districts = [[], [], [], [], [], [], [], [], [], [], [], [], [], []];
 	stationLine.forEach((station) => {
 		const district = station.district;
-		districts[district]++;
+		// special case for district 13: only 1 station !!
+		if (
+			(district === 13 && districts[district].length === 0) ||
+			district !== 13
+		) {
+			districts[district].push(station);
+		}
 	});
 	return districts.reduce((previous, cur) => {
-		if (cur > previous) {
+		if (cur.length > previous.length) {
 			return cur;
 		}
 		return previous;
-	}, 0);
+	}, []);
 }
 
 function getMonument(stationLine) {
@@ -321,12 +448,12 @@ function drawScore() {
 	strokeWeight(1);
 	textSize(20);
 	let total = 0;
-	prevStationLines.forEach((cur, index) => {
+	allStationLines.forEach((cur, index) => {
 		const colors = getRGBColor(cur.color);
 		stroke(colors[0], colors[1], colors[2]);
 		fill(colors[0], colors[1], colors[2]);
-		const districs = getCrossedDistricts(cur.line);
-		const maxStation = getMaxStation(cur.line);
+		const districs = getCrossedDistricts(cur.line).length;
+		const maxStation = getMaxStation(cur.line).length;
 		const monument = getMonument(cur.line);
 		const Xs = [881, 939, 997, 1056];
 		const X = Xs[index];
@@ -391,9 +518,10 @@ function drawGame() {
 
 	displayLines();
 
-	if (overStation) {
-		displayStation(overStation, pencils[round]);
-	}
+	displayStation(over.station, pencils[round]);
+
+	displayDistricts(over.districts);
+	displayStations(over.stations);
 
 	if (clickedStation) {
 		drawLine(clickedStation);
@@ -407,7 +535,7 @@ function drawGame() {
 		displaySection(element);
 	});
 	stations.forEach((element) => {
-		displayStation(element);
+		displayStation(element, null);
 	});
 	// end debug*/
 }
@@ -549,9 +677,9 @@ function nextCard() {
 }
 
 function addLine() {
-	const section = findSection(clickedStation, overStation);
+	const section = findSection(clickedStation, over.station);
 	section.color = pencils[round];
-	stationLine.push(overStation);
+	stationLine.push(over.station);
 	clickedStation = null;
 	nextCard();
 }
@@ -563,13 +691,13 @@ function mouseClicked() {
 	toolManager.mouseClicked();
 	uiManager.mouseClicked();
 
-	if (overStation) {
-		console.log("overStation is clicked:", overStation);
-		if (clickedStation !== overStation) {
+	if (over.station) {
+		console.log("an overed Station is clicked:", over.station);
+		if (clickedStation !== over.station) {
 			// check if station is clickable !!
-			if (isClickable(overStation)) {
+			if (isClickable(over.station)) {
 				if (!clickedStation) {
-					clickedStation = overStation;
+					clickedStation = over.station;
 				} else {
 					// draw line
 					addLine();
@@ -583,16 +711,34 @@ function mouseClicked() {
 }
 
 function isOverStation(station) {
-	const X = getX(station.position.x);
-	const Y = getY(station.position.y);
-	return distance(X, Y, mouseX, mouseY) < 20;
+	const X = station.district === 13 ? getX(5.5) : getX(station.position.x);
+	const Y = station.district === 13 ? getY(5.5) : getY(station.position.y);
+	return distance(X, Y, mouseX, mouseY) < (station.district === 13 ? 70 : 20);
+}
+
+function mouseInSquare(square) {
+	const between = (value, min, max) => {
+		return value > min && value < max;
+	};
+	return (
+		between(mouseX, square.topLeft.x, square.bottomRight.x) &&
+		between(mouseY, square.topLeft.y, square.bottomRight.y)
+	);
 }
 
 function mouseMoved() {
-	overStation = null;
+	over = {};
 	stations.forEach((station) => {
 		if (isOverStation(station)) {
-			overStation = station;
+			over.station = station;
+		}
+	});
+	scoreUI.lines.forEach((line, index) => {
+		if (mouseInSquare(line.districts)) {
+			over.districts = pencils[index];
+		}
+		if (mouseInSquare(line.stations)) {
+			over.stations = pencils[index];
 		}
 	});
 }
