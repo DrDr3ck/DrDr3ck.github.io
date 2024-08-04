@@ -244,6 +244,12 @@ class Overhead {
 	}
 }
 
+const CARDS = {
+	UNDERGROUND: "blue",
+	SURFACE: "yellow",
+	SWITCH: "switch",
+};
+
 class Card {
 	constructor(cardIndex, color, symbol) {
 		this.index = cardIndex;
@@ -255,17 +261,17 @@ class Card {
 
 function getCards() {
 	const cards = [];
-	cards.push(new Card(1, "blue", SHAPES.CIRCLE));
-	cards.push(new Card(2, "blue", SHAPES.TRIANGLE));
-	cards.push(new Card(3, "blue", SHAPES.PENTAGONE));
-	cards.push(new Card(4, "blue", SHAPES.SQUARE));
-	cards.push(new Card(5, "blue", SHAPES.JOKER));
-	cards.push(new Card(6, "switch", SHAPES.JOKER)); // SWITCH
-	cards.push(new Card(7, "yellow", SHAPES.PENTAGONE));
-	cards.push(new Card(8, "yellow", SHAPES.CIRCLE));
-	cards.push(new Card(9, "yellow", SHAPES.TRIANGLE));
-	cards.push(new Card(10, "yellow", SHAPES.SQUARE));
-	cards.push(new Card(11, "yellow", SHAPES.JOKER));
+	cards.push(new Card(1, CARDS.UNDERGROUND, SHAPES.CIRCLE));
+	cards.push(new Card(2, CARDS.UNDERGROUND, SHAPES.TRIANGLE));
+	cards.push(new Card(3, CARDS.UNDERGROUND, SHAPES.PENTAGONE));
+	cards.push(new Card(4, CARDS.UNDERGROUND, SHAPES.SQUARE));
+	cards.push(new Card(5, CARDS.UNDERGROUND, SHAPES.JOKER));
+	cards.push(new Card(6, CARDS.SWITCH, SHAPES.JOKER)); // SWITCH
+	cards.push(new Card(7, CARDS.SURFACE, SHAPES.PENTAGONE));
+	cards.push(new Card(8, CARDS.SURFACE, SHAPES.CIRCLE));
+	cards.push(new Card(9, CARDS.SURFACE, SHAPES.TRIANGLE));
+	cards.push(new Card(10, CARDS.SURFACE, SHAPES.SQUARE));
+	cards.push(new Card(11, CARDS.SURFACE, SHAPES.JOKER));
 	return cards;
 }
 

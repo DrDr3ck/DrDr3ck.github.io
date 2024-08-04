@@ -56,15 +56,71 @@ const scoreUI = {
 				bottomRight: { x: 903, y: 665 },
 			},
 		},
+		{
+			districts: {
+				topLeft: { x: 920, y: 513 },
+				bottomRight: { x: 960, y: 550 },
+			},
+			stations: {
+				topLeft: { x: 920, y: 570 },
+				bottomRight: { x: 960, y: 607 },
+			},
+			monuments: {
+				topLeft: { x: 920, y: 625 },
+				bottomRight: { x: 960, y: 665 },
+			},
+		},
+		{
+			districts: {
+				topLeft: { x: 980, y: 513 },
+				bottomRight: { x: 1017, y: 550 },
+			},
+			stations: {
+				topLeft: { x: 980, y: 570 },
+				bottomRight: { x: 1017, y: 607 },
+			},
+			monuments: {
+				topLeft: { x: 980, y: 625 },
+				bottomRight: { x: 1017, y: 665 },
+			},
+		},
+		{
+			districts: {
+				topLeft: { x: 980, y: 513 },
+				bottomRight: { x: 1017, y: 550 },
+			},
+			stations: {
+				topLeft: { x: 980, y: 570 },
+				bottomRight: { x: 1017, y: 607 },
+			},
+			monuments: {
+				topLeft: { x: 980, y: 625 },
+				bottomRight: { x: 1017, y: 665 },
+			},
+		},
+		{
+			districts: {
+				topLeft: { x: 1036, y: 513 },
+				bottomRight: { x: 1076, y: 550 },
+			},
+			stations: {
+				topLeft: { x: 1036, y: 570 },
+				bottomRight: { x: 1076, y: 607 },
+			},
+			monuments: {
+				topLeft: { x: 1036, y: 625 },
+				bottomRight: { x: 1076, y: 665 },
+			},
+		},
 	],
 	links: {
-		two: {},
-		three: {},
-		four: {},
+		two: { topLeft: { x: 1159, y: 513 }, bottomRight: { x: 1198, y: 550 } },
+		three: { topLeft: { x: 1159, y: 570 }, bottomRight: { x: 1198, y: 607 } },
+		four: { topLeft: { x: 1159, y: 625 }, bottomRight: { x: 1198, y: 665 } },
 	},
 	overheads: {
-		one: {},
-		two: {},
+		one: { topLeft: { x: 1035, y: 739 }, bottomRight: { x: 1074, y: 772 } },
+		two: { topLeft: { x: 1158, y: 739 }, bottomRight: { x: 1198, y: 772 } },
 	},
 };
 
@@ -136,6 +192,7 @@ function setup() {
 	spritesheet.addSpriteSheet("paris", "./paris.png", 770, 765);
 	spritesheet.addSpriteSheet("score", "./score.png", 615, 315);
 	spritesheet.addSpriteSheet("cards", "./cards.png", 325, 210);
+	spritesheet.addSpriteSheet("skip", "./skip.png", 100, 100);
 	spritesheet.addSpriteSheet("switch", "./switch.png", 131, 131);
 	spritesheet.addSpriteSheet("crayons", "./crayons.png", 93, 93);
 
@@ -184,6 +241,7 @@ function startLine() {
 	}
 }
 
+// display district for beginner
 function displayDistrict(district) {
 	noFill();
 	stroke(0);
@@ -196,6 +254,30 @@ function displayDistrict(district) {
 		vertex(20, 74);
 		endShape(CLOSE);
 	}
+	if (district === 2) {
+		beginShape();
+		vertex(720, 26);
+		vertex(777, 26);
+		vertex(777, 74);
+		vertex(720, 74);
+		endShape(CLOSE);
+	}
+	if (district === 3) {
+		beginShape();
+		vertex(20, 713);
+		vertex(84, 713);
+		vertex(84, 770);
+		vertex(20, 770);
+		endShape(CLOSE);
+	}
+	if (district === 4) {
+		beginShape();
+		vertex(720, 428);
+		vertex(777, 428);
+		vertex(777, 769);
+		vertex(720, 769);
+		endShape(CLOSE);
+	}
 	if (district === 5) {
 		beginShape();
 		vertex(20, 92);
@@ -206,6 +288,16 @@ function displayDistrict(district) {
 		vertex(20, 153);
 		endShape(CLOSE);
 	}
+	if (district === 6) {
+		beginShape();
+		vertex(415, 23);
+		vertex(700, 23);
+		vertex(700, 92);
+		vertex(770, 92);
+		vertex(770, 153);
+		vertex(415, 153);
+		endShape(CLOSE);
+	}
 	if (district === 7) {
 		beginShape();
 		vertex(20, 175);
@@ -214,6 +306,16 @@ function displayDistrict(district) {
 		vertex(308, 308);
 		vertex(308, 383);
 		vertex(20, 383);
+		endShape(CLOSE);
+	}
+	if (district === 8) {
+		beginShape();
+		vertex(415, 175);
+		vertex(770, 175);
+		vertex(770, 383);
+		vertex(493, 383);
+		vertex(493, 308);
+		vertex(415, 308);
 		endShape(CLOSE);
 	}
 	if (district === 9) {
@@ -236,6 +338,26 @@ function displayDistrict(district) {
 		vertex(415, 615);
 		endShape(CLOSE);
 	}
+	if (district === 11) {
+		beginShape();
+		vertex(20, 638);
+		vertex(390, 638);
+		vertex(390, 770);
+		vertex(100, 770);
+		vertex(100, 693);
+		vertex(20, 693);
+		endShape(CLOSE);
+	}
+	if (district === 12) {
+		beginShape();
+		vertex(410, 638);
+		vertex(773, 638);
+		vertex(773, 693);
+		vertex(695, 693);
+		vertex(695, 770);
+		vertex(410, 770);
+		endShape(CLOSE);
+	}
 	if (district === 13) {
 		beginShape();
 		vertex(337, 331);
@@ -244,6 +366,16 @@ function displayDistrict(district) {
 		vertex(337, 460);
 		endShape(CLOSE);
 	}
+}
+
+function displayOverHeads(overheadType) {
+	const overheads = getOverHeads(overheadType);
+	overheads.forEach((station) => displayStation(station, "black"));
+}
+
+function displayLinks(linkType) {
+	const links = getLinks(linkType);
+	links.forEach((station) => displayStation(station, "black"));
 }
 
 function displayMonuments(monumentColor) {
@@ -381,6 +513,7 @@ let stations = [];
 let sections = [];
 
 let cards = [];
+let countUnderground = 0;
 
 function displayLines() {
 	allStationLines.forEach((cur, index) =>
@@ -406,14 +539,14 @@ function displayLine(color, line, lastLine) {
 	sections.forEach((section) => displaySection(section));
 }
 
-function getOverHead(num) {
+function getOverHeads(num) {
 	// TODO: score for overhead
-	return 0;
+	return [];
 }
 
 function getLinks(num) {
 	// TODO: score for links
-	return 0;
+	return [];
 }
 
 function getCrossedDistricts(stationLine) {
@@ -479,17 +612,25 @@ function drawScore() {
 	// total station lines
 	text(total, 1115, 700);
 	// TODO: overhead
-	const overhead2 = getOverHead(1);
-	const overhead6 = getOverHead(2);
+	const overhead2 = getOverHeads(1).length;
+	const overhead6 = getOverHeads(2).length;
 	text(overhead2, 1056, 755);
 	text(overhead6, 1178, 755);
 
 	text(overhead2 * 2 + overhead6 * 6, 1178, 700);
 	total += overhead2 * 2 + overhead6 * 6;
 	// TODO: correspondance
-	const link2 = getLinks(2);
-	const link5 = getLinks(3);
-	const link9 = getLinks(4);
+	const link2 = getLinks(2).length;
+	const link5 = getLinks(3).length;
+	const link9 = getLinks(4).length;
+
+	text(link2, 1179, 536);
+	text(link5, 1179, 590);
+	text(link9, 1179, 644);
+
+	text(link2 * 2, 1243, 536);
+	text(link5 * 5, 1243, 590);
+	text(link9 * 9, 1243, 644);
 
 	text(link2 * 2 + link5 * 5 + link9 * 9, 1242, 700);
 	total += link2 * 2 + link5 * 5 + link9 * 9;
@@ -529,17 +670,29 @@ function drawGame() {
 
 	displayPencil();
 
+	spritesheet.drawSprite("skip", 0, 1360, 120);
+
 	displayLines();
 
 	displayStation(over.station, pencils[round]);
 
+	// for beginner
 	displayDistricts(over.districts);
 	displayStations(over.stations);
 	displayMonuments(over.monuments);
+	displayLinks(over.links);
+	displayOverHeads(over.overheads);
+	// end beginner
 
 	if (clickedStation) {
 		drawLine(clickedStation);
 	}
+
+	const rgb = getRGBColor();
+	noFill();
+	strokeWeight(10);
+	stroke(rgb[0], rgb[1], rgb[2]);
+	rect(0, 0, width, height);
 
 	/* debug
 	stroke(80);
@@ -721,6 +874,11 @@ function mouseClicked() {
 			clickedStation = null;
 		}
 	}
+
+	// skip turn
+	if (distance(mouseX, mouseY, 1410, 169) < 40) {
+		nextCard();
+	}
 	return false;
 }
 
@@ -758,6 +916,18 @@ function mouseMoved() {
 			over.monuments = pencils[index];
 		}
 	});
+	if (mouseInSquare(scoreUI.links.two)) {
+		over.links = 2;
+	} else if (mouseInSquare(scoreUI.links.three)) {
+		over.links = 3;
+	} else if (mouseInSquare(scoreUI.links.four)) {
+		over.links = 4;
+	}
+	if (mouseInSquare(scoreUI.overheads.one)) {
+		over.overheads = 1;
+	} else if (mouseInSquare(scoreUI.links.two)) {
+		over.overheads = 2;
+	}
 }
 
 function keyPressed() {
