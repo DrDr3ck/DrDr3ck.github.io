@@ -246,6 +246,19 @@ function displayDistrict(district) {
 	}
 }
 
+function displayMonuments(monumentColor) {
+	if (!monumentColor) {
+		return;
+	}
+	const coloredLine = allStationLines.find(
+		(line) => line.color == monumentColor
+	);
+	if (coloredLine) {
+		const stations = getMonuments(coloredLine.line);
+		stations.forEach((station) => displayStation(station, "black"));
+	}
+}
+
 function displayStations(stationColor) {
 	if (!stationColor) {
 		return;
@@ -254,7 +267,7 @@ function displayStations(stationColor) {
 		(line) => line.color == stationColor
 	);
 	if (coloredLine) {
-		const stations = getMaxStation(coloredLine.line);
+		const stations = getMaxStations(coloredLine.line);
 		stations.forEach((station) => displayStation(station, "black"));
 		const district = stations[0].district;
 		displayDistrict(district);
@@ -413,7 +426,7 @@ function getCrossedDistricts(stationLine) {
 	});
 	return districts;
 }
-function getMaxStation(stationLine) {
+function getMaxStations(stationLine) {
 	const districts = [[], [], [], [], [], [], [], [], [], [], [], [], [], []];
 	stationLine.forEach((station) => {
 		const district = station.district;
@@ -433,11 +446,11 @@ function getMaxStation(stationLine) {
 	}, []);
 }
 
-function getMonument(stationLine) {
-	let monuments = 0;
+function getMonuments(stationLine) {
+	const monuments = [];
 	stationLine.forEach((station) => {
 		if (station.monument) {
-			monuments++;
+			monuments.push(station);
 		}
 	});
 	return monuments;
@@ -453,8 +466,8 @@ function drawScore() {
 		stroke(colors[0], colors[1], colors[2]);
 		fill(colors[0], colors[1], colors[2]);
 		const districs = getCrossedDistricts(cur.line).length;
-		const maxStation = getMaxStation(cur.line).length;
-		const monument = getMonument(cur.line);
+		const maxStation = getMaxStations(cur.line).length;
+		const monument = getMonuments(cur.line).length;
 		const Xs = [881, 939, 997, 1056];
 		const X = Xs[index];
 		text(districs, X, 400 + 135);
@@ -522,6 +535,7 @@ function drawGame() {
 
 	displayDistricts(over.districts);
 	displayStations(over.stations);
+	displayMonuments(over.monuments);
 
 	if (clickedStation) {
 		drawLine(clickedStation);
@@ -739,6 +753,9 @@ function mouseMoved() {
 		}
 		if (mouseInSquare(line.stations)) {
 			over.stations = pencils[index];
+		}
+		if (mouseInSquare(line.monuments)) {
+			over.monuments = pencils[index];
 		}
 	});
 }
