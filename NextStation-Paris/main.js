@@ -25,6 +25,8 @@ let lastTime = 0;
 let randomizer = null;
 
 let useSwitch = false;
+let withMonument = false;
+let withMonumentBorder = false;
 
 let stationLine = [];
 const allStationLines = [];
@@ -86,20 +88,6 @@ const scoreUI = {
 		},
 		{
 			districts: {
-				topLeft: { x: 980, y: 513 },
-				bottomRight: { x: 1017, y: 550 },
-			},
-			stations: {
-				topLeft: { x: 980, y: 570 },
-				bottomRight: { x: 1017, y: 607 },
-			},
-			monuments: {
-				topLeft: { x: 980, y: 625 },
-				bottomRight: { x: 1017, y: 665 },
-			},
-		},
-		{
-			districts: {
 				topLeft: { x: 1036, y: 513 },
 				bottomRight: { x: 1076, y: 550 },
 			},
@@ -126,9 +114,7 @@ const scoreUI = {
 
 function preload() {}
 
-function musicClicked() {
-	// TODO
-}
+function musicClicked() {}
 
 const speakerStorageKey = "DrDr3ck/GameEngine/Speaker";
 function speakerClicked() {
@@ -152,8 +138,8 @@ function startClicked() {
 }
 
 const speakerButton = new BFloatingSwitchButton(
-	windowWidth - 70 - 10 - 70,
-	70,
+	windowWidth - 70,
+	70 + 10 + 70,
 	"\uD83D\uDD0A",
 	speakerClicked
 );
@@ -192,6 +178,7 @@ function setup() {
 	spritesheet.addSpriteSheet("paris", "./paris.png", 770, 765);
 	spritesheet.addSpriteSheet("score", "./score.png", 615, 315);
 	spritesheet.addSpriteSheet("cards", "./cards.png", 325, 210);
+	spritesheet.addSpriteSheet("mini", "./mini.png", 81, 81);
 	spritesheet.addSpriteSheet("skip", "./skip.png", 100, 100);
 	spritesheet.addSpriteSheet("switch", "./switch.png", 131, 131);
 	spritesheet.addSpriteSheet("crayons", "./crayons.png", 93, 93);
@@ -210,12 +197,6 @@ function getX(x) {
 function getY(y) {
 	return (y - 1) * ((747 - 53) / 9) + 50;
 }
-
-const getStation = (stations, x, y) => {
-	return stations.find(
-		(station) => station.position.x == x && station.position.y == y
-	);
-};
 
 function startLine() {
 	// which color for current line ?
@@ -238,6 +219,10 @@ function startLine() {
 	if (cards[0].switch) {
 		nextCard();
 		useSwitch = true;
+	}
+	// check if first card may start with a monument (remark: it will never be used)
+	if (cards[0].monument) {
+		withMonument = true;
 	}
 }
 
@@ -368,12 +353,26 @@ function displayDistrict(district) {
 	}
 }
 
+function displayOverHead(overhead) {
+	noFill();
+	strokeWeight(7);
+	stroke(110, 160, 130, 128);
+	displaySection(overhead.sections[0]);
+	displaySection(overhead.sections[1]);
+}
+
 function displayOverHeads(overheadType) {
-	const overheads = getOverHeads(overheadType);
-	overheads.forEach((station) => displayStation(station, "black"));
+	if (!overheadType) {
+		return;
+	}
+	const typedOverheads = getOverHeads(overheadType);
+	typedOverheads.forEach((overhead) => displayOverHead(overhead));
 }
 
 function displayLinks(linkType) {
+	if (!linkType) {
+		return;
+	}
 	const links = getLinks(linkType);
 	links.forEach((station) => displayStation(station, "black"));
 }
@@ -464,8 +463,8 @@ function displayStation(station, lineColor) {
 		strokeWeight(1);
 		fill(0);
 		textSize(15);
-		text(station.district, X, Y);
-		//text(`${station.position.x},${station.position.y}`, X, Y);
+		//text(station.district, X, Y);
+		text(`${station.position.x},${station.position.y}`, X, Y);
 	}
 }
 
@@ -511,6 +510,7 @@ function getRGBColor(color = null) {
 
 let stations = [];
 let sections = [];
+let overheads = [];
 
 let cards = [];
 let countUnderground = 0;
@@ -521,10 +521,7 @@ function displayLines() {
 	);
 }
 
-function displayLine(color, line, lastLine) {
-	if (lastLine) {
-		line.forEach((station) => displayStation(station, color));
-	}
+const getSections = (line, color) => {
 	const sections = [];
 	line.forEach((station) => {
 		for (const section of station.sections) {
@@ -533,6 +530,14 @@ function displayLine(color, line, lastLine) {
 			}
 		}
 	});
+	return sections;
+};
+
+function displayLine(color, line, lastLine) {
+	if (lastLine) {
+		line.forEach((station) => displayStation(station, color));
+	}
+	const sections = getSections(line, color);
 	strokeWeight(3);
 	const colors = getRGBColor(color);
 	stroke(colors[0], colors[1], colors[2]);
@@ -540,13 +545,48 @@ function displayLine(color, line, lastLine) {
 }
 
 function getOverHeads(num) {
-	// TODO: score for overhead
-	return [];
+	const overheadsNum = [];
+	overheads.forEach((overhead) => {
+		if (num === 1) {
+			if (overhead.sections[0].color && !overhead.sections[1].color) {
+				overheadsNum.push(overhead);
+			} else if (!overhead.sections[0].color && overhead.sections[1].color) {
+				overheadsNum.push(overhead);
+			}
+		} else {
+			// num === 2
+			if (
+				overhead.sections[0].color &&
+				overhead.sections[1].color &&
+				num === 2
+			) {
+				overheadsNum.push(overhead);
+			}
+		}
+	});
+	return overheadsNum;
+}
+
+function countLink(station) {
+	const allLines = [];
+	station.sections.forEach((section) => {
+		if (section.color && !allLines.includes(section.color)) {
+			allLines.push(section.color);
+		}
+	});
+	return allLines.length;
 }
 
 function getLinks(num) {
-	// TODO: score for links
-	return [];
+	const links = [];
+	allStationLines.forEach((line) => {
+		line.line.forEach((station) => {
+			if (countLink(station) === num && !links.includes(station)) {
+				links.push(station);
+			}
+		});
+	});
+	return links;
 }
 
 function getCrossedDistricts(stationLine) {
@@ -611,7 +651,8 @@ function drawScore() {
 	});
 	// total station lines
 	text(total, 1115, 700);
-	// TODO: overhead
+
+	// overhead
 	const overhead2 = getOverHeads(1).length;
 	const overhead6 = getOverHeads(2).length;
 	text(overhead2, 1056, 755);
@@ -619,7 +660,8 @@ function drawScore() {
 
 	text(overhead2 * 2 + overhead6 * 6, 1178, 700);
 	total += overhead2 * 2 + overhead6 * 6;
-	// TODO: correspondance
+
+	// links
 	const link2 = getLinks(2).length;
 	const link5 = getLinks(3).length;
 	const link9 = getLinks(4).length;
@@ -647,10 +689,23 @@ function drawLine(station) {
 	line(X, Y, mouseX, mouseY);
 }
 
-function drawCard() {
+function displayCard() {
+	if (round === 4) {
+		// end of game
+		spritesheet.drawSprite("cards", 0, 815, 15);
+		return;
+	}
 	spritesheet.drawSprite("cards", cards[0].index, 815, 15);
 	if (useSwitch) {
 		spritesheet.drawScaledSprite("switch", 0, 1080, 160, 0.8);
+	}
+
+	const indices = cards.map((c) => c.index);
+	for (let i = 1; i <= 11; i++) {
+		spritesheet.drawScaledSprite("mini", i, 1363, -50 + 70 * i, 0.8);
+		if (!indices.includes(i) && (i !== 6 || !useSwitch)) {
+			spritesheet.drawScaledSprite("mini", 0, 1363, -50 + 70 * i, 0.8);
+		}
 	}
 }
 
@@ -666,11 +721,11 @@ function drawGame() {
 	);
 	drawScore();
 
-	drawCard();
+	displayCard();
 
-	displayPencil();
-
-	spritesheet.drawSprite("skip", 0, 1360, 120);
+	if (round !== 4) {
+		displayPencil();
+	}
 
 	displayLines();
 
@@ -689,12 +744,15 @@ function drawGame() {
 	}
 
 	const rgb = getRGBColor();
-	noFill();
-	strokeWeight(10);
-	stroke(rgb[0], rgb[1], rgb[2]);
-	rect(0, 0, width, height);
+	if (rgb) {
+		noFill();
+		strokeWeight(10);
+		stroke(rgb[0], rgb[1], rgb[2]);
+		rect(0, 0, width, height);
+	}
 
-	/* debug
+	/*
+	// debug
 	stroke(80);
 	strokeWeight(2);
 	noFill();
@@ -704,13 +762,18 @@ function drawGame() {
 	stations.forEach((element) => {
 		displayStation(element, null);
 	});
-	// end debug*/
+	overheads.forEach((element) => {
+		displayOverHead(element);
+	});
+	// end debug
+	*/
 }
 
 function initGame() {
 	const map = buildMap();
 	stations = map.stations;
 	sections = map.sections;
+	overheads = map.overheads;
 
 	cards = getCards();
 
@@ -774,24 +837,17 @@ function draw() {
 
 function getBorderStations(line) {
 	const border = [];
-	line.forEach((station) => {
-		if (useSwitch || station.onBorder(pencils[round])) {
-			border.push(station);
-		}
-	});
-	return border;
-}
-
-function findSection(stationFrom, stationTo) {
-	for (const section of sections) {
-		if (
-			section.stations.includes(stationFrom) &&
-			section.stations.includes(stationTo)
-		) {
-			return section;
-		}
+	if (withMonumentBorder) {
+		// only put last station that is the monument
+		border.push(line[line.length - 1]);
+	} else {
+		line.forEach((station) => {
+			if (useSwitch || station.onBorder(pencils[round])) {
+				border.push(station);
+			}
+		});
 	}
-	return null;
+	return border;
 }
 
 // check if station is clickable.
@@ -810,7 +866,7 @@ function isClickable(station) {
 		return false;
 	}
 	// check if a section exists between the two stations
-	const section = findSection(clickedStation, station);
+	const section = findSection(sections, clickedStation, station);
 	if (!section) {
 		return false;
 	}
@@ -820,10 +876,10 @@ function isClickable(station) {
 
 function nextRound() {
 	round++;
-	if (round === 4) {
-		// TODO: end of game
-	} else {
-		cards = getCards();
+	cards = getCards();
+	countUnderground = 0;
+	if (round !== 4) {
+		// otherwise: end of game
 		randomizer.shuffleArray(cards);
 		startLine();
 	}
@@ -831,8 +887,13 @@ function nextRound() {
 
 function nextCard() {
 	useSwitch = false;
+	withMonument = false;
+	withMonumentBorder = false;
+	if (cards[0].color === CARDS.UNDERGROUND) {
+		countUnderground++;
+	}
 	cards.shift();
-	if (cards.length === 0) {
+	if (cards.length === 0 || countUnderground === 5) {
 		nextRound();
 		return;
 	}
@@ -841,13 +902,23 @@ function nextCard() {
 		useSwitch = true;
 		return;
 	}
+	if (cards[0].monument) {
+		withMonument = true;
+		return;
+	}
 }
 
 function addLine() {
-	const section = findSection(clickedStation, over.station);
+	const section = findSection(sections, clickedStation, over.station);
 	section.color = pencils[round];
 	stationLine.push(over.station);
 	clickedStation = null;
+	if (withMonument && over.station.monument) {
+		// keep card
+		withMonument = false;
+		withMonumentBorder = true;
+		return;
+	}
 	nextCard();
 }
 
@@ -876,7 +947,7 @@ function mouseClicked() {
 	}
 
 	// skip turn
-	if (distance(mouseX, mouseY, 1410, 169) < 40) {
+	if (distance(mouseX, mouseY, 1246, 169) < 40) {
 		nextCard();
 	}
 	return false;
@@ -925,7 +996,7 @@ function mouseMoved() {
 	}
 	if (mouseInSquare(scoreUI.overheads.one)) {
 		over.overheads = 1;
-	} else if (mouseInSquare(scoreUI.links.two)) {
+	} else if (mouseInSquare(scoreUI.overheads.two)) {
 		over.overheads = 2;
 	}
 }

@@ -43,6 +43,24 @@ const COLORS = {
 	GREEN: "green",
 };
 
+const getStation = (stations, x, y) => {
+	return stations.find(
+		(station) => station.position.x == x && station.position.y == y
+	);
+};
+
+const findSection = (sections, stationFrom, stationTo) => {
+	for (const section of sections) {
+		if (
+			section.stations.includes(stationFrom) &&
+			section.stations.includes(stationTo)
+		) {
+			return section;
+		}
+	}
+	return null;
+};
+
 function buildMap() {
 	const stations = [];
 	// line 1
@@ -121,18 +139,12 @@ function buildMap() {
 	stations.push(new Station(SHAPES.JOKER, 13, { x: 5, y: 6 }));
 	stations.push(new Station(SHAPES.JOKER, 13, { x: 6, y: 6 }));
 
-	const getStation = (x, y) => {
-		return stations.find(
-			(station) => station.position.x == x && station.position.y == y
-		);
-	};
-
 	// create also sections ?
 	const sections = [];
 
 	const addSection = (x1, y1, x2, y2) => {
-		const stationFrom = getStation(x1, y1);
-		const stationTo = getStation(x2, y2);
+		const stationFrom = getStation(stations, x1, y1);
+		const stationTo = getStation(stations, x2, y2);
 		if (!stationFrom || !stationTo) {
 			throw "error in add Section" + x1 + "," + y1 + ":" + x2 + "," + y2;
 		}
@@ -211,7 +223,26 @@ function buildMap() {
 
 	// TODO: compute 'crossing' sections
 
-	return { stations: stations, sections: sections };
+	const overheads = [];
+	const addOverHead = (x1, y1, x2, y2, x3, y3, x4, y4) => {
+		const stationFrom1 = getStation(stations, x1, y1);
+		const stationTo1 = getStation(stations, x2, y2);
+		const stationFrom2 = getStation(stations, x3, y3);
+		const stationTo2 = getStation(stations, x4, y4);
+		const section1 = findSection(sections, stationFrom1, stationTo1);
+		const section2 = findSection(sections, stationFrom2, stationTo2);
+		overheads.push(new Overhead(section1, section2));
+	};
+	addOverHead(4, 1, 4, 3, 2, 2, 5, 2);
+	addOverHead(2, 4, 4, 6, 3, 4, 1, 6);
+	addOverHead(3, 7, 5, 9, 3, 8, 5, 6);
+	addOverHead(3, 8, 3, 10, 2, 9, 4, 9);
+	addOverHead(6, 8, 8, 10, 7, 10, 9, 8);
+	addOverHead(6, 5, 9, 8, 8, 6, 8, 8);
+	addOverHead(9, 3, 9, 8, 8, 4, 10, 4);
+	addOverHead(8, 1, 6, 3, 7, 1, 9, 3);
+
+	return { stations: stations, sections: sections, overheads: overheads };
 }
 
 class Section {
@@ -251,11 +282,12 @@ const CARDS = {
 };
 
 class Card {
-	constructor(cardIndex, color, symbol) {
+	constructor(cardIndex, color, symbol, monument = false) {
 		this.index = cardIndex;
 		this.color = color;
 		this.symbol = symbol;
 		this.switch = color === "switch";
+		this.monument = monument;
 	}
 }
 
@@ -265,13 +297,13 @@ function getCards() {
 	cards.push(new Card(2, CARDS.UNDERGROUND, SHAPES.TRIANGLE));
 	cards.push(new Card(3, CARDS.UNDERGROUND, SHAPES.PENTAGONE));
 	cards.push(new Card(4, CARDS.UNDERGROUND, SHAPES.SQUARE));
-	cards.push(new Card(5, CARDS.UNDERGROUND, SHAPES.JOKER));
+	cards.push(new Card(5, CARDS.UNDERGROUND, SHAPES.JOKER, true));
 	cards.push(new Card(6, CARDS.SWITCH, SHAPES.JOKER)); // SWITCH
 	cards.push(new Card(7, CARDS.SURFACE, SHAPES.PENTAGONE));
 	cards.push(new Card(8, CARDS.SURFACE, SHAPES.CIRCLE));
 	cards.push(new Card(9, CARDS.SURFACE, SHAPES.TRIANGLE));
 	cards.push(new Card(10, CARDS.SURFACE, SHAPES.SQUARE));
-	cards.push(new Card(11, CARDS.SURFACE, SHAPES.JOKER));
+	cards.push(new Card(11, CARDS.SURFACE, SHAPES.JOKER, true));
 	return cards;
 }
 
