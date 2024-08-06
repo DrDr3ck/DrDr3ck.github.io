@@ -570,7 +570,19 @@ function getOverHeads(num) {
 
 function countLink(station) {
 	const allLines = [];
-	station.sections.forEach((section) => {
+	// special case with central station !!
+	let linkSections = station.sections;
+	if (station.district === 13) {
+		let s = getStation(stations, 5, 5);
+		linkSections = s.sections;
+		s = getStation(stations, 6, 5);
+		linkSections.push(...s.sections);
+		s = getStation(stations, 5, 6);
+		linkSections.push(...s.sections);
+		s = getStation(stations, 6, 6);
+		linkSections.push(...s.sections);
+	}
+	linkSections.forEach((section) => {
 		if (section.color && !allLines.includes(section.color)) {
 			allLines.push(section.color);
 		}
@@ -582,6 +594,9 @@ function getLinks(num) {
 	const links = [];
 	allStationLines.forEach((line) => {
 		line.line.forEach((station) => {
+			if (station.district === 13) {
+				station = getStation(stations, 5, 5);
+			}
 			if (countLink(station) === num && !links.includes(station)) {
 				links.push(station);
 			}
@@ -850,6 +865,13 @@ function getBorderStations(line) {
 			}
 		});
 	}
+	if (border.some((b) => b.district === 13)) {
+		// add all station from district 13
+		border.push(getStation(stations, 5, 5));
+		border.push(getStation(stations, 6, 5));
+		border.push(getStation(stations, 5, 6));
+		border.push(getStation(stations, 6, 6));
+	}
 	return border;
 }
 
@@ -940,6 +962,22 @@ function mouseClicked() {
 		console.log("an overed Station is clicked:", over.station);
 		if (clickedStation !== over.station) {
 			// check if station is clickable !!
+			// special case if station is in district 13 !!
+			if (over.station.district === 13) {
+				const central = [
+					over.station,
+					getStation(stations, 5, 5),
+					getStation(stations, 6, 5),
+					getStation(stations, 5, 6),
+					getStation(stations, 6, 6),
+				];
+				for (const station of central) {
+					if (isClickable(station)) {
+						over.station = station;
+						break;
+					}
+				}
+			}
 			if (isClickable(over.station)) {
 				if (!clickedStation) {
 					clickedStation = over.station;
@@ -961,9 +999,12 @@ function mouseClicked() {
 }
 
 function isOverStation(station) {
-	const X = station.district === 13 ? getX(5.5) : getX(station.position.x);
-	const Y = station.district === 13 ? getY(5.5) : getY(station.position.y);
-	return distance(X, Y, mouseX, mouseY) < (station.district === 13 ? 70 : 20);
+	//const X = station.district === 13 ? getX(5.5) : getX(station.position.x);
+	//const Y = station.district === 13 ? getY(5.5) : getY(station.position.y);
+	const X = getX(station.position.x);
+	const Y = getY(station.position.y);
+	//return distance(X, Y, mouseX, mouseY) < (station.district === 13 ? 70 : 20);
+	return distance(X, Y, mouseX, mouseY) < 20;
 }
 
 function mouseInSquare(square) {
@@ -978,11 +1019,12 @@ function mouseInSquare(square) {
 
 function mouseMoved() {
 	over = {};
-	stations.forEach((station) => {
+	for (const station of stations) {
 		if (isOverStation(station)) {
 			over.station = station;
+			break;
 		}
-	});
+	}
 	scoreUI.lines.forEach((line, index) => {
 		if (mouseInSquare(line.districts)) {
 			over.districts = pencils[index];
