@@ -2,7 +2,7 @@ const uiManager = new UIManager();
 const windowWidth = 1500;
 const windowHeight = 800;
 uiManager.loggerContainer = new LoggerContainer(
-	windowWidth - 300,
+	windowWidth - 500,
 	windowHeight - 500,
 	240,
 	100
@@ -21,6 +21,8 @@ const GAME_OVER_STATE = 3;
 let curState = GAME_LOADING_STATE;
 let toggleDebug = false;
 let lastTime = 0;
+
+let message = null;
 
 let randomizer = null;
 
@@ -514,6 +516,11 @@ function setup() {
 	spritesheet.addSpriteSheet("skip", "./skip.png", 100, 100);
 	spritesheet.addSpriteSheet("switch", "./switch.png", 131, 131);
 	spritesheet.addSpriteSheet("crayons", "./crayons.png", 93, 93);
+
+	soundManager.addSound("take_card", "./take_card.mp3", 1);
+	soundManager.addSound("error", "./error.wav", 1);
+	soundManager.addSound("next_round", "./next_round.wav", 1);
+	soundManager.addSound("validate", "./validate.wav", 1);
 
 	frameRate(15);
 
@@ -1044,6 +1051,13 @@ function displayCard() {
 		return;
 	}
 	spritesheet.drawSprite("cards", cards[0].index, 815, 15);
+	if (cards[0].color === CARDS.UNDERGROUND && countUnderground === 4) {
+		// last card for this round
+		noFill();
+		stroke(204, 204, 0);
+		strokeWeight(8);
+		rect(815, 15, 325, 210, 25);
+	}
 	if (useSwitch) {
 		spritesheet.drawScaledSprite("switch", 0, 1080, 160, 0.8);
 	}
@@ -1058,6 +1072,10 @@ function displayCard() {
 }
 
 function drawGame() {
+	if (message !== null) {
+		uiManager.addLogger(message);
+		message = null;
+	}
 	spritesheet.drawSprite("paris", 0, 15, 15);
 	const scoreScale = 0.9;
 	spritesheet.drawScaledSprite(
@@ -1177,6 +1195,12 @@ function draw() {
 		text("Station:", 850, 620);
 		textSize(15);
 		text(seed.replaceAll("_", " "), 850, 660);
+
+		text(
+			"Ce jeu n'est pas sponsorisé par blue orange mais produit par un fan",
+			640,
+			792
+		);
 	}
 	if (curState === GAME_PLAY_STATE) {
 		updateGame(elapsedTime);
@@ -1223,23 +1247,34 @@ function isClickable(station) {
 	if (!clickedStation) {
 		// first station
 		const stations = getBorderStations(stationLine);
-		return stations.includes(station);
+		if (stations.includes(station)) {
+			return true;
+		}
+		message = "Cannot start with this station";
+		return false;
 	}
 	// second station
 	if (!station.hasSameSymbol(cards[0].symbol)) {
+		message = "Wrong shape";
 		return false;
 	}
 	// check if a section exists between the two stations
 	const section = findSection(sections, clickedStation, station);
 	if (!section) {
+		message = "No Section between the 2 stations";
 		return false;
 	}
 	// check if no loop
 	if (station.usedBy(pencils[round])) {
+		message = "No loop";
 		return false;
 	}
 	// check if section is not already crossed by another section
-	return !section.isCrossed();
+	if (section.isCrossed()) {
+		message = "Cannot cross an existing section";
+		return false;
+	}
+	return true;
 }
 
 function nextRound() {
@@ -1247,6 +1282,7 @@ function nextRound() {
 	cards = getCards();
 	countUnderground = 0;
 	if (round !== 4) {
+		soundManager.playSound("next_round");
 		// otherwise: end of game
 		randomizer.shuffleArray(cards);
 		startLine();
@@ -1270,6 +1306,7 @@ function nextCard() {
 		useSwitch = true;
 		return;
 	}
+	soundManager.playSound("take_card");
 	if (cards[0].monument) {
 		withMonument = true;
 		return;
@@ -1285,6 +1322,7 @@ function addLine() {
 		// keep card
 		withMonument = false;
 		withMonumentBorder = true;
+		soundManager.playSound("validate");
 		return;
 	}
 	nextCard();
@@ -1324,6 +1362,8 @@ function mouseClicked() {
 					// draw line
 					addLine();
 				}
+			} else {
+				soundManager.playSound("error");
 			}
 		} else {
 			clickedStation = null;
