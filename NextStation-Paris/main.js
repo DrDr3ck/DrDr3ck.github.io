@@ -34,13 +34,313 @@ const allStationLines = [];
 let over = {};
 let clickedStation = null;
 
-let seed = "ParisJO"; // switch0: ParisJO2024 switch1: Paris switch2: ParisJO
-
 let pencils = [COLORS.GREEN, COLORS.BLUE, COLORS.ORANGE, COLORS.PURPLE];
 
 let round = 0;
 
 let cardArray = [];
+
+function getRandomStation() {
+	const names = [
+		"Abbesses",
+		"Alexandre Dumas",
+		"Alésia",
+		"Alma - Marceau",
+		"Anatole France",
+		"Anvers",
+		"Argentine",
+		"Arts et Métiers",
+		"Assemblée Nationale",
+		"Aubervilliers - Pantin - Quatre Chemins",
+		"Avenue Émile Zola",
+		"Avron",
+		"Balard",
+		"Barbès - Rochechouart",
+		"Basilique de Saint-Denis",
+		"Bastille",
+		"Belleville",
+		"Bel-Air",
+		"Bérault",
+		"Bercy",
+		"Billancourt",
+		"Bir-Hakeim",
+		"Blanche",
+		"Bobigny - Pantin - Raymond Queneau",
+		"Bobigny - Pablo Picasso",
+		"Boissière",
+		"Bolivar",
+		"Bonne Nouvelle",
+		"Boulogne - Jean Jaurès",
+		"Boulogne - Pont de Saint-Cloud",
+		"Bourse",
+		"Brochant",
+		"Bréguet - Sabin",
+		"Buzenval",
+		"Cadet",
+		"Cambronne",
+		"Campo-Formio",
+		"Cardinal Lemoine",
+		"Carrefour Pleyel",
+		"Charles de Gaulle - Étoile",
+		"Charles Michels",
+		"Chardon-Lagache",
+		"Charenton - Écoles",
+		"Charonne",
+		"Château d'Eau",
+		"Château de Vincennes",
+		"Château-Landon",
+		"Château Rouge",
+		"Châtelet",
+		"Châtillon - Montrouge",
+		"Chaussée d'Antin - La Fayette",
+		"Chemin Vert",
+		"Chevaleret",
+		"Cité",
+		"Cluny - La Sorbonne",
+		"Colonel Fabien",
+		"Commerce",
+		"Concorde",
+		"Corentin Cariou",
+		"Corentin Celton",
+		"Corvisart",
+		"Cour Saint-Émilion",
+		"Courcelles",
+		"Couronnes",
+		"Créteil - L'Échat",
+		"Créteil - Pointe du Lac",
+		"Créteil - Préfecture",
+		"Créteil - Université",
+		"Crimée",
+		"Croix de Chavaux",
+		"Dausmenil",
+		"Daumesnil",
+		"Denfert-Rochereau",
+		"Dugommier",
+		"Dupleix",
+		"Duroc",
+		"École Militaire",
+		"École Vétérinaire de Maisons-Alfort",
+		"Église d'Auteuil",
+		"Église de Pantin",
+		"Esplanade de La Défense",
+		"Exelmans",
+		"Faidherbe - Chaligny",
+		"Falguière",
+		"Félix Faure",
+		"Filles du Calvaire",
+		"Fort d'Aubervilliers",
+		"Franklin D. Roosevelt",
+		"Front Populaire",
+		"Gabriel Péri",
+		"Gaîté",
+		"Gallieni",
+		"Gambetta",
+		"Garibaldi",
+		"Gare d'Austerlitz",
+		"Gare de l'Est",
+		"Gare de Lyon",
+		"Gare du Nord",
+		"George V",
+		"Glacière",
+		"Goncourt",
+		"Grands Boulevards",
+		"Guy Môquet",
+		"Havre - Caumartin",
+		"Hoche",
+		"Hôtel de Ville",
+		"Iéna",
+		"Invalides",
+		"Jasmin",
+		"Jaurès",
+		"Javel - André Citroën",
+		"Jourdain",
+		"Jules Joffrin",
+		"Jussieu",
+		"Kléber",
+		"La Chapelle",
+		"La Courneuve - 8 Mai 1945",
+		"La Défense",
+		"La Fourche",
+		"La Motte-Picquet - Grenelle",
+		"La Muette",
+		"La Tour-Maubourg",
+		"Lamarck - Caulaincourt",
+		"Laumière",
+		"Le Kremlin-Bicêtre",
+		"Le Peletier",
+		"Ledru-Rollin",
+		"Les Agnettes",
+		"Les Courtilles",
+		"Les Gobelins",
+		"Les Halles",
+		"Les Sablons",
+		"Liberté",
+		"Liège",
+		"Louis Blanc",
+		"Louise Michel",
+		"Lourmel",
+		"Louvre - Rivoli",
+		"Mabillon",
+		"Madeleine",
+		"Maison Blanche",
+		"Maisons-Alfort - Les Juilliottes",
+		"Maisons-Alfort - Stade",
+		"Malesherbes",
+		"Malakoff - Plateau de Vanves",
+		"Malakoff - Rue Étienne Dolet",
+		"Maraîchers",
+		"Marcadet - Poissonniers",
+		"Marcel Sembat",
+		"Marx Dormoy",
+		"Maubert - Mutualité",
+		"Ménilmontant",
+		"Miromesnil",
+		"Michel-Ange - Auteuil",
+		"Michel-Ange - Molitor",
+		"Michel Bizot",
+		"Mirabeau",
+		"Monceau",
+		"Montgallet",
+		"Montparnasse - Bienvenue",
+		"Mouton-Duvernet",
+		"Nation",
+		"Nationale",
+		"Notre-Dame-de-Lorette",
+		"Notre-Dame-des-Champs",
+		"Oberkampf",
+		"Odéon",
+		"Olympiades",
+		"Opéra",
+		"Ourcq",
+		"Palais Royal - Musée du Louvre",
+		"Parmentier",
+		"Passy",
+		"Pasteur",
+		"Pelleport",
+		"Pereire",
+		"Père Lachaise",
+		"Philippe Auguste",
+		"Picpus",
+		"Pierre et Marie Curie",
+		"Pigalle",
+		"Place d'Italie",
+		"Place Monge",
+		"Place des Fêtes",
+		"Place de Clichy",
+		"Plaisance",
+		"Plaisir - Grignon",
+		"Plaisir - Les Clayes",
+		"Poissonnière",
+		"Pont de Levallois - Bécon",
+		"Pont de Neuilly",
+		"Pont de Sèvres",
+		"Pont Marie",
+		"Pont Neuf",
+		"Porte Dauphine",
+		"Porte de Bagnolet",
+		"Porte de Champerret",
+		"Porte de Charenton",
+		"Porte de Choisy",
+		"Porte de Clichy",
+		"Porte de Clignancourt",
+		"Porte de Montreuil",
+		"Porte de Pantin",
+		"Porte de Saint-Cloud",
+		"Porte de Vanves",
+		"Porte de Versailles",
+		"Porte de Vincennes",
+		"Porte des Lilas",
+		"Porte d'Auteuil",
+		"Porte d'Ivry",
+		"Porte d'Orléans",
+		"Porte Maillot",
+		"Porte de la Chapelle",
+		"Porte de la Villette",
+		"Porte de la Muette",
+		"Porte des Ternes",
+		"Porte d'Aubervilliers",
+		"Porte de Montrouge",
+		"Porte de Clignancourt",
+		"Pré-Saint-Gervais",
+		"Pyramides",
+		"Quai de la Gare",
+		"Quai de la Rapée",
+		"Quatre-Septembre",
+		"Rambuteau",
+		"Ranelagh",
+		"Raspail",
+		"Réaumur - Sébastopol",
+		"République",
+		"Reuilly - Diderot",
+		"Richard-Lenoir",
+		"Richelieu - Drouot",
+		"Riquet",
+		"Robespierre",
+		"Rome",
+		"Rue de la Pompe",
+		"Rue du Bac",
+		"Rue Saint-Maur",
+		"Sablons",
+		"Saint-Ambroise",
+		"Saint-Augustin",
+		"Saint-Denis - Porte de Paris",
+		"Saint-Denis - Université",
+		"Saint-Fargeau",
+		"Saint-François-Xavier",
+		"Saint-Georges",
+		"Saint-Germain-des-Prés",
+		"Saint-Jacques",
+		"Saint-Lazare",
+		"Saint-Mandé",
+		"Saint-Marcel",
+		"Saint-Michel",
+		"Saint-Ouen",
+		"Saint-Paul",
+		"Saint-Philippe du Roule",
+		"Saint-Placide",
+		"Saint-Sébastien - Froissart",
+		"Saint-Sulpice",
+		"Saint-Maur",
+		"Sèvres - Babylone",
+		"Sèvres - Lecourbe",
+		"Simplon",
+		"Strasbourg - Saint-Denis",
+		"Sully - Morland",
+		"Télégraphe",
+		"Temple",
+		"Ternes",
+		"Tolbiac",
+		"Trinité - d'Estienne d'Orves",
+		"Trocadéro",
+		"Tuileries",
+		"Vaneau",
+		"Varenne",
+		"Vavin",
+		"Vaugirard",
+		"Vaugirard (Adolphe Chérioux)",
+		"Vélizy 2",
+		"Versailles Rive Gauche",
+		"Villejuif - Léo Lagrange",
+		"Villejuif - Louis Aragon",
+		"Villejuif - Paul Vaillant-Couturier",
+		"Villiers",
+		"Volontaires",
+		"Voltaire",
+		"Wagram",
+	];
+
+	const name = names[Math.floor(Math.random() * names.length)];
+	// seed = "ParisJO"; // switch0: ParisJO2024 switch1: Paris switch2: ParisJO
+	// return "ParisJO";
+	return name;
+}
+
+const queryString = window.location.search;
+const urlParams = new URLSearchParams(queryString);
+let seed = urlParams.get("seed");
+if (!seed) {
+	seed = getRandomStation().replaceAll(" ", "_");
+}
 
 const scoreUI = {
 	lines: [
@@ -123,11 +423,35 @@ function speakerClicked() {
 	localStorage.setItem(speakerStorageKey, speakerButton.checked ? "on" : "off");
 }
 
+function resetSeed() {
+	seed = getRandomStation().replaceAll(" ", "_");
+}
+
+function getUrl(base = false) {
+	if (base) {
+		const url = document.location.toString();
+		const lastIndex = url.lastIndexOf("/");
+		if (lastIndex > 0) {
+			return url.substring(0, lastIndex);
+		}
+	}
+	if (document.location.toString().includes("seed=")) {
+		return `${document.location.toString()}`;
+	}
+	if (document.location.toString().includes("index.html")) {
+		return `${document.location.toString()}?seed=${seed}`;
+	}
+	return `${document.location.toString()}index.html?seed=${seed}`;
+}
+
 function startClicked() {
+	document.location.href = getUrl();
+}
+
+function startGame() {
 	curState = GAME_PLAY_STATE;
 	uiManager.setUI([speakerButton, musicButton]);
 	uiManager.addLogger("Start game");
-	console.log("seed:", seed);
 	randomizer = new Randomizer(seed);
 	randomizer.shuffleArray(cardArray);
 
@@ -155,6 +479,12 @@ const startButton = new BButton(
 	"START",
 	startClicked
 );
+const resetSeedButton = new BButton(
+	850,
+	windowHeight - 50,
+	"Reset seed",
+	resetSeed
+);
 
 function initUI() {
 	speakerButton.setTextSize(50);
@@ -166,7 +496,9 @@ function initUI() {
 		speakerButton.checked = false;
 		soundManager.mute(true);
 	}
-	const menu = [speakerButton, startButton, musicButton];
+	resetSeedButton.setTextSize(32);
+	resetSeedButton.w = 200;
+	const menu = [speakerButton, startButton, musicButton, resetSeedButton];
 	uiManager.setUI(menu);
 }
 
@@ -796,7 +1128,7 @@ function initGame() {
 	cards = getCards();
 
 	// debug
-	startClicked();
+	//startClicked();
 }
 
 function drawLoading() {
@@ -815,6 +1147,9 @@ function drawLoading() {
 		initGame();
 		textAlign(LEFT, BASELINE);
 		uiManager.addLogger("Game loaded");
+		if (document.location.toString().includes("seed=")) {
+			startGame();
+		}
 	}
 }
 
@@ -837,7 +1172,11 @@ function draw() {
 
 		spritesheet.drawSprite("cards", 0, 815, 15);
 
-		displayPencil();
+		fill(250);
+		textSize(25);
+		text("Station:", 850, 620);
+		textSize(15);
+		text(seed.replaceAll("_", " "), 850, 660);
 	}
 	if (curState === GAME_PLAY_STATE) {
 		updateGame(elapsedTime);
