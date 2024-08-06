@@ -1286,6 +1286,8 @@ function nextRound() {
 		// otherwise: end of game
 		randomizer.shuffleArray(cards);
 		startLine();
+	} else {
+		soundManager.playSound("take_card");
 	}
 }
 
@@ -1371,7 +1373,7 @@ function mouseClicked() {
 	}
 
 	// skip turn
-	if (distance(mouseX, mouseY, 1246, 169) < 40) {
+	if (round !== 4 && distance(mouseX, mouseY, 1246, 169) < 40) {
 		nextCard();
 	}
 	return false;
