@@ -511,6 +511,7 @@ function getRGBColor(color = null) {
 let stations = [];
 let sections = [];
 let overheads = [];
+let points = [];
 
 let cards = [];
 let countUnderground = 0;
@@ -765,6 +766,7 @@ function drawGame() {
 	overheads.forEach((element) => {
 		displayOverHead(element);
 	});
+	points.forEach((point) => ellipse(getX(point.x), getY(point.y), 25));
 	// end debug
 	*/
 }
@@ -774,6 +776,7 @@ function initGame() {
 	stations = map.stations;
 	sections = map.sections;
 	overheads = map.overheads;
+	points = map.intersects;
 
 	cards = getCards();
 
@@ -870,7 +873,11 @@ function isClickable(station) {
 	if (!section) {
 		return false;
 	}
-	// TODO: check if section is not already crossed by another section
+	// check if no loop
+	if (station.usedBy(pencils[round])) {
+		return false;
+	}
+	// check if section is not already crossed by another section
 	return !section.isCrossed();
 }
 

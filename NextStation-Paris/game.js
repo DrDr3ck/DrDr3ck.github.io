@@ -26,6 +26,10 @@ class Station {
 		}
 		return symbol === this.symbol;
 	}
+
+	usedBy(color) {
+		return this.sections.some((section) => section.color === color);
+	}
 }
 
 const SHAPES = {
@@ -60,6 +64,53 @@ const findSection = (sections, stationFrom, stationTo) => {
 	}
 	return null;
 };
+
+function getIntersection(section1, section2) {
+	const dx2 = section2.stations[1].position.x - section2.stations[0].position.x; // point4[0] - point3[0]
+	const dx1 = section1.stations[1].position.x - section1.stations[0].position.x; // point2[0] - point1[0]
+	const dy = section1.stations[0].position.y - section2.stations[0].position.y; // point1[1] - point3[1]
+	const dy2 = section2.stations[1].position.y - section2.stations[0].position.y; // point4[1] - point3[1]
+	const dy1 = section1.stations[1].position.y - section1.stations[0].position.y; // point2[1] - point1[1]
+	const dx = section1.stations[0].position.x - section2.stations[0].position.x; // point1[1] - point3[1]
+	const div = dy2 * dx1 - dx2 * dy1;
+	if (div === 0) {
+		return null;
+	}
+	const ua = (dx2 * dy - dy2 * dx) / div;
+
+	const x =
+		section1.stations[0].position.x +
+		ua * (section1.stations[1].position.x - section1.stations[0].position.x);
+	const y =
+		section1.stations[0].position.y +
+		ua * (section1.stations[1].position.y - section1.stations[0].position.y);
+
+	const between = (value, min, max) => {
+		return value >= Math.min(min, max) && value <= Math.max(min, max);
+	};
+
+	if (
+		between(
+			x,
+			section1.stations[0].position.x,
+			section1.stations[1].position.x
+		) &&
+		between(
+			y,
+			section1.stations[0].position.y,
+			section1.stations[1].position.y
+		) &&
+		between(
+			x,
+			section2.stations[0].position.x,
+			section2.stations[1].position.x
+		) &&
+		between(y, section2.stations[0].position.y, section2.stations[1].position.y)
+	) {
+		return { x, y };
+	}
+	return null;
+}
 
 function buildMap() {
 	const stations = [];
@@ -221,8 +272,6 @@ function buildMap() {
 	addSections(7, 10, [8, 10]);
 	addSections(8, 10, [10, 10]);
 
-	// TODO: compute 'crossing' sections
-
 	const overheads = [];
 	const addOverHead = (x1, y1, x2, y2, x3, y3, x4, y4) => {
 		const stationFrom1 = getStation(stations, x1, y1);
@@ -242,7 +291,46 @@ function buildMap() {
 	addOverHead(9, 3, 9, 8, 8, 4, 10, 4);
 	addOverHead(8, 1, 6, 3, 7, 1, 9, 3);
 
-	return { stations: stations, sections: sections, overheads: overheads };
+	// compute 'crossing' sections
+	const validIntersections = [
+		{ x: 4, y: 2 },
+		{ x: 2.5, y: 4.5 },
+		{ x: 7.5, y: 1.5 },
+		{ x: 9, y: 4 },
+		{ x: 3.5, y: 7.5 },
+		{ x: 3, y: 9 },
+		{ x: 8, y: 7 },
+		{ x: 7.5, y: 9.5 },
+		{ x: 4.5, y: 5.5 },
+		{ x: 5.5, y: 6.5 },
+		{ x: 6.5, y: 5.5 },
+	];
+	const points = [];
+	for (let i = 0; i < sections.length; i++) {
+		const sectionFrom = sections[i];
+		for (let j = i + 1; j < sections.length; j++) {
+			const sectionTo = sections[j];
+			const point = getIntersection(sectionFrom, sectionTo);
+			if (
+				point &&
+				!validIntersections.find((p) => p.x === point.x && p.y === point.y) &&
+				!stations.find(
+					(s) => s.position.x === point.x && s.position.y === point.y
+				)
+			) {
+				points.push(point);
+				sectionFrom.crossing.push(sectionTo);
+				sectionTo.crossing.push(sectionFrom);
+			}
+		}
+	}
+
+	return {
+		stations: stations,
+		sections: sections,
+		overheads: overheads,
+		intersects: points,
+	};
 }
 
 class Section {
