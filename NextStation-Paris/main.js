@@ -18,6 +18,8 @@ const GAME_LOADING_STATE = 0;
 const GAME_START_STATE = 1;
 const GAME_PLAY_STATE = 2;
 const GAME_OVER_STATE = 3;
+const RULES_STATE = 4;
+const TUTO_STATE = 5;
 let curState = GAME_LOADING_STATE;
 let toggleDebug = false;
 let lastTime = 0;
@@ -450,17 +452,32 @@ function startClicked() {
 	document.location.href = getUrl();
 }
 
-function startGame() {
+function startGame(isTuto) {
 	curState = GAME_PLAY_STATE;
 	uiManager.setUI([speakerButton, musicButton]);
 	uiManager.addLogger("Start game");
-	randomizer = new Randomizer(seed);
+	randomizer = new Randomizer(isTuto ? "tuto" : seed);
 	randomizer.shuffleArray(cardArray);
 
 	randomizer.shuffleArray(pencils);
 	randomizer.shuffleArray(cards);
 
+	if (isTuto) {
+		// change cards order to match the tuto
+		// station violette
+		// carte bleue triangle au debut
+		// Carte rond fond jaune
+		// carte aiguillage + pentagone fond jaune
+	}
+
 	startLine();
+}
+
+function rulesClicked() {
+	window.open(`${getUrl(true)}/index.html?rules`, "_blank");
+}
+function tutoClicked() {
+	window.open(`${getUrl(true)}/index.html?tuto`, "_blank");
 }
 
 const speakerButton = new BFloatingSwitchButton(
@@ -487,6 +504,8 @@ const resetSeedButton = new BButton(
 	"Reset seed",
 	resetSeed
 );
+const rulesButton = new BButton(140, 120, "Règles", rulesClicked);
+const tutoButton = new BButton(140, 220, "Tutoriel", tutoClicked);
 
 function initUI() {
 	speakerButton.setTextSize(50);
@@ -500,7 +519,14 @@ function initUI() {
 	}
 	resetSeedButton.setTextSize(32);
 	resetSeedButton.w = 200;
-	const menu = [speakerButton, startButton, musicButton, resetSeedButton];
+	const menu = [
+		speakerButton,
+		startButton,
+		musicButton,
+		resetSeedButton,
+		rulesButton,
+		tutoButton,
+	];
 	uiManager.setUI(menu);
 }
 
@@ -1166,9 +1192,113 @@ function drawLoading() {
 		textAlign(LEFT, BASELINE);
 		uiManager.addLogger("Game loaded");
 		if (document.location.toString().includes("seed=")) {
-			startGame();
+			startGame(false);
+		} else if (document.location.toString().includes("rules")) {
+			curState = RULES_STATE;
+			resizeCanvas(windowWidth, windowHeight);
+		} else if (document.location.toString().includes("tuto")) {
+			startGame(true);
+			curState = TUTO_STATE;
+			resizeCanvas(windowWidth, windowHeight);
 		}
 	}
+}
+
+const guidedTour = new GuidedTour();
+guidedTour.addStep({
+	draw: () => {
+		/*
+		const image = rulesImages[0];
+		const imageX = (windowWidth - image.width) / 2;
+		const imageY = (windowHeight - image.height) / 2;
+		spritesheet.drawSprite(image.name, 0, imageX, imageY);
+		noFill();
+		stroke(0);
+		strokeWeight(5);
+		rect(imageX - 2, imageY - 2, image.width + 4, image.height + 4, 15);
+		*/
+
+		noStroke();
+		textAlign(LEFT, TOP);
+		fill(250);
+		text(
+			"Clique gauche sur ta station pour commencer à tirer une ligne",
+			800,
+			240
+		);
+	},
+});
+guidedTour.addStep({
+	draw: () => {
+		noStroke();
+		textAlign(LEFT, TOP);
+		fill(250);
+
+		drawLine(stationLine[0]);
+
+		text("Clique sur une station de type Triangle en suivant les", 800, 240);
+		text("lignes pointillées", 800, 280);
+		text("Deux choix possibles, prenons celui du bas pour continuer", 800, 320);
+	},
+	finalizeStep: () => {
+		clickedStation = getStation(stations, 8, 8);
+		over.station = getStation(stations, 6, 10);
+		addLine();
+		nextCard();
+	},
+});
+guidedTour.addStep({
+	draw: () => {
+		noStroke();
+		textAlign(LEFT, TOP);
+		fill(250);
+
+		text("Clique sur une station de type Rond", 800, 240);
+		text("Plusieurs choix s'offre à toi:", 800, 280);
+		text("En partant du triangle, 2 stations Rond sont disponibles", 800, 320);
+		text(
+			"En partant du carré violet, 2 stations Rond sont également disponibles",
+			800,
+			360
+		);
+		text("Choisissons la station violette", 800, 400);
+	},
+	finalizeStep: () => {
+		clickedStation = getStation(stations, 8, 8);
+	},
+});
+guidedTour.addStep({
+	draw: () => {
+		noStroke();
+		textAlign(LEFT, TOP);
+		fill(250);
+
+		drawLine(stationLine[0]);
+
+		text("Clique sur la station de type Rond à gauche", 800, 240);
+	},
+	finalizeStep: () => {
+		clickedStation = getStation(stations, 8, 8);
+		over.station = getStation(stations, 6, 8);
+		addLine();
+		nextCard();
+	},
+});
+guidedTour.addStep({
+	draw: () => {
+		noStroke();
+		textAlign(LEFT, TOP);
+		fill(250);
+
+		text("Bien joué", 800, 240);
+	},
+});
+
+function drawRules() {}
+
+function drawTuto() {
+	drawGame();
+	guidedTour.draw();
 }
 
 function draw() {
@@ -1178,6 +1308,13 @@ function draw() {
 	if (curState === GAME_LOADING_STATE) {
 		drawLoading();
 		return;
+	}
+	if (curState === RULES_STATE) {
+		drawRules();
+	}
+	if (curState === TUTO_STATE) {
+		//updateGame(elapsedTime);
+		drawTuto();
 	}
 
 	uiManager.processInput();
@@ -1336,6 +1473,14 @@ function mouseClicked() {
 	}
 	toolManager.mouseClicked();
 	uiManager.mouseClicked();
+
+	if (curState === RULES_STATE) {
+		return;
+	}
+	if (curState === TUTO_STATE) {
+		guidedTour.nextStep();
+		return;
+	}
 
 	if (over.station) {
 		console.log("an overed Station is clicked:", over.station);
