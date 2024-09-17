@@ -28,7 +28,7 @@ function musicClicked() {
 	// TODO
 }
 
-const speakerStorageKey = "DrDr3ck/GameEngine/Speaker";
+const speakerStorageKey = "DrDr3ck/Parks/Speaker";
 function speakerClicked() {
 	speakerButton.checked = !speakerButton.checked;
 	soundManager.mute(!speakerButton.checked);
@@ -37,18 +37,18 @@ function speakerClicked() {
 
 function startClicked() {
 	curState = GAME_PLAY_STATE;
-	uiManager.setUI([speakerButton, musicButton]);
+	uiManager.setUI([speakerButton]);
 	uiManager.addLogger("Start game");
 }
 
 const speakerButton = new BFloatingSwitchButton(
-	windowWidth - 70 - 10 - 70,
+	windowWidth - 70,
 	70,
 	"\uD83D\uDD0A",
 	speakerClicked
 );
 const musicButton = new BFloatingSwitchButton(
-	windowWidth - 70,
+	windowWidth - 70 - 10 - 70,
 	70,
 	"\uD83C\uDFB6",
 	musicClicked
@@ -108,7 +108,7 @@ function initUI() {
 		speakerButton.checked = false;
 		soundManager.mute(true);
 	}
-	const menu = [speakerButton, startButton, musicButton, resetButton];
+	const menu = [speakerButton, startButton, resetButton];
 	uiManager.setUI(menu);
 }
 
@@ -119,12 +119,39 @@ function setup() {
 
 	frameRate(60);
 
+	spritesheet.addSpriteSheet("covers", "./covers.png", 260, 165);
+	spritesheet.addSpriteSheet("parks", "./parks.png", 250, 300);
+	spritesheet.addSpriteSheet("equipements", "./equipements.png", 255, 160);
+
 	lastTime = Date.now();
 }
 
 function updateGame(elapsedTime) {}
 
-function drawGame() {}
+function drawPark(index, x, y) {
+	fill(248, 223, 195);
+	rect(x - 1, y - 1, 250 + 2, 340 + 2);
+	spritesheet.drawSprite("parks", index, x, y);
+	fill(138, 116, 75);
+	rect(x, y + 300, 40, 40);
+	fill(0);
+	text(parks[index].points, x + 20, y + 320);
+}
+
+function drawGame() {
+	spritesheet.drawSprite("covers", 0, 10, 10);
+	spritesheet.drawSprite("covers", 1, 10, 185);
+
+	textAlign(CENTER, CENTER);
+	textSize(20);
+	drawPark(0, 280, 10);
+	drawPark(0, 540, 10);
+	drawPark(0, 800, 10);
+
+	spritesheet.drawScaledSprite("equipements", 0, 1060, 10, 0.8);
+	spritesheet.drawScaledSprite("equipements", 0, 1060, 145, 0.8);
+	spritesheet.drawScaledSprite("equipements", 0, 1060, 280, 0.8);
+}
 
 function initGame() {}
 
