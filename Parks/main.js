@@ -1,6 +1,6 @@
 const uiManager = new UIManager();
 const windowWidth = 1400;
-const windowHeight = 800;
+const windowHeight = 900;
 uiManager.loggerContainer = new LoggerContainer(
 	windowWidth - 300,
 	windowHeight - 100,
@@ -62,14 +62,14 @@ const startButton = new BButton(
 
 const parks = [
 	{
-		name: "Mammoth Cave National Park",
-		points: 2,
-		cost: ["mountain", "mountain"],
-	},
-	{
 		name: "Isle Royale National Park",
 		points: 2,
 		cost: ["forest", "sun", "rain"],
+	},
+	{
+		name: "Mammoth Cave National Park",
+		points: 2,
+		cost: ["mountain", "mountain"],
 	},
 	{
 		name: "Wrangell-St Elias National Park",
@@ -123,12 +123,17 @@ function setup() {
 	spritesheet.addSpriteSheet("parks", "./parks.png", 250, 300);
 	spritesheet.addSpriteSheet("equipements", "./equipements.png", 255, 160);
 
+	spritesheet.addSpriteSheet("start", "./start.png", 222, 283);
+	spritesheet.addSpriteSheet("lieux", "./lieux.png", 193, 283);
+
 	lastTime = Date.now();
 }
 
 function updateGame(elapsedTime) {}
 
 function drawPark(index, x, y) {
+	textAlign(CENTER, CENTER);
+	textSize(20);
 	fill(248, 223, 195);
 	rect(x - 1, y - 1, 250 + 2, 340 + 2);
 	spritesheet.drawSprite("parks", index, x, y);
@@ -136,6 +141,30 @@ function drawPark(index, x, y) {
 	rect(x, y + 300, 40, 40);
 	fill(0);
 	text(parks[index].points, x + 20, y + 320);
+	textAlign(CENTER, TOP);
+	textSize(15);
+	fill(0);
+	text(parks[index].name, x + 250 / 2 + 2, y + 5 + 2);
+	fill(250);
+	text(parks[index].name, x + 250 / 2, y + 5);
+	drawSymbols(parks[index].cost, x, y + 320);
+}
+
+function drawSymbols(symbols, x, y) {
+	let X = x + 250 / 2 - (symbols.length / 2) * 30 + 30;
+	symbols.forEach((symbol) => {
+		if (symbol === "mountain") {
+			fill(238, 34, 16);
+		} else if (symbol === "forest") {
+			fill(148, 154, 48);
+		} else if (symbol === "sun") {
+			fill(247, 196, 60);
+		} else if (symbol === "rain") {
+			fill(78, 116, 218);
+		}
+		ellipse(X, y, 25, 25);
+		X += 30;
+	});
 }
 
 function drawGame() {
@@ -145,12 +174,15 @@ function drawGame() {
 	textAlign(CENTER, CENTER);
 	textSize(20);
 	drawPark(0, 280, 10);
-	drawPark(0, 540, 10);
-	drawPark(0, 800, 10);
+	drawPark(1, 540, 10);
+	drawPark(2, 800, 10);
 
 	spritesheet.drawScaledSprite("equipements", 0, 1060, 10, 0.8);
 	spritesheet.drawScaledSprite("equipements", 0, 1060, 145, 0.8);
 	spritesheet.drawScaledSprite("equipements", 0, 1060, 280, 0.8);
+
+	spritesheet.drawSprite("start", 0, 10, 360);
+	spritesheet.drawSprite("lieux", 0, 10 + 195, 360);
 }
 
 function initGame() {}
