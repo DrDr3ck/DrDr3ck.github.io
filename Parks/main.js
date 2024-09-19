@@ -1,5 +1,5 @@
 const uiManager = new UIManager();
-const windowWidth = 1400;
+const windowWidth = 1570;
 const windowHeight = 900;
 uiManager.loggerContainer = new LoggerContainer(
 	windowWidth - 300,
@@ -39,6 +39,9 @@ function startClicked() {
 	curState = GAME_PLAY_STATE;
 	uiManager.setUI([speakerButton]);
 	uiManager.addLogger("Start game");
+
+	shuffleArray(parks);
+	shuffleArray(lieux);
 }
 
 const speakerButton = new BFloatingSwitchButton(
@@ -65,31 +68,73 @@ const parks = [
 		name: "Isle Royale National Park",
 		points: 2,
 		cost: ["forest", "sun", "rain"],
+		index: 0,
 	},
 	{
 		name: "Mammoth Cave National Park",
 		points: 2,
 		cost: ["mountain", "mountain"],
+		index: 1,
 	},
 	{
 		name: "Wrangell-St Elias National Park",
 		points: 4,
 		cost: ["mountain", "mountain", "mountain", "rain", "rain"],
+		index: 2,
 	},
 	{
 		name: "Acadia National Park",
 		points: 3,
 		cost: ["forest", "forest", "sun", "rain"],
+		index: 3,
 	},
 	{
 		name: "Arches National Park",
 		points: 3,
 		cost: ["forest", "forest", "sun", "sun"],
+		index: 4,
 	},
 	{
 		name: "Congaree National Park",
 		points: 2,
 		cost: ["forest", "forest"],
+		index: 5,
+	},
+	{
+		name: "Gates of the Arctic National Park",
+		points: 5,
+		cost: ["mountain", "mountain", "mountain", "rain", "rain", "rain", "rain"],
+		index: 6,
+	},
+	{
+		name: "Carlsbad Caverns National Park",
+		points: 2,
+		cost: ["mountain", "sun", "rain"],
+		index: 7,
+	},
+	{
+		name: "Great Basin National Park",
+		points: 3,
+		cost: ["forest", "mountain", "mountain"],
+		index: 8,
+	},
+	{
+		name: "Kings Canyon National Park",
+		points: 3,
+		cost: ["forest", "forest", "mountain"],
+		index: 9,
+	},
+	{
+		name: "Great Smoky Mountains National Park",
+		points: 4,
+		cost: ["forest", "forest", "forest", "mountain"],
+		index: 10,
+	},
+	{
+		name: "Saquaro National Park",
+		points: 2,
+		cost: ["forest", "sun", "sun"],
+		index: 11,
 	},
 ];
 const seed = new Seed(() => {
@@ -97,6 +142,18 @@ const seed = new Seed(() => {
 	return names[Math.floor(Math.random() * names.length)];
 });
 const resetButton = seed.getResetButton(80, 80, {});
+
+const lieux = [
+	{ index: 0, name: "forest" },
+	{ index: 1, name: "rain" },
+	{ index: 2, name: "sun" },
+	{ index: 3, name: "mountain" },
+	{ index: 4, name: "gourde ou photo" },
+	{ index: 5, name: "animal" },
+	//{ index: 6, name: "park ou equipement" },
+	//{ index: 7, name: "copie" },
+	//{ index: 8, name: "echange" },
+];
 
 function initUI() {
 	speakerButton.setTextSize(50);
@@ -125,6 +182,7 @@ function setup() {
 
 	spritesheet.addSpriteSheet("start", "./start.png", 222, 283);
 	spritesheet.addSpriteSheet("lieux", "./lieux.png", 193, 283);
+	spritesheet.addSpriteSheet("end", "./end.png", 250, 283);
 
 	lastTime = Date.now();
 }
@@ -136,7 +194,7 @@ function drawPark(index, x, y) {
 	textSize(20);
 	fill(248, 223, 195);
 	rect(x - 1, y - 1, 250 + 2, 340 + 2);
-	spritesheet.drawSprite("parks", index, x, y);
+	spritesheet.drawSprite("parks", parks[index].index, x, y);
 	fill(138, 116, 75);
 	rect(x, y + 300, 40, 40);
 	fill(0);
@@ -151,7 +209,7 @@ function drawPark(index, x, y) {
 }
 
 function drawSymbols(symbols, x, y) {
-	let X = x + 250 / 2 - (symbols.length / 2) * 30 + 30;
+	let X = x + 250 / 2 - (symbols.length / 2) * 30 + 34;
 	symbols.forEach((symbol) => {
 		if (symbol === "mountain") {
 			fill(238, 34, 16);
@@ -167,6 +225,29 @@ function drawSymbols(symbols, x, y) {
 	});
 }
 
+function drawLieux() {
+	const scale = 1.3 - lieux.length * 0.05;
+	spritesheet.drawScaledSprite("start", 0, 10, 360, scale);
+
+	for (let i = 0; i < lieux.length; i++) {
+		spritesheet.drawScaledSprite(
+			"lieux",
+			lieux[i].index,
+			10 + 195 * scale + 166 * scale * i,
+			360,
+			scale
+		);
+	}
+
+	spritesheet.drawScaledSprite(
+		"end",
+		0,
+		10 + 195 * scale + 166 * scale * lieux.length,
+		360,
+		scale
+	);
+}
+
 function drawGame() {
 	spritesheet.drawSprite("covers", 0, 10, 10);
 	spritesheet.drawSprite("covers", 1, 10, 185);
@@ -177,12 +258,15 @@ function drawGame() {
 	drawPark(1, 540, 10);
 	drawPark(2, 800, 10);
 
-	spritesheet.drawScaledSprite("equipements", 0, 1060, 10, 0.8);
-	spritesheet.drawScaledSprite("equipements", 0, 1060, 145, 0.8);
-	spritesheet.drawScaledSprite("equipements", 0, 1060, 280, 0.8);
+	// equipements
+	spritesheet.drawScaledSprite("covers", 2, 1060, 10, 0.7);
+	drawSymbols(["sun"], 1120, 70);
+	spritesheet.drawScaledSprite("covers", 2, 1060, 125, 0.7);
+	drawSymbols(["sun", "sun"], 1135, 180);
+	spritesheet.drawScaledSprite("equipements", 0, 1060, 240, 0.7);
+	drawSymbols(["sun", "sun", "sun"], 1150, 290);
 
-	spritesheet.drawSprite("start", 0, 10, 360);
-	spritesheet.drawSprite("lieux", 0, 10 + 195, 360);
+	drawLieux();
 }
 
 function initGame() {}
@@ -251,3 +335,13 @@ function keyPressed() {
 		toggleDebug = !toggleDebug;
 	}
 }
+
+/* Randomize array in-place using Durstenfeld shuffle algorithm */
+const shuffleArray = (array) => {
+	for (var i = array.length - 1; i > 0; i--) {
+		var j = Math.floor(Math.random() * (i + 1));
+		var temp = array[i];
+		array[i] = array[j];
+		array[j] = temp;
+	}
+};
