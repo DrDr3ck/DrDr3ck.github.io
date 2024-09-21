@@ -136,6 +136,42 @@ const parks = [
 		cost: ["forest", "sun", "sun"],
 		index: 11,
 	},
+	{
+		name: "Glacier Bay National Park",
+		points: 3,
+		cost: ["forest", "mountain", "rain", "rain"],
+		index: 12,
+	},
+	{
+		name: "Denali National Park",
+		points: 4,
+		cost: ["mountain", "mountain", "mountain", "mountain"],
+		index: 13,
+	},
+	{
+		name: "National Park of American Samoa",
+		points: 4,
+		cost: ["forest", "forest", "sun", "sun", "rain", "rain"],
+		index: 14,
+	},
+	{
+		name: "Sequoia National Park",
+		points: 4,
+		cost: ["forest", "forest", "forest", "forest"],
+		index: 15,
+	},
+	{
+		name: "Rocky Mountain National Park",
+		points: 4,
+		cost: ["mountain", "mountain", "sun", "sun", "rain", "rain"],
+		index: 16,
+	},
+	{
+		name: "Shenandoah National Park",
+		points: 2,
+		cost: ["forest", "mountain"],
+		index: 17,
+	},
 ];
 const seed = new Seed(() => {
 	const names = parks.map((p) => p.name);
