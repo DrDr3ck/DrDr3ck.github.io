@@ -4,3 +4,4 @@ Assets/
 Dungeon/characters_8_directions.png
 Dungeon/characters.jpg
 node_modules
+*.pdf

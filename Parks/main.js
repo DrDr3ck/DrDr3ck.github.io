@@ -35,6 +35,7 @@ let overToken = null;
 let selectedToken = null;
 let curPlace = null;
 let selectedEquip = null;
+let selectedRanger = null;
 
 let move_ranger = 0;
 
@@ -59,6 +60,16 @@ class Hiker {
 
 	draw(x, y) {
 		spritesheet.drawScaledSprite("hikers", this.colorIndex, x, y, 0.8);
+	}
+
+	getPlaceIndex() {
+		if (this.placeIndex === "start") {
+			return -1;
+		}
+		if (this.placeIndex === "end") {
+			return 100;
+		}
+		return this.placeIndex;
 	}
 }
 
@@ -199,6 +210,7 @@ function startClicked() {
 	shuffleArray(gourdes);
 	shuffleArray(saisons);
 	shuffleArray(equipements);
+	shuffleArray(rangers);
 
 	board.start = new Place("start", "start", 0);
 	board.places = places.map((lieu, i) => {
@@ -410,6 +422,17 @@ const equipements = [
 	{ index: 11, name: "filtre a eau mountain", cost: 2 },
 ];
 
+const rangers = [
+	{ index: 1, name: "vague de chaleur" },
+	{ index: 2, name: "crue eclair" },
+	{ index: 3, name: "terrain dangereux" },
+	{ index: 4, name: "brouillard epais" },
+	{ index: 5, name: "vents violents" },
+	{ index: 6, name: "fermeture gouvernementale" },
+	{ index: 7, name: "heure de fermeture" },
+	{ index: 8, name: "periode de grand froid" },
+];
+
 function initUI() {
 	speakerButton.setTextSize(50);
 	musicButton.setTextSize(50);
@@ -438,6 +461,7 @@ function setup() {
 	spritesheet.addSpriteSheet("equipements", "./equipements.png", 255, 160);
 
 	spritesheet.addSpriteSheet("hikers", "./hikers.png", 66, 80);
+	spritesheet.addSpriteSheet("rangers", "./rangers.png", 300, 200);
 
 	spritesheet.addSpriteSheet("start", "./start.png", 222, 283);
 	spritesheet.addSpriteSheet("lieux", "./lieux.png", 193, 283);
@@ -471,18 +495,24 @@ function drawPark(index, x, y) {
 	);
 }
 
+function drawSymbol(symbol, x, y) {
+	if (symbol === "mountain") {
+		fill(238, 34, 16);
+	} else if (symbol === "forest") {
+		fill(148, 154, 48);
+	} else if (symbol === "sun") {
+		fill(247, 196, 60);
+	} else if (symbol === "rain") {
+		fill(78, 116, 218);
+	} else if (symbol === "animal") {
+		fill(91, 60, 17);
+	}
+	ellipse(x, y, 25, 25);
+}
+
 function drawSymbols(symbols, x, y) {
 	symbols.forEach((symbol) => {
-		if (symbol === "mountain") {
-			fill(238, 34, 16);
-		} else if (symbol === "forest") {
-			fill(148, 154, 48);
-		} else if (symbol === "sun") {
-			fill(247, 196, 60);
-		} else if (symbol === "rain") {
-			fill(78, 116, 218);
-		}
-		ellipse(x, y, 25, 25);
+		drawSymbol(symbol, x, y);
 		x += 30;
 	});
 }
@@ -517,15 +547,27 @@ function getCoords(hiker) {
 	return { x: hiker.isSecond ? x + 80 : x, y };
 }
 
+function isEqualRanger(hiker, ranger) {
+	if (!ranger) {
+		return false;
+	}
+	return (
+		hiker.colorIndex === ranger.colorIndex && hiker.isSecond == ranger.isSecond
+	);
+}
+
 function drawHikers() {
 	board.hikers.forEach((hiker) => {
-		if (!hiker.isSelected) {
+		if (!hiker.isSelected && !isEqualRanger(hiker, selectedRanger)) {
 			const { x, y } = getCoords(hiker);
 			hiker.draw(x, y);
 		}
 	});
 	if (selectedHiker) {
 		selectedHiker.draw(mouseX - 25, mouseY - 25);
+	}
+	if (selectedRanger) {
+		selectedRanger.draw(mouseX - 25, mouseY - 25);
 	}
 }
 
@@ -548,7 +590,8 @@ function drawGame() {
 	} else if (curState === STATE.MOVE_RANGER) {
 		if (selectedEquip) {
 			text("Move equipement on rank " + selectedEquip.cost, 715, 670);
-		} else {
+		}
+		if (selectedRanger) {
 			text("Move ranger from " + move_ranger + " place(s): ", 715, 670);
 		}
 	}
@@ -638,7 +681,7 @@ function drawGame() {
 	drawBoard();
 
 	if (selectedToken) {
-		drawSymbols([selectedToken.type], mouseX, mouseY);
+		drawSymbol(selectedToken.type, mouseX, mouseY);
 	}
 
 	if (selectedEquip) {
@@ -650,19 +693,36 @@ function drawGame() {
 			0.7
 		);
 	}
+
+	if (selectedRanger) {
+		// display rect where ranger was placed
+		const { x, y } = getCoords(selectedRanger);
+		noFill();
+		stroke(250, 250, 50);
+		rect(x - 5, y - 10, 60, 80, 10);
+		// display ranger on cursor
+		// selectedRanger.draw(mouseX - 25, mouseY - 25);
+		// display place where ranger should be placed
+		rect(10 + 195 + 166 * rangerPlace.position, 360, 166, 280, 10);
+	}
 }
 
 function drawBoard() {
+	// gourdes
 	if (board.gourdes.length > 0) {
 		spritesheet.drawSprite("gourdes", board.gourdes[0].index, 10, 730);
 	}
+
+	// garde forestier
+	spritesheet.drawScaledSprite("rangers", 0, 600, 730, 0.825);
+	spritesheet.drawScaledSprite("rangers", rangers[0].index, 855, 730, 0.825);
 
 	stroke(0);
 	fill(91, 60, 17);
 	rect(1370, 100, 180, 220, 10);
 
 	board.box.forEach((token) => {
-		drawSymbols([token.type], token.x, token.y);
+		drawSymbol(token.type, token.x, token.y);
 	});
 }
 
@@ -742,6 +802,33 @@ function addTokenToBox(tokenType) {
 	selectedToken = null;
 }
 
+function chooseRanger() {
+	let positions = [
+		board.hikers[0].getPlaceIndex(),
+		board.hikers[1].getPlaceIndex(),
+	];
+	const maxHikerPosition =
+		positions[0] > positions[1] ? positions[0] : positions[1];
+	positions = [
+		board.hikers[2].getPlaceIndex(),
+		board.hikers[3].getPlaceIndex(),
+	];
+	const maxRangerPosition =
+		positions[0] > positions[1] ? positions[0] : positions[1];
+	if (maxHikerPosition > maxRangerPosition) {
+		// most in front
+		return positions[0] > positions[1] ? board.hikers[2] : board.hikers[3];
+	}
+	// most behind
+	return positions[0] < positions[1] ? board.hikers[2] : board.hikers[3];
+}
+
+function choosePlace() {
+	// choose place where ranger should move
+	const placeIndex = selectedRanger.getPlaceIndex() + move_ranger;
+	return board.places[placeIndex];
+}
+
 function mouseClicked() {
 	if (toggleDebug) {
 		uiManager.addLogger(`X=${mouseX}, Y=${mouseY}`);
@@ -763,13 +850,23 @@ function mouseClicked() {
 		overToken = null;
 	}
 
+	if (curState === STATE.MOVE_RANGER && selectedRanger && rangerPlace) {
+		// place ranger on new place
+		selectedRanger.placeIndex = rangerPlace.position;
+		selectedRanger = null;
+		rangerPlace = null;
+		move_ranger = 0;
+		// TODO: new State
+	}
+
 	if (curState === STATE.MOVE_RANGER && selectedEquip) {
 		// move equipement on corresponding rank
 		move_ranger = selectedEquip.cost;
 		board.equipements[selectedEquip.cost - 1] = { ...selectedEquip };
 		selectedEquip = null;
 		// which ranger to move ? most in front or most behind ?
-		chooseRange(rangersBehindHiker() ? "most_in_front" : "most_behind");
+		selectedRanger = chooseRanger();
+		rangerPlace = choosePlace();
 	}
 
 	if (
