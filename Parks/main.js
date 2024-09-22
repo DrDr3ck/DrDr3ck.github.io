@@ -1,5 +1,5 @@
 const uiManager = new UIManager();
-const windowWidth = 1570;
+const windowWidth = 1600;
 const windowHeight = 900;
 uiManager.loggerContainer = new LoggerContainer(
 	windowWidth - 300,
@@ -34,6 +34,9 @@ let overPlace = null;
 let overToken = null;
 let selectedToken = null;
 let curPlace = null;
+let selectedEquip = null;
+
+let move_ranger = 0;
 
 let manche = 0;
 
@@ -84,14 +87,14 @@ class Place {
 		const Y = 620;
 		for (let i = 0; i < this.tokens.length; i++) {
 			if (distance(mouseX, mouseY, X + 30 * i, Y) < 25 / 2) {
-				return { x: X + 30 * i, y: Y, token: this.tokens[i] };
+				return { x: X + 30 * i, y: Y, type: this.tokens[i] };
 			}
 		}
 		return null;
 	}
 
 	removeToken(token) {
-		const index = this.tokens.findIndex((curToken) => curToken === token.token);
+		const index = this.tokens.findIndex((curToken) => curToken === token.type);
 		if (index >= 0) {
 			this.tokens.splice(index, 1);
 		}
@@ -116,6 +119,8 @@ const board = {
 	hikers: [],
 	places: [],
 	gourdes: [],
+	box: [],
+	equipements: [null, null, null],
 };
 
 const distance = (x1, y1, x2, y2) => {
@@ -160,6 +165,10 @@ function isOverTokenOnCurrentPlace() {
 	return curPlace.isOverToken(scale);
 }
 
+function isOverBox() {
+	return mouseX > 1370 && mouseX < 1550 && mouseY > 100 && mouseY < 320;
+}
+
 const isRanger = true;
 const isSecond = true;
 board.hikers.push(new Hiker(Color.RED, !isRanger, "start", !isSecond));
@@ -189,6 +198,7 @@ function startClicked() {
 	shuffleArray(places);
 	shuffleArray(gourdes);
 	shuffleArray(saisons);
+	shuffleArray(equipements);
 
 	board.start = new Place("start", "start", 0);
 	board.places = places.map((lieu, i) => {
@@ -381,6 +391,25 @@ const saisons = [
 	{ index: 4, name: "pierres", meteo: ["rain", "sun", "sun"] },
 ];
 
+const equipements = [
+	{ index: 0, name: "plan parcours sun", cost: 1 },
+	{ index: 1, name: "sac couchage forest", cost: 2 },
+	{ index: 2, name: "journal forest", cost: 3 },
+	{ index: 2, name: "journal forest", cost: 3 },
+	{ index: 2, name: "journal forest", cost: 3 },
+	{ index: 3, name: "journal mountain", cost: 3 },
+	{ index: 3, name: "journal mountain", cost: 3 },
+	{ index: 3, name: "journal mountain", cost: 3 },
+	{ index: 4, name: "filtre a eau forest", cost: 2 },
+	{ index: 5, name: "equipement de pluie mountain", cost: 3 },
+	{ index: 6, name: "tente", cost: 3 },
+	{ index: 7, name: "sac couchage mountain", cost: 2 },
+	{ index: 8, name: "lampe torche", cost: 1 },
+	{ index: 9, name: "pass park", cost: 2 },
+	{ index: 10, name: "plan parcours rain", cost: 1 },
+	{ index: 11, name: "filtre a eau mountain", cost: 2 },
+];
+
 function initUI() {
 	speakerButton.setTextSize(50);
 	musicButton.setTextSize(50);
@@ -516,14 +545,50 @@ function drawGame() {
 		text(selectedHiker ? "Move hiker on a place" : "Select a hiker", 715, 670);
 	} else if (curState === STATE.TAKE_TOKENS_ON_CARD) {
 		text("Take tokens from place", 715, 670);
+	} else if (curState === STATE.MOVE_RANGER) {
+		if (selectedEquip) {
+			text("Move equipement on rank " + selectedEquip.cost, 715, 670);
+		} else {
+			text("Move ranger from " + move_ranger + " place(s): ", 715, 670);
+		}
 	}
 
 	// equipements
-	spritesheet.drawScaledSprite("covers", 2, 1060, 10, 0.71);
+	if (board.equipements[0] === null) {
+		spritesheet.drawScaledSprite("covers", 2, 1060, 10, 0.71);
+	} else {
+		spritesheet.drawScaledSprite(
+			"equipements",
+			board.equipements[0].index,
+			1060,
+			10,
+			0.71
+		);
+	}
+	if (board.equipements[1] === null) {
+		spritesheet.drawScaledSprite("covers", 2, 1060, 125, 0.71);
+	} else {
+		spritesheet.drawScaledSprite(
+			"equipements",
+			board.equipements[1].index,
+			1060,
+			125,
+			0.71
+		);
+	}
+	if (board.equipements[2] === null) {
+		spritesheet.drawScaledSprite("covers", 2, 1060, 240, 0.7);
+	} else {
+		spritesheet.drawScaledSprite(
+			"equipements",
+			board.equipements[2].index,
+			1060,
+			240,
+			0.71
+		);
+	}
 	drawSymbols(["sun"], 1255, 70);
-	spritesheet.drawScaledSprite("covers", 2, 1060, 125, 0.71);
 	drawSymbols(["sun", "sun"], 1255, 180);
-	spritesheet.drawScaledSprite("equipements", 2, 1060, 240, 0.7);
 	drawSymbols(["sun", "sun", "sun"], 1255, 290);
 
 	drawPlaces();
@@ -565,18 +630,40 @@ function drawGame() {
 		textAlign(LEFT, TOP);
 		fill(220);
 		stroke(0);
-		text(overToken.token, 10, 650);
+		text(overToken.type, 10, 650);
 		text(overToken.x, 10, 670);
 		text(overToken.y, 40, 670);
 	}
 
 	drawBoard();
+
+	if (selectedToken) {
+		drawSymbols([selectedToken.type], mouseX, mouseY);
+	}
+
+	if (selectedEquip) {
+		spritesheet.drawScaledSprite(
+			"equipements",
+			selectedEquip.index,
+			mouseX - 90,
+			mouseY - 56,
+			0.7
+		);
+	}
 }
 
 function drawBoard() {
 	if (board.gourdes.length > 0) {
 		spritesheet.drawSprite("gourdes", board.gourdes[0].index, 10, 730);
 	}
+
+	stroke(0);
+	fill(91, 60, 17);
+	rect(1370, 100, 180, 220, 10);
+
+	board.box.forEach((token) => {
+		drawSymbols([token.type], token.x, token.y);
+	});
 }
 
 function initGame() {}
@@ -650,6 +737,11 @@ function placeHiker() {
 	selectedHiker = null;
 }
 
+function addTokenToBox(tokenType) {
+	board.box.push({ x: mouseX, y: mouseY, type: tokenType });
+	selectedToken = null;
+}
+
 function mouseClicked() {
 	if (toggleDebug) {
 		uiManager.addLogger(`X=${mouseX}, Y=${mouseY}`);
@@ -669,6 +761,28 @@ function mouseClicked() {
 		curPlace.removeToken(overToken);
 		selectedToken = overToken;
 		overToken = null;
+	}
+
+	if (curState === STATE.MOVE_RANGER && selectedEquip) {
+		// move equipement on corresponding rank
+		move_ranger = selectedEquip.cost;
+		board.equipements[selectedEquip.cost - 1] = { ...selectedEquip };
+		selectedEquip = null;
+		// which ranger to move ? most in front or most behind ?
+		chooseRange(rangersBehindHiker() ? "most_in_front" : "most_behind");
+	}
+
+	if (
+		curState === STATE.TAKE_TOKENS_ON_CARD &&
+		selectedToken !== null &&
+		isOverBox()
+	) {
+		addTokenToBox(selectedToken.type);
+		// check if tokens on card otherwise move to next state
+		if (curPlace.tokens.length === 0) {
+			curState = STATE.MOVE_RANGER;
+			selectedEquip = equipements.pop();
+		}
 	}
 
 	toolManager.mouseClicked();
