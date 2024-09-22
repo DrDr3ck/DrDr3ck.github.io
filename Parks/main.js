@@ -18,12 +18,24 @@ const GAME_LOADING_STATE = 0;
 const GAME_START_STATE = 1;
 const GAME_PLAY_STATE = 2;
 const GAME_OVER_STATE = 3;
-let curState = GAME_LOADING_STATE;
+let curGameState = GAME_LOADING_STATE;
 let toggleDebug = false;
 let lastTime = 0;
 
+const STATE = {
+	MOVE_HIKER: "move_hiker",
+	TAKE_TOKENS_ON_CARD: "take_tokens_on_card",
+};
+let curState = STATE.MOVE_HIKER;
+
 let overHiker = null;
 let selectedHiker = null;
+let overPlace = null;
+let overToken = null;
+let selectedToken = null;
+let curPlace = null;
+
+let manche = 0;
 
 const Color = {
 	BLUE: 0,
@@ -48,8 +60,8 @@ class Hiker {
 }
 
 class Place {
-	constructor(index, type, position) {
-		this.index = index;
+	constructor(placeIndex, type, position) {
+		this.placeIndex = placeIndex;
 		this.type = type;
 		this.tokens = [];
 		this.hikers = [];
@@ -57,23 +69,53 @@ class Place {
 	}
 
 	draw(scale) {
-		if (this.index === "start") {
+		if (this.placeIndex === "start") {
 			spritesheet.drawScaledSprite("start", 0, 10, 360, scale);
 			return;
 		}
-		spritesheet.drawScaledSprite(
-			"lieux",
-			this.index,
-			10 + 195 * scale + 166 * scale * this.position,
-			360,
-			scale
-		);
+		const X = 10 + 195 * scale + 166 * scale * this.position;
+		spritesheet.drawScaledSprite("lieux", this.placeIndex, X, 360, scale);
+
+		drawSymbols(this.tokens, X + 30, 620);
+	}
+
+	isOverToken(scale) {
+		const X = 10 + 195 * scale + 166 * scale * this.position + 30;
+		const Y = 620;
+		for (let i = 0; i < this.tokens.length; i++) {
+			if (distance(mouseX, mouseY, X + 30 * i, Y) < 25 / 2) {
+				return { x: X + 30 * i, y: Y, token: this.tokens[i] };
+			}
+		}
+		return null;
+	}
+
+	removeToken(token) {
+		const index = this.tokens.findIndex((curToken) => curToken === token.token);
+		if (index >= 0) {
+			this.tokens.splice(index, 1);
+		}
+	}
+
+	resetTile() {
+		if (this.type === "forest") {
+			this.tokens.push("forest");
+		} else if (this.type === "rain") {
+			this.tokens.push("rain");
+			this.tokens.push("rain");
+		} else if (this.type === "sun") {
+			this.tokens.push("sun");
+			this.tokens.push("sun");
+		} else if (this.type === "mountain") {
+			this.tokens.push("mountain");
+		}
 	}
 }
 
 const board = {
 	hikers: [],
 	places: [],
+	gourdes: [],
 };
 
 const distance = (x1, y1, x2, y2) => {
@@ -87,20 +129,36 @@ function isOverHiker() {
 		return board.hikers[0];
 	}
 	const { x: x1, y: y1 } = getCoords(board.hikers[1]);
-	console.log(
-		x1,
-		y1,
-		mouseX,
-		mouseY,
-		distance(mouseX, mouseY, x0 + 25, y0 + 30)
-	);
 	if (distance(mouseX, mouseY, x1 + 25, y1 + 30) < 25) {
 		return board.hikers[1];
 	}
 	return null;
 }
 
-function isOverPlace() {}
+function isOverPlace() {
+	// 360 640
+	if (mouseY < 360 || mouseY > 640) {
+		return null;
+	}
+	if (mouseX < 10) {
+		return null;
+	}
+	if (mouseX < 205) {
+		return "start";
+	}
+	for (let i = 0; i < board.places.length; i++) {
+		if (mouseX < 205 + 166 + 166 * i) {
+			return board.places[i];
+		}
+	}
+
+	return null;
+}
+
+function isOverTokenOnCurrentPlace() {
+	const scale = 1.3 - board.places.length * 0.05;
+	return curPlace.isOverToken(scale);
+}
 
 const isRanger = true;
 const isSecond = true;
@@ -123,24 +181,31 @@ function speakerClicked() {
 }
 
 function startClicked() {
-	curState = GAME_PLAY_STATE;
+	curGameState = GAME_PLAY_STATE;
 	uiManager.setUI([speakerButton]);
 	uiManager.addLogger("Start game");
 
 	shuffleArray(parks);
 	shuffleArray(places);
+	shuffleArray(gourdes);
+	shuffleArray(saisons);
 
 	board.start = new Place("start", "start", 0);
 	board.places = places.map((lieu, i) => {
 		return new Place(lieu.index, lieu.name, i);
 	});
+	board.gourdes.push(gourdes.pop());
+	// place token on places according to season card
+	const saison = saisons[manche];
+	for (let i = 1; i < board.places.length; i++) {
+		const symbol = saison.meteo[(i - 1) % saison.meteo.length];
+		board.places[i].tokens.push(symbol);
+	}
 
 	// put hikers and rangers on first tile
-	board.hikers.forEach((hiker) => (hiker.position = "start"));
+	board.hikers.forEach((hiker) => (hiker.placeIndex = "start"));
 
-	// debug
-	board.hikers[0].isSelected = false;
-	//End debug
+	curState = STATE.MOVE_HIKER;
 }
 
 const speakerButton = new BFloatingSwitchButton(
@@ -290,6 +355,32 @@ const places = [
 	//{ index: 8, name: "echange" },
 ];
 
+const gourdes = [
+	{ index: 0, name: "forest", empty: true },
+	{ index: 1, name: "mountain", empty: true },
+	{ index: 2, name: "sun x2", empty: true },
+	{ index: 3, name: "exchange x2", empty: true },
+	{ index: 4, name: "animal or park", empty: true },
+	{ index: 0, name: "forest", empty: true },
+	{ index: 1, name: "mountain", empty: true },
+	{ index: 2, name: "sun x2", empty: true },
+	{ index: 3, name: "exchange x2", empty: true },
+	{ index: 4, name: "animal or park", empty: true },
+	{ index: 0, name: "forest", empty: true },
+	{ index: 1, name: "mountain", empty: true },
+	{ index: 2, name: "sun x2", empty: true },
+	{ index: 3, name: "exchange x2", empty: true },
+	{ index: 4, name: "animal or park", empty: true },
+];
+
+const saisons = [
+	{ index: 0, name: "recifs", meteo: ["rain", "rain", "sun"] },
+	{ index: 1, name: "neiges", meteo: ["sun", "rain", "rain"] },
+	{ index: 2, name: "étoiles filantes", meteo: ["sun", "rain", "sun"] },
+	{ index: 3, name: "splendeurs", meteo: ["rain", "sun"] },
+	{ index: 4, name: "pierres", meteo: ["rain", "sun", "sun"] },
+];
+
 function initUI() {
 	speakerButton.setTextSize(50);
 	musicButton.setTextSize(50);
@@ -312,6 +403,8 @@ function setup() {
 	frameRate(60);
 
 	spritesheet.addSpriteSheet("covers", "./covers.png", 260, 165);
+	spritesheet.addSpriteSheet("gourdes", "./gourdes.png", 260, 165);
+	spritesheet.addSpriteSheet("saisons", "./saisons.png", 260, 165);
 	spritesheet.addSpriteSheet("parks", "./parks.png", 250, 300);
 	spritesheet.addSpriteSheet("equipements", "./equipements.png", 255, 160);
 
@@ -342,11 +435,14 @@ function drawPark(index, x, y) {
 	text(parks[index].name, x + 250 / 2 + 2, y + 5 + 2);
 	fill(250);
 	text(parks[index].name, x + 250 / 2, y + 5);
-	drawSymbols(parks[index].cost, x, y + 320);
+	drawSymbols(
+		parks[index].cost,
+		x + 250 / 2 - (parks[index].cost.length / 2) * 30 + 34,
+		y + 320
+	);
 }
 
 function drawSymbols(symbols, x, y) {
-	let X = x + 250 / 2 - (symbols.length / 2) * 30 + 34;
 	symbols.forEach((symbol) => {
 		if (symbol === "mountain") {
 			fill(238, 34, 16);
@@ -357,8 +453,8 @@ function drawSymbols(symbols, x, y) {
 		} else if (symbol === "rain") {
 			fill(78, 116, 218);
 		}
-		ellipse(X, y, 25, 25);
-		X += 30;
+		ellipse(x, y, 25, 25);
+		x += 30;
 	});
 }
 
@@ -406,7 +502,7 @@ function drawHikers() {
 
 function drawGame() {
 	spritesheet.drawSprite("covers", 0, 10, 10);
-	spritesheet.drawSprite("covers", 1, 10, 185);
+	spritesheet.drawSprite("saisons", saisons[manche].index, 10, 185);
 
 	textAlign(CENTER, CENTER);
 	textSize(20);
@@ -415,13 +511,20 @@ function drawGame() {
 	drawPark(1, 540, 10);
 	drawPark(2, 800, 10);
 
+	fill(220);
+	if (curState === STATE.MOVE_HIKER) {
+		text(selectedHiker ? "Move hiker on a place" : "Select a hiker", 715, 670);
+	} else if (curState === STATE.TAKE_TOKENS_ON_CARD) {
+		text("Take tokens from place", 715, 670);
+	}
+
 	// equipements
-	spritesheet.drawScaledSprite("covers", 2, 1060, 10, 0.7);
-	drawSymbols(["sun"], 1120, 70);
-	spritesheet.drawScaledSprite("covers", 2, 1060, 125, 0.7);
-	drawSymbols(["sun", "sun"], 1135, 180);
-	spritesheet.drawScaledSprite("equipements", 0, 1060, 240, 0.7);
-	drawSymbols(["sun", "sun", "sun"], 1150, 290);
+	spritesheet.drawScaledSprite("covers", 2, 1060, 10, 0.71);
+	drawSymbols(["sun"], 1255, 70);
+	spritesheet.drawScaledSprite("covers", 2, 1060, 125, 0.71);
+	drawSymbols(["sun", "sun"], 1255, 180);
+	spritesheet.drawScaledSprite("equipements", 2, 1060, 240, 0.7);
+	drawSymbols(["sun", "sun", "sun"], 1255, 290);
 
 	drawPlaces();
 
@@ -430,8 +533,49 @@ function drawGame() {
 	if (overHiker) {
 		const { x, y } = getCoords(overHiker);
 		noFill();
-		stroke(250, 50, 50);
+		stroke(250, 250, 50);
 		rect(x - 5, y - 10, 60, 80, 10);
+
+		fill(220);
+		stroke(0);
+		text(overHiker.placeIndex, 30, 650);
+	}
+
+	if (overPlace) {
+		noFill();
+		stroke(250, 250, 50);
+		if (overPlace === "start") {
+			rect(10, 360, 195, 280, 10);
+		} else {
+			rect(10 + 195 + 166 * overPlace.position, 360, 166, 280, 10);
+		}
+
+		textAlign(LEFT, TOP);
+		fill(220);
+		stroke(0);
+		text(overPlace.position, 10, 650);
+		text(overPlace.type, 10, 670);
+	}
+
+	if (overToken) {
+		noFill();
+		stroke(250, 250, 50);
+		ellipse(overToken.x, overToken.y, 25);
+
+		textAlign(LEFT, TOP);
+		fill(220);
+		stroke(0);
+		text(overToken.token, 10, 650);
+		text(overToken.x, 10, 670);
+		text(overToken.y, 40, 670);
+	}
+
+	drawBoard();
+}
+
+function drawBoard() {
+	if (board.gourdes.length > 0) {
+		spritesheet.drawSprite("gourdes", board.gourdes[0].index, 10, 730);
 	}
 }
 
@@ -447,7 +591,7 @@ function drawLoading() {
 		soundManager.totalLoadedSounds === soundManager.soundToLoad &&
 		spritesheet.totalLoadedImages === spritesheet.totalImagesToLoad
 	) {
-		curState = GAME_START_STATE;
+		curGameState = GAME_START_STATE;
 
 		// init game
 		initGame();
@@ -460,7 +604,7 @@ function draw() {
 	const currentTime = Date.now();
 	const elapsedTime = currentTime - lastTime;
 	background(51);
-	if (curState === GAME_LOADING_STATE) {
+	if (curGameState === GAME_LOADING_STATE) {
 		drawLoading();
 		return;
 	}
@@ -470,10 +614,10 @@ function draw() {
 	uiManager.update(elapsedTime);
 
 	// draw game
-	if (curState === GAME_START_STATE) {
+	if (curGameState === GAME_START_STATE) {
 		seed.render(100, 160, { label: "Seed", color: 220 });
 	}
-	if (curState === GAME_PLAY_STATE) {
+	if (curGameState === GAME_PLAY_STATE) {
 		updateGame(elapsedTime);
 		drawGame();
 	}
@@ -487,6 +631,25 @@ function draw() {
 	lastTime = currentTime;
 }
 
+// TODO: check if hiker can move on this place depending of previous place + number of ranger in 'end' place
+function hikerCanPlace() {
+	return selectedHiker && overPlace;
+}
+
+function placeHiker() {
+	selectedHiker.isSelected = false;
+	selectedHiker.placeIndex = overPlace.position;
+
+	// change state according to chosen place
+	if (overPlace.name !== "end") {
+		overPlace.resetTile();
+		curState = STATE.TAKE_TOKENS_ON_CARD;
+	}
+	curPlace = overPlace;
+	overPlace = null;
+	selectedHiker = null;
+}
+
 function mouseClicked() {
 	if (toggleDebug) {
 		uiManager.addLogger(`X=${mouseX}, Y=${mouseY}`);
@@ -498,14 +661,30 @@ function mouseClicked() {
 		overHiker = null;
 	}
 
+	if (hikerCanPlace()) {
+		placeHiker();
+	}
+
+	if (overToken && !selectedToken) {
+		curPlace.removeToken(overToken);
+		selectedToken = overToken;
+		overToken = null;
+	}
+
 	toolManager.mouseClicked();
 	uiManager.mouseClicked();
 	return false;
 }
 
 function mouseMoved() {
-	if (!selectedHiker) {
+	if (!selectedHiker && curState === STATE.MOVE_HIKER) {
 		overHiker = isOverHiker();
+	}
+	if (selectedHiker) {
+		overPlace = isOverPlace();
+	}
+	if (curState === STATE.TAKE_TOKENS_ON_CARD) {
+		overToken = isOverTokenOnCurrentPlace();
 	}
 }
 
