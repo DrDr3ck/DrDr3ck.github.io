@@ -358,6 +358,42 @@ const parks = [
 		cost: ["forest", "mountain"],
 		index: 17,
 	},
+    {
+		name: "Bryce Canyon National Park",
+		points: 4,
+		cost: ["forest", "mountain","mountain","mountain"],
+		index: 18,
+	},
+    {
+		name: "Virgin Islands National Park",
+		points: 5,
+		cost: ["forest","forest","forest", "rain", "rain", "rain", "rain"],
+		index: 19,
+	},
+    {
+		name: "Grand Canyon National Park",
+		points: 3,
+		cost: ["mountain", "mountain","sun","rain"],
+		index: 20,
+	},
+    {
+		name: "Channel Islands National Park",
+		points: 2,
+		cost: ["mountain", "rain", "rain"],
+		index: 21,
+	},
+    {
+		name: "Grand Canyon National Park",
+		points: 4,
+		cost: ["mountain", "mountain", "sun","rain", "rain", "rain"],
+		index: 22,
+	},
+    {
+		name: "Biscayne National Park",
+		points: 3,
+		cost: ["forest", "forest","rain", "rain"],
+		index: 23,
+	},
 ];
 const seed = new Seed(() => {
 	const names = parks.map((p) => p.name);
