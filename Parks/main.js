@@ -25,6 +25,8 @@ let lastTime = 0;
 const STATE = {
 	MOVE_HIKER: "move_hiker",
 	TAKE_TOKENS_ON_CARD: "take_tokens_on_card",
+	TAKE_TOKEN_FOR_RANGER: "take_token_for_ranger",
+	BOTTLE_OR_PHOTO: "bottle_or_photo",
 };
 let curState = STATE.MOVE_HIKER;
 
@@ -132,6 +134,8 @@ const board = {
 	gourdes: [],
 	box: [],
 	equipements: [null, null, null],
+	soloSun: [],
+	soloRain: [],
 };
 
 const distance = (x1, y1, x2, y2) => {
@@ -180,6 +184,10 @@ function isOverBox() {
 	return mouseX > 1370 && mouseX < 1550 && mouseY > 100 && mouseY < 320;
 }
 
+function isOverSoloCard() {
+	return mouseX > 610 && mouseX < 830 && mouseY > 740 && mouseY < 880;
+}
+
 const isRanger = true;
 const isSecond = true;
 board.hikers.push(new Hiker(Color.RED, !isRanger, "start", !isSecond));
@@ -206,11 +214,14 @@ function startClicked() {
 	uiManager.addLogger("Start game");
 
 	shuffleArray(parks);
-	shuffleArray(places);
+	shuffleArray(morePlaces);
 	shuffleArray(gourdes);
 	shuffleArray(saisons);
 	shuffleArray(equipements);
 	shuffleArray(rangers);
+
+	places.push(morePlaces.pop());
+	shuffleArray(places);
 
 	board.start = new Place("start", "start", 0);
 	board.places = places.map((lieu, i) => {
@@ -358,41 +369,149 @@ const parks = [
 		cost: ["forest", "mountain"],
 		index: 17,
 	},
-    {
+	{
 		name: "Bryce Canyon National Park",
 		points: 4,
-		cost: ["forest", "mountain","mountain","mountain"],
+		cost: ["forest", "mountain", "mountain", "mountain"],
 		index: 18,
 	},
-    {
+	{
 		name: "Virgin Islands National Park",
 		points: 5,
-		cost: ["forest","forest","forest", "rain", "rain", "rain", "rain"],
+		cost: ["forest", "forest", "forest", "rain", "rain", "rain", "rain"],
 		index: 19,
 	},
-    {
+	{
 		name: "Grand Canyon National Park",
 		points: 3,
-		cost: ["mountain", "mountain","sun","rain"],
+		cost: ["mountain", "mountain", "sun", "rain"],
 		index: 20,
 	},
-    {
+	{
 		name: "Channel Islands National Park",
 		points: 2,
 		cost: ["mountain", "rain", "rain"],
 		index: 21,
 	},
-    {
+	{
 		name: "Grand Canyon National Park",
 		points: 4,
-		cost: ["mountain", "mountain", "sun","rain", "rain", "rain"],
+		cost: ["mountain", "mountain", "sun", "rain", "rain", "rain"],
 		index: 22,
 	},
-    {
+	{
 		name: "Biscayne National Park",
 		points: 3,
-		cost: ["forest", "forest","rain", "rain"],
+		cost: ["forest", "forest", "rain", "rain"],
 		index: 23,
+	},
+	{
+		name: "Arches National Park",
+		points: 2,
+		cost: ["mountain", "sun", "sun"],
+		index: 24,
+	},
+	{
+		name: "Mesa Verde National Park",
+		points: 3,
+		cost: ["forest", "mountain", "sun", "sun"],
+		index: 25,
+	},
+	{
+		name: "Black Canyon National Park",
+		points: 3,
+		cost: ["mountain", "mountain", "rain", "rain"],
+		index: 26,
+	},
+	{
+		name: "Haleakala National Park",
+		points: 4,
+		cost: ["forest", "mountain", "rain", "rain", "rain", "rain"],
+		index: 27,
+	},
+	{
+		name: "Tortugas National Park",
+		points: 2,
+		cost: ["rain", "rain", "rain", "rain"],
+		index: 28,
+	},
+	{
+		name: "Yellowstone National Park",
+		points: 5,
+		cost: ["forest", "forest", "forest", "sun", "sun", "sun", "sun"],
+		index: 29,
+	},
+	{
+		name: "Guadelupe Mountains National Park",
+		points: 3,
+		cost: ["mountain", "mountain", "sun", "sun"],
+		index: 30,
+	},
+	{
+		name: "Yosemite National Park",
+		points: 4,
+		cost: ["forest", "forest", "forest", "rain", "rain"],
+		index: 31,
+	},
+	{
+		name: "Capitol Reef National Park",
+		points: 4,
+		cost: ["forest", "forest", "forest", "sun", "sun"],
+		index: 32,
+	},
+	{
+		name: "Cuyahoga Valley National Park",
+		points: 2,
+		cost: ["forest", "rain", "rain"],
+		index: 33,
+	},
+	{
+		name: "Mount Rainier National Park",
+		points: 3,
+		cost: ["mountain", "mountain", "mountain"],
+		index: 34,
+	},
+	{
+		name: "Badlands National Park",
+		points: 4,
+		cost: ["mountain", "mountain", "sun", "sun", "sun", "sun"],
+		index: 35,
+	},
+	{
+		name: "Zion National Park",
+		points: 4,
+		cost: ["forest", "mountain", "sun", "sun", "sun", "sun"],
+		index: 36,
+	},
+	{
+		name: "Gateway Arch National Park",
+		points: 2,
+		cost: ["sun", "sun", "sun", "sun"],
+		index: 37,
+	},
+	{
+		name: "Great Sand Dunes National Park",
+		points: 4,
+		cost: ["mountain", "mountain", "mountain", "sun", "sun"],
+		index: 38,
+	},
+	{
+		name: "Kenai Fjords National Park",
+		points: 4,
+		cost: ["forest", "forest", "rain", "rain", "rain", "rain"],
+		index: 39,
+	},
+	{
+		name: "Big Bend National Park",
+		points: 4,
+		cost: ["mountain", "mountain", "sun", "sun", "sun", "rain"],
+		index: 40,
+	},
+	{
+		name: "North Cascades National Park",
+		points: 4,
+		cost: ["mountain", "mountain", "rain", "rain", "rain", "rain"],
+		index: 41,
 	},
 ];
 const seed = new Seed(() => {
@@ -407,10 +526,13 @@ const places = [
 	{ index: 2, name: "sun" },
 	{ index: 3, name: "mountain" },
 	{ index: 4, name: "gourde ou photo" },
+];
+
+const morePlaces = [
 	{ index: 5, name: "animal" },
-	//{ index: 6, name: "park ou equipement" },
-	//{ index: 7, name: "copie" },
-	//{ index: 8, name: "echange" },
+	{ index: 6, name: "park ou equipement" },
+	{ index: 7, name: "copie" },
+	{ index: 8, name: "echange" },
 ];
 
 const gourdes = [
@@ -630,6 +752,8 @@ function drawGame() {
 		if (selectedRanger) {
 			text("Move ranger from " + move_ranger + " place(s): ", 715, 670);
 		}
+	} else if (curState === STATE.TAKE_TOKEN_FOR_RANGER) {
+		text("Take token for ranger card", 715, 670);
 	}
 
 	// equipements
@@ -760,6 +884,14 @@ function drawBoard() {
 	board.box.forEach((token) => {
 		drawSymbol(token.type, token.x, token.y);
 	});
+
+	board.soloSun.forEach((tokenType, index) => {
+		drawSymbol(tokenType, 647 + 75 * index, 773);
+	});
+
+	board.soloRain.forEach((tokenType, index) => {
+		drawSymbol(tokenType, 647 + 75 * index, 858);
+	});
 }
 
 function initGame() {}
@@ -825,8 +957,13 @@ function placeHiker() {
 
 	// change state according to chosen place
 	if (overPlace.name !== "end") {
-		overPlace.resetTile();
-		curState = STATE.TAKE_TOKENS_ON_CARD;
+		// TODO: depdending of the card, take token or do a specific action
+		if (overPlace.placeIndex <= 3) {
+			overPlace.resetTile();
+			curState = STATE.TAKE_TOKENS_ON_CARD;
+		} else if (overPlace.placeIndex === 4) {
+			curState = STATE.BOTTLE_OR_PHOTO;
+		}
 	}
 	curPlace = overPlace;
 	overPlace = null;
@@ -835,6 +972,15 @@ function placeHiker() {
 
 function addTokenToBox(tokenType) {
 	board.box.push({ x: mouseX, y: mouseY, type: tokenType });
+	selectedToken = null;
+}
+
+function addTokenToSoloCard(tokenType) {
+	if (tokenType === "sun") {
+		board.soloSun.push("sun");
+	} else {
+		board.soloRain.push("rain");
+	}
 	selectedToken = null;
 }
 
@@ -862,6 +1008,7 @@ function chooseRanger() {
 function choosePlace() {
 	// choose place where ranger should move
 	const placeIndex = selectedRanger.getPlaceIndex() + move_ranger;
+	// TODO: check if a hiker is on this place !!
 	return board.places[placeIndex];
 }
 
@@ -890,9 +1037,15 @@ function mouseClicked() {
 		// place ranger on new place
 		selectedRanger.placeIndex = rangerPlace.position;
 		selectedRanger = null;
-		rangerPlace = null;
 		move_ranger = 0;
-		// TODO: new State
+		// check if meteo token needs to be moved on 'Solo' card
+		if (rangerPlace.tokens.length !== 0) {
+			curState = STATE.TAKE_TOKEN_FOR_RANGER;
+			curPlace = rangerPlace;
+		} else {
+			curState = STATE.MOVE_HIKER;
+		}
+		rangerPlace = null;
 	}
 
 	if (curState === STATE.MOVE_RANGER && selectedEquip) {
@@ -902,6 +1055,7 @@ function mouseClicked() {
 		selectedEquip = null;
 		// which ranger to move ? most in front or most behind ?
 		selectedRanger = chooseRanger();
+		// where to move it ? is there a hiker on this place ?
 		rangerPlace = choosePlace();
 	}
 
@@ -918,6 +1072,19 @@ function mouseClicked() {
 		}
 	}
 
+	if (
+		curState === STATE.TAKE_TOKEN_FOR_RANGER &&
+		selectedToken !== null &&
+		isOverSoloCard()
+	) {
+		addTokenToSoloCard(selectedToken.type);
+		// check if tokens on card otherwise move to next state
+		if (curPlace.tokens.length === 0) {
+			// TODO: check if solo card is full
+			curState = STATE.MOVE_HIKER;
+		}
+	}
+
 	toolManager.mouseClicked();
 	uiManager.mouseClicked();
 	return false;
@@ -930,7 +1097,10 @@ function mouseMoved() {
 	if (selectedHiker) {
 		overPlace = isOverPlace();
 	}
-	if (curState === STATE.TAKE_TOKENS_ON_CARD) {
+	if (
+		curState === STATE.TAKE_TOKENS_ON_CARD ||
+		curState === STATE.TAKE_TOKEN_FOR_RANGER
+	) {
 		overToken = isOverTokenOnCurrentPlace();
 	}
 }
