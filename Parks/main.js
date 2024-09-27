@@ -210,7 +210,9 @@ function speakerClicked() {
 
 function startClicked() {
 	curGameState = GAME_PLAY_STATE;
-	uiManager.setUI([speakerButton]);
+	uiManager.setUI([speakerButton, plusButton, minusButton]);
+	plusButton.setTextSize(35);
+	minusButton.setTextSize(35);
 	uiManager.addLogger("Start game");
 
 	shuffleArray(parks);
@@ -259,6 +261,15 @@ const startButton = new BButton(
 	"START",
 	startClicked
 );
+
+const plusButton = new BFloatingButton(10, 720, "<", () => {
+	const g = board.gourdes.shift();
+	board.gourdes.push(g);
+});
+const minusButton = new BFloatingButton(225, 720, ">", () => {
+	const g = board.gourdes.pop();
+	board.gourdes.unshift(g);
+});
 
 const parks = [
 	{
@@ -754,6 +765,9 @@ function drawGame() {
 		}
 	} else if (curState === STATE.TAKE_TOKEN_FOR_RANGER) {
 		text("Take token for ranger card", 715, 670);
+	} else if (curState === STATE.BOTTLE_OR_PHOTO) {
+		text("Choose between bottle and photo", 715, 670);
+		// TODO: add bottle/photo buttons ?
 	}
 
 	// equipements
@@ -871,6 +885,11 @@ function drawBoard() {
 	// gourdes
 	if (board.gourdes.length > 0) {
 		spritesheet.drawSprite("gourdes", board.gourdes[0].index, 10, 730);
+		fill(220);
+		noStroke();
+		textAlign(CENTER, CENTER);
+		textSize(25);
+		text(`x${board.gourdes.length}`, 135, 695);
 	}
 
 	// garde forestier
@@ -962,7 +981,12 @@ function placeHiker() {
 			overPlace.resetTile();
 			curState = STATE.TAKE_TOKENS_ON_CARD;
 		} else if (overPlace.placeIndex === 4) {
-			curState = STATE.BOTTLE_OR_PHOTO;
+			// check first if place contains some tokens !!
+			if (overPlace.tokens.length > 0) {
+				curState = STATE.TAKE_TOKENS_ON_CARD;
+			} else {
+				curState = STATE.BOTTLE_OR_PHOTO;
+			}
 		}
 	}
 	curPlace = overPlace;
@@ -1067,8 +1091,12 @@ function mouseClicked() {
 		addTokenToBox(selectedToken.type);
 		// check if tokens on card otherwise move to next state
 		if (curPlace.tokens.length === 0) {
-			curState = STATE.MOVE_RANGER;
-			selectedEquip = equipements.pop();
+			if (curPlace.placeIndex === 4) {
+				curState = STATE.BOTTLE_OR_PHOTO;
+			} else {
+				curState = STATE.MOVE_RANGER;
+				selectedEquip = equipements.pop();
+			}
 		}
 	}
 
