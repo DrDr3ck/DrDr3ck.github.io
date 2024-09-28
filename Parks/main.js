@@ -27,6 +27,8 @@ const STATE = {
 	TAKE_TOKENS_ON_CARD: "take_tokens_on_card",
 	TAKE_TOKEN_FOR_RANGER: "take_token_for_ranger",
 	BOTTLE_OR_PHOTO: "bottle_or_photo",
+	TAKE_BOTTLE: "take_bottle",
+	TAKE_PHOTO: "take_photo",
 };
 let curState = STATE.MOVE_HIKER;
 
@@ -38,6 +40,8 @@ let selectedToken = null;
 let curPlace = null;
 let selectedEquip = null;
 let selectedRanger = null;
+let overBottle = false;
+let selectedBottle = null;
 
 let move_ranger = 0;
 
@@ -178,6 +182,10 @@ function isOverPlace() {
 function isOverTokenOnCurrentPlace() {
 	const scale = 1.3 - board.places.length * 0.05;
 	return curPlace.isOverToken(scale);
+}
+
+function isOverBottleCards() {
+	return mouseX > 10 && mouseX < 270 && mouseY > 10 && mouseY < 175;
 }
 
 function isOverBox() {
@@ -852,6 +860,14 @@ function drawGame() {
 		text(overToken.y, 40, 670);
 	}
 
+	if (overBottle) {
+		noFill();
+		stroke(250, 250, 50);
+		strokeWeight(3);
+		rect(10, 10, 260, 165, 5);
+		strokeWeight(1);
+	}
+
 	drawBoard();
 
 	if (selectedToken) {
@@ -878,6 +894,15 @@ function drawGame() {
 		// selectedRanger.draw(mouseX - 25, mouseY - 25);
 		// display place where ranger should be placed
 		rect(10 + 195 + 166 * rangerPlace.position, 360, 166, 280, 10);
+	}
+
+	if (selectedBottle !== null) {
+		spritesheet.drawSprite(
+			"gourdes",
+			gourdes[selectedBottle].index,
+			mouseX - 130,
+			mouseY - 65
+		);
 	}
 }
 
@@ -1031,8 +1056,20 @@ function chooseRanger() {
 
 function choosePlace() {
 	// choose place where ranger should move
-	const placeIndex = selectedRanger.getPlaceIndex() + move_ranger;
+	let placeIndex = selectedRanger.getPlaceIndex() + move_ranger;
 	// TODO: check if a hiker is on this place !!
+	if (
+		board.hikers[0].placeIndex === placeIndex ||
+		board.hikers[1].placeIndex === placeIndex
+	) {
+		placeIndex = placeIndex + 1;
+	}
+	if (
+		board.hikers[0].placeIndex === placeIndex ||
+		board.hikers[1].placeIndex === placeIndex
+	) {
+		placeIndex = placeIndex + 1;
+	}
 	return board.places[placeIndex];
 }
 
@@ -1057,7 +1094,20 @@ function mouseClicked() {
 		overToken = null;
 	}
 
-	if (curState === STATE.MOVE_RANGER && selectedRanger && rangerPlace) {
+	if (
+		curState === STATE.BOTTLE_OR_PHOTO &&
+		overBottle &&
+		selectedBottle === null
+	) {
+		selectedBottle = gourdes.length - 1; // index of bottle to show
+		curState = STATE.TAKE_BOTTLE;
+		overBottle = false;
+	} else if (curState === STATE.TAKE_BOTTLE && selectedBottle !== null) {
+		selectedBottle = null;
+		curState = STATE.MOVE_RANGER;
+		selectedEquip = equipements.pop();
+		board.gourdes.push(gourdes.pop());
+	} else if (curState === STATE.MOVE_RANGER && selectedRanger && rangerPlace) {
 		// place ranger on new place
 		selectedRanger.placeIndex = rangerPlace.position;
 		selectedRanger = null;
@@ -1070,9 +1120,7 @@ function mouseClicked() {
 			curState = STATE.MOVE_HIKER;
 		}
 		rangerPlace = null;
-	}
-
-	if (curState === STATE.MOVE_RANGER && selectedEquip) {
+	} else if (curState === STATE.MOVE_RANGER && selectedEquip) {
 		// move equipement on corresponding rank
 		move_ranger = selectedEquip.cost;
 		board.equipements[selectedEquip.cost - 1] = { ...selectedEquip };
@@ -1081,9 +1129,7 @@ function mouseClicked() {
 		selectedRanger = chooseRanger();
 		// where to move it ? is there a hiker on this place ?
 		rangerPlace = choosePlace();
-	}
-
-	if (
+	} else if (
 		curState === STATE.TAKE_TOKENS_ON_CARD &&
 		selectedToken !== null &&
 		isOverBox()
@@ -1098,9 +1144,7 @@ function mouseClicked() {
 				selectedEquip = equipements.pop();
 			}
 		}
-	}
-
-	if (
+	} else if (
 		curState === STATE.TAKE_TOKEN_FOR_RANGER &&
 		selectedToken !== null &&
 		isOverSoloCard()
@@ -1130,6 +1174,9 @@ function mouseMoved() {
 		curState === STATE.TAKE_TOKEN_FOR_RANGER
 	) {
 		overToken = isOverTokenOnCurrentPlace();
+	}
+	if (curState === STATE.BOTTLE_OR_PHOTO) {
+		overBottle = isOverBottleCards();
 	}
 }
 
