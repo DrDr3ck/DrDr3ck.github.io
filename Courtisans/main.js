@@ -110,6 +110,45 @@ function speakerClicked() {
 	localStorage.setItem(speakerStorageKey, speakerButton.checked ? "on" : "off");
 }
 
+// type is player name or light or dark
+function dropCard(dropCard, type) {
+	if (type === "light") {
+		let position = 0;
+		const isSpy = dropCard.role === ROLE.SPY;
+		board.lightCards.forEach((positionCard) => {
+			const card = positionCard.card;
+			if (isSpy) {
+				if (card.role === ROLE.SPY) {
+					position += 1;
+				}
+			} else {
+				if (card.role !== ROLE.SPY && card.color === dropCard.color) {
+					position += 1;
+				}
+			}
+		});
+		console.log("position:", position);
+		board.lightCards.push({ card: dropCard, position });
+	} else if (type === "dark") {
+		let position = 0;
+		const isSpy = dropCard.role === ROLE.SPY;
+		board.darkCards.forEach((positionCard) => {
+			const card = positionCard.card;
+			if (isSpy) {
+				if (card.role === ROLE.SPY) {
+					position += 1;
+				}
+			} else {
+				if (card.color === dropCard.color) {
+					position += 1;
+				}
+			}
+		});
+		console.log("position:", position);
+		board.darkCards.push({ card: dropCard, position });
+	}
+}
+
 function startClicked() {
 	curState = GAME_PLAY_STATE;
 	uiManager.setUI([speakerButton, musicButton]);
@@ -123,13 +162,24 @@ function startClicked() {
 	shuffleArray(missions);
 
 	// DEBUG
-	board.lightCards.push(cards.pop());
-	board.lightCards.push(cards.pop());
-	board.lightCards.push(cards.pop());
-	board.darkCards.push(cards.pop());
-	board.darkCards.push(cards.pop());
-	board.darkCards.push(cards.pop());
-	board.darkCards.push(cards.pop());
+	dropCard(cards.pop(), "light");
+	dropCard(cards.pop(), "light");
+	dropCard(cards.pop(), "light");
+	dropCard(cards.pop(), "light");
+	dropCard(cards.pop(), "light");
+	dropCard(cards.pop(), "light");
+
+	dropCard(cards.pop(), "light");
+	dropCard(cards.pop(), "light");
+	dropCard(cards.pop(), "light");
+	dropCard(cards.pop(), "light");
+	dropCard(cards.pop(), "light");
+	dropCard(cards.pop(), "light");
+
+	dropCard(cards.pop(), "dark");
+	dropCard(cards.pop(), "dark");
+	dropCard(cards.pop(), "dark");
+	dropCard(cards.pop(), "dark");
 	// END DEBUG
 }
 
@@ -213,8 +263,9 @@ function displayCard(card, y) {
 }
 
 function drawBoard() {
-	board.lightCards.forEach((card) => {
-		displayCard(card, 160);
+	const cards = [...board.lightCards].reverse();
+	cards.forEach((card) => {
+		displayCard(card.card, 160 - 60 * card.position);
 	});
 	spritesheet.drawScaledSprite(
 		"board",
@@ -224,7 +275,7 @@ function drawBoard() {
 		0.65
 	);
 	board.darkCards.forEach((card) => {
-		displayCard(card, 450);
+		displayCard(card.card, 450 + 60 * card.position);
 	});
 }
 
