@@ -14,6 +14,49 @@ const jobManager = new JobManager();
 const soundManager = new SoundMgr();
 const spritesheet = new SpriteSheet();
 
+const COLOR = {
+	CARPE: "carpe",
+	LIEVRE: "lievre",
+	ROSSIGNOL: "rossignol",
+	CERF: "cerf",
+	PAPILLON: "papillon",
+	CRAPAUD: "crapaud",
+};
+
+const ROLE = {
+	MURDER: "murder",
+	PROTECT: "protect",
+	NOBLE: "noble",
+	SPY: "spy",
+	CITIZEN: "citizen",
+};
+
+let cards = [];
+
+function addRole(color, role, nb, index) {
+	for (let i = 0; i < nb; i++) {
+		cards.push({ color, role, index });
+	}
+}
+
+function addFamily(color, index) {
+	addRole(color, ROLE.MURDER, 2, index);
+	addRole(color, ROLE.PROTECT, 3, index + 1);
+	addRole(color, ROLE.NOBLE, 4, index + 2);
+	addRole(color, ROLE.SPY, 2, index + 3);
+	addRole(color, ROLE.CITIZEN, 4, index + 4);
+}
+
+function addCards() {
+	let index = 0;
+	addFamily(COLOR.CARPE, index);
+	addFamily(COLOR.LIEVRE, index + 5);
+	addFamily(COLOR.ROSSIGNOL, index + 10);
+	addFamily(COLOR.CERF, index + 15);
+	addFamily(COLOR.PAPILLON, index + 20);
+	addFamily(COLOR.CRAPAUD, index + 25);
+}
+
 const GAME_LOADING_STATE = 0;
 const GAME_START_STATE = 1;
 const GAME_PLAY_STATE = 2;
@@ -39,6 +82,10 @@ function startClicked() {
 	curState = GAME_PLAY_STATE;
 	uiManager.setUI([speakerButton, musicButton]);
 	uiManager.addLogger("Start game");
+
+	cards = [];
+	addCards();
+	shuffleArray(cards);
 }
 
 const speakerButton = new BFloatingSwitchButton(
@@ -115,6 +162,11 @@ function drawGame() {
 	spritesheet.drawScaledSprite("cards", 19, 973, 510, 0.75);
 
 	spritesheet.drawScaledSprite("cover", 0, 617, 450, 0.75);
+
+	// main
+	spritesheet.drawScaledSprite("cards", cards[0].index, 410, 820, 0.75);
+	spritesheet.drawScaledSprite("cards", cards[1].index, 610, 820, 0.75);
+	spritesheet.drawScaledSprite("cards", cards[2].index, 810, 820, 0.75);
 }
 
 function initGame() {}
@@ -183,3 +235,13 @@ function keyPressed() {
 		toggleDebug = !toggleDebug;
 	}
 }
+
+/* Randomize array in-place using Durstenfeld shuffle algorithm */
+const shuffleArray = (array) => {
+	for (var i = array.length - 1; i > 0; i--) {
+		var j = Math.floor(Math.random() * (i + 1));
+		var temp = array[i];
+		array[i] = array[j];
+		array[j] = temp;
+	}
+};
