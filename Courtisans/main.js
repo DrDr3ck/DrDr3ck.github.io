@@ -33,6 +33,14 @@ const ROLE = {
 
 let cards = [];
 
+let missions = [];
+
+const board = {
+	lightCards: [], // light cards
+	darkCards: [], // dark cards
+	players: [],
+};
+
 function addRole(color, role, nb, index) {
 	for (let i = 0; i < nb; i++) {
 		cards.push({ color, role, index });
@@ -55,6 +63,30 @@ function addCards() {
 	addFamily(COLOR.CERF, index + 15);
 	addFamily(COLOR.PAPILLON, index + 20);
 	addFamily(COLOR.CRAPAUD, index + 25);
+}
+
+function addMissions() {
+	missions.push({ color: "blue", type: COLOR.PAPILLON, index: 0 });
+	missions.push({ color: "blue", type: COLOR.CRAPAUD, index: 1 });
+	missions.push({ color: "blue", type: COLOR.ROSSIGNOL, index: 2 });
+	missions.push({ color: "blue", type: COLOR.LIEVRE, index: 3 });
+	missions.push({ color: "blue", type: COLOR.CERF, index: 4 });
+	missions.push({ color: "blue", type: COLOR.CARPE, index: 5 });
+	missions.push({ color: "blue", type: "2", index: 6 });
+	missions.push({ color: "blue", type: "3", index: 7 });
+	missions.push({ color: "blue", type: "5", index: 8 });
+	missions.push({ color: "blue", type: "1", index: 9 });
+
+	missions.push({ color: "white", type: COLOR.PAPILLON, index: 12 });
+	missions.push({ color: "white", type: COLOR.CRAPAUD, index: 13 });
+	missions.push({ color: "white", type: COLOR.ROSSIGNOL, index: 14 });
+	missions.push({ color: "white", type: COLOR.LIEVRE, index: 15 });
+	missions.push({ color: "white", type: COLOR.CERF, index: 16 });
+	missions.push({ color: "white", type: COLOR.CARPE, index: 17 });
+	missions.push({ color: "white", type: ROLE.PROTECT, index: 18 });
+	missions.push({ color: "white", type: ROLE.NOBLE, index: 19 });
+	missions.push({ color: "white", type: ROLE.SPY, index: 20 });
+	missions.push({ color: "white", type: ROLE.MURDER, index: 21 });
 }
 
 const GAME_LOADING_STATE = 0;
@@ -86,6 +118,19 @@ function startClicked() {
 	cards = [];
 	addCards();
 	shuffleArray(cards);
+	missions = [];
+	addMissions();
+	shuffleArray(missions);
+
+	// DEBUG
+	board.lightCards.push(cards.pop());
+	board.lightCards.push(cards.pop());
+	board.lightCards.push(cards.pop());
+	board.darkCards.push(cards.pop());
+	board.darkCards.push(cards.pop());
+	board.darkCards.push(cards.pop());
+	board.darkCards.push(cards.pop());
+	// END DEBUG
 }
 
 const speakerButton = new BFloatingSwitchButton(
@@ -142,12 +187,35 @@ function setup() {
 
 function updateGame(elapsedTime) {}
 
-function drawGame() {
-	spritesheet.drawScaledSprite("cards", 10, 440, 160, 0.75);
-	spritesheet.drawScaledSprite("cards", 7, 800, 160, 0.75);
-	spritesheet.drawScaledSprite("cards", 27, 260, 100, 0.75);
-	spritesheet.drawScaledSprite("cards", 26, 260, 160, 0.75);
+const positions = {
+	papillon: 65,
+	crapaud: 260,
+	rossignol: 440,
+	lievre: 800,
+	cerf: 973,
+	carpe: 1160,
+};
 
+const spyPosition = 617;
+
+function displayCard(card, y) {
+	if (card.role !== ROLE.SPY) {
+		spritesheet.drawScaledSprite(
+			"cards",
+			card.index,
+			positions[card.color],
+			y,
+			0.75
+		);
+	} else {
+		spritesheet.drawScaledSprite("cover", 0, spyPosition, y, 0.75);
+	}
+}
+
+function drawBoard() {
+	board.lightCards.forEach((card) => {
+		displayCard(card, 160);
+	});
 	spritesheet.drawScaledSprite(
 		"board",
 		0,
@@ -155,13 +223,29 @@ function drawGame() {
 		(windowHeight - 560 * 0.65) / 2,
 		0.65
 	);
+	board.darkCards.forEach((card) => {
+		displayCard(card, 450);
+	});
+}
+
+function drawGame() {
+	drawBoard();
+	/*
+	spritesheet.drawScaledSprite("cards", 10, 440, 160, 0.75);
+	spritesheet.drawScaledSprite("cards", 7, 800, 160, 0.75);
+	spritesheet.drawScaledSprite("cards", 27, 260, 100, 0.75);
+	spritesheet.drawScaledSprite("cards", 26, 260, 160, 0.75);
+
+	//
 
 	spritesheet.drawScaledSprite("cards", 0, 1160, 450, 0.75);
 	spritesheet.drawScaledSprite("cards", 21, 65, 450, 0.75);
 	spritesheet.drawScaledSprite("cards", 17, 973, 450, 0.75);
 	spritesheet.drawScaledSprite("cards", 19, 973, 510, 0.75);
+	spritesheet.drawScaledSprite("cards", 19, 973, 570, 0.75);
 
 	spritesheet.drawScaledSprite("cover", 0, 617, 450, 0.75);
+	*/
 
 	// main
 	spritesheet.drawScaledSprite("cards", cards[0].index, 410, 820, 0.75);
@@ -206,6 +290,9 @@ function draw() {
 	// draw game
 	if (curState === GAME_START_STATE) {
 		spritesheet.drawSprite("main", 0, (windowWidth - 310) / 2, 20);
+
+		spritesheet.drawSprite("missions", 11, 50, 150);
+		spritesheet.drawSprite("missions", 23, windowWidth - 340 - 50, 150);
 	}
 	if (curState === GAME_PLAY_STATE) {
 		updateGame(elapsedTime);
