@@ -23,14 +23,18 @@ let toggleDebug = false;
 let lastTime = 0;
 
 const STATE = {
+	CHOOSE_HIKER: "choose_hiker",
 	MOVE_HIKER: "move_hiker",
 	TAKE_TOKENS_ON_CARD: "take_tokens_on_card",
 	TAKE_TOKEN_FOR_RANGER: "take_token_for_ranger",
 	BOTTLE_OR_PHOTO: "bottle_or_photo",
 	TAKE_BOTTLE: "take_bottle",
 	TAKE_PHOTO: "take_photo",
+	REMOVE_PARK1: "remove_park1",
+	REMOVE_PARK2: "remove_park2",
+	REMOVE_PARK3: "remove_park3",
 };
-let curState = STATE.MOVE_HIKER;
+let curState = STATE.CHOOSE_HIKER;
 
 let overHiker = null;
 let selectedHiker = null;
@@ -93,6 +97,15 @@ class Place {
 			spritesheet.drawScaledSprite("start", 0, 10, 360, scale);
 			return;
 		}
+		if (this.placeIndex === "end") {
+			spritesheet.drawScaledSprite(
+				"end",
+				0,
+				10 + 195 * scale + 166 * scale * board.places.length,
+				360,
+				scale
+			);
+		}
 		const X = 10 + 195 * scale + 166 * scale * this.position;
 		spritesheet.drawScaledSprite("lieux", this.placeIndex, X, 360, scale);
 
@@ -140,6 +153,7 @@ const board = {
 	equipements: [null, null, null],
 	soloSun: [],
 	soloRain: [],
+	parks: [],
 };
 
 const distance = (x1, y1, x2, y2) => {
@@ -182,6 +196,10 @@ function isOverPlace() {
 function isOverTokenOnCurrentPlace() {
 	const scale = 1.3 - board.places.length * 0.05;
 	return curPlace.isOverToken(scale);
+}
+
+function mouseInRect(x, y, w, h) {
+	return mouseX > x && mouseX < x + w && mouseY > y && mouseY < y + h;
 }
 
 function isOverBottleCards() {
@@ -233,10 +251,15 @@ function startClicked() {
 	places.push(morePlaces.pop());
 	shuffleArray(places);
 
+	board.parks.push(parks.pop());
+	board.parks.push(parks.pop());
+	board.parks.push(parks.pop());
+
 	board.start = new Place("start", "start", 0);
 	board.places = places.map((lieu, i) => {
 		return new Place(lieu.index, lieu.name, i);
 	});
+	board.end = new Place("end", "end", board.places.length);
 	board.gourdes.push(gourdes.pop());
 	// place token on places according to season card
 	const saison = saisons[manche];
@@ -248,7 +271,7 @@ function startClicked() {
 	// put hikers and rangers on first tile
 	board.hikers.forEach((hiker) => (hiker.placeIndex = "start"));
 
-	curState = STATE.MOVE_HIKER;
+	curState = STATE.CHOOSE_HIKER;
 }
 
 const speakerButton = new BFloatingSwitchButton(
@@ -639,6 +662,7 @@ function setup() {
 
 	spritesheet.addSpriteSheet("hikers", "./hikers.png", 66, 80);
 	spritesheet.addSpriteSheet("rangers", "./rangers.png", 300, 200);
+	spritesheet.addSpriteSheet("cursor", "./cursor.png", 40, 40);
 
 	spritesheet.addSpriteSheet("start", "./start.png", 222, 283);
 	spritesheet.addSpriteSheet("lieux", "./lieux.png", 193, 283);
@@ -650,24 +674,27 @@ function setup() {
 function updateGame(elapsedTime) {}
 
 function drawPark(index, x, y) {
+	if (!board.parks[index]) {
+		return;
+	}
 	textAlign(CENTER, CENTER);
 	textSize(20);
 	fill(248, 223, 195);
 	rect(x - 1, y - 1, 250 + 2, 340 + 2);
-	spritesheet.drawSprite("parks", parks[index].index, x, y);
+	spritesheet.drawSprite("parks", board.parks[index].index, x, y);
 	fill(138, 116, 75);
 	rect(x, y + 300, 40, 40);
 	fill(0);
-	text(parks[index].points, x + 20, y + 320);
+	text(board.parks[index].points, x + 20, y + 320);
 	textAlign(CENTER, TOP);
 	textSize(15);
 	fill(0);
-	text(parks[index].name, x + 250 / 2 + 2, y + 5 + 2);
+	text(board.parks[index].name, x + 250 / 2 + 2, y + 5 + 2);
 	fill(250);
-	text(parks[index].name, x + 250 / 2, y + 5);
+	text(board.parks[index].name, x + 250 / 2, y + 5);
 	drawSymbols(
-		parks[index].cost,
-		x + 250 / 2 - (parks[index].cost.length / 2) * 30 + 34,
+		board.parks[index].cost,
+		x + 250 / 2 - (board.parks[index].cost.length / 2) * 30 + 34,
 		y + 320
 	);
 }
@@ -699,14 +726,7 @@ function drawPlaces() {
 
 	board.start.draw(scale);
 	board.places.forEach((place) => place.draw(scale));
-
-	spritesheet.drawScaledSprite(
-		"end",
-		0,
-		10 + 195 * scale + 166 * scale * board.places.length,
-		360,
-		scale
-	);
+	board.end.draw(scale);
 }
 
 function getCoords(hiker) {
@@ -748,20 +768,12 @@ function drawHikers() {
 	}
 }
 
-function drawGame() {
-	spritesheet.drawSprite("covers", 0, 10, 10);
-	spritesheet.drawSprite("saisons", saisons[manche].index, 10, 185);
-
-	textAlign(CENTER, CENTER);
-	textSize(20);
-	stroke(0);
-	drawPark(0, 280, 10);
-	drawPark(1, 540, 10);
-	drawPark(2, 800, 10);
-
+function drawText() {
 	fill(220);
-	if (curState === STATE.MOVE_HIKER) {
-		text(selectedHiker ? "Move hiker on a place" : "Select a hiker", 715, 670);
+	if (curState === STATE.CHOOSE_HIKER) {
+		text("Select a hiker", 715, 670);
+	} else if (curState === STATE.MOVE_HIKER) {
+		text("Move hiker on a place", 715, 670);
 	} else if (curState === STATE.TAKE_TOKENS_ON_CARD) {
 		text("Take tokens from place", 715, 670);
 	} else if (curState === STATE.MOVE_RANGER) {
@@ -769,15 +781,28 @@ function drawGame() {
 			text("Move equipement on rank " + selectedEquip.cost, 715, 670);
 		}
 		if (selectedRanger) {
-			text("Move ranger from " + move_ranger + " place(s): ", 715, 670);
+			text("Move ranger from " + move_ranger + " place(s)", 715, 670);
 		}
 	} else if (curState === STATE.TAKE_TOKEN_FOR_RANGER) {
 		text("Take token for ranger card", 715, 670);
 	} else if (curState === STATE.BOTTLE_OR_PHOTO) {
 		text("Choose between bottle and photo", 715, 670);
 		// TODO: add bottle/photo buttons ?
+	} else if (curState === STATE.REMOVE_PARK1) {
+		text("Remove first park", 715, 670);
+	} else if (curState === STATE.REMOVE_PARK2) {
+		text("Remove second park", 715, 670);
+	} else if (curState === STATE.REMOVE_PARK3) {
+		text("Remove last park", 715, 670);
 	}
 
+	if (!curState) {
+		stroke(240, 20, 20);
+		text("ERROR: undefined state", 715, 670);
+	}
+}
+
+function drawEquipements() {
 	// equipements
 	if (board.equipements[0] === null) {
 		spritesheet.drawScaledSprite("covers", 2, 1060, 10, 0.71);
@@ -815,11 +840,9 @@ function drawGame() {
 	drawSymbols(["sun"], 1255, 70);
 	drawSymbols(["sun", "sun"], 1255, 180);
 	drawSymbols(["sun", "sun", "sun"], 1255, 290);
+}
 
-	drawPlaces();
-
-	drawHikers();
-
+function drawOver() {
 	if (overHiker) {
 		const { x, y } = getCoords(overHiker);
 		noFill();
@@ -867,9 +890,9 @@ function drawGame() {
 		rect(10, 10, 260, 165, 5);
 		strokeWeight(1);
 	}
+}
 
-	drawBoard();
-
+function drawSelection() {
 	if (selectedToken) {
 		drawSymbol(selectedToken.type, mouseX, mouseY);
 	}
@@ -893,7 +916,18 @@ function drawGame() {
 		// display ranger on cursor
 		// selectedRanger.draw(mouseX - 25, mouseY - 25);
 		// display place where ranger should be placed
-		rect(10 + 195 + 166 * rangerPlace.position, 360, 166, 280, 10);
+		if (rangerPlace.placeIndex === "end") {
+			// special case for "end" tile
+			rect(
+				10 + 195 + 166 * rangerPlace.position + 40,
+				300 + 80 * move_ranger,
+				200,
+				75,
+				10
+			);
+		} else {
+			rect(10 + 195 + 166 * rangerPlace.position, 360, 166, 280, 10);
+		}
 	}
 
 	if (selectedBottle !== null) {
@@ -903,6 +937,50 @@ function drawGame() {
 			mouseX - 130,
 			mouseY - 65
 		);
+	}
+}
+
+function drawGame() {
+	spritesheet.drawSprite("covers", 0, 10, 10);
+	spritesheet.drawSprite("saisons", saisons[manche].index, 10, 185);
+
+	textAlign(CENTER, CENTER);
+	textSize(20);
+	stroke(0);
+	drawPark(0, 280, 10);
+	drawPark(1, 540, 10);
+	drawPark(2, 800, 10);
+
+	drawText();
+
+	drawEquipements();
+
+	drawPlaces();
+
+	drawHikers();
+
+	drawOver();
+
+	drawBoard();
+
+	drawSelection();
+
+	// special case when removing parks
+	if (curState && curState.startsWith("remove_park")) {
+		noFill();
+		stroke(248, 23, 95);
+		strokeWeight(5);
+		if (curState === STATE.REMOVE_PARK1) {
+			rect(279, 9, 250 + 2, 340 + 2);
+		} else if (curState === STATE.REMOVE_PARK2) {
+			rect(539, 9, 250 + 2, 340 + 2);
+		} else {
+			rect(799, 9, 250 + 2, 340 + 2);
+		}
+		strokeWeight(1);
+
+		// draw Bin at cursor
+		spritesheet.drawSprite("cursor", 0, mouseX - 20, mouseY - 20);
 	}
 }
 
@@ -1001,7 +1079,7 @@ function placeHiker() {
 
 	// change state according to chosen place
 	if (overPlace.name !== "end") {
-		// TODO: depdending of the card, take token or do a specific action
+		// TODO: depending of the card, take token or do a specific action
 		if (overPlace.placeIndex <= 3) {
 			overPlace.resetTile();
 			curState = STATE.TAKE_TOKENS_ON_CARD;
@@ -1012,6 +1090,8 @@ function placeHiker() {
 			} else {
 				curState = STATE.BOTTLE_OR_PHOTO;
 			}
+		} else {
+			curState = STATE.ERROR;
 		}
 	}
 	curPlace = overPlace;
@@ -1057,7 +1137,7 @@ function chooseRanger() {
 function choosePlace() {
 	// choose place where ranger should move
 	let placeIndex = selectedRanger.getPlaceIndex() + move_ranger;
-	// TODO: check if a hiker is on this place !!
+	// check if a hiker is on this place !!
 	if (
 		board.hikers[0].placeIndex === placeIndex ||
 		board.hikers[1].placeIndex === placeIndex
@@ -1069,6 +1149,10 @@ function choosePlace() {
 		board.hikers[1].placeIndex === placeIndex
 	) {
 		placeIndex = placeIndex + 1;
+	}
+	// check if place index is on the last tile
+	if (placeIndex >= board.places.length) {
+		return board.end;
 	}
 	return board.places[placeIndex];
 }
@@ -1081,6 +1165,7 @@ function mouseClicked() {
 	if (overHiker && !selectedHiker) {
 		overHiker.isSelected = true;
 		selectedHiker = overHiker;
+		curState = STATE.MOVE_HIKER;
 		overHiker = null;
 	}
 
@@ -1111,13 +1196,38 @@ function mouseClicked() {
 		// place ranger on new place
 		selectedRanger.placeIndex = rangerPlace.position;
 		selectedRanger = null;
-		move_ranger = 0;
+		// move_ranger = 0; never reset move_ranger
+		// check if ranger is on 'end' tile
+		if (rangerPlace.placeIndex === "end") {
+			if (move_ranger === 1) {
+				// check presence of park
+				if (board.parks[0]) {
+					curState = STATE.REMOVE_PARK1;
+				} else {
+					// TODO: take firstPlace or CannotBookPlace
+				}
+			} else if (move_ranger === 2) {
+				// check presence of park
+				if (board.parks[1]) {
+					curState = STATE.REMOVE_PARK2;
+				} else {
+					// TODO: remove photo
+				}
+			} else {
+				// check presence of park
+				if (board.parks[2]) {
+					curState = STATE.REMOVE_PARK3;
+				} else {
+					// TODO: shuffle equip 3
+				}
+			}
+		}
 		// check if meteo token needs to be moved on 'Solo' card
-		if (rangerPlace.tokens.length !== 0) {
+		else if (rangerPlace.tokens.length !== 0) {
 			curState = STATE.TAKE_TOKEN_FOR_RANGER;
 			curPlace = rangerPlace;
 		} else {
-			curState = STATE.MOVE_HIKER;
+			curState = STATE.CHOOSE_HIKER;
 		}
 		rangerPlace = null;
 	} else if (curState === STATE.MOVE_RANGER && selectedEquip) {
@@ -1153,7 +1263,27 @@ function mouseClicked() {
 		// check if tokens on card otherwise move to next state
 		if (curPlace.tokens.length === 0) {
 			// TODO: check if solo card is full
-			curState = STATE.MOVE_HIKER;
+			curState = STATE.CHOOSE_HIKER;
+		}
+	} else if (curState && curState.startsWith("remove_park")) {
+		if (curState === STATE.REMOVE_PARK1 && mouseInRect(280, 10, 250, 340)) {
+			//TODO: take firstPlace ? cannot book ?
+			board.parks[0] = null;
+			curState = STATE.CHOOSE_HIKER;
+		} else if (
+			curState === STATE.REMOVE_PARK2 &&
+			mouseInRect(540, 10, 250, 340)
+		) {
+			//TODO: remove photo !!
+			board.parks[1] = null;
+			curState = STATE.CHOOSE_HIKER;
+		} else if (
+			curState === STATE.REMOVE_PARK3 &&
+			mouseInRect(800, 10, 250, 340)
+		) {
+			//TODO: reshuffle equip 3
+			board.parks[2] = null;
+			curState = STATE.CHOOSE_HIKER;
 		}
 	}
 
@@ -1163,20 +1293,19 @@ function mouseClicked() {
 }
 
 function mouseMoved() {
-	if (!selectedHiker && curState === STATE.MOVE_HIKER) {
-		overHiker = isOverHiker();
-	}
-	if (selectedHiker) {
-		overPlace = isOverPlace();
-	}
-	if (
-		curState === STATE.TAKE_TOKENS_ON_CARD ||
-		curState === STATE.TAKE_TOKEN_FOR_RANGER
-	) {
-		overToken = isOverTokenOnCurrentPlace();
-	}
-	if (curState === STATE.BOTTLE_OR_PHOTO) {
-		overBottle = isOverBottleCards();
+	switch (curState) {
+		case STATE.CHOOSE_HIKER:
+			overHiker = isOverHiker();
+			break;
+		case STATE.MOVE_HIKER:
+			overPlace = isOverPlace();
+			break;
+		case STATE.TAKE_TOKENS_ON_CARD:
+		case STATE.TAKE_TOKEN_FOR_RANGER:
+			overToken = isOverTokenOnCurrentPlace();
+			break;
+		case STATE.BOTTLE_OR_PHOTO:
+			overBottle = isOverBottleCards();
 	}
 }
 
