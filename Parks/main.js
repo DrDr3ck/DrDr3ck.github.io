@@ -25,6 +25,7 @@ let lastTime = 0;
 const STATE = {
 	CHOOSE_HIKER: "choose_hiker",
 	MOVE_HIKER: "move_hiker",
+	MOVE_RANGER: "move_ranger",
 	TAKE_TOKENS_ON_CARD: "take_tokens_on_card",
 	TAKE_TOKEN_FOR_RANGER: "take_token_for_ranger",
 	BOTTLE_OR_PHOTO: "bottle_or_photo",
@@ -45,6 +46,7 @@ let curPlace = null;
 let selectedEquip = null;
 let selectedRanger = null;
 let overBottle = false;
+let overDevice = false;
 let selectedBottle = null;
 
 let move_ranger = 0;
@@ -90,11 +92,12 @@ class Place {
 		this.tokens = [];
 		this.hikers = [];
 		this.position = position;
+		this.rect = null;
 	}
 
 	draw(scale) {
 		if (this.placeIndex === "start") {
-			spritesheet.drawScaledSprite("start", 0, 10, 360, scale);
+			spritesheet.drawScaledSprite("start", 0, this.rect.x, this.rect.y, scale);
 			return;
 		}
 		if (this.placeIndex === "end") {
@@ -107,9 +110,28 @@ class Place {
 			);
 		}
 		const X = 10 + 195 * scale + 166 * scale * this.position;
-		spritesheet.drawScaledSprite("lieux", this.placeIndex, X, 360, scale);
+		spritesheet.drawScaledSprite("places", this.placeIndex, X, 360, scale);
 
 		drawSymbols(this.tokens, X + 30, 620);
+	}
+
+	drawRect() {
+		noFill();
+		stroke(250, 250, 50);
+		rect(this.rect.x, this.rect.y, this.rect.w, this.rect.h, 10);
+	}
+
+	isOverPlace() {
+		if (mouseX < this.rect.x || mouseY < this.rect.y) {
+			return false;
+		}
+		if (
+			mouseX > this.rect.x + this.rect.w ||
+			mouseY > this.rect.y + this.rect.h
+		) {
+			return false;
+		}
+		return true;
 	}
 
 	isOverToken(scale) {
@@ -154,6 +176,10 @@ const board = {
 	soloSun: [],
 	soloRain: [],
 	parks: [],
+	photos: [],
+	hasDevice: true,
+	isFirst: true,
+	hikerParks: [],
 };
 
 const distance = (x1, y1, x2, y2) => {
@@ -173,6 +199,10 @@ function isOverHiker() {
 	return null;
 }
 
+function computeRectForPlaces() {
+	board.start.rect = { x: 10, y: 360, w: 205 - 10, h: 640 - 360 };
+}
+
 function isOverPlace() {
 	// 360 640
 	if (mouseY < 360 || mouseY > 640) {
@@ -181,13 +211,16 @@ function isOverPlace() {
 	if (mouseX < 10) {
 		return null;
 	}
-	if (mouseX < 205) {
-		return "start";
+	if (board.start.isOverPlace()) {
+		return board.start;
 	}
 	for (let i = 0; i < board.places.length; i++) {
 		if (mouseX < 205 + 166 + 166 * i) {
 			return board.places[i];
 		}
+	}
+	if (mouseX > 205 + 166 + 166 * board.places.length) {
+		return board.end;
 	}
 
 	return null;
@@ -200,6 +233,10 @@ function isOverTokenOnCurrentPlace() {
 
 function mouseInRect(x, y, w, h) {
 	return mouseX > x && mouseX < x + w && mouseY > y && mouseY < y + h;
+}
+
+function isOverPhotoDevice() {
+	return mouseX > 1300 && mouseX < 1420 && mouseY > 0 && mouseY < 90;
 }
 
 function isOverBottleCards() {
@@ -236,9 +273,17 @@ function speakerClicked() {
 
 function startClicked() {
 	curGameState = GAME_PLAY_STATE;
-	uiManager.setUI([speakerButton, plusButton, minusButton]);
-	plusButton.setTextSize(35);
-	minusButton.setTextSize(35);
+	uiManager.setUI([
+		speakerButton,
+		plusBottleButton,
+		minusBottleButton,
+		plusParkButton,
+		minusParkButton,
+	]);
+	plusBottleButton.setTextSize(35);
+	minusBottleButton.setTextSize(35);
+	plusParkButton.setTextSize(35);
+	minusParkButton.setTextSize(35);
 	uiManager.addLogger("Start game");
 
 	shuffleArray(parks);
@@ -260,6 +305,8 @@ function startClicked() {
 		return new Place(lieu.index, lieu.name, i);
 	});
 	board.end = new Place("end", "end", board.places.length);
+	computeRectForPlaces();
+
 	board.gourdes.push(gourdes.pop());
 	// place token on places according to season card
 	const saison = saisons[manche];
@@ -293,14 +340,17 @@ const startButton = new BButton(
 	startClicked
 );
 
-const plusButton = new BFloatingButton(10, 720, "<", () => {
+const plusBottleButton = new BFloatingButton(10, 720, "<", () => {
 	const g = board.gourdes.shift();
 	board.gourdes.push(g);
 });
-const minusButton = new BFloatingButton(225, 720, ">", () => {
+const minusBottleButton = new BFloatingButton(225, 720, ">", () => {
 	const g = board.gourdes.pop();
 	board.gourdes.unshift(g);
 });
+
+const plusParkButton = new BFloatingButton(1260, 720, "<", () => {});
+const minusParkButton = new BFloatingButton(225 + 1250, 720, ">", () => {});
 
 const parks = [
 	{
@@ -659,13 +709,15 @@ function setup() {
 	spritesheet.addSpriteSheet("saisons", "./saisons.png", 260, 165);
 	spritesheet.addSpriteSheet("parks", "./parks.png", 250, 300);
 	spritesheet.addSpriteSheet("equipements", "./equipements.png", 255, 160);
+	spritesheet.addSpriteSheet("photo_device", "./photo_device.png", 160, 130);
+	spritesheet.addSpriteSheet("first_token", "./first_token.png", 80, 70);
 
 	spritesheet.addSpriteSheet("hikers", "./hikers.png", 66, 80);
 	spritesheet.addSpriteSheet("rangers", "./rangers.png", 300, 200);
 	spritesheet.addSpriteSheet("cursor", "./cursor.png", 40, 40);
 
 	spritesheet.addSpriteSheet("start", "./start.png", 222, 283);
-	spritesheet.addSpriteSheet("lieux", "./lieux.png", 193, 283);
+	spritesheet.addSpriteSheet("places", "./places.png", 193, 283);
 	spritesheet.addSpriteSheet("end", "./end.png", 250, 283);
 
 	lastTime = Date.now();
@@ -768,7 +820,7 @@ function drawHikers() {
 	}
 }
 
-function drawText() {
+function drawHelpText() {
 	fill(220);
 	if (curState === STATE.CHOOSE_HIKER) {
 		text("Select a hiker", 715, 670);
@@ -787,7 +839,10 @@ function drawText() {
 		text("Take token for ranger card", 715, 670);
 	} else if (curState === STATE.BOTTLE_OR_PHOTO) {
 		text("Choose between bottle and photo", 715, 670);
-		// TODO: add bottle/photo buttons ?
+	} else if (curState === STATE.TAKE_BOTTLE) {
+		text("Stack new bottle", 715, 670);
+	} else if (curState === STATE.TAKE_PHOTO) {
+		text("Take a photo", 715, 670);
 	} else if (curState === STATE.REMOVE_PARK1) {
 		text("Remove first park", 715, 670);
 	} else if (curState === STATE.REMOVE_PARK2) {
@@ -857,8 +912,9 @@ function drawOver() {
 	if (overPlace) {
 		noFill();
 		stroke(250, 250, 50);
-		if (overPlace === "start") {
-			rect(10, 360, 195, 280, 10);
+		if (overPlace.placeIndex === "start") {
+			overPlace.drawRect();
+		} else if (overPlace.placeIndex === "end") {
 		} else {
 			rect(10 + 195 + 166 * overPlace.position, 360, 166, 280, 10);
 		}
@@ -888,6 +944,14 @@ function drawOver() {
 		stroke(250, 250, 50);
 		strokeWeight(3);
 		rect(10, 10, 260, 165, 5);
+		strokeWeight(1);
+	}
+
+	if (overDevice) {
+		noFill();
+		stroke(250, 250, 50);
+		strokeWeight(3);
+		rect(1300, 2, 1420 - 1300, 85, 5);
 		strokeWeight(1);
 	}
 }
@@ -940,6 +1004,22 @@ function drawSelection() {
 	}
 }
 
+function drawPhotos() {
+	spritesheet.drawScaledSprite(
+		"photo_device",
+		board.hasDevice ? 0 : 1,
+		1300,
+		0,
+		0.75
+	);
+}
+
+function drawFirstToken() {
+	if (board.isFirst) {
+		spritesheet.drawScaledSprite("first_token", 0, 1440, 10, 1);
+	}
+}
+
 function drawGame() {
 	spritesheet.drawSprite("covers", 0, 10, 10);
 	spritesheet.drawSprite("saisons", saisons[manche].index, 10, 185);
@@ -951,7 +1031,7 @@ function drawGame() {
 	drawPark(1, 540, 10);
 	drawPark(2, 800, 10);
 
-	drawText();
+	drawHelpText();
 
 	drawEquipements();
 
@@ -964,6 +1044,10 @@ function drawGame() {
 	drawBoard();
 
 	drawSelection();
+
+	drawPhotos();
+
+	drawFirstToken();
 
 	// special case when removing parks
 	if (curState && curState.startsWith("remove_park")) {
@@ -993,6 +1077,16 @@ function drawBoard() {
 		textAlign(CENTER, CENTER);
 		textSize(25);
 		text(`x${board.gourdes.length}`, 135, 695);
+	}
+
+	// parks
+	// to change whe getting parks !!
+	if (board.hikerParks.length > 0) {
+		fill(220);
+		noStroke();
+		textAlign(CENTER, CENTER);
+		textSize(25);
+		text(`x${board.hikerParks.length}`, 135 + 1250, 695);
 	}
 
 	// garde forestier
@@ -1078,7 +1172,7 @@ function placeHiker() {
 	selectedHiker.placeIndex = overPlace.position;
 
 	// change state according to chosen place
-	if (overPlace.name !== "end") {
+	if (overPlace.placeIndex !== "end") {
 		// TODO: depending of the card, take token or do a specific action
 		if (overPlace.placeIndex <= 3) {
 			overPlace.resetTile();
@@ -1187,6 +1281,13 @@ function mouseClicked() {
 		selectedBottle = gourdes.length - 1; // index of bottle to show
 		curState = STATE.TAKE_BOTTLE;
 		overBottle = false;
+	} else if (
+		curState === STATE.BOTTLE_OR_PHOTO &&
+		overDevice &&
+		board.box.length >= (board.hasDevice ? 1 : 2)
+	) {
+		curState = STATE.TAKE_PHOTO;
+		overDevice = false;
 	} else if (curState === STATE.TAKE_BOTTLE && selectedBottle !== null) {
 		selectedBottle = null;
 		curState = STATE.MOVE_RANGER;
@@ -1205,20 +1306,25 @@ function mouseClicked() {
 					curState = STATE.REMOVE_PARK1;
 				} else {
 					// TODO: take firstPlace or CannotBookPlace
+					curState = STATE.MOVE_HIKER;
 				}
 			} else if (move_ranger === 2) {
 				// check presence of park
 				if (board.parks[1]) {
 					curState = STATE.REMOVE_PARK2;
 				} else {
-					// TODO: remove photo
+					// remove photo device
+					board.hasDevice = false;
+					curState = STATE.MOVE_HIKER;
 				}
 			} else {
 				// check presence of park
 				if (board.parks[2]) {
 					curState = STATE.REMOVE_PARK3;
 				} else {
-					// TODO: shuffle equip 3
+					// shuffle equip 3
+					reshuffleEquip3();
+					curState = STATE.MOVE_HIKER;
 				}
 			}
 		}
@@ -1274,16 +1380,19 @@ function mouseClicked() {
 			curState === STATE.REMOVE_PARK2 &&
 			mouseInRect(540, 10, 250, 340)
 		) {
-			//TODO: remove photo !!
+			//remove photo device !!
 			board.parks[1] = null;
+			board.hasDevice = false;
 			curState = STATE.CHOOSE_HIKER;
 		} else if (
 			curState === STATE.REMOVE_PARK3 &&
 			mouseInRect(800, 10, 250, 340)
 		) {
-			//TODO: reshuffle equip 3
+			// remove last park
 			board.parks[2] = null;
 			curState = STATE.CHOOSE_HIKER;
+			// reshuffle equip 3
+			reshuffleEquip3();
 		}
 	}
 
@@ -1306,6 +1415,7 @@ function mouseMoved() {
 			break;
 		case STATE.BOTTLE_OR_PHOTO:
 			overBottle = isOverBottleCards();
+			overDevice = isOverPhotoDevice();
 	}
 }
 
