@@ -149,7 +149,8 @@ function drawGame() {
 	// Les mines sont maintenant initialisées dans initGame
 
 	// Dessine la grille
-	stroke(200);
+	stroke(250);
+	strokeWeight(2);
 	let hoveredX = null;
 	let hoveredY = null;
 	for (let i = 0; i < rows; i++) {
@@ -159,9 +160,13 @@ function drawGame() {
 			if (revealedCells[i] && revealedCells[i][j]) {
 				fill(150, 200, 255); // bleu pastel
 			} else if (isMine) {
-				fill(200, 0, 0); // rouge
+				if( toggleDebug)	 {
+					fill(200, 0, 0); // rouge
+				} else {
+					fill(150);	
+				}
 			} else {
-				fill(100);
+				fill(150);
 			}
 			rect(offsetX + j * cellSize, offsetY + i * cellSize, cellSize, cellSize);
 			// Affiche le drapeau si la case est marquée
@@ -192,9 +197,31 @@ function drawGame() {
 		fill(255);
 		textSize(24);
 		const mineCount = countMinesAround(hoveredX, hoveredY);
-		text(`X: ${hoveredX}, Y: ${hoveredY} | Mines autour: ${mineCount}`,
-			offsetX + cols * cellSize / 2,
-			offsetY + rows * cellSize + 30);
+		if( toggleDebug ) {
+			text(`X: ${hoveredX}, Y: ${hoveredY} | Mines autour: ${mineCount}`,
+				offsetX + cols * cellSize / 2,
+				offsetY + rows * cellSize + 30);
+		}
+	}
+
+	// Ajoute un voile transparent si toutes les cases sans mines sont révélées
+	let totalSafe = 0;
+	let revealedSafe = 0;
+	for (let i = 0; i < rows; i++) {
+		for (let j = 0; j < cols; j++) {
+			const isMine = minePositions.some(pos => pos.x === j && pos.y === i);
+			if (!isMine) {
+				totalSafe++;
+				if (revealedCells[i] && revealedCells[i][j]) {
+					revealedSafe++;
+				}
+			}
+		}
+	}
+	if (revealedSafe === totalSafe) {
+		noStroke();
+		fill(0, 0, 0, 120); // noir semi-transparent
+		rect(offsetX, offsetY, cols * cellSize, rows * cellSize);
 	}
 }
 
@@ -234,8 +261,20 @@ function draw() {
 		seed.render(100, 160, { label: "Seed", color: 220 });
 	}
 	if (curState === GAME_PLAY_STATE) {
+		textAlign(CENTER, CENTER);
 		updateGame(elapsedTime);
 		drawGame();
+	}
+
+	if (curState === GAME_OVER_STATE) {
+		textSize(60);
+		textAlign(CENTER, CENTER);
+		stroke(0);
+		strokeWeight(6);
+		fill(255, 0, 0);
+		text("Game Over", windowWidth / 2, windowHeight / 2);
+		noStroke();
+		textAlign(LEFT, BASELINE);
 	}
 
 	uiManager.draw();
@@ -252,6 +291,7 @@ function mouseClicked() {
 }
 
 function mousePressed() {
+	if (curState === GAME_OVER_STATE) return;
 	if (toggleDebug) {
 		uiManager.addLogger(`X=${mouseX}, Y=${mouseY}`);
 	}
@@ -271,6 +311,12 @@ function mousePressed() {
 					mouseX >= x1 && mouseX < x1 + cellSize &&
 					mouseY >= y1 && mouseY < y1 + cellSize
 				) {
+					// Si la case est une mine, game over
+					if (minePositions.some(pos => pos.x === j && pos.y === i)) {
+						curState = GAME_OVER_STATE;
+						uiManager.addLogger('Game Over!');
+						return;
+					}
 					revealCell(j, i);
 				}
 			}
