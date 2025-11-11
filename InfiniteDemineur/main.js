@@ -1,3 +1,5 @@
+// Variable globale pour le bouton pressé
+let buttonPressed = undefined;
 // Désactive le menu contextuel du navigateur sur clic droit
 document.addEventListener('contextmenu', function(e) {
 	e.preventDefault();
@@ -64,16 +66,17 @@ const startButton = new BButton(
 	startClicked
 );
 
-const mines = ["Escondida",
-    "Grasberg",
-    "Carajás",
-    "Mirny",
-    "Canyon de Bingham",
-    "Super Pit de Kalgoorlie",
-    "Oyu Tolgoi",
-    "Diavik",
-    "Jwaneng",
-    "Mine de Kiruna"
+const mines = [
+	"Escondida",
+	"Grasberg",
+	"Carajás",
+	"Mirny",
+	"Canyon de Bingham",
+	"Super Pit de Kalgoorlie",
+	"Oyu Tolgoi",
+	"Diavik",
+	"Jwaneng",
+	"Mine de Kiruna"
 ];
 const seed = new Seed(() => {
 	const names = mines;
@@ -99,16 +102,41 @@ function setup() {
 	initUI();
 	canvas = createCanvas(windowWidth, windowHeight);
 	canvas.parent("canvas");
-
 	frameRate(60);
-
 	lastTime = Date.now();
 }
 
-function updateGame(elapsedTime) {}
+function updateGame(elapsedTime) { }
 
 // Mines positions globales
 let minePositions = null;
+let revealedCells = [];
+let flaggedCells = [];
+
+function initGame() {
+	// Initialisation des mines
+	const rows = 10;
+	const cols = 10;
+	minePositions = [];
+	revealedCells = [];
+	while (minePositions.length < 12) {
+		const x = Math.floor(Math.random() * cols);
+		const y = Math.floor(Math.random() * rows);
+		if (!minePositions.some(pos => pos.x === x && pos.y === y)) {
+			minePositions.push({ x, y });
+		}
+	}
+	console.log("Mine positions:", minePositions);
+	// Initialise la grille des cases révélées et des drapeaux
+	for (let i = 0; i < rows; i++) {
+		revealedCells[i] = [];
+		flaggedCells[i] = [];
+		for (let j = 0; j < cols; j++) {
+			revealedCells[i][j] = false;
+			flaggedCells[i][j] = false;
+		}
+	}
+}
 
 function drawGame() {
 	// Paramètres du tableau
@@ -128,12 +156,27 @@ function drawGame() {
 		for (let j = 0; j < cols; j++) {
 			// Vérifie si la case est une mine
 			const isMine = minePositions.some(pos => pos.x === j && pos.y === i);
-			if (isMine) {
+			if (revealedCells[i] && revealedCells[i][j]) {
+				fill(150, 200, 255); // bleu pastel
+			} else if (isMine) {
 				fill(200, 0, 0); // rouge
 			} else {
 				fill(100);
 			}
 			rect(offsetX + j * cellSize, offsetY + i * cellSize, cellSize, cellSize);
+			// Affiche le drapeau si la case est marquée
+			if (flaggedCells[i] && flaggedCells[i][j]) {
+				fill(255, 0, 0);
+				textSize(22);
+				text("🚩", offsetX + j * cellSize + cellSize / 2, offsetY + i * cellSize + cellSize / 2);
+			}
+			// Affiche le nombre de mines autour si la case est révélée
+			if (revealedCells[i] && revealedCells[i][j]) {
+				const count = countMinesAround(j, i);
+				fill(255);
+				textSize(20);
+				text(count, offsetX + j * cellSize + cellSize / 2, offsetY + i * cellSize + cellSize / 2);
+			}
 			// Détection du survol
 			if (
 				mouseX >= offsetX + j * cellSize && mouseX < offsetX + (j + 1) * cellSize &&
@@ -153,21 +196,6 @@ function drawGame() {
 			offsetX + cols * cellSize / 2,
 			offsetY + rows * cellSize + 30);
 	}
-}
-
-function initGame() {
-	// Initialisation des mines
-	const rows = 10;
-	const cols = 10;
-	minePositions = [];
-	while (minePositions.length < 12) {
-		const x = Math.floor(Math.random() * cols);
-		const y = Math.floor(Math.random() * rows);
-		if (!minePositions.some(pos => pos.x === x && pos.y === y)) {
-			minePositions.push({ x, y });
-		}
-	}
-	console.log("Mine positions:", minePositions);
 }
 
 function drawLoading() {
@@ -199,7 +227,6 @@ function draw() {
 	}
 
 	uiManager.processInput();
-
 	uiManager.update(elapsedTime);
 
 	// draw game
@@ -221,8 +248,52 @@ function draw() {
 }
 
 function mouseClicked() {
+	
+}
+
+function mousePressed() {
 	if (toggleDebug) {
 		uiManager.addLogger(`X=${mouseX}, Y=${mouseY}`);
+	}
+	// Détection du clic gauche sur une case du tableau
+	const rows = 10;
+	const cols = 10;
+	const cellSize = 40;
+	const offsetX = (windowWidth - cols * cellSize) / 2;
+	const offsetY = (windowHeight - rows * cellSize) / 2;
+	console.log("Mouse clicked at:", mouseX, mouseY, mouseButton);
+	if (mouseButton === LEFT) {
+		for (let i = 0; i < rows; i++) {
+			for (let j = 0; j < cols; j++) {
+				const x1 = offsetX + j * cellSize;
+				const y1 = offsetY + i * cellSize;
+				if (
+					mouseX >= x1 && mouseX < x1 + cellSize &&
+					mouseY >= y1 && mouseY < y1 + cellSize
+				) {
+					revealCell(j, i);
+				}
+			}
+		}
+	}
+	// Gestion du clic droit pour marquer/dé-marquer une case
+	if (mouseButton === RIGHT) {
+		for (let i = 0; i < rows; i++) {
+			for (let j = 0; j < cols; j++) {
+				const x1 = offsetX + j * cellSize;
+				const y1 = offsetY + i * cellSize;
+				if (
+					mouseX >= x1 && mouseX < x1 + cellSize &&
+					mouseY >= y1 && mouseY < y1 + cellSize
+				) {
+					if (flaggedCells[i][j]) {
+						flaggedCells[i][j] = false;
+					} else {
+						flaggedCells[i][j] = true;
+					}
+				}
+			}
+		}
 	}
 	toolManager.mouseClicked();
 	uiManager.mouseClicked();
@@ -232,6 +303,27 @@ function mouseClicked() {
 function keyPressed() {
 	if (key === "D") {
 		toggleDebug = !toggleDebug;
+	}
+}
+
+// Révèle une case et ses voisines si elle vaut 0
+function revealCell(x, y) {
+	if (revealedCells[y][x]) return;
+	revealedCells[y][x] = true;
+	const count = countMinesAround(x, y);
+	if (count === 0) {
+		for (let dy = -1; dy <= 1; dy++) {
+			for (let dx = -1; dx <= 1; dx++) {
+				if (dx === 0 && dy === 0) continue;
+				const nx = x + dx;
+				const ny = y + dy;
+				if (nx >= 0 && nx < 10 && ny >= 0 && ny < 10) {
+					if (!revealedCells[ny][nx]) {
+						revealCell(nx, ny);
+					}
+				}
+			}
+		}
 	}
 }
 
@@ -252,3 +344,5 @@ function countMinesAround(x, y) {
 	}
 	return count;
 }
+
+	
