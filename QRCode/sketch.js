@@ -56,7 +56,7 @@ function setup() {
   st.parent(document.head || document.body);
 
   // build a simple UI: textarea with lines "title: url" and a button
-  let info = createP('Enter one item per line in the form: <strong>title: url</strong>');
+  let info = createP('<p>Entrez un élément par ligne sous la forme : <strong>titre : url</strong><br>Si le texte est trop grand, vous pouvez spécifier une taille de police personnalisée en ajoutant <strong>(taille)</strong> à la fin de l\'URL<br>Par exemple : <em>Mon Jeu : https://example.com(12)</em><br>Par défaut, la taille est de 16</p>');
   info.parent(controlsDiv);
 
   let ta = createElement('textarea');
@@ -94,7 +94,13 @@ function parseInputAndGenerate(text) {
     if (parts.length >= 3) {
       let title = parts[0].trim();
       let url = parts[1].trim();
-      if (title && url) parsed.push({ title: title, url: url });
+      let fontSize = 16;
+      let sizeMatch = url.match(/^(.*)\((\d+)\)$/);
+      if (sizeMatch) {
+        url = sizeMatch[1].trim();
+        fontSize = parseInt(sizeMatch[2]);
+      }
+      if (title && url) parsed.push({ title: title, url: url, fontSize: fontSize });
     }
   }
   if (parsed.length > 0) items = parsed;
@@ -177,7 +183,7 @@ function draw() {
     push();
     fill(0);
     if (customFont) textFont(customFont);
-    textSize(16);
+    textSize(items[i].fontSize || 16);
     textAlign(CENTER, TOP);
     text(items[i].title, x0 + itemW / 2, qrY + qrPixel + 6);
     pop();
